@@ -51,7 +51,7 @@ export function KnowledgeBaseMgmt({
       {/* 顶级标准页眉布局 */}
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h2 className='text-lg font-black tracking-tighter uppercase'>
             {t('basicSettings.knowledgeBase.page.title')}
           </h2>
           <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -60,7 +60,7 @@ export function KnowledgeBaseMgmt({
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <div className='flex h-9 items-center gap-3 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4'>
-            <span className='text-[9px] font-black tracking-[0.2em] text-primary/60 uppercase italic'>
+            <span className='text-[9px] font-black tracking-[0.2em] text-primary/60 uppercase'>
               {t('basicSettings.knowledgeBase.page.entryCount', {
                 count: entries.length,
               })}

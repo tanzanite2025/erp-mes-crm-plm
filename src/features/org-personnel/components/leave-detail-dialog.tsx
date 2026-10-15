@@ -33,7 +33,7 @@ export function LeaveDetailDialog({
       <DialogContent className='max-w-2xl overflow-hidden rounded-[28px] border-dashed p-0'>
         <div className='border-b border-dashed bg-muted/10 p-6'>
           <DialogHeader>
-            <DialogTitle className='text-xl font-black tracking-tighter italic'>
+            <DialogTitle className='text-xl font-black tracking-tighter'>
               {t('orgPersonnel.leaveMgmt.detail.title')}
             </DialogTitle>
             <DialogDescription>
@@ -49,7 +49,7 @@ export function LeaveDetailDialog({
                 <p className='text-[10px] font-black tracking-widest uppercase opacity-50'>
                   {t('orgPersonnel.leaveMgmt.detail.applicant')}
                 </p>
-                <p className='text-lg font-black tracking-tighter italic'>
+                <p className='text-lg font-black tracking-tighter'>
                   {leave.employeeName ||
                     t('orgPersonnel.leaveMgmt.list.unknownApplicant')}
                 </p>
@@ -72,7 +72,7 @@ export function LeaveDetailDialog({
                 <p className='text-[10px] font-black tracking-widest uppercase opacity-50'>
                   {t('orgPersonnel.leaveMgmt.detail.leaveType')}
                 </p>
-                <p className='mt-2 text-base font-black tracking-tighter italic'>
+                <p className='mt-2 text-base font-black tracking-tighter'>
                   {getLeaveTypeLabel(leave.leaveType, locale)}
                 </p>
               </div>
@@ -80,7 +80,7 @@ export function LeaveDetailDialog({
                 <p className='text-[10px] font-black tracking-widest uppercase opacity-50'>
                   {t('orgPersonnel.leaveMgmt.detail.leaveDays')}
                 </p>
-                <p className='mt-2 text-base font-black tracking-tighter text-primary italic'>
+                <p className='mt-2 text-base font-black tracking-tighter text-primary'>
                   {leave.durationDays.toFixed(1)}{' '}
                   {t('orgPersonnel.leaveMgmt.list.daysUnit')}
                 </p>

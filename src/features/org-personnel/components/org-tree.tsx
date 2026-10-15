@@ -101,7 +101,7 @@ function OrgTreeNode({
 
         {getIcon(node.type)}
 
-        <span className='flex-1 truncate font-medium italic'>{node.name}</span>
+        <span className='flex-1 truncate font-medium'>{node.name}</span>
 
         {hasChildren && !isSelected && (
           <span className='text-[10px] text-muted-foreground opacity-60 group-hover:text-accent-foreground'>

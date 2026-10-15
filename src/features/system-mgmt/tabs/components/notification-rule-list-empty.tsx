@@ -27,7 +27,7 @@ export function NotificationRuleListEmpty({
         <p className='text-[12px] font-black tracking-widest text-muted-foreground uppercase'>
           当前的监控雷达为空
         </p>
-        <p className='mt-1 text-[10px] text-muted-foreground/60 italic'>
+        <p className='mt-1 text-[10px] text-muted-foreground/60'>
           点击上方按钮，开始建立业务通知链路
         </p>
       </div>

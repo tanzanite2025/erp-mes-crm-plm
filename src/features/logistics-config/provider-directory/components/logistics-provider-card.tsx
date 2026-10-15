@@ -96,13 +96,13 @@ export function LogisticsProviderCard({
               )}
             </div>
             <div className='min-w-0 space-y-2'>
-              <CardTitle className='text-base font-black tracking-tighter uppercase italic'>
+              <CardTitle className='text-base font-black tracking-tighter uppercase'>
                 {provider.name}
               </CardTitle>
               <CardDescription className='flex flex-wrap items-center gap-1.5'>
                 <Badge
                   variant='outline'
-                  className='h-4 border-slate-200 px-1.5 text-[8px] font-black tracking-tighter uppercase italic'
+                  className='h-4 border-slate-200 px-1.5 text-[8px] font-black tracking-tighter uppercase'
                 >
                   {provider.code}
                 </Badge>
@@ -320,7 +320,7 @@ export function LogisticsProviderCard({
             <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase'>
               {t('logisticsConfig.platforms.fields.quotaTotal')}
             </span>
-            <p className='text-sm font-black tracking-tighter text-slate-700 italic'>
+            <p className='text-sm font-black tracking-tighter text-slate-700'>
               {provider.quotaTotal ?? 0}
             </p>
           </div>
@@ -328,7 +328,7 @@ export function LogisticsProviderCard({
             <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase'>
               {t('logisticsConfig.platforms.fields.quotaUsed')}
             </span>
-            <p className='text-sm font-black tracking-tighter text-slate-700 italic'>
+            <p className='text-sm font-black tracking-tighter text-slate-700'>
               {provider.quotaUsed ?? 0}
             </p>
           </div>
@@ -336,7 +336,7 @@ export function LogisticsProviderCard({
             <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase'>
               {t('logisticsConfig.platforms.fields.quotaRemaining')}
             </span>
-            <p className='text-sm font-black tracking-tighter text-slate-700 italic'>
+            <p className='text-sm font-black tracking-tighter text-slate-700'>
               {quotaRemaining ?? '-'}
             </p>
           </div>

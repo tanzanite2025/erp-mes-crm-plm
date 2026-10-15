@@ -123,7 +123,7 @@ export function RequirementList({ data, isLoading }: RequirementListProps) {
                       <Layers className='size-6 text-primary' />
                     </div>
                     <div className='flex flex-col gap-0.5'>
-                      <span className='text-[16px] font-black tracking-tighter uppercase italic'>
+                      <span className='text-[16px] font-black tracking-tighter uppercase'>
                         {section}
                       </span>
                       <div className='flex items-center gap-2 uppercase'>
@@ -161,28 +161,28 @@ export function RequirementList({ data, isLoading }: RequirementListProps) {
                   <Table className='w-full border-collapse text-left'>
                     <TableHeader className='bg-muted/10'>
                       <TableRow className='border-b border-dashed hover:bg-transparent'>
-                        <TableHead className='w-[100px] min-w-[100px] py-4 pl-6 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[100px] min-w-[100px] py-4 pl-6 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.code')}
                         </TableHead>
-                        <TableHead className='w-auto min-w-[200px] py-4 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-auto min-w-[200px] py-4 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.name')}
                         </TableHead>
-                        <TableHead className='w-[90px] min-w-[90px] py-4 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[90px] min-w-[90px] py-4 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.total')}
                         </TableHead>
-                        <TableHead className='w-[90px] min-w-[90px] py-4 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[90px] min-w-[90px] py-4 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.inventory')}
                         </TableHead>
-                        <TableHead className='w-[200px] min-w-[200px] px-4 py-4 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[200px] min-w-[200px] px-4 py-4 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.supplyAnalysis')}
                         </TableHead>
-                        <TableHead className='w-[110px] min-w-[110px] py-4 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[110px] min-w-[110px] py-4 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.effectiveGap')}
                         </TableHead>
-                        <TableHead className='w-[150px] min-w-[150px] py-4 text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[150px] min-w-[150px] py-4 text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.packaging')}
                         </TableHead>
-                        <TableHead className='w-[140px] min-w-[140px] py-4 pr-6 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <TableHead className='w-[140px] min-w-[140px] py-4 pr-6 text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('mrp.requirements.list.headers.status')}
                         </TableHead>
                       </TableRow>

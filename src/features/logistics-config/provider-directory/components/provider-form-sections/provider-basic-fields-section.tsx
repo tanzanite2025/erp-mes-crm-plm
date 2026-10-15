@@ -44,7 +44,7 @@ export function ProviderBasicFieldsSection({
               code: event.target.value.toUpperCase(),
             }))
           }
-          className='h-11 rounded-2xl border-slate-200 font-black tracking-tighter italic'
+          className='h-11 rounded-2xl border-slate-200 font-black tracking-tighter'
         />
       </div>
     </div>

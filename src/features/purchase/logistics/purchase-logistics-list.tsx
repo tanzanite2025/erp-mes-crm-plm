@@ -166,7 +166,7 @@ function PurchaseLogisticsDetailSheet({
               <Truck className='size-5 text-emerald-600' />
             </div>
             <div>
-              <SheetTitle className='text-sm font-black tracking-tighter uppercase italic'>
+              <SheetTitle className='text-sm font-black tracking-tighter uppercase'>
                 {t('purchase.logistics.detailTitle')}
               </SheetTitle>
               <div className='flex items-center gap-2'>
@@ -282,7 +282,7 @@ function PurchaseLogisticsDetailSheet({
         </div>
 
         <div className='flex items-center justify-between border-t bg-slate-50 p-4'>
-          <span className='font-mono text-[9px] text-slate-300 italic'>
+          <span className='font-mono text-[9px] text-slate-300'>
             UUID: {record.id}
           </span>
           <span className='text-[9px] font-black tracking-widest text-slate-400 uppercase'>
@@ -313,7 +313,7 @@ export function PurchaseLogisticsList() {
       cell: ({ row }) => (
         <div className='flex items-center gap-2'>
           <Package className='size-3 text-slate-400' />
-          <span className='font-mono text-xs font-black tracking-tighter text-blue-600 italic'>
+          <span className='font-mono text-xs font-black tracking-tighter text-blue-600'>
             {row.original.orderNo}
           </span>
         </div>
@@ -324,7 +324,7 @@ export function PurchaseLogisticsList() {
       header: t('purchase.logistics.columns.supplier'),
       cell: ({ row }) => (
         <div className='flex flex-col'>
-          <span className='text-[10px] font-black tracking-widest text-slate-700 uppercase italic'>
+          <span className='text-[10px] font-black tracking-widest text-slate-700 uppercase'>
             {row.original.purchaseOrder?.supplierName ||
               t('purchase.logistics.supplierFallback')}
           </span>
@@ -338,7 +338,7 @@ export function PurchaseLogisticsList() {
       accessorKey: 'carrier',
       header: t('purchase.logistics.columns.carrier'),
       cell: ({ row }) => (
-        <span className='text-[10px] font-black tracking-widest text-slate-500 uppercase italic'>
+        <span className='text-[10px] font-black tracking-widest text-slate-500 uppercase'>
           {row.original.carrier}
         </span>
       ),
@@ -360,7 +360,7 @@ export function PurchaseLogisticsList() {
         return (
           <Badge
             className={cn(
-              'rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest uppercase italic',
+              'rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest uppercase',
               status === 'Delivered'
                 ? 'border-emerald-200 bg-emerald-500/10 text-emerald-600'
                 : status === 'Pending'
@@ -379,7 +379,7 @@ export function PurchaseLogisticsList() {
       cell: ({ row }) => (
         <div className='flex items-center gap-1.5 overflow-hidden'>
           <MapPin className='size-3 shrink-0 text-slate-400' />
-          <span className='truncate text-[10px] font-black text-slate-500/70 italic'>
+          <span className='truncate text-[10px] font-black text-slate-500/70'>
             {row.original.lastLocation || t('purchase.logistics.noLocation')}
           </span>
         </div>
@@ -417,7 +417,7 @@ export function PurchaseLogisticsList() {
     <Card className='animate-in border-none bg-transparent shadow-none duration-700 fade-in'>
       <CardHeader className='flex-row items-center justify-between px-0 pb-6'>
         <div className='space-y-1'>
-          <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+          <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
             <Truck className='size-4 text-emerald-600' />
             {t('purchase.logistics.trackingTitle')}
           </CardTitle>
@@ -433,7 +433,7 @@ export function PurchaseLogisticsList() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('purchase.logistics.searchPlaceholder')}
-              className='h-9 w-64 rounded-full border-dashed border-slate-200 bg-white pr-4 pl-9 text-[11px] font-black tracking-tight italic'
+              className='h-9 w-64 rounded-full border-dashed border-slate-200 bg-white pr-4 pl-9 text-[11px] font-black tracking-tight'
             />
           </div>
         </div>
@@ -480,7 +480,7 @@ export function PurchaseLogisticsList() {
                     className='text-center align-middle text-slate-300'
                   >
                     <Package className='mx-auto mb-2 size-12 opacity-10' />
-                    <span className='text-[10px] font-black tracking-widest uppercase italic'>
+                    <span className='text-[10px] font-black tracking-widest uppercase'>
                       {t('purchase.logistics.empty')}
                     </span>
                   </td>

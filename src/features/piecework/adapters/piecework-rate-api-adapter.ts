@@ -1,54 +1,16 @@
 import type { DeltaSet } from '@/lib/delta/types'
-import type {
-  PieceworkRateApiDTO,
-  PieceworkRatePatchApiDTO,
-  PieceworkRateWriteApiDTO,
+import {
+  PIECEWORK_RATE_PATCH_WRITABLE_FIELDS,
+  type PieceworkRateApiDTO,
+  type PieceworkRatePatchApiDTO,
+  type PieceworkRateWriteApiDTO,
 } from '../contracts/piecework-rate-api-dto'
-import type { PieceworkRate } from '../data/schema'
-
-function normalizeOptionalId(value?: string | null): string {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-function normalizeStatus(value?: string): 'active' | 'inactive' {
-  return value?.toLowerCase() === 'inactive' ? 'inactive' : 'active'
-}
-
-function normalizeDate(value?: string | null): string {
-  return typeof value === 'string' ? value : ''
-}
+import { pieceworkRateSchema, type PieceworkRate } from '../data/schema'
 
 export function toPieceworkRateContract(
   dto: PieceworkRateApiDTO
 ): PieceworkRate {
-  const effectiveFrom = normalizeDate(dto.effectiveFrom || dto.effectiveAt)
-  const unitPrice =
-    typeof dto.unitPrice === 'number'
-      ? dto.unitPrice
-      : typeof dto.piecePrice === 'number'
-        ? dto.piecePrice
-        : 0
-
-  return {
-    id: dto.id,
-    createdAt: dto.createdAt || '',
-    updatedAt: dto.updatedAt || '',
-    productId: dto.productId || '',
-    processStepId: normalizeOptionalId(dto.processStepId),
-    routeStepId: normalizeOptionalId(dto.routeStepId),
-    processCode: dto.processCode || '',
-    processName: dto.processName || '',
-    unit: dto.unit || 'PCS',
-    unitPrice,
-    currency: dto.currency || 'CNY',
-    effectiveAt: normalizeDate(dto.effectiveAt || effectiveFrom),
-    effectiveFrom,
-    effectiveTo: normalizeDate(dto.effectiveTo),
-    status: normalizeStatus(dto.status),
-    remarks: dto.remarks || '',
-    version: Number(dto.version) || 1,
-    operator: dto.operator || '',
-  }
+  return pieceworkRateSchema.parse(dto)
 }
 
 export function toPieceworkRateContracts(
@@ -62,12 +24,10 @@ export function toPieceworkRateWriteApiDTO(
 ): PieceworkRateWriteApiDTO {
   return {
     ...(rate.id ? { id: rate.id } : {}),
-    productId: rate.productId || '',
-    ...(rate.processStepId ? { processStepId: rate.processStepId } : {}),
-    ...(rate.routeStepId ? { routeStepId: rate.routeStepId } : {}),
-    unit: rate.unit || 'PCS',
-    unitPrice: rate.unitPrice ?? 0,
-    currency: rate.currency || 'CNY',
+    payItemId: rate.payItemId || '',
+    unit: rate.unit,
+    unitPrice: rate.unitPrice,
+    currency: rate.currency,
     ...(rate.effectiveFrom ? { effectiveFrom: rate.effectiveFrom } : {}),
     ...(rate.effectiveTo ? { effectiveTo: rate.effectiveTo } : {}),
     status: rate.status || 'active',
@@ -81,9 +41,15 @@ export function toPieceworkRatePatchApiDTO(
   delta: DeltaSet,
   version: number
 ): PieceworkRatePatchApiDTO {
+  const writableDelta: PieceworkRatePatchApiDTO['delta'] = {}
+  for (const field of PIECEWORK_RATE_PATCH_WRITABLE_FIELDS) {
+    const change = delta[field]
+    if (change !== undefined) writableDelta[field] = change
+  }
+
   return {
     op: 'PATCH',
-    delta,
+    delta: writableDelta,
     metadata: { id, version },
   }
 }

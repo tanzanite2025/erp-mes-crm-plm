@@ -80,16 +80,16 @@ export function TemplateEditorDialog({
     componentLabels[editingTemplate?.componentKey || 'GENERAL'] ||
     t('engineering.templateMgmt.components.GENERAL')
   const controlClassName =
-    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-black italic'
+    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-black'
   const controlMonoClassName =
-    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-mono font-black italic'
+    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-mono font-black'
   const selectControlClassName =
-    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-black italic'
+    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-black'
 
   const leftColumn = (
     <div className='space-y-5'>
       <div className='rounded-[24px] border border-dashed border-blue-200/60 bg-background/80 p-4'>
-        <div className='text-[13px] font-black tracking-tight text-blue-700 italic'>
+        <div className='text-[13px] font-black tracking-tight text-blue-700'>
           {t('engineering.templateMgmt.fields.name')}
         </div>
         <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-blue-600/50 uppercase opacity-60'>
@@ -110,7 +110,7 @@ export function TemplateEditorDialog({
           <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
             {t('engineering.templateMgmt.fields.name')}
           </div>
-          <div className='mt-1 text-[13px] font-black tracking-tight text-slate-700 italic'>
+          <div className='mt-1 text-[13px] font-black tracking-tight text-slate-700'>
             {templateName}
           </div>
         </div>
@@ -182,7 +182,7 @@ export function TemplateEditorDialog({
                   <SelectItem
                     key={key}
                     value={key}
-                    className='text-xs font-black italic'
+                    className='text-xs font-black'
                   >
                     {componentLabels[key] ||
                       t('engineering.templateMgmt.components.GENERAL')}
@@ -219,7 +219,7 @@ export function TemplateEditorDialog({
   const middleColumn = (
     <div className='space-y-4'>
       <div className='rounded-[24px] border border-dashed border-blue-200/60 bg-background/80 p-4'>
-        <div className='text-[13px] font-black tracking-tight text-blue-700 italic'>
+        <div className='text-[13px] font-black tracking-tight text-blue-700'>
           {t('engineering.templateMgmt.fields.assemblyTitle')}
         </div>
         <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-blue-600/50 uppercase opacity-60'>
@@ -230,7 +230,7 @@ export function TemplateEditorDialog({
       <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-4'>
         <div className='flex items-center justify-between gap-3 border-b border-dashed border-muted/30 pb-3'>
           <div>
-            <div className='text-[13px] font-black tracking-tight text-slate-700 italic'>
+            <div className='text-[13px] font-black tracking-tight text-slate-700'>
               {t('engineering.templateMgmt.buttons.addAttribute')}
             </div>
             <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase opacity-60'>
@@ -264,7 +264,7 @@ export function TemplateEditorDialog({
                   <SelectItem
                     key={category.id}
                     value={category.key}
-                    className='text-xs font-black italic'
+                    className='text-xs font-black'
                   >
                     {getCategoryName(locale, category)}
                   </SelectItem>
@@ -286,7 +286,7 @@ export function TemplateEditorDialog({
       <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-4'>
         <div className='flex items-center justify-between gap-3 border-b border-dashed border-muted/30 pb-3'>
           <div>
-            <div className='text-[13px] font-black tracking-tight text-slate-700 italic'>
+            <div className='text-[13px] font-black tracking-tight text-slate-700'>
               {t('engineering.templateMgmt.assembly.previewAttributes')}
             </div>
             <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase opacity-60'>
@@ -311,7 +311,7 @@ export function TemplateEditorDialog({
               >
                 <div className='flex items-start justify-between gap-3'>
                   <div className='min-w-0 space-y-1'>
-                    <div className='text-[11px] font-black text-slate-700 italic'>
+                    <div className='text-[11px] font-black text-slate-700'>
                       {getCategoryName(locale, category)}
                     </div>
                     <div className='font-mono text-[8px] font-black tracking-widest break-all text-muted-foreground/40 uppercase'>
@@ -361,7 +361,7 @@ export function TemplateEditorDialog({
         <div className='flex items-center gap-2 text-blue-700'>
           <Eye className='size-4' />
           <div className='min-w-0'>
-            <div className='text-[13px] font-black tracking-tight italic'>
+            <div className='text-[13px] font-black tracking-tight'>
               {t('engineering.templateMgmt.fields.previewTitle')}
             </div>
             <div className='mt-1 text-[9px] font-black tracking-[0.18em] wrap-break-word text-blue-700/70 uppercase opacity-60'>
@@ -375,7 +375,7 @@ export function TemplateEditorDialog({
             <div className='text-[10px] font-black tracking-widest text-blue-700/60 uppercase'>
               {t('engineering.templateMgmt.assembly.previewSpec')}
             </div>
-            <div className='mt-1 text-[12px] font-black wrap-break-word text-slate-800 italic'>
+            <div className='mt-1 text-[12px] font-black wrap-break-word text-slate-800'>
               {componentLabel}
             </div>
           </div>
@@ -414,7 +414,7 @@ export function TemplateEditorDialog({
                 className='flex items-center justify-between gap-3 rounded-2xl bg-muted/40 px-3 py-2'
               >
                 <div className='min-w-0'>
-                  <div className='text-[11px] font-black wrap-break-word text-slate-700 italic'>
+                  <div className='text-[11px] font-black wrap-break-word text-slate-700'>
                     {getCategoryName(locale, category)}
                   </div>
                   <div className='font-mono text-[8px] font-black tracking-widest break-all text-muted-foreground/40 uppercase'>

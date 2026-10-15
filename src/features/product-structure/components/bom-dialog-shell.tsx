@@ -106,7 +106,7 @@ export function BOMDialogShell({
         <DialogHeader className='relative flex-none px-3 pt-2.5 pb-1 text-start sm:px-4 sm:pt-3 sm:pb-1'>
           <div className='flex w-full items-start justify-between gap-3'>
             <div className='flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden'>
-              <DialogTitle className='flex min-w-0 flex-1 items-center gap-2 text-base font-black tracking-tighter uppercase italic sm:gap-3 sm:text-xl'>
+              <DialogTitle className='flex min-w-0 flex-1 items-center gap-2 text-base font-black tracking-tighter uppercase sm:gap-3 sm:text-xl'>
                 <Layers className='size-5 shrink-0 stroke-3 text-blue-600 sm:size-6' />
                 <span className='truncate sm:whitespace-normal'>
                   {isEdit

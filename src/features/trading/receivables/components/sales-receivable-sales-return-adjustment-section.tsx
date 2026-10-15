@@ -24,7 +24,7 @@ export function SalesReceivableSalesReturnAdjustmentSection({
     <section className='rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4'>
       <div className='flex items-start justify-between gap-3 border-b border-dashed border-primary/15 pb-3'>
         <div>
-          <p className='text-sm font-black italic'>
+          <p className='text-sm font-black'>
             {t('trading.receivables.returnAdjustments.title')}
           </p>
           <p className='text-[9px] font-black tracking-widest uppercase opacity-60'>

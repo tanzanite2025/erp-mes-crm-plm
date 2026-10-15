@@ -126,7 +126,7 @@ export function QualityAbnormalities() {
             <span className='text-[10px] font-black tracking-widest whitespace-nowrap text-rose-600/60 uppercase'>
               {t('quality.abnormalities.page.activeCriticals')}
             </span>
-            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-rose-600 italic tabular-nums'>
+            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-rose-600 tabular-nums'>
               {abnormalities?.filter((item) => item.severity === 'CRITICAL')
                 .length || 0}
             </div>
@@ -137,7 +137,7 @@ export function QualityAbnormalities() {
             <span className='text-[10px] font-black tracking-widest whitespace-nowrap text-amber-600/60 uppercase'>
               {t('quality.abnormalities.page.openReports')}
             </span>
-            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-amber-600 italic tabular-nums'>
+            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-amber-600 tabular-nums'>
               {abnormalities?.filter((item) => item.status === 'OPEN').length ||
                 0}
             </div>
@@ -148,7 +148,7 @@ export function QualityAbnormalities() {
             <span className='text-[10px] font-black tracking-widest whitespace-nowrap text-emerald-600/60 uppercase'>
               {t('quality.abnormalities.page.closedLooped')}
             </span>
-            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-emerald-600 italic tabular-nums'>
+            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-emerald-600 tabular-nums'>
               {abnormalities?.filter((item) => item.status === 'CLOSED')
                 .length || 0}
             </div>
@@ -199,7 +199,7 @@ export function QualityAbnormalities() {
                         {getSeverityLabel(t, ab.severity)}
                       </Badge>
                     </div>
-                    <h4 className='truncate text-sm font-black tracking-tight text-slate-700 uppercase italic'>
+                    <h4 className='truncate text-sm font-black tracking-tight text-slate-700 uppercase'>
                       {ab.description}
                     </h4>
                   </div>
@@ -223,14 +223,14 @@ export function QualityAbnormalities() {
                         {normalizeStatus(ab.status) === 'CLOSED' ? (
                           <>
                             <CheckCircle2 className='size-3 text-emerald-500' />
-                            <span className='text-[10px] font-black text-emerald-600 uppercase italic'>
+                            <span className='text-[10px] font-black text-emerald-600 uppercase'>
                               {getStatusLabel(t, ab.status)}
                             </span>
                           </>
                         ) : (
                           <>
                             <Clock className='size-3 animate-pulse text-amber-500' />
-                            <span className='text-[10px] font-black text-amber-600 uppercase italic'>
+                            <span className='text-[10px] font-black text-amber-600 uppercase'>
                               {getStatusLabel(t, ab.status)}
                             </span>
                           </>

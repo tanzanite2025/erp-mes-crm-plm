@@ -74,7 +74,7 @@ export function MaterialAssemblyRuleDialog({
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <div className='relative max-h-[90vh] overflow-y-auto p-8'>
           <DialogHeader className='mb-8'>
-            <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary italic'>
+            <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary'>
               <Settings2 className='size-5' />
               {t('materialArchive.assemblyManager.dialog.title')}
             </DialogTitle>
@@ -207,7 +207,7 @@ export function MaterialAssemblyRuleDialog({
                     id='baseUnit'
                     readOnly
                     disabled
-                    className='h-12 rounded-2xl border-none bg-muted/20 font-mono font-black text-primary/30 italic'
+                    className='h-12 rounded-2xl border-none bg-muted/20 font-mono font-black text-primary/30'
                     value={editingRule?.baseUnit || ''}
                   />
                 </div>

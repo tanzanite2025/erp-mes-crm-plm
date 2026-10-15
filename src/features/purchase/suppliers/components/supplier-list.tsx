@@ -392,7 +392,7 @@ export function SupplierList() {
                     </div>
                     <div>
                       <div className='flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2'>
-                        <h4 className='text-sm font-black tracking-tight text-foreground italic md:text-base'>
+                        <h4 className='text-sm font-black tracking-tight text-foreground md:text-base'>
                           {supplier.name}
                         </h4>
                         <div className='flex'>
@@ -443,7 +443,7 @@ export function SupplierList() {
               <CardContent className='relative p-2.5 pt-2.5 md:p-3 md:pt-3'>
                 <div className='grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2'>
                   <div className={SUPPLIER_INFO_PANEL_CLASS}>
-                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 md:text-[9px]'>
                       <User className='size-3' />
                       {t('purchase.suppliers.liaison')}
                     </div>
@@ -452,7 +452,7 @@ export function SupplierList() {
                     </p>
                   </div>
                   <div className={SUPPLIER_INFO_PANEL_CLASS}>
-                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 md:text-[9px]'>
                       <Phone className='size-3' />
                       {t('purchase.suppliers.hotline')}
                     </div>
@@ -462,7 +462,7 @@ export function SupplierList() {
                   </div>
 
                   <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
-                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 md:text-[9px]'>
                       <Box className='size-3' />
                       {t('purchase.suppliers.offerings')}
                     </div>
@@ -480,7 +480,7 @@ export function SupplierList() {
                   </div>
 
                   <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
-                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 md:text-[9px]'>
                       <MapPin className='size-3' />
                       {t('purchase.suppliers.address')}
                     </div>
@@ -490,7 +490,7 @@ export function SupplierList() {
                   </div>
 
                   <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
-                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 md:text-[9px]'>
+                    <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 md:text-[9px]'>
                       <MessageCircle className='size-3' />
                       {t('purchase.suppliers.communication')} /{' '}
                       {t('purchase.suppliers.wechat')}
@@ -519,11 +519,11 @@ export function SupplierList() {
                   <div className={`${SUPPLIER_INFO_PANEL_CLASS} sm:col-span-2`}>
                     <div className='grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'>
                       <div className='flex min-w-0 items-center justify-between gap-1.5 sm:flex-col sm:items-start sm:justify-start'>
-                        <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
+                        <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase'>
                           {t('purchase.suppliers.rating')}
                         </span>
                         <div className='flex flex-col items-start'>
-                          <div className='flex items-center gap-1.5 text-base font-black tracking-tighter text-amber-500 italic tabular-nums md:text-lg'>
+                          <div className='flex items-center gap-1.5 text-base font-black tracking-tighter text-amber-500 tabular-nums md:text-lg'>
                             <Star className='size-3.5 animate-pulse fill-amber-500 text-amber-500 md:size-4' />
                             {supplier.rating.toFixed(1)}
                           </div>

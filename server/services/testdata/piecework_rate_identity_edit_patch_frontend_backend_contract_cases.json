@@ -1,0 +1,71 @@
+{
+  "initialRate": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "payItemId": "44444444-4444-4444-8444-444444444444",
+    "payItemCode": "PAY-001",
+    "payItemName": "Independent payroll item",
+    "unit": "PCS",
+    "unitPrice": 2,
+    "currency": "CNY",
+    "effectiveFrom": "2026-10-01T00:00:00Z",
+    "effectiveTo": null,
+    "status": "active",
+    "remarks": "Initial rate",
+    "version": 1
+  },
+  "cases": [
+    {
+      "name": "explicit payroll item reassignment excludes display and legacy fields",
+      "formUpdates": [
+        {
+          "payItemId": "66666666-6666-4666-8666-666666666666",
+          "payItemCode": "PAY-002",
+          "payItemName": "Another payroll item",
+          "productId": "legacy-product"
+        }
+      ],
+      "expectedPayload": {
+        "op": "PATCH",
+        "delta": {
+          "payItemId": {
+            "o": "44444444-4444-4444-8444-444444444444",
+            "n": "66666666-6666-4666-8666-666666666666"
+          }
+        },
+        "metadata": {
+          "id": "55555555-5555-4555-8555-555555555555",
+          "version": 1
+        }
+      },
+      "expectedPayItemId": "66666666-6666-4666-8666-666666666666"
+    },
+    {
+      "name": "zero unit price and cleared remarks remain writable",
+      "formUpdates": [
+        {
+          "unitPrice": 0,
+          "remarks": "",
+          "payItemName": "Display-only change"
+        }
+      ],
+      "expectedPayload": {
+        "op": "PATCH",
+        "delta": {
+          "unitPrice": {
+            "o": 2,
+            "n": 0
+          },
+          "remarks": {
+            "o": "Initial rate",
+            "n": ""
+          }
+        },
+        "metadata": {
+          "id": "55555555-5555-4555-8555-555555555555",
+          "version": 1
+        }
+      },
+      "expectedPayItemId": "44444444-4444-4444-8444-444444444444"
+    }
+  ]
+}

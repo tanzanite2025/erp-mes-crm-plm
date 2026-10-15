@@ -59,7 +59,7 @@ export function ProductAppearanceMgmt() {
     footer:
       'shrink-0 flex-row gap-3 border-t border-dashed border-muted/50 bg-muted/5 p-4 sm:justify-end sm:px-6',
     title:
-      'flex flex-col gap-0.5 text-lg font-black uppercase tracking-tighter italic',
+      'flex flex-col gap-0.5 text-lg font-black uppercase tracking-tighter',
     description:
       'mt-2 text-[10px] font-black uppercase tracking-widest opacity-60',
   })
@@ -245,7 +245,7 @@ export function ProductAppearanceMgmt() {
           <div className='space-y-1'>
             <div className='flex items-center gap-2.5 text-primary'>
               <Palette className='size-4' />
-              <h3 className='text-base font-black tracking-tighter uppercase italic md:text-lg'>
+              <h3 className='text-base font-black tracking-tighter uppercase md:text-lg'>
                 {t('engineering.productAppearance.title')}
               </h3>
             </div>

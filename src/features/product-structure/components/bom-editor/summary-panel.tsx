@@ -18,10 +18,10 @@ export function SummaryPanel({ groups, onSectionClick }: SummaryPanelProps) {
     <div className='space-y-3 bg-muted/5 p-2.5 sm:p-3'>
       <div className='grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-4'>
         <div className='group rounded-[24px] border border-dashed border-blue-200 bg-blue-50 p-3.5 shadow-inner transition-all hover:bg-white sm:p-4'>
-          <div className='text-[10px] font-black tracking-widest text-blue-800 uppercase italic'>
+          <div className='text-[10px] font-black tracking-widest text-blue-800 uppercase'>
             {t('engineering.bomArchive.summary.totalItems')}
           </div>
-          <div className='mt-2 text-2xl font-black tracking-tighter text-slate-800 uppercase italic sm:text-3xl'>
+          <div className='mt-2 text-2xl font-black tracking-tighter text-slate-800 uppercase sm:text-3xl'>
             {totalItems}{' '}
             <span className='text-[10px] font-bold text-blue-400'>
               {t('engineering.bomArchive.summary.itemsUnit')}
@@ -29,18 +29,18 @@ export function SummaryPanel({ groups, onSectionClick }: SummaryPanelProps) {
           </div>
         </div>
         <div className='group rounded-[24px] border border-dashed border-emerald-200 bg-emerald-50 p-3.5 shadow-inner transition-all hover:bg-white sm:p-4'>
-          <div className='text-[10px] font-black tracking-widest text-emerald-800 uppercase italic'>
+          <div className='text-[10px] font-black tracking-widest text-emerald-800 uppercase'>
             {t('engineering.bomArchive.summary.totalCost')}
           </div>
-          <div className='mt-2 text-2xl font-black tracking-tighter break-all text-emerald-600 uppercase italic sm:text-3xl'>
+          <div className='mt-2 text-2xl font-black tracking-tighter break-all text-emerald-600 uppercase sm:text-3xl'>
             {totalCost.toFixed(2)}
           </div>
         </div>
         <div className='group rounded-[24px] border border-dashed border-orange-200 bg-orange-50 p-3.5 shadow-inner transition-all hover:bg-white sm:p-4'>
-          <div className='text-[10px] font-black tracking-widest text-orange-800 uppercase italic'>
+          <div className='text-[10px] font-black tracking-widest text-orange-800 uppercase'>
             {t('engineering.bomArchive.summary.stageCoverage')}
           </div>
-          <div className='mt-2 text-2xl font-black tracking-tighter text-slate-800 uppercase italic sm:text-3xl'>
+          <div className='mt-2 text-2xl font-black tracking-tighter text-slate-800 uppercase sm:text-3xl'>
             {stageCoverage} / {groups.length}
           </div>
         </div>
@@ -81,7 +81,7 @@ export function SummaryPanel({ groups, onSectionClick }: SummaryPanelProps) {
         </div>
       </div>
 
-      <div className='rounded-2xl bg-primary p-3 text-center text-[9px] font-bold tracking-widest text-white uppercase italic shadow-lg shadow-primary/20'>
+      <div className='rounded-2xl bg-primary p-3 text-center text-[9px] font-bold tracking-widest text-white uppercase shadow-lg shadow-primary/20'>
         {t('engineering.bomArchive.recipe.summaryHint')}
       </div>
     </div>

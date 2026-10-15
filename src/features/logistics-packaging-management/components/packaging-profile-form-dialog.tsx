@@ -127,7 +127,7 @@ export function PackagingProfileFormDialog({
 
         <div className='relative flex-1 space-y-4 overflow-y-auto px-5 py-5 lg:px-6 lg:py-5'>
           <DialogHeader className='mt-1 space-y-1'>
-            <DialogTitle className='text-xl font-black tracking-tighter text-primary uppercase italic'>
+            <DialogTitle className='text-xl font-black tracking-tighter text-primary uppercase'>
               {t('logisticsPackagingManagement.packagingRules.dialog.title')}
             </DialogTitle>
             <DialogDescription className='text-[10px] leading-none font-black tracking-[0.2em] uppercase opacity-40'>
@@ -522,7 +522,7 @@ export function PackagingProfileFormDialog({
                   'logisticsPackagingManagement.packagingRules.summary.volume'
                 )}
               </div>
-              <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
+              <div className='mt-1 text-xl font-black tracking-tighter text-primary'>
                 {computedVolume}{' '}
                 <span className='text-[10px] not-italic opacity-50'>
                   {draft.dimensionUnitCode || '-'}³
@@ -535,7 +535,7 @@ export function PackagingProfileFormDialog({
                   'logisticsPackagingManagement.packagingRules.summary.productWeightTotal'
                 )}
               </div>
-              <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
+              <div className='mt-1 text-xl font-black tracking-tighter text-primary'>
                 {productWeight * draft.capacity}{' '}
                 <span className='text-[10px] not-italic opacity-50'>
                   {draft.weightUnitCode || '-'}
@@ -548,7 +548,7 @@ export function PackagingProfileFormDialog({
                   'logisticsPackagingManagement.packagingRules.summary.grossWeight'
                 )}
               </div>
-              <div className='mt-1 text-xl font-black tracking-tighter text-primary italic'>
+              <div className='mt-1 text-xl font-black tracking-tighter text-primary'>
                 {computedGrossWeight}{' '}
                 <span className='text-[10px] not-italic opacity-50'>
                   {draft.weightUnitCode || '-'}

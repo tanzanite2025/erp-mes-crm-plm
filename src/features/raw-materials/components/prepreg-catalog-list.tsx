@@ -54,7 +54,7 @@ export function PrepregCatalogList({
           <div className='space-y-2'>
             <div className='flex items-center gap-2 text-primary'>
               <Database className='size-5' />
-              <h2 className='text-sm font-black tracking-tighter italic'>
+              <h2 className='text-sm font-black tracking-tighter'>
                 {t('rawMaterials.catalog.hero.title')}
               </h2>
             </div>
@@ -170,7 +170,7 @@ export function PrepregCatalogList({
                     {statusLabel(spec.status)}
                   </Badge>
                 </div>
-                <div className='text-sm font-black tracking-tighter text-foreground/90 italic'>
+                <div className='text-sm font-black tracking-tighter text-foreground/90'>
                   {spec.displayAlias || spec.name}
                 </div>
                 {spec.displayAlias ? (

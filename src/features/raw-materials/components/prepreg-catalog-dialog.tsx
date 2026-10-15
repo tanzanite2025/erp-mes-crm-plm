@@ -65,7 +65,7 @@ export function PrepregCatalogDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='h-[90vh] max-h-[90vh] gap-3 overflow-hidden rounded-[24px] p-5 sm:max-w-[1120px]'>
         <DialogHeader className='space-y-1'>
-          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
+          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase'>
             <Layers3 className='size-5 text-primary' />
             {editingSpec
               ? t('rawMaterials.catalog.dialog.titleEdit')
@@ -75,7 +75,7 @@ export function PrepregCatalogDialog({
         <div className='min-h-0 flex-1 overflow-y-scroll pr-1'>
           {isBindingMode ? (
             <div className='mb-3 rounded-[24px] border border-dashed border-emerald-500/40 bg-emerald-500/5 p-4'>
-              <p className='text-sm font-black tracking-tighter text-emerald-700 italic'>
+              <p className='text-sm font-black tracking-tighter text-emerald-700'>
                 {t('rawMaterials.catalog.binding.title')}
               </p>
               <p className='mt-2 text-[10px] font-black tracking-widest text-emerald-700/80 uppercase'>

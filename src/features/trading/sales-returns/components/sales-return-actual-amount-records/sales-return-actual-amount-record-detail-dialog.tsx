@@ -36,7 +36,7 @@ export function SalesReturnActualAmountRecordDetailDialog({
         className='w-[calc(100vw-24px)] max-w-[880px] rounded-[32px] border-none bg-background p-0 shadow-2xl'
       >
         <DialogHeader className='border-b border-dashed border-border/70 px-6 py-5 text-left'>
-          <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+          <DialogTitle className='text-lg font-black tracking-tighter uppercase'>
             {t('trading.salesReturns.actualAmountRecordDetailDialog.title')}
           </DialogTitle>
           <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>

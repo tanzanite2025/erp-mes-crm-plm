@@ -47,7 +47,7 @@ export function QuotePrintPreviewDialog({
         <DialogHeader className='border-b border-dashed border-border/60 px-6 py-5'>
           <div className='flex items-start justify-between gap-4'>
             <div>
-              <DialogTitle className='text-xl font-black tracking-tight italic'>
+              <DialogTitle className='text-xl font-black tracking-tight'>
                 报价打印预览
               </DialogTitle>
               <DialogDescription>

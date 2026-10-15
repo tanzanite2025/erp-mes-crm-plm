@@ -64,7 +64,7 @@ export default function PersonalWorkbenchCapturePage({
               <p className='text-[10px] font-black tracking-[0.24em] text-muted-foreground/60 uppercase'>
                 独立新建入口
               </p>
-              <p className='truncate text-sm font-black tracking-tight italic'>
+              <p className='truncate text-sm font-black tracking-tight'>
                 {isVideoMode ? '新建录像记录' : '新建拍照记录'}
               </p>
             </div>

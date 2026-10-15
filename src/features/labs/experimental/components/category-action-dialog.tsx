@@ -56,7 +56,7 @@ export function CategoryActionDialog({
     content: 'sm:max-w-[560px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+      'text-xl font-black uppercase tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-6',
     footer:
@@ -217,7 +217,7 @@ export function CategoryActionDialog({
                     <div className='mb-3 rounded-full bg-primary/10 p-4 transition-transform group-hover:scale-110'>
                       <Upload className='size-6 text-primary' />
                     </div>
-                    <span className='px-4 text-[9px] leading-tight font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                    <span className='px-4 text-[9px] leading-tight font-black tracking-widest text-muted-foreground/60 uppercase'>
                       点击上传
                       <br />
                       设备实物图
@@ -257,7 +257,7 @@ export function CategoryActionDialog({
                 <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                   层级归属 / HIERARCHY
                 </Label>
-                <div className='flex h-12 items-center gap-3 rounded-2xl border-none bg-muted/20 px-5 text-[10px] font-black text-muted-foreground italic'>
+                <div className='flex h-12 items-center gap-3 rounded-2xl border-none bg-muted/20 px-5 text-[10px] font-black text-muted-foreground'>
                   <div className='size-2 animate-pulse rounded-full bg-primary/40' />
                   {parentId || category?.parentId
                     ? `子分类_SUB (PARENT_ID: ${parentId || category?.parentId})`

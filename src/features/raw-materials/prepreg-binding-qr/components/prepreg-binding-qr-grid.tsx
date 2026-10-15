@@ -39,7 +39,7 @@ export function PrepregBindingQrGrid({
   if (!items.length) {
     return (
       <div className='rounded-[24px] border border-dashed border-muted/60 bg-muted/10 px-6 py-12 text-center'>
-        <p className='text-sm font-black tracking-tighter text-foreground italic'>
+        <p className='text-sm font-black tracking-tighter text-foreground'>
           {emptyTitle}
         </p>
         <p className='mt-2 text-[10px] font-black tracking-[0.18em] text-muted-foreground/70 uppercase'>
@@ -52,7 +52,7 @@ export function PrepregBindingQrGrid({
   return (
     <div className='rounded-[24px] border border-dashed border-border/70 bg-background p-5'>
       <div className='flex items-center justify-between gap-3'>
-        <p className='text-sm font-black tracking-tighter text-foreground italic'>
+        <p className='text-sm font-black tracking-tighter text-foreground'>
           {title}
         </p>
         <span className='rounded-full bg-primary/10 px-3 py-1 font-mono text-[8px] text-primary'>

@@ -8,11 +8,17 @@ import type {
   ProductionScanCommandSource,
 } from '../contracts/production-scan-command-api-dto'
 import type { ScanCaptureSource } from '../core/types'
+import {
+  prepareProductionScanCommandRequestForRetry,
+  releaseCompletedProductionScanCommandRetryKey,
+} from './production-scan-command-request-retry-tracker'
 
 export const PRODUCTION_SCAN_COMMAND_ENDPOINT =
   '/production/scan-commands/execute'
 
 export interface ExecuteProductionScanCommandInput {
+  idempotencyKey?: string
+  executionRound?: number
   productBarcode: string
   executionLotId?: string
   routeId?: string
@@ -87,6 +93,11 @@ export function buildProductionScanCommandApiRequest(
     | ProductionScanCommandAction
     | string
   const request: ProductionScanCommandApiRequestDTO = {
+    idempotencyKey:
+      input.idempotencyKey?.trim() || globalThis.crypto.randomUUID(),
+    ...(input.executionRound !== undefined
+      ? { executionRound: input.executionRound }
+      : {}),
     productBarcode: normalizeMachineCode(input.productBarcode),
     action: action as ProductionScanCommandAction,
     commandSource: resolveProductionScanCommandSource(
@@ -151,12 +162,17 @@ export function classifyProductionScanCommandError(
   return createProductionScanCommandError(error)
 }
 
+const inFlightProductionScanCommands = new Map<
+  string,
+  Promise<ProductionScanCommandApiResponseDTO>
+>()
+
 export const productionScanCommandService = {
   async execute(
     input: ExecuteProductionScanCommandInput
   ): Promise<ProductionScanCommandApiResponseDTO> {
-    const request = buildProductionScanCommandApiRequest(input)
-    if (!request.productBarcode) {
+    const builtRequest = buildProductionScanCommandApiRequest(input)
+    if (!builtRequest.productBarcode) {
       throw classifyProductionScanCommandError(
         createApiClientError({
           kind: 'http',
@@ -166,16 +182,34 @@ export const productionScanCommandService = {
       )
     }
 
-    try {
-      return await apiFetch<ProductionScanCommandApiResponseDTO>(
-        PRODUCTION_SCAN_COMMAND_ENDPOINT,
-        {
-          method: 'POST',
-          body: JSON.stringify(request),
+    const request = prepareProductionScanCommandRequestForRetry(
+      builtRequest,
+      Boolean(input.idempotencyKey?.trim())
+    )
+    const requestKey = JSON.stringify(request)
+    const existingRequest = inFlightProductionScanCommands.get(requestKey)
+    if (existingRequest) return existingRequest
+
+    const execution = apiFetch<ProductionScanCommandApiResponseDTO>(
+      PRODUCTION_SCAN_COMMAND_ENDPOINT,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    )
+      .then((response) => {
+        releaseCompletedProductionScanCommandRetryKey(request)
+        return response
+      })
+      .catch((error: unknown) => {
+        const normalized = classifyProductionScanCommandError(error)
+        if (['validation', 'forbidden', 'conflict'].includes(normalized.kind)) {
+          releaseCompletedProductionScanCommandRetryKey(request)
         }
-      )
-    } catch (error) {
-      throw classifyProductionScanCommandError(error)
-    }
+        throw normalized
+      })
+      .finally(() => inFlightProductionScanCommands.delete(requestKey))
+    inFlightProductionScanCommands.set(requestKey, execution)
+    return execution
   },
 }

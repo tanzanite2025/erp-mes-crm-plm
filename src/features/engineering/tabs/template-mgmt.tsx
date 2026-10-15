@@ -234,7 +234,7 @@ export function TemplateMgmt() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <LayoutTemplate className='size-4 text-primary' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h3 className='text-lg font-black tracking-tighter uppercase'>
             {t('engineering.templateMgmt.header.title')}
           </h3>
         </div>
@@ -264,7 +264,7 @@ export function TemplateMgmt() {
           <div className='mb-6 flex size-16 items-center justify-center rounded-full bg-white shadow-xl'>
             <LayoutTemplate className='size-8 text-blue-600/20' />
           </div>
-          <h3 className='mb-2 text-xl font-black tracking-tighter text-slate-800 italic'>
+          <h3 className='mb-2 text-xl font-black tracking-tighter text-slate-800'>
             {t('engineering.templateMgmt.empty.title')}
           </h3>
           <p className='mb-8 max-w-sm text-xs font-black text-muted-foreground/40'>
@@ -327,7 +327,7 @@ export function TemplateMgmt() {
                       </Button>
                     </div>
                   </div>
-                  <CardTitle className='mt-1 text-sm font-black tracking-tighter text-slate-800 uppercase italic'>
+                  <CardTitle className='mt-1 text-sm font-black tracking-tighter text-slate-800 uppercase'>
                     {template.name}
                   </CardTitle>
                   <CardDescription className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
@@ -338,7 +338,7 @@ export function TemplateMgmt() {
                 </CardHeader>
                 <CardContent className='pt-0'>
                   <div className='space-y-2'>
-                    <p className='line-clamp-2 min-h-0 text-[11px] leading-relaxed font-black text-slate-500 italic'>
+                    <p className='line-clamp-2 min-h-0 text-[11px] leading-relaxed font-black text-slate-500'>
                       {template.description ||
                         t('engineering.templateMgmt.card.descriptionFallback')}
                     </p>
@@ -347,7 +347,7 @@ export function TemplateMgmt() {
                         <span className='text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('engineering.templateMgmt.card.componentLabel')}
                         </span>
-                        <span className='text-[10px] font-black text-blue-600 italic'>
+                        <span className='text-[10px] font-black text-blue-600'>
                           {componentLabels[
                             template.componentKey as keyof typeof componentLabels
                           ] || t('engineering.templateMgmt.components.GENERAL')}

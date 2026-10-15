@@ -75,7 +75,7 @@ export function MaterialUpsertDialog({
             <div className='flex items-center justify-between gap-3 text-primary'>
               <div className='flex items-center gap-2'>
                 <Settings2 className='size-5' />
-                <DialogTitle className='text-lg font-black tracking-tighter italic'>
+                <DialogTitle className='text-lg font-black tracking-tighter'>
                   {material
                     ? t('materialArchive.upsertDialog.editTitle')
                     : t('materialArchive.upsertDialog.createTitle')}

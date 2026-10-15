@@ -46,7 +46,7 @@ export function KpiGrid() {
         <Card className='relative h-full gap-2 overflow-hidden rounded-xl border-dashed border-muted/50 bg-muted/5 py-2 shadow-none transition-all hover:bg-muted/10 md:rounded-[24px] md:py-2.5'>
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
           <CardHeader className='z-10 flex flex-row items-center justify-between space-y-0 px-3 pt-0.5 pb-0 md:px-3.5'>
-            <CardTitle className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+            <CardTitle className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('dashboard.page.kpi.wip.title')}
             </CardTitle>
             <div className='rounded-lg bg-emerald-500/10 p-1.5 text-emerald-600 transition-transform group-hover:scale-110'>
@@ -56,7 +56,7 @@ export function KpiGrid() {
           <CardContent className='z-10 px-3 pb-0.5 md:px-3.5'>
             {stats.availability.wip.connected ? (
               <>
-                <div className='text-lg leading-none font-black tracking-tighter text-emerald-700 italic md:text-xl'>
+                <div className='text-lg leading-none font-black tracking-tighter text-emerald-700 md:text-xl'>
                   {stats.wip.toLocaleString()}{' '}
                   <span className='ml-1 text-[9px] font-black text-emerald-600/40 uppercase not-italic'>
                     {t('dashboard.page.kpi.wip.unit')}
@@ -85,7 +85,7 @@ export function KpiGrid() {
         <Card className='relative h-full gap-2 overflow-hidden rounded-xl border-dashed border-rose-500/20 bg-rose-500/2 py-2 shadow-none transition-all hover:bg-rose-500/5 md:rounded-[24px] md:py-2.5'>
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
           <CardHeader className='z-10 flex flex-row items-center justify-between space-y-0 px-3 pt-0.5 pb-0 md:px-3.5'>
-            <CardTitle className='text-[10px] font-black tracking-widest text-rose-600/60 uppercase italic'>
+            <CardTitle className='text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
               {t('dashboard.page.kpi.scrap.title')}
             </CardTitle>
             <div className='rounded-lg bg-rose-500/10 p-1.5 text-rose-500 transition-transform group-hover:scale-110'>
@@ -95,7 +95,7 @@ export function KpiGrid() {
           <CardContent className='z-10 px-3 pb-0.5 md:px-3.5'>
             {stats.availability.scrap.connected ? (
               <>
-                <div className='text-lg leading-none font-black tracking-tighter text-rose-600 italic md:text-xl'>
+                <div className='text-lg leading-none font-black tracking-tighter text-rose-600 md:text-xl'>
                   {stats.scrap}{' '}
                   <span className='ml-1 text-[9px] font-black text-rose-500/40 uppercase not-italic'>
                     {t('dashboard.page.kpi.scrap.unit')}
@@ -131,7 +131,7 @@ export function KpiGrid() {
         <Card className='relative h-full gap-2 overflow-hidden rounded-xl border-dashed border-amber-500/20 bg-amber-500/2 py-2 shadow-none transition-all hover:bg-amber-500/5 md:rounded-[24px] md:py-2.5'>
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
           <CardHeader className='z-10 flex flex-row items-center justify-between space-y-0 px-3 pt-0.5 pb-0 md:px-3.5'>
-            <CardTitle className='text-[10px] font-black tracking-widest text-amber-600/60 uppercase italic'>
+            <CardTitle className='text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
               {t('dashboard.page.kpi.gap.title')}
             </CardTitle>
             <div className='rounded-lg bg-amber-500/10 p-1.5 text-amber-600 transition-transform group-hover:scale-110'>
@@ -141,7 +141,7 @@ export function KpiGrid() {
           <CardContent className='z-10 px-3 pb-0.5 md:px-3.5'>
             {stats.availability.gapOrders.connected ? (
               <>
-                <div className='text-lg leading-none font-black tracking-tighter text-amber-600 italic md:text-xl'>
+                <div className='text-lg leading-none font-black tracking-tighter text-amber-600 md:text-xl'>
                   {stats.gapOrders}{' '}
                   <span className='ml-1 text-[9px] font-black text-amber-600/40 uppercase not-italic'>
                     {t('dashboard.page.kpi.gap.unit')}

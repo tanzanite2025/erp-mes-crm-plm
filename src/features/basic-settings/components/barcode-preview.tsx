@@ -106,7 +106,7 @@ export function BarcodePreview({
             {shortCode || '--------------'}
           </span>
           {finalSuffix ? (
-            <span className='ml-2 inline-flex items-center rounded-sm border-2 border-red-500 px-1.5 py-0.5 text-xs leading-none font-black text-red-500 italic'>
+            <span className='ml-2 inline-flex items-center rounded-sm border-2 border-red-500 px-1.5 py-0.5 text-xs leading-none font-black text-red-500'>
               {finalSuffix}
             </span>
           ) : null}

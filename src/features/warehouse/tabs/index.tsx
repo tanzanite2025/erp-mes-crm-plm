@@ -23,7 +23,7 @@ function Placeholder({ title }: { title: string }) {
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h3 className='text-lg font-black tracking-tighter uppercase'>
             {t('warehouse.placeholder.title', { title })}
           </h3>
         </div>
@@ -33,7 +33,7 @@ function Placeholder({ title }: { title: string }) {
       </div>
 
       <div className='flex h-96 flex-col items-center justify-center rounded-[24px] border border-dashed border-muted/50 bg-muted/5 text-muted-foreground/30'>
-        <p className='text-xs font-black tracking-[0.3em] uppercase italic'>
+        <p className='text-xs font-black tracking-[0.3em] uppercase'>
           {t('warehouse.placeholder.devMode', { title })}
         </p>
         <p className='mt-2 text-[9px] leading-none tracking-widest uppercase'>

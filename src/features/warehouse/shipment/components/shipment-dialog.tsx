@@ -107,7 +107,7 @@ export function ShipmentDialog({
                 <Truck className='size-5 text-white md:size-6' />
               </div>
               <div className='space-y-0.5 overflow-hidden'>
-                <h3 className='truncate text-base font-black tracking-widest text-white uppercase italic md:text-lg'>
+                <h3 className='truncate text-base font-black tracking-widest text-white uppercase md:text-lg'>
                   {isVirtualLock
                     ? '转入虚拟发货仓'
                     : t('warehouse.shipment.dialog.title')}
@@ -368,7 +368,7 @@ export function ShipmentDialog({
                             </SelectItem>
                           ))}
                         {salesOrders.length === 0 && (
-                          <div className='p-4 text-center text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+                          <div className='p-4 text-center text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase'>
                             {t('warehouse.shipment.dialog.noOrders')}
                           </div>
                         )}

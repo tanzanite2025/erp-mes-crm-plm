@@ -37,7 +37,7 @@ function StatusBadge({ status }: { status: string }) {
   const meta = getSalesStatusMeta(status)
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[10px] font-black uppercase italic ${meta.color}`}
+      className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[10px] font-black uppercase ${meta.color}`}
     >
       {getSalesStatusLabel(status, t)}
     </span>
@@ -64,9 +64,7 @@ function SalesOrderInfoCard({
       <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
       <div className='relative flex h-full flex-1 flex-col gap-3'>
         <div>
-          <h3 className='text-sm font-black tracking-tighter italic'>
-            {label}
-          </h3>
+          <h3 className='text-sm font-black tracking-tighter'>{label}</h3>
         </div>
         <div className='flex-1'>{children}</div>
       </div>
@@ -181,7 +179,7 @@ export function SalesOrderMaster({
                   <div className='flex flex-col gap-2.5 border-b border-dashed border-muted/40 pb-3 xl:flex-row xl:items-center xl:justify-between'>
                     <div className='min-w-0 space-y-2.5'>
                       <div className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2'>
-                        <span className='min-w-0 truncate text-lg font-black tracking-tighter text-foreground uppercase italic'>
+                        <span className='min-w-0 truncate text-lg font-black tracking-tighter text-foreground uppercase'>
                           {order.orderNo}
                         </span>
                         <StatusBadge status={order.status} />

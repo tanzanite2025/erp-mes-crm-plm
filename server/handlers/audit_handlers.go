@@ -62,6 +62,8 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleCuttingEngineConfig:   {authz.MenuCuttingEngine},
 	services.AuditModuleApprovalRequest:       {authz.MenuApproval},
 	services.AuditModuleBusinessAnalysisQuery: {authz.MenuBusinessAnalysis},
+
+	services.AuditModulePieceworkPayItem: {authz.MenuPiecework},
 }
 
 // enforceAuditModulePermission checks whether the requesting user has permission

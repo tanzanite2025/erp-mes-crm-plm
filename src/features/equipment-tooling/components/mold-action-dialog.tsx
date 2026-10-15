@@ -188,7 +188,7 @@ export function MoldActionDialog({
       headerClassName='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0 text-left'
       bodyClassName='flex-1 overflow-y-auto px-6 sm:px-8 pb-8 custom-scrollbar'
       footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
-      titleClassName='text-lg sm:text-xl font-black tracking-tight uppercase italic'
+      titleClassName='text-lg sm:text-xl font-black tracking-tight uppercase'
       descriptionClassName='text-[10px] sm:text-xs font-bold text-muted-foreground/60 leading-relaxed mt-2'
       footer={
         <>
@@ -520,7 +520,7 @@ export function MoldActionDialog({
                     </Badge>
                   ))
                 ) : (
-                  <span className='text-[9px] font-black tracking-widest text-muted-foreground/20 uppercase italic'>
+                  <span className='text-[9px] font-black tracking-widest text-muted-foreground/20 uppercase'>
                     {t('equipmentTooling.molds.dialog.emptyLinkedDrawings')}
                   </span>
                 )}

@@ -59,7 +59,7 @@ export function ApsKpiCards({ source }: ApsKpiCardsProps) {
             <div className='flex items-end justify-between'>
               <span
                 className={cn(
-                  'text-2xl font-black tracking-tighter italic md:text-[28px]',
+                  'text-2xl font-black tracking-tighter md:text-[28px]',
                   item.tone
                 )}
               >

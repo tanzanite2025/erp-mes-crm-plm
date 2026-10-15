@@ -170,7 +170,7 @@ export function AiAccessControl() {
     <div className='flex animate-in flex-col gap-6 p-6 duration-700 fade-in'>
       <header className='flex items-center justify-between'>
         <div className='space-y-1'>
-          <h2 className='text-base font-black tracking-tighter text-slate-800 uppercase italic md:text-xl'>
+          <h2 className='text-base font-black tracking-tighter text-slate-800 uppercase md:text-xl'>
             {t('aiAssistant.accessControl.title')}
           </h2>
           <p className='text-[8px] leading-none font-black tracking-widest text-indigo-500 uppercase md:text-[10px]'>

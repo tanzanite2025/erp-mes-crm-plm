@@ -70,9 +70,9 @@ export const MRPNode = memo(({ data }: NodeProps<MRPNodeData>) => {
         )}
       </div>
 
-      {/* 主标题 - 强斜体工业风 */}
+      {/* 主标题 - 工业风 */}
       <div className='mb-2'>
-        <h4 className='truncate text-sm font-black tracking-tighter uppercase italic'>
+        <h4 className='truncate text-sm font-black tracking-tighter uppercase'>
           {data.title || 'Unknown Item'}
         </h4>
         <p className='text-[9px] font-black tracking-widest uppercase opacity-60'>

@@ -97,7 +97,7 @@ function DialogBody({
           </div>
           <div className='text-start'>
             {/* UDS 1.0 标题规范 */}
-            <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+            <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase'>
               {t(`${translationPrefix}.dialog.editTitle` as TranslationKey, {
                 name:
                   t(

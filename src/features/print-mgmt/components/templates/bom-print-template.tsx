@@ -223,7 +223,7 @@ export const BOMPrintTemplate = forwardRef<
               ))
             ) : (
               <tr>
-                <td colSpan={10} className='py-8 text-gray-500 italic'>
+                <td colSpan={10} className='py-8 text-gray-500'>
                   {t('printMgmt.bomTemplate.empty')}
                 </td>
               </tr>

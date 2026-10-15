@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 	"time"
+	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
@@ -213,6 +214,10 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			notes TEXT
 		)
 	`).Error)
+	require.NoError(t, db.EnsureProductionExecutionRequestReplayIntegrity(database))
+	require.NoError(t, db.EnsureIndependentPieceworkPayrollStorageContract(database))
+	seedPieceworkAttributionTestIdentities(t, database)
+	require.NoError(t, database.Create(&models.PieceworkPayItem{BaseModel: models.BaseModel{ID: pieceworkTestPayItemID}, Code: "PAY-001", Name: "Independent payroll item", Unit: "PCS", Status: "active", Version: 1}).Error)
 }
 
 func seedProductionOperationProcess(t *testing.T, database *gorm.DB, processID string) {
@@ -251,7 +256,7 @@ func TestRecordProductionOperationExecutionCreatesOperationAndBarcodeState(t *te
 	require.Equal(t, ProductBarcodeStateEventStart, events[0].EventType)
 
 	var pieceworkRecordCount int64
-	require.NoError(t, database.Model(&models.PieceworkRecord{}).Count(&pieceworkRecordCount).Error)
+	require.NoError(t, database.Table("piecework_records").Count(&pieceworkRecordCount).Error)
 	require.Zero(t, pieceworkRecordCount)
 }
 
@@ -270,7 +275,7 @@ func TestRecordProductionOperationExecutionDoesNotRequirePosition(t *testing.T) 
 	require.NotEmpty(t, operation.CompletedAt)
 }
 
-func TestRecordProductionOperationExecutionCreatesPieceworkRecordOnCompletion(t *testing.T) {
+func TestProductionCompletionPreservesProductStateWithoutCreatingWageRecords(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
 	seedProductionOperationProcess(t, database, "process-a")
 	require.NoError(t, database.Create(&models.ProductionRoute{
@@ -296,15 +301,11 @@ func TestRecordProductionOperationExecutionCreatesPieceworkRecordOnCompletion(t 
 		Status:         ProductionExecutionLotStatusActive,
 	}).Error)
 	effectiveFrom := time.Now().UTC().Add(-time.Hour)
-	processStepID := "process-a"
-	routeStepID := "route-step-a"
 	require.NoError(t, database.Create(&models.PieceworkRate{
 		BaseModel:     models.BaseModel{ID: "rate-a"},
-		ProductID:     "product-a",
-		ProcessStepID: &processStepID,
-		RouteStepID:   &routeStepID,
-		ProcessCode:   "process-a",
-		ProcessName:   "process-a",
+		PayItemID:     pieceworkTestPayItemID,
+		PayItemCode:   "PAY-001",
+		PayItemName:   "Independent payroll item",
 		Unit:          "PCS",
 		UnitPrice:     2,
 		Currency:      "CNY",
@@ -326,18 +327,9 @@ func TestRecordProductionOperationExecutionCreatesPieceworkRecordOnCompletion(t 
 	require.NoError(t, err)
 	require.Equal(t, ProductBarcodeStateStatusCompleted, operation.Status)
 
-	var record models.PieceworkRecord
-	require.NoError(t, database.First(&record, "source_execution_id = ?", operation.ID).Error)
-	require.Equal(t, "product-a", record.ProductID)
-	require.Equal(t, "Product A", record.ProductName)
-	require.Equal(t, "route-a", record.RouteID)
-	require.Equal(t, "route-step-a", record.RouteStepID)
-	require.Equal(t, "process-a", record.ProcessStepID)
-	require.Equal(t, "rate-a", record.RateID)
-	require.Equal(t, int64(1), record.RateVersion)
-	require.Equal(t, 3.0, record.Quantity)
-	require.Equal(t, 2.0, record.UnitPrice)
-	require.Equal(t, 6.0, record.TotalAmount)
+	var wageRecordCount int64
+	require.NoError(t, database.Table("piecework_records").Count(&wageRecordCount).Error)
+	require.Zero(t, wageRecordCount)
 
 	state, _, err := loadProductBarcodeStateWithEvents(database, "ABC-004")
 	require.NoError(t, err)

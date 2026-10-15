@@ -24,12 +24,8 @@ func DecodePieceworkRatePatchDelta(
 		}
 
 		switch key {
-		case "productId":
-			command.ProductID, err = decodePatchString(newValue)
-		case "processStepId":
-			command.ProcessStepID, err = decodePatchString(newValue)
-		case "routeStepId":
-			command.RouteStepID, err = decodePatchString(newValue)
+		case "payItemId":
+			command.PayItemID, err = decodePatchString(newValue)
 		case "unit":
 			command.Unit, err = decodePatchString(newValue)
 		case "unitPrice":

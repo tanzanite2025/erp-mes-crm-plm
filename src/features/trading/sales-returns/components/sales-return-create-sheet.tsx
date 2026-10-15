@@ -578,7 +578,7 @@ function SalesReturnCreateSheetBody({
                   <p className='text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
                     {t('trading.salesReturns.createSheet.summarySelectedLines')}
                   </p>
-                  <p className='text-base font-black text-amber-600 italic'>
+                  <p className='text-base font-black text-amber-600'>
                     {selectedLineCount}
                   </p>
                 </div>
@@ -588,7 +588,7 @@ function SalesReturnCreateSheetBody({
                   <p className='text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
                     {t('trading.salesReturns.createSheet.summaryQuantity')}
                   </p>
-                  <p className='text-base font-black text-rose-600 italic'>
+                  <p className='text-base font-black text-rose-600'>
                     {totalQuantity.toLocaleString()}
                   </p>
                 </div>

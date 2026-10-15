@@ -176,7 +176,7 @@ export function MoldLoanActionDialog({
       headerClassName='p-6 sm:p-8 shrink-0 pb-4 bg-muted/5 border-b border-dashed text-left'
       bodyClassName='flex-1 overflow-y-auto px-6 sm:p-8 pt-6 custom-scrollbar pb-8'
       footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
-      titleClassName='text-xl font-black tracking-tighter italic uppercase'
+      titleClassName='text-xl font-black tracking-tighter uppercase'
       descriptionClassName='text-[9px] font-black uppercase tracking-widest opacity-60'
       footer={
         <>
@@ -271,7 +271,7 @@ export function MoldLoanActionDialog({
               name='moldId'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.loans.dialog.fields.mold')}
                   </FormLabel>
                   <Select
@@ -317,7 +317,7 @@ export function MoldLoanActionDialog({
                 name='moldSn'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       {t('equipmentTooling.loans.dialog.fields.externalSn')}
                     </FormLabel>
                     <FormControl>
@@ -338,7 +338,7 @@ export function MoldLoanActionDialog({
                 name='moldName'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       {t('equipmentTooling.loans.dialog.fields.moldName')}
                     </FormLabel>
                     <FormControl>
@@ -363,7 +363,7 @@ export function MoldLoanActionDialog({
               name='fromFactory'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {mode === 'LEND'
                       ? t('equipmentTooling.loans.dialog.fields.fromFactory')
                       : t('equipmentTooling.loans.dialog.fields.sourceFactory')}
@@ -402,7 +402,7 @@ export function MoldLoanActionDialog({
               name='toFactory'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.loans.dialog.fields.toFactory')}
                   </FormLabel>
                   <Select
@@ -443,7 +443,7 @@ export function MoldLoanActionDialog({
                 name='maxCycles'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       寿命上限 / LIFESPAN
                     </FormLabel>
                     <FormControl>
@@ -465,7 +465,7 @@ export function MoldLoanActionDialog({
                 name='currentCycles'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                    <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       当前次数 / INITIAL
                     </FormLabel>
                     <FormControl>
@@ -489,7 +489,7 @@ export function MoldLoanActionDialog({
             name='contactPerson'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.loans.dialog.fields.contact')}
                 </FormLabel>
                 <FormControl>
@@ -512,12 +512,12 @@ export function MoldLoanActionDialog({
               name='loanDate'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.loans.dialog.fields.loanDate')}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold italic'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold'
                       type='date'
                       {...field}
                     />
@@ -531,14 +531,14 @@ export function MoldLoanActionDialog({
               name='expectedReturnDate'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t(
                       'equipmentTooling.loans.dialog.fields.expectedReturnDate'
                     )}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold italic'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold'
                       type='date'
                       {...field}
                     />
@@ -554,7 +554,7 @@ export function MoldLoanActionDialog({
             name='remarks'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.loans.dialog.fields.remarks')}
                 </FormLabel>
                 <FormControl>
@@ -576,7 +576,7 @@ export function MoldLoanActionDialog({
             name='photoUrl'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.loans.dialog.fields.photo')}
                 </FormLabel>
                 <FormControl>

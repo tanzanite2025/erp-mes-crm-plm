@@ -216,7 +216,7 @@ export default function MaterialThresholdsTab() {
           <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
           <div className='relative z-10 flex items-center gap-3 text-primary'>
             <TriangleAlert className='size-5' />
-            <h1 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h1 className='text-lg font-black tracking-tighter uppercase'>
               {t('warehouseConfig.materialThresholds.title')}
             </h1>
           </div>
@@ -368,7 +368,7 @@ export default function MaterialThresholdsTab() {
                   <div className='flex items-start justify-between gap-4'>
                     <div className='min-w-0'>
                       <div className='flex flex-wrap items-center gap-2'>
-                        <h2 className='truncate text-sm font-black tracking-tighter uppercase italic md:text-base'>
+                        <h2 className='truncate text-sm font-black tracking-tighter uppercase md:text-base'>
                           {rule.targetNameSnapshot}
                         </h2>
                         <Badge
@@ -477,7 +477,7 @@ export default function MaterialThresholdsTab() {
               <div className='relative mb-6'>
                 <Database className='size-20 opacity-5' />
               </div>
-              <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+              <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {t('warehouseConfig.materialThresholds.emptyTitle')}
               </p>
               <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-muted-foreground/70'>

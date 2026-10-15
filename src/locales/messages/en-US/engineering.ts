@@ -1342,6 +1342,7 @@ export const engineering = {
       ownerPlaceholder: 'Filter by owner',
       allOwners: 'All owners',
       internal: 'Internal models',
+      customerOwner: 'Customer: {{customerName}}',
     },
     status: {
       draft: 'Draft',

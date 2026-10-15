@@ -102,21 +102,21 @@ export function CommandMenuView({
             <TabsList className='grid w-full grid-cols-3 rounded-2xl border border-sky-500/15 bg-sky-500/5 p-1'>
               <TabsTrigger
                 value='business'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <Box size={11} />
                 {t('commandMenu.headings.data')}
               </TabsTrigger>
               <TabsTrigger
                 value='knowledge'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <BookOpenText size={11} />
                 {t('commandMenu.headings.knowledgeBase')}
               </TabsTrigger>
               <TabsTrigger
                 value='actions'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <Zap size={11} />
                 {t('commandMenu.headings.actions')}
@@ -140,7 +140,7 @@ export function CommandMenuView({
                     {asyncResults.length > 0 && (
                       <CommandGroup
                         heading={t('commandMenu.headings.data')}
-                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-emerald-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-emerald-600/70 **:[[cmdk-group-heading]]:uppercase'
                       >
                         {asyncResults.map((item) => (
                           <SearchListItem
@@ -156,7 +156,7 @@ export function CommandMenuView({
                     {groupedItems.modules && (
                       <CommandGroup
                         heading={categoryLabels.modules}
-                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-indigo-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-indigo-600/70 **:[[cmdk-group-heading]]:uppercase'
                       >
                         {groupedItems.modules
                           .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
@@ -196,7 +196,7 @@ export function CommandMenuView({
                     {groupedItems.actions && (
                       <CommandGroup
                         heading={categoryLabels.actions}
-                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-amber-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
+                        className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-amber-600/70 **:[[cmdk-group-heading]]:uppercase'
                       >
                         <div className='grid grid-cols-1 gap-0'>
                           {groupedItems.actions
@@ -228,7 +228,7 @@ export function CommandMenuView({
         </Tabs>
 
         <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
-          <div className='flex items-center gap-2.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+          <div className='flex items-center gap-2.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             <span className='flex items-center gap-1.5'>
               <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
                 Enter
@@ -248,7 +248,7 @@ export function CommandMenuView({
               {t('commandMenu.footer.tab')}
             </span>
           </div>
-          <div className='text-[9px] font-black tracking-[0.2em] text-sky-600/35 uppercase italic'>
+          <div className='text-[9px] font-black tracking-[0.2em] text-sky-600/35 uppercase'>
             Intelligent Search v2.1
           </div>
         </div>
@@ -263,7 +263,7 @@ export function CommandMenuView({
 
 function SearchEmptyState({ message }: { message: string }) {
   return (
-    <div className='flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 text-center text-xs font-bold text-muted-foreground/50 italic'>
+    <div className='flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 text-center text-xs font-bold text-muted-foreground/50'>
       {message}
     </div>
   )
@@ -343,7 +343,7 @@ function SearchListItem({
 
 function SearchHintItem() {
   return (
-    <div className='flex items-center gap-1.5 px-2 py-1 text-[7px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+    <div className='flex items-center gap-1.5 px-2 py-1 text-[7px] font-black tracking-widest text-muted-foreground/30 uppercase'>
       <Search size={10} />
       <span>输入更多关键词以搜索完整列表...</span>
     </div>

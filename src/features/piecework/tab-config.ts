@@ -23,15 +23,5 @@ export function getPieceworkTabs(t: TabTranslator): TabItem[] {
       label: t('piecework.layout.tabs.rules'),
       href: '/piecework/rules',
     },
-    {
-      key: 'stats',
-      label: t('piecework.layout.tabs.stats'),
-      href: '/piecework/stats',
-    },
-    {
-      key: 'teams',
-      label: t('piecework.layout.tabs.teams'),
-      href: '/piecework/teams',
-    },
   ]
 }

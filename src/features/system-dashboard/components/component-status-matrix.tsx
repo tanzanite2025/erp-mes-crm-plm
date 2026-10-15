@@ -64,7 +64,7 @@ function StatusItem({
         <div className='flex size-5.5 items-center justify-center rounded-xl bg-slate-100 text-slate-500 sm:size-6 dark:bg-white/6 dark:text-slate-400'>
           <Icon className='size-2.5 sm:size-3' />
         </div>
-        <span className='text-[9px] font-black tracking-widest text-slate-600 uppercase italic sm:text-[10px] dark:text-slate-300'>
+        <span className='text-[9px] font-black tracking-widest text-slate-600 uppercase sm:text-[10px] dark:text-slate-300'>
           {label}
         </span>
       </div>
@@ -98,7 +98,7 @@ export function ComponentStatusMatrix({
   return (
     <Card className='gap-0 overflow-hidden rounded-[32px] border-dashed border-slate-200 bg-slate-50/50 py-0 shadow-none dark:border-white/10 dark:bg-white/3'>
       <CardHeader className='p-3 pb-1 sm:p-3.5 sm:pb-1.5'>
-        <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+        <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
           <ShieldCheck className='size-4 text-emerald-600' />
           {t('systemManagement.componentStatus.title')}
         </CardTitle>

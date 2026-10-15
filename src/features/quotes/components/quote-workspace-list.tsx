@@ -44,7 +44,7 @@ export function QuoteWorkspaceList({
       <div className='overflow-hidden rounded-[20px] bg-background/60'>
         <div className='flex flex-col gap-3 border-b border-dashed border-border/60 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6'>
           <div className='space-y-2'>
-            <div className='text-base font-black tracking-tight italic'>
+            <div className='text-base font-black tracking-tight'>
               报价单列表
             </div>
             <div className='flex flex-wrap items-center gap-2 text-[11px] font-bold text-muted-foreground'>

@@ -3,450 +3,170 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"testing"
-	"time"
-	"xdfc-server/audit"
-	"xdfc-server/models"
-
 	"github.com/glebarez/sqlite"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"testing"
+	"time"
+	"xdfc-server/audit"
+	"xdfc-server/db"
+	"xdfc-server/models"
 )
 
-type pieceworkRateTestTxManager struct {
-	db *gorm.DB
-}
+type pieceworkRateTestTxManager struct{ db *gorm.DB }
 
-func (m pieceworkRateTestTxManager) DB() *gorm.DB {
-	return m.db
-}
-
+func (m pieceworkRateTestTxManager) DB() *gorm.DB { return m.db }
 func (m pieceworkRateTestTxManager) WithinTransaction(fn func(tx *gorm.DB) error) error {
 	return m.db.Transaction(fn)
 }
 
-func newPieceworkRateTestService(t *testing.T) (*PieceworkService, *gorm.DB) {
+const pieceworkTestPayItemID = "44444444-4444-4444-8444-444444444444"
+
+func newPieceworkRateTestService(t *testing.T) (*PieceworkRateService, *gorm.DB) {
 	t.Helper()
-
-	database, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=shared"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	database, err := gorm.Open(sqlite.Open("file:"+uuid.NewString()+"?mode=memory&cache=shared"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	require.NoError(t, err)
-
 	sqlDB, err := database.DB()
 	require.NoError(t, err)
 	sqlDB.SetMaxOpenConns(1)
-	t.Cleanup(func() {
-		require.NoError(t, sqlDB.Close())
-	})
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+	createIndependentPieceworkPayrollSQLiteTables(t, database)
+	return NewPieceworkRateService(pieceworkRateTestTxManager{db: database}), database
+}
 
-	require.NoError(t, database.Exec(`
-		CREATE TABLE process_steps (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			code TEXT NOT NULL,
-			name TEXT NOT NULL,
-			description TEXT,
-			sort_order INTEGER,
-			is_active BOOLEAN
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
-		CREATE TABLE production_routes (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			code TEXT NOT NULL,
-			name TEXT NOT NULL,
-			product_id TEXT,
-			product_name TEXT,
-			product_template_id TEXT,
-			description TEXT,
-			version INTEGER,
-			status TEXT
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
-		CREATE TABLE production_route_steps (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			route_id TEXT NOT NULL,
-			sequence INTEGER NOT NULL,
-			segment_id TEXT NOT NULL,
-			process_step_id TEXT,
-			execution_mode TEXT,
-			quality_gate TEXT,
-			quality_routing TEXT,
-			estimated_minutes INTEGER,
-			transfer_required BOOLEAN,
-			description TEXT
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
-		CREATE TABLE piecework_rates (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			product_id TEXT NOT NULL,
-			process_step_id TEXT,
-			route_step_id TEXT,
-			process_code TEXT,
-			process_name TEXT,
-			unit TEXT,
-			unit_price REAL,
-			currency TEXT,
-			effective_at DATETIME,
-			effective_from DATETIME,
-			effective_to DATETIME,
-			status TEXT,
-			remarks TEXT,
-			version INTEGER,
-			operator TEXT
-		)
-	`).Error)
-	require.NoError(t, database.Exec(`
-		CREATE TABLE audit_logs (
-			id TEXT PRIMARY KEY,
-			module TEXT,
-			target_id TEXT,
-			action TEXT,
-			diff TEXT,
-			operator TEXT,
-			ip TEXT,
-			created_at DATETIME
-		)
-	`).Error)
-
-	return NewPieceworkService(pieceworkRateTestTxManager{db: database}), database
+// Deliberately no product, route, process, barcode, or production execution tables.
+func createIndependentPieceworkPayrollSQLiteTables(t *testing.T, database *gorm.DB) {
+	t.Helper()
+	for _, statement := range []string{
+		`CREATE TABLE audit_logs(id TEXT PRIMARY KEY,module TEXT,target_id TEXT,action TEXT,diff TEXT,operator TEXT,ip TEXT,created_at DATETIME)`,
+	} {
+		require.NoError(t, database.Exec(statement).Error)
+	}
+	require.NoError(t, db.EnsureIndependentPieceworkPayrollStorageContract(database))
+	seedPieceworkAttributionTestIdentities(t, database)
+	require.NoError(t, database.Create(&models.PieceworkPayItem{BaseModel: models.BaseModel{ID: pieceworkTestPayItemID}, Code: "PAY-001", Name: "Independent payroll item", Unit: "PCS", Status: "active", Version: 1}).Error)
 }
 
 func pieceworkRateTestContext() context.Context {
-	return audit.NewContextWithActor(context.Background(), audit.AuditActor{
-		UserID:   "user-1",
-		Username: "tester",
-		IP:       "127.0.0.1",
-		Source:   "test",
-	})
+	return audit.NewContextWithActor(context.Background(), audit.AuditActor{UserID: pieceworkTestReportingUserID, Username: "tester", IP: "127.0.0.1", Source: "test"})
+}
+func pointerFloat(value float64) *float64    { return &value }
+func pieceworkTestDate(day string) time.Time { date, _ := time.Parse("2006-01-02", day); return date }
+func pieceworkTestRateCommand() PieceworkRateCommand {
+	date := pieceworkTestDate("2026-10-01")
+	return PieceworkRateCommand{PayItemID: pieceworkTestPayItemID, Unit: "PCS", UnitPrice: 2, Currency: "CNY", EffectiveFrom: &date, Status: "active"}
 }
 
-func seedPieceworkRateProcess(t *testing.T, database *gorm.DB, id, code, name string) {
-	t.Helper()
-	require.NoError(t, database.Create(&models.ProcessStep{
-		BaseModel: models.BaseModel{ID: id},
-		Code:      code,
-		Name:      name,
-		IsActive:  true,
-	}).Error)
-}
-
-func TestPieceworkRateServiceSupportsStableContractAndLegacyProjection(t *testing.T) {
+func TestPieceworkRatePayrollContractHasNoProductionColumnsOrResponseAliases(t *testing.T) {
 	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-outer", "ROLL-OUTER", "外圈卷制")
-
-	start := time.Date(2026, 8, 13, 0, 0, 0, 0, time.UTC)
-	saved, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-outer",
-		RouteStepID:   "",
-		Unit:          "PCS",
-		UnitPrice:     pointerFloat(1.25),
-		EffectiveFrom: start.Format(time.RFC3339),
-		Remarks:       "stable contract",
-	})
+	saved, err := service.CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
 	require.NoError(t, err)
-	require.Equal(t, "process-outer", saved.ProcessStepID)
-	require.Equal(t, "ROLL-OUTER", saved.ProcessCode)
-	require.Equal(t, 1.25, saved.UnitPrice)
-	require.Equal(t, 1.25, saved.PiecePrice)
-	require.Equal(t, start, saved.EffectiveFrom.UTC())
-	require.Equal(t, start, saved.EffectiveAt.UTC())
-	require.Equal(t, int64(1), saved.Version)
-}
-
-func TestPieceworkRateCompatibilityRejectsConflictingAliases(t *testing.T) {
-	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-conflict", "PROC-CONFLICT", "冲突测试")
-
-	_, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-conflict",
-		UnitPrice:     pointerFloat(1),
-		PiecePrice:    pointerFloat(2),
-	})
-	require.ErrorIs(t, err, ErrInvalidPieceworkRate)
-
-	effectiveFrom := time.Date(2026, 8, 14, 0, 0, 0, 0, time.UTC)
-	_, err = service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-conflict",
-		UnitPrice:     pointerFloat(1),
-		EffectiveFrom: effectiveFrom.Format(time.RFC3339),
-		EffectiveAt:   effectiveFrom.Add(time.Hour).Format(time.RFC3339),
-	})
-	require.ErrorIs(t, err, ErrInvalidPieceworkRate)
-}
-
-func TestPieceworkRatePatchRequiresCompleteSDRTSDeltaAndRejectsLegacyFields(t *testing.T) {
-	incomplete, err := json.Marshal(map[string]any{"n": 1.5})
+	require.Equal(t, pieceworkTestPayItemID, saved.PayItemID)
+	require.Equal(t, "PAY-001", saved.PayItemCode)
+	payload, err := json.Marshal(saved)
 	require.NoError(t, err)
-	_, err = DecodePieceworkRatePatchDelta(map[string]json.RawMessage{
-		"unitPrice": incomplete,
-	})
-	require.Error(t, err)
-
-	complete, err := json.Marshal(map[string]any{"o": 1, "n": 1.5})
-	require.NoError(t, err)
-	command, err := DecodePieceworkRatePatchDelta(map[string]json.RawMessage{
-		"unitPrice": complete,
-	})
-	require.NoError(t, err)
-	require.True(t, command.UnitPrice.Set)
-	require.NotNil(t, command.UnitPrice.Value)
-	require.Equal(t, 1.5, *command.UnitPrice.Value)
-
-	require.Error(t, ValidatePieceworkRateDelta(map[string]json.RawMessage{
-		"piecePrice": complete,
-	}))
-	require.Error(t, ValidatePieceworkRateDelta(map[string]json.RawMessage{
-		"effectiveAt": complete,
-	}))
-}
-
-func TestPieceworkRateCanonicalUpdateRequiresExpectedVersion(t *testing.T) {
-	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-update", "PROC-UPDATE", "更新测试")
-
-	created, err := service.CreatePieceworkRate(pieceworkRateTestContext(), PieceworkRateCommand{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-update",
-		UnitPrice:     1,
-	})
-	require.NoError(t, err)
-
-	_, err = service.UpdatePieceworkRate(
-		pieceworkRateTestContext(),
-		created.ID,
-		PieceworkRateCommand{
-			ProductID:     "product-g24",
-			ProcessStepID: "process-update",
-			UnitPrice:     2,
-		},
-		0,
-	)
-	require.ErrorIs(t, err, ErrPieceworkRateVersionConflict)
-
-	updated, err := service.UpdatePieceworkRate(
-		pieceworkRateTestContext(),
-		created.ID,
-		PieceworkRateCommand{
-			ProductID:     "product-g24",
-			ProcessStepID: "process-update",
-			UnitPrice:     2,
-		},
-		created.Version,
-	)
-	require.NoError(t, err)
-	require.Equal(t, int64(2), updated.Version)
-
-	_, err = service.UpdatePieceworkRate(
-		pieceworkRateTestContext(),
-		created.ID,
-		PieceworkRateCommand{
-			ProductID:     "product-g24",
-			ProcessStepID: "process-update",
-			UnitPrice:     3,
-		},
-		created.Version,
-	)
-	require.ErrorIs(t, err, ErrPieceworkRateVersionConflict)
-
-	var persisted models.PieceworkRate
-	require.NoError(t, database.First(&persisted, "id = ?", created.ID).Error)
-	require.Equal(t, 2.0, persisted.UnitPrice)
-}
-
-func TestPieceworkRateCoreRequiresStableProcessStepIdentity(t *testing.T) {
-	_, database := newPieceworkRateTestService(t)
-	rate := models.PieceworkRate{
-		ProductID:   "product-g24",
-		ProcessCode: "PROC-LEGACY",
-		UnitPrice:   1,
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(payload, &response))
+	for _, field := range []string{"productId", "processStepId", "routeStepId", "processCode", "processName", "piecePrice", "effectiveAt", "isLegacy"} {
+		require.NotContains(t, response, field)
 	}
-
-	err := normalizeAndValidatePieceworkRate(database, &rate)
-	require.ErrorIs(t, err, ErrInvalidPieceworkRate)
-}
-
-func TestPieceworkRateServiceBackfillsUniqueProcessCodeAndRejectsOverlaps(t *testing.T) {
-	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-forming", "FORMING", "成型")
-
-	legacyAt := time.Date(2026, 8, 13, 8, 0, 0, 0, time.UTC)
-	legacy := models.PieceworkRate{
-		ProductID:   "product-g24",
-		ProcessCode: "FORMING",
-		UnitPrice:   2,
-		EffectiveAt: legacyAt,
+	for _, column := range []string{"product_id", "process_step_id", "route_step_id", "process_code", "process_name", "piece_price", "effective_at"} {
+		require.False(t, database.Migrator().HasColumn("piecework_rates", column))
 	}
-	require.NoError(t, service.SavePieceworkRate(pieceworkRateTestContext(), &legacy))
+	for _, table := range []string{"products", "process_steps", "production_routes", "production_route_steps"} {
+		require.False(t, database.Migrator().HasTable(table))
+	}
+	rows, err := service.ListPieceworkRates()
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	require.Equal(t, saved.ID, rows[0].ID)
+}
 
-	var loaded models.PieceworkRate
-	require.NoError(t, database.First(&loaded, "id = ?", legacy.ID).Error)
-	require.NotNil(t, loaded.ProcessStepID)
-	require.Equal(t, "process-forming", *loaded.ProcessStepID)
-	require.Equal(t, legacyAt, loaded.EffectiveFrom.UTC())
-
-	_, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-forming",
-		UnitPrice:     pointerFloat(3),
-		EffectiveFrom: legacyAt.Add(30 * time.Minute).Format(time.RFC3339),
-	})
+func TestPieceworkRatePayrollIntervalsAreHalfOpenAndRejectOverlapAndStaleChanges(t *testing.T) {
+	service, database := newPieceworkRateTestService(t)
+	cmd := pieceworkTestRateCommand()
+	end := pieceworkTestDate("2026-10-15")
+	cmd.EffectiveTo = &end
+	original, err := service.CreatePieceworkRate(pieceworkRateTestContext(), cmd)
+	require.NoError(t, err)
+	_, err = service.CreatePieceworkRate(pieceworkRateTestContext(), cmd)
 	require.ErrorIs(t, err, ErrInvalidPieceworkRate)
-}
-
-func TestPieceworkRateServiceRejectsStaleVersion(t *testing.T) {
-	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-a", "PROC-A", "作业 A")
-
-	saved, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-a",
-		UnitPrice:     pointerFloat(1),
-	})
+	cmd.EffectiveFrom, cmd.EffectiveTo, cmd.UnitPrice = &end, nil, 4
+	next, err := service.CreatePieceworkRate(pieceworkRateTestContext(), cmd)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), saved.Version)
-
-	updated, err := service.PatchPieceworkRate(
-		pieceworkRateTestContext(),
-		saved.ID,
-		PieceworkRatePatchCommand{
-			UnitPrice: PieceworkRatePatchField[float64]{
-				Set:   true,
-				Value: pointerFloat(2),
-			},
-		},
-		1,
-	)
-	require.NoError(t, err)
-	require.Equal(t, int64(2), updated.Version)
-
-	_, err = service.PatchPieceworkRate(
-		pieceworkRateTestContext(),
-		saved.ID,
-		PieceworkRatePatchCommand{
-			UnitPrice: PieceworkRatePatchField[float64]{
-				Set:   true,
-				Value: pointerFloat(3),
-			},
-		},
-		1,
-	)
-	require.True(t, errors.Is(err, ErrPieceworkRateVersionConflict))
-
-	var persisted models.PieceworkRate
-	require.NoError(t, database.First(&persisted, "id = ?", saved.ID).Error)
-	require.Equal(t, 2.0, persisted.UnitPrice)
-}
-
-func TestPieceworkRateResolverPrefersRouteStepAndFallsBackToProcessStep(t *testing.T) {
-	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-forming", "FORMING", "成型")
-
-	require.NoError(t, database.Create(&models.ProductionRoute{
-		BaseModel: models.BaseModel{ID: "route-g24"},
-		Code:      "G24-ROUTE-V1",
-		Name:      "G24 工艺路线",
-		ProductID: "product-g24",
-		Status:    "PUBLISHED",
-	}).Error)
-	require.NoError(t, database.Create(&models.ProductionRouteStep{
-		BaseModel:     models.BaseModel{ID: "route-step-forming"},
-		RouteID:       "route-g24",
-		Sequence:      10,
-		SegmentID:     "segment-forming",
-		ProcessStepID: "process-forming",
-	}).Error)
-
-	start := time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC)
-	generic, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-forming",
-		UnitPrice:     pointerFloat(1),
-		EffectiveFrom: start.Format(time.RFC3339),
-	})
-	require.NoError(t, err)
-
-	routeSpecific, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-forming",
-		RouteStepID:   "route-step-forming",
-		UnitPrice:     pointerFloat(2),
-		EffectiveFrom: start.Add(24 * time.Hour).Format(time.RFC3339),
-	})
-	require.NoError(t, err)
-
 	resolver := NewPieceworkRateResolver(pieceworkRateTestTxManager{db: database})
-
-	match, err := resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{
-		ProductID:     "product-g24",
-		RouteStepID:   "route-step-forming",
-		ProcessStepID: "process-forming",
-		At:            start.Add(48 * time.Hour),
-	})
+	match, err := resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{PayItemID: cmd.PayItemID, Unit: cmd.Unit, At: end})
 	require.NoError(t, err)
-	require.Equal(t, PieceworkRateMatchByRouteStep, match.Kind)
-	require.Equal(t, routeSpecific.ID, match.Rate.ID)
-
-	match, err = resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-forming",
-		At:            start.Add(48 * time.Hour),
-	})
+	require.Equal(t, next.ID, match.Rate.ID)
+	_, err = resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{PayItemID: cmd.PayItemID, Unit: "KG", At: end})
+	require.ErrorIs(t, err, ErrPieceworkRateNotFound)
+	update := PieceworkRatePatchCommand{UnitPrice: PieceworkRatePatchField[float64]{Set: true, Value: pointerFloat(3)}}
+	updated, err := service.PatchPieceworkRate(pieceworkRateTestContext(), original.ID, update, original.Version)
 	require.NoError(t, err)
-	require.Equal(t, PieceworkRateMatchByProcessStep, match.Kind)
-	require.Equal(t, generic.ID, match.Rate.ID)
-
-	match, err = resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{
-		ProductID:     "product-g24",
-		RouteStepID:   "route-step-forming",
-		ProcessStepID: "process-forming",
-		At:            start,
-	})
-	require.NoError(t, err)
-	require.Equal(t, PieceworkRateMatchByProcessStep, match.Kind)
-	require.Equal(t, generic.ID, match.Rate.ID)
+	require.Equal(t, int64(2), updated.Version)
+	_, err = service.PatchPieceworkRate(pieceworkRateTestContext(), original.ID, update, original.Version)
+	require.ErrorIs(t, err, ErrPieceworkRateVersionConflict)
+	require.ErrorIs(t, service.DeletePieceworkRate(pieceworkRateTestContext(), original.ID, original.Version), ErrPieceworkRateVersionConflict)
+	require.NoError(t, service.DeletePieceworkRate(pieceworkRateTestContext(), original.ID, updated.Version))
+	var auditCount int64
+	require.NoError(t, database.Table("audit_logs").Where("target_id = ?", original.ID).Count(&auditCount).Error)
+	require.Equal(t, int64(3), auditCount)
 }
 
-func TestPieceworkRateServiceDeleteRequiresExpectedVersion(t *testing.T) {
-	service, database := newPieceworkRateTestService(t)
-	seedPieceworkRateProcess(t, database, "process-delete", "PROC-DELETE", "删除测试")
-
-	saved, err := service.SavePieceworkRateDTO(pieceworkRateTestContext(), PieceworkRateWriteDTO{
-		ProductID:     "product-g24",
-		ProcessStepID: "process-delete",
-		UnitPrice:     pointerFloat(1),
-	})
-	require.NoError(t, err)
-
-	require.ErrorIs(t,
-		service.DeletePieceworkRate(pieceworkRateTestContext(), saved.ID, saved.Version-1),
-		ErrPieceworkRateVersionConflict,
-	)
-	require.NoError(t, service.DeletePieceworkRate(pieceworkRateTestContext(), saved.ID, saved.Version))
-
-	var deleted models.PieceworkRate
-	require.ErrorIs(t, database.First(&deleted, "id = ?", saved.ID).Error, gorm.ErrRecordNotFound)
+func TestPieceworkRatePayrollRejectsMissingIdentityDateUnitAndInvalidDecimals(t *testing.T) {
+	service, _ := newPieceworkRateTestService(t)
+	for _, change := range []func(*PieceworkRateCommand){
+		func(c *PieceworkRateCommand) { c.PayItemID = "" },
+		func(c *PieceworkRateCommand) { c.EffectiveFrom = nil },
+		func(c *PieceworkRateCommand) { c.Unit = "" },
+		func(c *PieceworkRateCommand) { c.Unit = "KG" },
+		func(c *PieceworkRateCommand) { c.UnitPrice = -1 },
+		func(c *PieceworkRateCommand) { c.UnitPrice = 1.00001 },
+		func(c *PieceworkRateCommand) { c.UnitPrice = 1000000 },
+		func(c *PieceworkRateCommand) { c.Status = "anything" },
+		func(c *PieceworkRateCommand) { c.Currency = "CN" },
+	} {
+		c := pieceworkTestRateCommand()
+		change(&c)
+		_, err := service.CreatePieceworkRate(pieceworkRateTestContext(), c)
+		require.Error(t, err)
+	}
+	_, err := service.UpdatePieceworkRate(pieceworkRateTestContext(), "", pieceworkTestRateCommand(), 1)
+	require.ErrorIs(t, err, ErrInvalidPieceworkRate)
 }
 
-func pointerFloat(value float64) *float64 {
-	return &value
+func TestPieceworkRatePatchRequiresFullSDRTSAndRejectsProductionIdentities(t *testing.T) {
+	for _, field := range []string{"productId", "processStepId", "routeStepId", "processCode", "processName", "piecePrice", "effectiveAt", "id", "version", "payItemName"} {
+		_, err := DecodePieceworkRatePatchDelta(map[string]json.RawMessage{field: json.RawMessage(`{"o":"old","n":"new"}`)})
+		require.Error(t, err, field)
+	}
+	_, err := DecodePieceworkRatePatchDelta(map[string]json.RawMessage{"unitPrice": json.RawMessage(`{"n":2}`)})
+	require.Error(t, err)
+	cmd, err := DecodePieceworkRatePatchDelta(map[string]json.RawMessage{"unitPrice": json.RawMessage(`{"o":2,"n":0}`), "effectiveTo": json.RawMessage(`{"o":"2026-10-15","n":null}`)})
+	require.NoError(t, err)
+	require.Equal(t, 0.0, *cmd.UnitPrice.Value)
+	require.True(t, cmd.EffectiveTo.Set)
+	require.Nil(t, cmd.EffectiveTo.Value)
+}
+
+func TestPieceworkPayItemMaintenanceKeepsUsedUnitAndVersionStable(t *testing.T) {
+	rates, database := newPieceworkRateTestService(t)
+	service := NewPieceworkPayItemService(pieceworkRateTestTxManager{db: database})
+	item, err := service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{Code: "PAY-NEW", Name: "Payroll work", Unit: "H", Status: "active"})
+	require.NoError(t, err)
+	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{Code: "pay-new", Name: "Duplicate", Unit: "H"})
+	require.ErrorIs(t, err, ErrInvalidPieceworkPayItem)
+	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: item.ID, Version: 0, Code: item.Code, Name: item.Name, Unit: item.Unit})
+	require.ErrorIs(t, err, ErrPieceworkRateVersionConflict)
+	_, err = rates.CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
+	require.NoError(t, err)
+	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: pieceworkTestPayItemID, Version: 1, Code: "PAY-001", Name: "Renamed", Unit: "KG"})
+	require.ErrorIs(t, err, ErrInvalidPieceworkPayItem)
+	saved, err := service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: pieceworkTestPayItemID, Version: 1, Code: "PAY-001", Name: "Renamed", Unit: "PCS", Status: "inactive"})
+	require.NoError(t, err)
+	require.Equal(t, int64(2), saved.Version)
+	_, err = rates.CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
+	require.ErrorIs(t, err, ErrInvalidPieceworkPayItem)
 }

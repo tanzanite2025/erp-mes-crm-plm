@@ -36,7 +36,7 @@ export function IndustrialHeader({
         className={cn('flex items-center gap-2 text-primary', innerClassName)}
       >
         <Icon className='size-4' />
-        <h3 className='text-base font-black tracking-tighter uppercase italic'>
+        <h3 className='text-base font-black tracking-tighter uppercase'>
           {title}
         </h3>
       </div>

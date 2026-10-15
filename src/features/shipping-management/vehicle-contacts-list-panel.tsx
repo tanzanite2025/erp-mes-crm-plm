@@ -63,7 +63,7 @@ export function VehicleContactsListPanel({
               空状态引导
             </div>
             <div>
-              <div className='text-[18px] font-black tracking-tighter text-foreground italic'>
+              <div className='text-[18px] font-black tracking-tighter text-foreground'>
                 {emptyStateTitle}
               </div>
               <div className='mt-2 max-w-2xl text-[10px] leading-5 text-muted-foreground'>
@@ -174,7 +174,7 @@ export function VehicleContactsListPanel({
         >
           <div className='flex flex-wrap items-start justify-between gap-3'>
             <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
-              <div className='text-[18px] font-black tracking-tighter text-foreground italic'>
+              <div className='text-[18px] font-black tracking-tighter text-foreground'>
                 {item.contactName}
               </div>
               <div className='text-sm leading-5 text-muted-foreground'>

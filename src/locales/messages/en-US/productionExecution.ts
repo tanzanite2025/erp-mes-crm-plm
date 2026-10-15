@@ -14,6 +14,7 @@ export const productionExecution = {
     usb: 'USB Scanner',
   },
   fields: {
+    submittedBy: 'Submitted by',
     captureMode: 'Capture source',
     productBarcode: 'Product barcode',
     action: 'Action',

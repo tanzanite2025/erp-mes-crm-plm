@@ -65,7 +65,7 @@ export function LabelingActionDialog({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+      'text-xl font-black uppercase tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
     footer:
@@ -244,7 +244,7 @@ export function LabelingActionDialog({
                 { label: '激光 / Laser', value: 'Laser' },
                 { label: '其他 / Other', value: 'Other' },
               ]}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold italic shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
             />
           </div>
         </div>
@@ -261,7 +261,7 @@ export function LabelingActionDialog({
               }
               items={targetProductOptions}
               placeholder='选择适配的成品 SKU'
-              className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold italic shadow-sm'
+              className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold shadow-sm'
             />
           </div>
         </div>

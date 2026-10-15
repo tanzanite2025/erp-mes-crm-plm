@@ -24,7 +24,7 @@ export function StandardPreviewFooter({
       <div className='flex flex-col items-center justify-between gap-4 sm:flex-row'>
         <div className='flex items-center gap-3'>
           <div className='size-1.5 animate-pulse rounded-full bg-primary/40' />
-          <span className='text-[8px] font-black tracking-[0.3em] text-muted-foreground uppercase italic opacity-40 lg:text-[9px]'>
+          <span className='text-[8px] font-black tracking-[0.3em] text-muted-foreground uppercase opacity-40 lg:text-[9px]'>
             {t('quality.standards.dialog.detail.footerHint')}
           </span>
         </div>

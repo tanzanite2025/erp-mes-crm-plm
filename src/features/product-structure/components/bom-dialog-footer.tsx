@@ -40,7 +40,7 @@ export function BOMDialogFooter({
                 )}
                 disabled={isLocked}
                 {...field}
-                className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-bold tracking-widest uppercase italic shadow-inner placeholder:text-[9px] placeholder:text-muted-foreground/40 placeholder:italic sm:h-full'
+                className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-bold tracking-widest uppercase shadow-inner placeholder:text-[9px] placeholder:text-muted-foreground/40 sm:h-full'
               />
             </FormControl>
           </FormItem>
@@ -51,7 +51,7 @@ export function BOMDialogFooter({
         {isLocked ? (
           <div className='flex items-center gap-2 px-6 text-muted-foreground/40'>
             <Lock className='size-3' />
-            <span className='text-[10px] font-black tracking-widest uppercase italic'>
+            <span className='text-[10px] font-black tracking-widest uppercase'>
               {t('engineering.bomArchive.dialog.locked')}
             </span>
           </div>
@@ -62,7 +62,7 @@ export function BOMDialogFooter({
               form='bom-form'
               variant='outline'
               disabled={isSubmitDisabled}
-              className='h-12 flex-1 shrink-0 rounded-xl border-dashed border-muted-foreground/20 text-[10px] font-black tracking-widest uppercase italic transition-all hover:bg-muted/50 sm:h-full sm:w-32'
+              className='h-12 flex-1 shrink-0 rounded-xl border-dashed border-muted-foreground/20 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-muted/50 sm:h-full sm:w-32'
             >
               {t('engineering.bomArchive.dialog.saveDraft')}
             </Button>
@@ -71,7 +71,7 @@ export function BOMDialogFooter({
               <Button
                 type='button'
                 onClick={() => onPromote('APPROVED')}
-                className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-blue-600 text-[10px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-blue-600/10 transition-all hover:bg-blue-700 sm:h-full sm:w-48'
+                className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-blue-600 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-blue-600/10 transition-all hover:bg-blue-700 sm:h-full sm:w-48'
               >
                 {t('engineering.bomArchive.dialog.submitReview')}
               </Button>
@@ -81,7 +81,7 @@ export function BOMDialogFooter({
               <Button
                 type='button'
                 onClick={() => onPromote('RELEASED')}
-                className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-emerald-600 text-[10px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-emerald-600/10 transition-all hover:bg-emerald-700 sm:h-full sm:w-48'
+                className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-emerald-600 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-emerald-600/10 transition-all hover:bg-emerald-700 sm:h-full sm:w-48'
               >
                 {t('engineering.bomArchive.dialog.release')}
               </Button>

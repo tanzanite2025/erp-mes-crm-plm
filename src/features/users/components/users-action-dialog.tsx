@@ -168,7 +168,7 @@ export function UsersActionDialog({
             <UserPlus className='h-12 w-12' />
           </div>
           <div className='flex items-start justify-between gap-3'>
-            <DialogTitle className='flex flex-col gap-0.5 text-lg font-black tracking-tighter uppercase italic'>
+            <DialogTitle className='flex flex-col gap-0.5 text-lg font-black tracking-tighter uppercase'>
               <span>
                 {isEdit
                   ? t('users.dialogs.editTitle')

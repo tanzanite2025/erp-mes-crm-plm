@@ -30,6 +30,16 @@ describe('production execution form utils', () => {
     expect(resolveProductionExecutionCaptureSource('camera')).toBe('camera')
   })
 
+  it('does not add payroll fields to production commands', () => {
+    const command = buildProductionExecutionCommandInput({
+      ...baseValues,
+      action: 'COMPLETE',
+    })
+    expect(command).not.toHaveProperty('pieceworkAttribution')
+    expect(command).not.toHaveProperty('quantity')
+    expect(command).not.toHaveProperty('unitPrice')
+  })
+
   it('keeps the selected execution context for the command service', () => {
     expect(
       buildProductionExecutionCommandInput({

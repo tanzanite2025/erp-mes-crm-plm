@@ -47,7 +47,7 @@ export function CustomerQuoteEntryBlock({
             : 'space-y-1 border-t border-dashed border-muted/50 pt-2'
         }
       >
-        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
           <FileText className='size-3' />
           {t('trading.customers.summary.quoteTitle')}
         </div>
@@ -67,7 +67,7 @@ export function CustomerQuoteEntryBlock({
             : 'space-y-1 border-t border-dashed border-muted/50 pt-2'
         }
       >
-        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
           <FileText className='size-3' />
           {t('trading.customers.summary.quoteTitle')}
         </div>
@@ -92,7 +92,7 @@ export function CustomerQuoteEntryBlock({
   if (quotes.length === 0) {
     return (
       <div className={sectionClass}>
-        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
           <AlertTriangle className='size-3' />
           {t('trading.customers.summary.quoteTitle')}
         </div>
@@ -129,7 +129,7 @@ export function CustomerQuoteEntryBlock({
     const quote = quotes[0]
     return (
       <div className={sectionClass}>
-        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
           <FileText className='size-3' />
           {t('trading.customers.summary.quoteTitle')}
         </div>
@@ -162,7 +162,7 @@ export function CustomerQuoteEntryBlock({
 
   return (
     <div className={sectionClass}>
-      <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+      <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
         <FileText className='size-3' />
         {t('trading.customers.summary.quoteTitle')}
       </div>

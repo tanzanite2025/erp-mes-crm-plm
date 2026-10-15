@@ -217,7 +217,7 @@ export function DocumentEvidenceManager({
           <ImageIcon className='size-3.5 text-primary' />
           <h4
             className={cn(
-              'font-black text-muted-foreground uppercase italic',
+              'font-black text-muted-foreground uppercase',
               compact
                 ? 'text-[9px] tracking-[0.16em]'
                 : 'text-[10px] tracking-[0.2em]'
@@ -464,7 +464,7 @@ export function DocumentEvidenceManager({
             <CloudUpload className={cn(compact ? 'size-6' : 'size-8')} />
             <p
               className={cn(
-                'font-black uppercase italic',
+                'font-black uppercase',
                 compact
                   ? 'text-[9px] tracking-[0.14em]'
                   : 'text-[10px] tracking-[0.2em]'

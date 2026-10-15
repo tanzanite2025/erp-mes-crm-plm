@@ -56,7 +56,7 @@ export function HoleCodeSourceActionDialog({
             <Database className='size-6' />
           </div>
           <div className='space-y-1.5'>
-            <div className='text-lg font-black tracking-tight italic sm:text-xl'>
+            <div className='text-lg font-black tracking-tight sm:text-xl'>
               {t('codeCenter.sharedCodeSource.holeCodes.page.title')}
             </div>
             <div className='flex flex-wrap gap-2'>

@@ -54,7 +54,7 @@ export function PurchaseOrderActionDialogShell({
             <div className='flex min-w-0 items-center gap-3'>
               <ClipboardList className='size-5 shrink-0 text-primary sm:size-6' />
               <DialogHeader className='min-w-0 flex-1 space-y-0 text-left sm:flex-row sm:flex-wrap sm:items-center sm:space-y-0 sm:gap-x-3 sm:gap-y-1'>
-                <DialogTitle className='truncate text-base leading-tight font-black tracking-tighter text-slate-900 uppercase italic sm:text-lg lg:text-xl dark:text-white'>
+                <DialogTitle className='truncate text-base leading-tight font-black tracking-tighter text-slate-900 uppercase sm:text-lg lg:text-xl dark:text-white'>
                   {title}
                 </DialogTitle>
                 <DialogDescription className='hidden text-[9px] leading-none font-black tracking-widest text-muted-foreground/55 uppercase sm:block'>

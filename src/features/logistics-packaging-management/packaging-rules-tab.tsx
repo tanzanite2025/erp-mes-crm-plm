@@ -153,7 +153,7 @@ export function LogisticsPackagingRulesTab() {
                   key={profile.id}
                   className='border-dashed transition-colors hover:bg-muted/5'
                 >
-                  <TableCell className='text-sm font-black tracking-tight text-primary italic transition-all group-hover:pl-4'>
+                  <TableCell className='text-sm font-black tracking-tight text-primary transition-all group-hover:pl-4'>
                     {profile.name}
                   </TableCell>
                   <TableCell className='text-xs font-medium opacity-80'>

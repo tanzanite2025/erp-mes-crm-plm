@@ -185,7 +185,7 @@ export function DrawingActionDialog({
       headerClassName='p-6 sm:p-8 shrink-0 pb-4 bg-primary/5 border-b border-dashed text-left'
       bodyClassName='flex-1 overflow-y-auto px-6 sm:p-8 pt-6 custom-scrollbar pb-8'
       footerClassName='p-6 sm:p-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
-      titleClassName='text-xl font-black tracking-tighter italic uppercase'
+      titleClassName='text-xl font-black tracking-tighter uppercase'
       footer={
         <>
           <Button
@@ -216,7 +216,7 @@ export function DrawingActionDialog({
             name='name'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.drawings.dialog.fields.name')}
                 </FormLabel>
                 <FormControl>
@@ -239,7 +239,7 @@ export function DrawingActionDialog({
               name='type'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.drawings.dialog.fields.type')}
                   </FormLabel>
                   <Select
@@ -282,7 +282,7 @@ export function DrawingActionDialog({
               name='version'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.drawings.dialog.fields.version')}
                   </FormLabel>
                   <FormControl>
@@ -305,7 +305,7 @@ export function DrawingActionDialog({
             name='moldSn'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-primary/40 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-primary/40 uppercase'>
                   {t('equipmentTooling.drawings.dialog.fields.mold')}
                 </FormLabel>
                 <Select
@@ -330,7 +330,7 @@ export function DrawingActionDialog({
                   <SelectContent className='rounded-2xl border-none shadow-2xl'>
                     <SelectItem
                       value={EMPTY_MOLD_VALUE}
-                      className='rounded-xl text-muted-foreground italic'
+                      className='rounded-xl text-muted-foreground'
                     >
                       {t('equipmentTooling.drawings.options.independent')}
                     </SelectItem>
@@ -351,7 +351,7 @@ export function DrawingActionDialog({
           />
 
           <div className='space-y-2'>
-            <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+            <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t('equipmentTooling.drawings.dialog.fields.source')}
             </FormLabel>
             {form.watch('fileUrl') || pendingFile ? (
@@ -364,7 +364,7 @@ export function DrawingActionDialog({
                     <span className='block text-[10px] font-black tracking-widest text-emerald-600 uppercase'>
                       {t('equipmentTooling.drawings.source.ready')}
                     </span>
-                    <span className='block max-w-[200px] truncate font-mono text-[9px] text-emerald-600/60 italic'>
+                    <span className='block max-w-[200px] truncate font-mono text-[9px] text-emerald-600/60'>
                       {pendingFile?.name ||
                         t('equipmentTooling.drawings.source.archived')}
                     </span>
@@ -405,7 +405,7 @@ export function DrawingActionDialog({
             name='remarks'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.drawings.dialog.fields.remarks')}
                 </FormLabel>
                 <FormControl>

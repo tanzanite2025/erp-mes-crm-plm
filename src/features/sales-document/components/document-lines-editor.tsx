@@ -214,7 +214,7 @@ export function DocumentLinesEditor({
       <div className='flex items-center justify-between px-1'>
         <div className='flex items-center gap-2'>
           <Package className='size-4 text-primary' />
-          <h4 className='text-[11px] font-black tracking-[0.2em] text-foreground uppercase italic'>
+          <h4 className='text-[11px] font-black tracking-[0.2em] text-foreground uppercase'>
             {t('tradingSalesOrder.linesEditor.sectionTitle')}
           </h4>
         </div>
@@ -503,7 +503,7 @@ export function DocumentLinesEditor({
                 )}
               </div>
               <div className='min-w-0 flex-1 space-y-1.5'>
-                <span className='text-[8px] leading-none font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                <span className='text-[8px] leading-none font-black tracking-widest text-muted-foreground/40 uppercase'>
                   {t('tradingSalesOrder.linesEditor.lineItem')} #{line.lineNo}
                 </span>
                 <select
@@ -598,7 +598,7 @@ export function DocumentLinesEditor({
               <div className='space-y-1'>
                 <div className='flex items-center gap-1.5 pl-1'>
                   <Scissors className='size-2.5 text-orange-500' />
-                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase italic'>
+                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase'>
                     {t('tradingSalesOrder.linesEditor.drillingPlan')}
                   </span>
                 </div>
@@ -627,7 +627,7 @@ export function DocumentLinesEditor({
               <div className='space-y-1'>
                 <div className='flex items-center gap-1.5 pl-1'>
                   <Layers className='size-2.5 text-blue-500' />
-                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase italic'>
+                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase'>
                     {t('tradingSalesOrder.linesEditor.labelingPlan')}
                   </span>
                 </div>
@@ -656,7 +656,7 @@ export function DocumentLinesEditor({
               <div className='space-y-1'>
                 <div className='flex items-center gap-1.5 pl-1'>
                   <Settings2 className='size-2.5 text-slate-500' />
-                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase italic'>
+                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase'>
                     {t('tradingSalesOrder.linesEditor.holeCount')}
                   </span>
                 </div>
@@ -684,7 +684,7 @@ export function DocumentLinesEditor({
               <div className='space-y-1'>
                 <div className='flex items-center gap-1.5 pl-1'>
                   <Package className='size-2.5 text-slate-500' />
-                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase italic'>
+                  <span className='text-[7px] font-black tracking-tighter text-muted-foreground uppercase'>
                     {t('tradingSalesOrder.linesEditor.unit')}
                   </span>
                 </div>
@@ -732,10 +732,10 @@ export function DocumentLinesEditor({
                 </div>
               </div>
               <div className='flex flex-col items-end pb-1.5'>
-                <span className='mb-1 text-[7px] leading-none font-black tracking-widest text-primary/40 uppercase italic'>
+                <span className='mb-1 text-[7px] leading-none font-black tracking-widest text-primary/40 uppercase'>
                   {t('tradingSalesOrder.linesEditor.rowTotal')}
                 </span>
-                <div className='text-lg font-black tracking-tighter text-primary italic'>
+                <div className='text-lg font-black tracking-tighter text-primary'>
                   <span className='mr-0.5 text-[10px]'>{currencySymbol}</span>
                   {Number(line.amount).toLocaleString()}
                 </div>
@@ -747,7 +747,7 @@ export function DocumentLinesEditor({
         {(!lines || lines.length === 0) && (
           <div className='flex flex-col items-center gap-4 rounded-[32px] border-2 border-dashed bg-muted/5 py-20 text-center'>
             <Package className='size-8 text-muted-foreground/10' />
-            <span className='text-[10px] font-black tracking-[0.3em] text-muted-foreground/30 uppercase italic'>
+            <span className='text-[10px] font-black tracking-[0.3em] text-muted-foreground/30 uppercase'>
               {t('tradingSalesOrder.linesEditor.noLines')}
             </span>
             <Button

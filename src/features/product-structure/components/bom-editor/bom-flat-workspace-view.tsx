@@ -48,7 +48,7 @@ export function BOMFlatWorkspaceView({
   return (
     <div className='flex min-h-0 flex-1 flex-col space-y-1.5'>
       <div className='mb-1 flex items-center justify-between border-b-2 border-dashed border-muted/50 pb-1'>
-        <h4 className='text-[10px] font-black tracking-widest text-slate-900 uppercase italic sm:text-[12px]'>
+        <h4 className='text-[10px] font-black tracking-widest text-slate-900 uppercase sm:text-[12px]'>
           {t('engineering.bomArchive.recipe.title')}
         </h4>
       </div>

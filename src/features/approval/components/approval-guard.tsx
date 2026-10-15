@@ -67,7 +67,7 @@ export function ApprovalGuard({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className='rounded-[32px] border-none shadow-2xl sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-tight uppercase italic'>
+            <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-tight uppercase'>
               <ShieldAlert className='h-4 w-4 text-primary' />
               {t('approval.guard.title')}
             </DialogTitle>

@@ -104,7 +104,7 @@ export function EngineeringSidebar({
                       className={`size-1.5 rounded-full ${type.level === 0 ? 'bg-blue-600' : 'bg-blue-600/40'}`}
                     />
                     <h3
-                      className={`font-black tracking-widest uppercase italic ${type.level === 0 ? 'text-[11px] text-slate-800' : 'text-[9px] text-muted-foreground/40'}`}
+                      className={`font-black tracking-widest uppercase ${type.level === 0 ? 'text-[11px] text-slate-800' : 'text-[9px] text-muted-foreground/40'}`}
                     >
                       {type.name}
                     </h3>
@@ -157,7 +157,7 @@ export function EngineeringSidebar({
                             {/* 第 2 列：信息集中对齐 */}
                             <div className='group/card-info relative flex min-w-0 flex-col gap-0.5'>
                               <div className='flex items-center justify-between gap-2.5'>
-                                <p className='truncate text-[13px] leading-none font-black tracking-tight uppercase italic sm:text-[15px]'>
+                                <p className='truncate text-[13px] leading-none font-black tracking-tight uppercase sm:text-[15px]'>
                                   {product.name}
                                 </p>
                                 <div className='flex shrink-0 items-center gap-2'>

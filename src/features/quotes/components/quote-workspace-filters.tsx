@@ -47,7 +47,7 @@ export function QuoteWorkspaceFilters({
   return (
     <div className='flex flex-col gap-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 shadow-inner'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex items-center gap-2 text-sm font-black tracking-tight text-foreground italic'>
+        <div className='flex items-center gap-2 text-sm font-black tracking-tight text-foreground'>
           <Filter className='size-4 text-primary' />
           报价筛选
         </div>

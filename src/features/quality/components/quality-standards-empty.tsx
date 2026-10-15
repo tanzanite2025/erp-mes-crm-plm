@@ -9,7 +9,7 @@ export function QualityStandardsEmpty() {
       <div className='animate-spin-slow mb-6 flex size-20 items-center justify-center rounded-full border-4 border-dashed border-muted/10'>
         <ShieldCheck className='size-10 opacity-20' />
       </div>
-      <p className='text-[11px] font-black tracking-[0.4em] uppercase italic'>
+      <p className='text-[11px] font-black tracking-[0.4em] uppercase'>
         {t('quality.standards.page.empty')}
       </p>
     </div>

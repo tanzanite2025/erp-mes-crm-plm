@@ -18,7 +18,6 @@ interface AuditStatusDisplayProps {
   showNote?: boolean
   noteVariant?: 'text' | 'box'
   size?: 'sm' | 'md'
-  italic?: boolean
 }
 
 export function AuditStatusDisplay({
@@ -31,7 +30,6 @@ export function AuditStatusDisplay({
   showNote = false,
   noteVariant = 'box',
   size = 'sm',
-  italic = false,
 }: AuditStatusDisplayProps) {
   const dotSizeClassName = size === 'md' ? 'size-1.5' : 'size-1'
   const badgeSizeClassName =
@@ -61,13 +59,7 @@ export function AuditStatusDisplay({
               )}
             />
           ) : null}
-          <span
-            className={cn(
-              labelSizeClassName,
-              italic && 'italic',
-              labelClassName
-            )}
-          >
+          <span className={cn(labelSizeClassName, labelClassName)}>
             {meta.label}
           </span>
         </Badge>

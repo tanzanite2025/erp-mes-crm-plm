@@ -134,7 +134,7 @@ export function BOMTable({
           row.original.product || productMap.get(row.original.productId)
         if (!product) {
           return (
-            <span className='text-muted-foreground italic'>
+            <span className='text-muted-foreground'>
               {t('engineering.bomArchive.table.unknownProduct')}
             </span>
           )
@@ -226,7 +226,7 @@ export function BOMTable({
                 </Badge>
               ))
             ) : (
-              <span className='text-xs text-muted-foreground italic'>
+              <span className='text-xs text-muted-foreground'>
                 {t('engineering.bomArchive.table.noSection')}
               </span>
             )}
@@ -487,7 +487,7 @@ export function BOMTable({
                     >
                       <div className='flex flex-col items-center justify-center gap-3 opacity-40'>
                         <Layers className='size-10 stroke-1 text-muted-foreground sm:size-12' />
-                        <p className='px-8 text-[10px] font-semibold tracking-widest uppercase italic sm:text-sm'>
+                        <p className='px-8 text-[10px] font-semibold tracking-widest uppercase sm:text-sm'>
                           {t('engineering.bomArchive.table.empty')}
                         </p>
                       </div>

@@ -43,7 +43,7 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
             <tr>
               <td
                 colSpan={6}
-                className='px-6 py-12 text-center font-black tracking-widest text-muted-foreground/20 uppercase italic'
+                className='px-6 py-12 text-center font-black tracking-widest text-muted-foreground/20 uppercase'
               >
                 {t('warehouse.reports.inboundTable.empty')}
               </td>
@@ -161,7 +161,7 @@ export function ShipmentReportTable({
             <tr>
               <td
                 colSpan={7}
-                className='px-6 py-12 text-center font-black tracking-widest text-muted-foreground/20 uppercase italic'
+                className='px-6 py-12 text-center font-black tracking-widest text-muted-foreground/20 uppercase'
               >
                 {t('warehouse.reports.shipmentTable.empty')}
               </td>

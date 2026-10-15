@@ -190,7 +190,7 @@ export function MaintenancePlansPage() {
               <p className='text-[9px] font-black tracking-wider text-muted-foreground/50 uppercase'>
                 {card.label}
               </p>
-              <p className='text-xl font-black tracking-tighter italic'>
+              <p className='text-xl font-black tracking-tighter'>
                 {isLoading ? '...' : card.count}
               </p>
             </div>
@@ -204,7 +204,7 @@ export function MaintenancePlansPage() {
         {/* Left Side: Weekly Calendar */}
         <Card className='flex flex-col rounded-[24px] border-dashed bg-muted/5 p-4 lg:col-span-8'>
           <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
-            <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+            <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
               <Calendar className='size-4 text-primary' />
               保养排班日程周历
             </CardTitle>
@@ -277,7 +277,7 @@ export function MaintenancePlansPage() {
                         拉取中...
                       </span>
                     ) : tasks.length === 0 ? (
-                      <span className='mt-4 block text-center text-[8px] font-bold text-muted-foreground/20 italic'>
+                      <span className='mt-4 block text-center text-[8px] font-bold text-muted-foreground/20'>
                         无任务
                       </span>
                     ) : (
@@ -315,7 +315,7 @@ export function MaintenancePlansPage() {
         <Card className='flex flex-col justify-between rounded-[24px] border-dashed bg-muted/5 p-4 lg:col-span-4'>
           <div>
             <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <Wrench className='size-4 text-primary' />
                 保养计划任务看板
               </CardTitle>
@@ -332,7 +332,7 @@ export function MaintenancePlansPage() {
                   载入任务库...
                 </div>
               ) : planTasks.length === 0 ? (
-                <div className='py-8 text-center text-xs font-bold text-muted-foreground italic'>
+                <div className='py-8 text-center text-xs font-bold text-muted-foreground'>
                   暂无预防性保养任务
                 </div>
               ) : (

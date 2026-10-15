@@ -162,7 +162,7 @@ export function LeaveActionDialog({
       <DialogContent className='w-[95vw] overflow-hidden rounded-3xl border-dashed p-0 sm:max-w-[560px]'>
         <div className='relative space-y-6 p-6 md:p-8'>
           <DialogHeader className='text-left'>
-            <DialogTitle className='text-lg font-black tracking-tighter uppercase italic md:text-xl'>
+            <DialogTitle className='text-lg font-black tracking-tighter uppercase md:text-xl'>
               {t('orgPersonnel.leaveMgmt.actionDialog.title')}
             </DialogTitle>
             <DialogDescription className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -310,7 +310,7 @@ export function LeaveActionDialog({
                 <p className='text-[10px] font-black tracking-widest uppercase opacity-60'>
                   {t('orgPersonnel.leaveMgmt.actionDialog.previewTitle')}
                 </p>
-                <p className='text-sm font-black tracking-tighter uppercase italic'>
+                <p className='text-sm font-black tracking-tighter uppercase'>
                   {preview.employeeName ||
                     t('orgPersonnel.leaveMgmt.actionDialog.employeeFallback')}
                 </p>
@@ -320,7 +320,7 @@ export function LeaveActionDialog({
                 </p>
               </div>
               <div className='text-right'>
-                <p className='text-2xl font-black tracking-tighter text-primary italic'>
+                <p className='text-2xl font-black tracking-tighter text-primary'>
                   {preview.durationDays.toFixed(1)}
                 </p>
                 <p className='text-[9px] font-black tracking-widest uppercase opacity-50'>

@@ -162,7 +162,7 @@ export function printBatchEngineReviewPdf(
         <title>Batch Engine Review ${plan.rank}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-          h1, h2 { font-style: italic; text-transform: uppercase; }
+          h1, h2 { text-transform: uppercase; }
           pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: #f8fafc; padding: 16px; border: 1px dashed #cbd5e1; border-radius: 16px; }
         </style>
       </head>

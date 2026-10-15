@@ -62,7 +62,7 @@ export function ProductOverviewTab({
               </span>
             </div>
             <div className='group/header-title flex items-center gap-1 sm:gap-3'>
-              <h1 className='text-2xl leading-none font-black tracking-tighter break-all text-slate-800 uppercase italic sm:text-4xl'>
+              <h1 className='text-2xl leading-none font-black tracking-tighter break-all text-slate-800 uppercase sm:text-4xl'>
                 {product.name}
               </h1>
               <Button
@@ -89,7 +89,7 @@ export function ProductOverviewTab({
         <div className='flex flex-col items-start gap-2 sm:items-end'>
           <Badge
             variant='secondary'
-            className='h-7 rounded-full border-none bg-blue-600/5 px-4 text-[9px] font-black tracking-widest text-blue-600 uppercase italic shadow-inner sm:h-8 sm:px-6 sm:text-[10px]'
+            className='h-7 rounded-full border-none bg-blue-600/5 px-4 text-[9px] font-black tracking-widest text-blue-600 uppercase shadow-inner sm:h-8 sm:px-6 sm:text-[10px]'
           >
             {t('engineering.productMgmt.typeRefLabel')} / {categoryType!.code}
           </Badge>
@@ -124,7 +124,7 @@ export function ProductOverviewTab({
       <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-blue-600/15 bg-blue-600/3 shadow-none transition-all hover:bg-blue-600/5'>
         <div className='flex flex-col items-start gap-3 px-3 py-3 sm:flex-row sm:items-center sm:gap-5 sm:px-4 sm:py-4'>
           <div className='flex shrink-0 flex-col gap-1'>
-            <div className='rounded-md bg-blue-600 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-blue-600/20'>
+            <div className='rounded-md bg-blue-600 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-blue-600/20'>
               {t(bindingInfoKey)}
             </div>
           </div>
@@ -133,7 +133,7 @@ export function ProductOverviewTab({
               <div className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('engineering.productMgmt.form.spec')}
               </div>
-              <div className='mt-1 text-[13px] font-black tracking-tight break-all text-slate-800 italic'>
+              <div className='mt-1 text-[13px] font-black tracking-tight break-all text-slate-800'>
                 {displayMetadata?.engineeringSpecLabel ||
                   t('engineering.productMgmt.noBinding')}
               </div>
@@ -142,7 +142,7 @@ export function ProductOverviewTab({
               <div className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('engineering.productMgmt.form.mold')}
               </div>
-              <div className='mt-1 text-[13px] font-black tracking-tight break-all text-slate-800 italic'>
+              <div className='mt-1 text-[13px] font-black tracking-tight break-all text-slate-800'>
                 {product.moldGroup || t('engineering.productMgmt.noBinding')}
               </div>
             </div>
@@ -154,7 +154,7 @@ export function ProductOverviewTab({
       <Card className='group overflow-hidden rounded-[20px] border-2 border-dashed border-rose-500/20 bg-rose-500/2 shadow-none transition-all hover:bg-rose-500/5'>
         <div className='flex flex-col items-start gap-3 px-3 py-3 sm:flex-row sm:items-center sm:gap-5 sm:px-4 sm:py-4'>
           <div className='flex shrink-0 flex-col gap-1'>
-            <div className='rounded-md bg-rose-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-rose-500/20'>
+            <div className='rounded-md bg-rose-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-rose-500/20'>
               {t('engineering.productMgmt.riskConstraints')}
             </div>
           </div>
@@ -170,7 +170,7 @@ export function ProductOverviewTab({
                 </Badge>
               ))
             ) : (
-              <span className='text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+              <span className='text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase'>
                 {t('engineering.productMgmt.noProductionRestrictionsRecorded')}
               </span>
             )}

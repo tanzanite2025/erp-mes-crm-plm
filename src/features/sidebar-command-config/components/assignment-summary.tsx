@@ -37,7 +37,7 @@ export function AssignmentSummary({
           <p className='text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase'>
             {t('sidebarCommandConfig.summary.currentAccount')}
           </p>
-          <h2 className='truncate text-base font-black tracking-tighter italic'>
+          <h2 className='truncate text-base font-black tracking-tighter'>
             {selectedAccount?.name || '-'}
             <span className='ml-2 text-xs font-black tracking-tight text-muted-foreground/60'>
               @{selectedAccount?.username || '-'}
@@ -71,7 +71,7 @@ export function AssignmentSummary({
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandConfig.summary.assigned')}
           </p>
-          <p className='text-base font-black tracking-tighter italic tabular-nums'>
+          <p className='text-base font-black tracking-tighter tabular-nums'>
             {isFetchingAssignment ? '...' : assignedCount}
           </p>
         </div>
@@ -79,7 +79,7 @@ export function AssignmentSummary({
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandConfig.summary.categories')}
           </p>
-          <p className='text-base font-black tracking-tighter italic tabular-nums'>
+          <p className='text-base font-black tracking-tighter tabular-nums'>
             {isFetchingAssignment ? '...' : assignedCategoryCount}
           </p>
         </div>
@@ -87,7 +87,7 @@ export function AssignmentSummary({
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandConfig.summary.directCommands')}
           </p>
-          <p className='text-base font-black tracking-tighter italic tabular-nums'>
+          <p className='text-base font-black tracking-tighter tabular-nums'>
             {isFetchingAssignment ? '...' : directCommandCount}
           </p>
         </div>
@@ -95,7 +95,7 @@ export function AssignmentSummary({
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandConfig.summary.assignablePool')}
           </p>
-          <p className='text-base font-black tracking-tighter italic tabular-nums'>
+          <p className='text-base font-black tracking-tighter tabular-nums'>
             {assignableCount}
           </p>
         </div>
@@ -103,7 +103,7 @@ export function AssignmentSummary({
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandConfig.summary.batchTargets')}
           </p>
-          <p className='text-base font-black tracking-tighter italic tabular-nums'>
+          <p className='text-base font-black tracking-tighter tabular-nums'>
             {selectedTargetCount}
           </p>
         </div>

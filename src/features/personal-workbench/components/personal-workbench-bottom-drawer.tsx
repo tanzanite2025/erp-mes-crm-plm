@@ -183,7 +183,7 @@ export function PersonalWorkbenchBottomDrawer() {
             <div className='min-w-0'>
               <p
                 id='personal-workbench-bottom-drawer-title'
-                className='truncate text-sm leading-none font-black tracking-tight whitespace-nowrap text-foreground italic'
+                className='truncate text-sm leading-none font-black tracking-tight whitespace-nowrap text-foreground'
               >
                 个人记录
               </p>

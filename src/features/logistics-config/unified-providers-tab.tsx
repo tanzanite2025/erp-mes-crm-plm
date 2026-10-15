@@ -56,7 +56,7 @@ export function UnifiedProvidersTab() {
           <div className='flex flex-col gap-1'>
             <div className='flex items-center gap-2 text-primary'>
               <Truck className='size-5' />
-              <h2 className='text-base font-black tracking-tighter uppercase italic'>
+              <h2 className='text-base font-black tracking-tighter uppercase'>
                 {t('logisticsConfig.unified.title')}
               </h2>
             </div>

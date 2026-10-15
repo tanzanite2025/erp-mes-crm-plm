@@ -82,7 +82,7 @@ export function EquipmentHierarchy({
             ) : (
               <div className='space-y-3 text-center opacity-20'>
                 <ImageIcon className='mx-auto size-12' />
-                <p className='text-[10px] font-black tracking-widest uppercase italic'>
+                <p className='text-[10px] font-black tracking-widest uppercase'>
                   未上传实物配图 / NO_IMAGE
                 </p>
               </div>
@@ -106,8 +106,8 @@ export function EquipmentHierarchy({
               <h2
                 className={
                   isTopLevelParent
-                    ? 'text-3xl font-black tracking-tighter uppercase italic'
-                    : 'text-2xl font-black tracking-tighter uppercase italic'
+                    ? 'text-3xl font-black tracking-tighter uppercase'
+                    : 'text-2xl font-black tracking-tighter uppercase'
                 }
               >
                 {parentCategory?.name}
@@ -203,7 +203,7 @@ export function EquipmentHierarchy({
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
                   <Folder className='size-3.5 text-primary/60' />
-                  <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                  <CardTitle className='text-sm font-black tracking-tighter uppercase'>
                     {cat.name}
                   </CardTitle>
                 </div>
@@ -243,7 +243,7 @@ export function EquipmentHierarchy({
                 </div>
                 <Button
                   variant='link'
-                  className='h-auto p-0 text-[10px] font-black tracking-widest uppercase italic'
+                  className='h-auto p-0 text-[10px] font-black tracking-widest uppercase'
                   onClick={() => {}}
                 >
                   VIEW_DETAILS
@@ -260,7 +260,7 @@ export function EquipmentHierarchy({
           <div className='flex size-12 items-center justify-center rounded-full border-2 border-dashed transition-transform group-hover:scale-110'>
             <Plus className='size-6' />
           </div>
-          <span className='text-[10px] font-black tracking-widest uppercase italic'>
+          <span className='text-[10px] font-black tracking-widest uppercase'>
             新建设备子类 / ADD_SUB_CATEGORY
           </span>
         </button>
@@ -270,7 +270,7 @@ export function EquipmentHierarchy({
       <div className='mt-12 space-y-6'>
         <div className='flex items-center justify-between px-2'>
           <div className='flex flex-col gap-1'>
-            <h3 className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+            <h3 className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
               <Settings className='animate-spin-slow size-4 text-primary' />
               下属实验资产明细 / ASSET_INVENTORY
             </h3>
@@ -348,7 +348,7 @@ export function EquipmentHierarchy({
           </div>
         ) : (
           <div className='flex h-32 flex-col items-center justify-center gap-2 rounded-[32px] border border-dashed bg-muted/5'>
-            <span className='text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+            <span className='text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase'>
               此分类下暂无已登记的资产设备 / EMPTY_INVENTORY
             </span>
           </div>

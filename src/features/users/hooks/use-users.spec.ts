@@ -3,8 +3,8 @@ import { createElement, type PropsWithChildren } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createTestUser } from '../test-factories'
 import type { UserPermissionsResponse } from '../data/schema'
+import { createTestUser } from '../test-factories'
 import {
   USER_PERMISSIONS_QUERY_KEY,
   useUserMutations,

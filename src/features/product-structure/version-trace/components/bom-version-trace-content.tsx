@@ -185,9 +185,7 @@ export function BOMVersionTraceContent({
       <div className='grid min-h-0 lg:grid-cols-[320px_1fr]'>
         <div className='flex min-h-0 flex-col border-b border-dashed bg-muted/5 lg:border-r lg:border-b-0'>
           <div className='border-b border-dashed px-4 py-4'>
-            <div className='text-sm font-black tracking-tighter italic'>
-              追溯记录
-            </div>
+            <div className='text-sm font-black tracking-tighter'>追溯记录</div>
             <div className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               优先按最新版本排序
             </div>
@@ -352,7 +350,7 @@ export function BOMVersionTraceContent({
             <div className='flex flex-col gap-4 px-5 py-5'>
               {!trace.hasAnyRecord ? (
                 <div className='rounded-[32px] border border-dashed bg-muted/5 px-6 py-16 text-center'>
-                  <div className='text-lg font-black tracking-tighter text-slate-700 uppercase italic'>
+                  <div className='text-lg font-black tracking-tighter text-slate-700 uppercase'>
                     暂无版本记录
                   </div>
                   <div className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -363,7 +361,7 @@ export function BOMVersionTraceContent({
                 !trace.rightDetail ||
                 !trace.diffSummary ? (
                 <div className='rounded-[32px] border border-dashed bg-muted/5 px-6 py-16 text-center'>
-                  <div className='text-lg font-black tracking-tighter text-slate-700 uppercase italic'>
+                  <div className='text-lg font-black tracking-tighter text-slate-700 uppercase'>
                     等待选择可对比版本
                   </div>
                   <div className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -410,7 +408,7 @@ export function BOMVersionTraceContent({
                   <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
                     <div className='flex items-center gap-2 text-primary'>
                       <Layers className='size-4' />
-                      <div className='text-sm font-black tracking-tighter italic'>
+                      <div className='text-sm font-black tracking-tighter'>
                         版本对比总览
                       </div>
                     </div>
@@ -444,7 +442,7 @@ export function BOMVersionTraceContent({
 
                   <div className='grid gap-4 xl:grid-cols-2'>
                     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                      <div className='text-sm font-black tracking-tighter italic'>
+                      <div className='text-sm font-black tracking-tighter'>
                         控制字段变化
                       </div>
                       <div className='mt-3 flex flex-col gap-3'>
@@ -466,7 +464,7 @@ export function BOMVersionTraceContent({
                     </div>
 
                     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                      <div className='text-sm font-black tracking-tighter italic'>
+                      <div className='text-sm font-black tracking-tighter'>
                         结构变化
                       </div>
                       <div className='mt-3 flex flex-col gap-3'>
@@ -490,7 +488,7 @@ export function BOMVersionTraceContent({
 
                   <div className='grid gap-4 xl:grid-cols-3'>
                     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                      <div className='text-sm font-black tracking-tighter text-emerald-700 italic'>
+                      <div className='text-sm font-black tracking-tighter text-emerald-700'>
                         新增物料
                       </div>
                       <div className='mt-3 flex flex-col gap-2'>
@@ -517,7 +515,7 @@ export function BOMVersionTraceContent({
                     </div>
 
                     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                      <div className='text-sm font-black tracking-tighter text-rose-700 italic'>
+                      <div className='text-sm font-black tracking-tighter text-rose-700'>
                         移除物料
                       </div>
                       <div className='mt-3 flex flex-col gap-2'>
@@ -544,7 +542,7 @@ export function BOMVersionTraceContent({
                     </div>
 
                     <div className='rounded-[24px] border border-dashed bg-muted/5 p-4'>
-                      <div className='text-sm font-black tracking-tighter text-amber-700 italic'>
+                      <div className='text-sm font-black tracking-tighter text-amber-700'>
                         修改物料
                       </div>
                       <div className='mt-3 flex flex-col gap-2'>

@@ -88,7 +88,7 @@ export function ProductionSelector({
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className='max-w-md overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'>
         <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/10 p-8'>
-          <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+          <DialogTitle className='text-lg font-black tracking-tighter uppercase'>
             {t('orgPersonnel.org.productionSelector.title')}
           </DialogTitle>
           <DialogDescription className='text-[10px] font-black tracking-widest uppercase opacity-60'>

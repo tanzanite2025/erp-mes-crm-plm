@@ -1,11 +1,11 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { type AppLocale } from '@/locales'
 import { ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type AppLocale } from '@/locales'
 import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
 import {
@@ -114,7 +114,7 @@ export function getUsersColumns(
             <LongText
               className={cn(
                 'max-w-36',
-                protected_ && 'font-black text-amber-600 italic'
+                protected_ && 'font-black text-amber-600'
               )}
             >
               {row.getValue('username')}

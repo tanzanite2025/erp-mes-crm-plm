@@ -388,7 +388,7 @@ export function CutSizeLibraryPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className='max-h-[88vh] overflow-y-auto rounded-[24px] sm:max-w-[980px]'>
           <DialogHeader>
-            <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight italic'>
+            <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight'>
               <Ruler className='size-5 text-primary' />
               {editingUnit ? '编辑裁切尺寸单元' : '新增裁切尺寸单元'}
             </DialogTitle>

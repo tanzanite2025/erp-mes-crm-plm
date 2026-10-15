@@ -58,7 +58,7 @@ export function AuditStamp({
           {formattedCreatedAt}
         </span>
         <div className='size-0.5 rounded-full bg-muted-foreground/30' />
-        <span className='font-black text-slate-500 italic'>
+        <span className='font-black text-slate-500'>
           @{auditUtils.formatOperatorName(createdBy)}
         </span>
         {isInteractive && showTimelineButton && (
@@ -84,7 +84,7 @@ export function AuditStamp({
             {formattedUpdatedAt}
           </span>
           <div className='size-0.5 rounded-full bg-muted-foreground/30' />
-          <span className='font-black text-slate-500 italic'>
+          <span className='font-black text-slate-500'>
             @{auditUtils.formatOperatorName(updatedBy)}
           </span>
         </div>

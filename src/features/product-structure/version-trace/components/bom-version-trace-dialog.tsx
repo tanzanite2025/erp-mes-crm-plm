@@ -41,7 +41,7 @@ export function BOMVersionTraceDialog({
             <div className='space-y-2'>
               <div className='flex items-center gap-2 text-primary'>
                 <History className='size-4' />
-                <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+                <DialogTitle className='text-lg font-black tracking-tighter uppercase'>
                   BOM追溯
                 </DialogTitle>
               </div>

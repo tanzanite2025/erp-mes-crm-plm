@@ -17,7 +17,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
             <Cpu className='size-6' />
           </div>
           <div>
-            <p className='text-[10px] font-black tracking-widest uppercase italic opacity-80'>
+            <p className='text-[10px] font-black tracking-widest uppercase opacity-80'>
               {t('toolingFurnaces.stats.totalUnits')}
             </p>
             <h3 className='font-mono text-3xl font-black tracking-tighter'>
@@ -31,7 +31,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
         <CardContent className='flex items-center gap-4 p-5'>
           <Activity className='size-6 text-primary/60' />
           <div>
-            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('toolingFurnaces.stats.runningNow')}
             </p>
             <div className='flex items-center gap-2'>
@@ -53,7 +53,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
         <CardContent className='flex items-center gap-4 p-5'>
           <Zap className='size-6 text-amber-500/60' />
           <div>
-            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('toolingFurnaces.stats.maintenance')}
             </p>
             <h3 className='font-mono text-3xl font-black tracking-tighter text-amber-600'>
@@ -67,7 +67,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
         <CardContent className='flex items-center gap-4 p-5'>
           <AlertTriangle className='size-6 text-rose-500/60' />
           <div>
-            <p className='text-[10px] font-black tracking-widest text-rose-600 uppercase italic opacity-60'>
+            <p className='text-[10px] font-black tracking-widest text-rose-600 uppercase opacity-60'>
               {t('toolingFurnaces.stats.faultAlert')}
             </p>
             <h3 className='font-mono text-3xl font-black tracking-tighter text-rose-600'>

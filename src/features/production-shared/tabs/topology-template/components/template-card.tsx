@@ -211,7 +211,7 @@ export function TemplateCard({
 
                 <div className='flex h-auto min-h-0 w-full flex-col gap-2 pl-4 sm:pl-8'>
                   {(segment.processes || []).length === 0 ? (
-                    <p className='rounded-[20px] border border-dashed border-muted/40 bg-background/70 px-3 py-2 text-[10px] text-muted-foreground/50 italic'>
+                    <p className='rounded-[20px] border border-dashed border-muted/40 bg-background/70 px-3 py-2 text-[10px] text-muted-foreground/50'>
                       {t('orgPersonnel.lineMgmt.editor.noLevelsConfigured', {
                         levelName: level3Name,
                       })}

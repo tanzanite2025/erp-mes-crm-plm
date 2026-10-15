@@ -85,7 +85,7 @@ export function UnitMgmt() {
       {/* 顶级标准页眉布局 */}
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h2 className='text-lg font-black tracking-tighter uppercase'>
             {t('basicSettings.units.page.title')}
           </h2>
           <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -94,7 +94,7 @@ export function UnitMgmt() {
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <div className='flex h-9 shrink-0 items-center gap-4 rounded-full border border-dashed border-primary/20 bg-primary/5 px-4 py-1.5'>
-            <span className='text-[9px] font-black tracking-widest text-primary/60 uppercase italic'>
+            <span className='text-[9px] font-black tracking-widest text-primary/60 uppercase'>
               {t('common.status.ready')}
             </span>
             <div className='size-1.5 animate-pulse rounded-full bg-emerald-500' />
@@ -129,7 +129,7 @@ export function UnitMgmt() {
             <button
               onClick={() => setCategoryFilter('ALL')}
               className={cn(
-                'rounded-full px-5 py-1.5 text-[10px] font-black tracking-widest whitespace-nowrap uppercase italic transition-all',
+                'rounded-full px-5 py-1.5 text-[10px] font-black tracking-widest whitespace-nowrap uppercase transition-all',
                 categoryFilter === 'ALL'
                   ? 'bg-background text-primary shadow-sm'
                   : 'text-muted-foreground/40 hover:text-muted-foreground'
@@ -142,7 +142,7 @@ export function UnitMgmt() {
                 key={option.value}
                 onClick={() => setCategoryFilter(option.value)}
                 className={cn(
-                  'rounded-full px-5 py-1.5 text-[10px] font-black tracking-widest whitespace-nowrap uppercase italic transition-all',
+                  'rounded-full px-5 py-1.5 text-[10px] font-black tracking-widest whitespace-nowrap uppercase transition-all',
                   categoryFilter === option.value
                     ? 'bg-background text-primary shadow-sm'
                     : 'text-muted-foreground/40 hover:text-muted-foreground'
@@ -266,7 +266,7 @@ export function UnitMgmt() {
                         >
                           <TableCell className='pl-8'>
                             <div className='flex items-center gap-2'>
-                              <span className='font-mono text-[10px] font-black tracking-widest text-primary italic'>
+                              <span className='font-mono text-[10px] font-black tracking-widest text-primary'>
                                 {unit.code}
                               </span>
                               {unit.isSystem && (
@@ -274,7 +274,7 @@ export function UnitMgmt() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className='text-sm font-black tracking-tighter text-slate-800 uppercase italic'>
+                          <TableCell className='text-sm font-black tracking-tighter text-slate-800 uppercase'>
                             {unit.name}
                           </TableCell>
                           <TableCell className='text-center'>
@@ -285,7 +285,7 @@ export function UnitMgmt() {
                               {t(categoryLabel)}
                             </Badge>
                           </TableCell>
-                          <TableCell className='text-center font-mono text-[10px] font-black text-muted-foreground/40 italic'>
+                          <TableCell className='text-center font-mono text-[10px] font-black text-muted-foreground/40'>
                             {unit.precision}
                           </TableCell>
                           <TableCell>
@@ -295,11 +295,11 @@ export function UnitMgmt() {
                           </TableCell>
                           <TableCell className='text-center'>
                             {unit.status === 'active' ? (
-                              <Badge className='h-5 rounded-full border-none bg-emerald-500/10 px-2 text-[8px] font-black text-emerald-600 uppercase italic'>
+                              <Badge className='h-5 rounded-full border-none bg-emerald-500/10 px-2 text-[8px] font-black text-emerald-600 uppercase'>
                                 {t('basicSettings.units.statuses.active')}
                               </Badge>
                             ) : (
-                              <Badge className='h-5 rounded-full border-none bg-muted px-2 text-[8px] font-black text-muted-foreground/40 uppercase italic'>
+                              <Badge className='h-5 rounded-full border-none bg-muted px-2 text-[8px] font-black text-muted-foreground/40 uppercase'>
                                 {t('basicSettings.units.statuses.inactive')}
                               </Badge>
                             )}
@@ -319,7 +319,7 @@ export function UnitMgmt() {
                                 align='end'
                                 className='w-48 rounded-[24px] border-dashed p-2 shadow-2xl'
                               >
-                                <DropdownMenuLabel className='px-3 py-2 text-[9px] font-black tracking-widest uppercase italic opacity-40'>
+                                <DropdownMenuLabel className='px-3 py-2 text-[9px] font-black tracking-widest uppercase opacity-40'>
                                   {t('basicSettings.units.menu.label')}
                                 </DropdownMenuLabel>
                                 <DropdownMenuItem
@@ -350,7 +350,7 @@ export function UnitMgmt() {
         </ScrollArea>
 
         {!isLoading && filteredUnits.length === 0 && (
-          <div className='flex flex-col items-center justify-center py-40 text-muted-foreground/20 italic'>
+          <div className='flex flex-col items-center justify-center py-40 text-muted-foreground/20'>
             <Scale className='mb-6 size-16 opacity-5' />
             <p className='text-[11px] font-black tracking-widest uppercase'>
               {t('basicSettings.units.table.empty')}

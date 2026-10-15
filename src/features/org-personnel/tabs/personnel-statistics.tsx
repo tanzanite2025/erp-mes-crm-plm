@@ -34,7 +34,7 @@ export default function PersonnelStatistics() {
       {/* 顶部荣誉榜 */}
       <header className='relative overflow-hidden rounded-[32px] border-dashed border-primary/20 bg-muted/5 p-8'>
         <div className='relative z-10 space-y-2'>
-          <h1 className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary uppercase italic'>
+          <h1 className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary uppercase'>
             <Trophy className='h-5 w-5 text-amber-500' />
             {t('orgPersonnel.statsPage.headerTitle')}
           </h1>
@@ -43,7 +43,7 @@ export default function PersonnelStatistics() {
           </p>
         </div>
         <div className='absolute top-0 right-0 flex h-full w-64 items-center justify-end bg-linear-to-l from-primary/5 to-transparent pr-12'>
-          <Trophy className='-mr-8 h-32 w-32 text-primary/10 italic' />
+          <Trophy className='-mr-8 h-32 w-32 text-primary/10' />
         </div>
       </header>
 
@@ -54,16 +54,16 @@ export default function PersonnelStatistics() {
             key={player.employeeId}
             className='group relative overflow-hidden rounded-[24px] border-dashed p-6 transition-all hover:shadow-xl'
           >
-            <div className='absolute top-4 right-4 text-4xl font-black italic opacity-10 transition-opacity group-hover:opacity-20'>
+            <div className='absolute top-4 right-4 text-4xl font-black opacity-10 transition-opacity group-hover:opacity-20'>
               0{index + 1}
             </div>
             <div className='space-y-4'>
               <div className='flex items-center gap-3'>
-                <div className='flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-black text-primary italic'>
+                <div className='flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-black text-primary'>
                   {player.name.substring(0, 1)}
                 </div>
                 <div>
-                  <h3 className='text-sm font-black tracking-tighter uppercase italic'>
+                  <h3 className='text-sm font-black tracking-tighter uppercase'>
                     {player.name}
                   </h3>
                   <p className='font-mono text-[8px] text-muted-foreground'>
@@ -94,7 +94,7 @@ export default function PersonnelStatistics() {
                   <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('orgPersonnel.statsPage.metrics.score')}
                   </p>
-                  <p className='text-lg font-black text-primary italic'>
+                  <p className='text-lg font-black text-primary'>
                     {player.score}
                   </p>
                 </div>
@@ -113,7 +113,7 @@ export default function PersonnelStatistics() {
 
       {/* 详细列表 */}
       <div className='rounded-[24px] border border-dashed bg-muted/5 p-6'>
-        <h2 className='mb-6 flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+        <h2 className='mb-6 flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
           <Users className='h-4 w-4' />
           {t('orgPersonnel.statsPage.detailTitle')}
         </h2>
@@ -144,7 +144,7 @@ export default function PersonnelStatistics() {
                   key={row.employeeId}
                   className='border-b border-dashed border-primary/5 transition-colors hover:bg-primary/5'
                 >
-                  <td className='py-4 text-xs font-bold italic'>{row.name}</td>
+                  <td className='py-4 text-xs font-bold'>{row.name}</td>
                   <td className='py-4 text-[9px] tracking-widest uppercase'>
                     {row.orgUnitName}
                   </td>
@@ -168,7 +168,7 @@ export default function PersonnelStatistics() {
                       count: row.tenureYears,
                     })}
                   </td>
-                  <td className='py-4 text-sm font-black text-primary italic'>
+                  <td className='py-4 text-sm font-black text-primary'>
                     {row.score}
                   </td>
                 </tr>

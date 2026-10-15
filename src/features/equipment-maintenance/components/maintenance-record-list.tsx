@@ -292,9 +292,7 @@ export function MaintenanceRecordList({
                         {record.remarks}
                       </p>
                     ) : (
-                      <p className='text-[10px] text-muted-foreground/40 italic'>
-                        无
-                      </p>
+                      <p className='text-[10px] text-muted-foreground/40'>无</p>
                     )}
                   </div>
                   <Button

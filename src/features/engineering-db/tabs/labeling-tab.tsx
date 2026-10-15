@@ -237,7 +237,7 @@ export function LabelingTab() {
       cell: ({ row }) => {
         if (!row.original.item.productId) {
           return (
-            <span className='rounded-full bg-muted/30 px-2 py-0.5 text-[10px] font-black text-muted-foreground/40 uppercase italic'>
+            <span className='rounded-full bg-muted/30 px-2 py-0.5 text-[10px] font-black text-muted-foreground/40 uppercase'>
               {t('engineering.labeling.table.generic')}
             </span>
           )
@@ -439,11 +439,11 @@ export function LabelingTab() {
 
       <div className='flex flex-col gap-4 md:hidden'>
         {isLoading ? (
-          <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase italic'>
+          <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase'>
             {t('engineering.labeling.placeholders.mobileLoading')}
           </div>
         ) : filteredData.length === 0 ? (
-          <div className='rounded-[28px] border border-dashed border-muted-foreground/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase italic opacity-40'>
+          <div className='rounded-[28px] border border-dashed border-muted-foreground/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase opacity-40'>
             {t('engineering.labeling.placeholders.noData')}
           </div>
         ) : (
@@ -485,7 +485,7 @@ export function LabelingTab() {
                     <Badge
                       variant='outline'
                       className={cn(
-                        'h-5 rounded-full border-none px-3 font-mono text-[10px] leading-none font-black italic',
+                        'h-5 rounded-full border-none px-3 font-mono text-[10px] leading-none font-black',
                         row.productSku
                           ? 'bg-teal-500/10 text-teal-600'
                           : 'bg-muted/50 text-muted-foreground/60'
@@ -511,7 +511,7 @@ export function LabelingTab() {
                         {row.typeLabel}
                       </div>
                       <div className='size-1 rounded-full bg-muted-foreground/20' />
-                      <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60 italic'>
+                      <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60'>
                         <Hash className='size-2.5 opacity-30' />
                         {item.id.substring(0, 6)}
                       </div>
@@ -519,7 +519,7 @@ export function LabelingTab() {
                   </div>
 
                   <div className='flex items-center justify-between border-t border-dashed border-muted-foreground/10 pt-3'>
-                    <div className='flex items-center gap-2 text-[9px] font-medium text-muted-foreground/40 italic'>
+                    <div className='flex items-center gap-2 text-[9px] font-medium text-muted-foreground/40'>
                       <Calendar className='size-3 opacity-30' />
                       {item.createdAt
                         ? new Date(item.createdAt).toLocaleDateString()

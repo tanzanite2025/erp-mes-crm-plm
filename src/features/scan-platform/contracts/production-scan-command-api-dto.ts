@@ -7,6 +7,8 @@ export type ProductionScanCommandAction =
   | 'REWORK'
 
 export interface ProductionScanCommandApiRequestDTO {
+  idempotencyKey: string
+  executionRound?: number
   productBarcode: string
   executionLotId?: string
   routeId?: string
@@ -27,7 +29,9 @@ export interface ProductionScanCommandApiRequestDTO {
 }
 
 export interface ProductionOperationExecutionApiDTO {
+  submittedByUserId?: string
   id: string
+  executionRound?: number
   productBarcode: string
   stateId: string
   executionLotId: string

@@ -127,7 +127,7 @@ export function PartnerActionDialog({
       headerClassName='p-6 sm:p-8 shrink-0 pb-4 bg-muted/5 border-b border-dashed text-left'
       bodyClassName='flex-1 overflow-y-auto px-6 sm:p-8 pt-6 custom-scrollbar pb-8'
       footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
-      titleClassName='text-xl font-black tracking-tighter italic uppercase'
+      titleClassName='text-xl font-black tracking-tighter uppercase'
       footer={
         <>
           <Button
@@ -157,7 +157,7 @@ export function PartnerActionDialog({
             name='name'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.partners.dialog.fields.name')}
                 </FormLabel>
                 <FormControl>
@@ -179,7 +179,7 @@ export function PartnerActionDialog({
             name='type'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.partners.dialog.fields.type')}
                 </FormLabel>
                 <Select
@@ -217,7 +217,7 @@ export function PartnerActionDialog({
               name='contactPerson'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.partners.dialog.fields.contact')}
                   </FormLabel>
                   <FormControl>
@@ -238,7 +238,7 @@ export function PartnerActionDialog({
               name='phone'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('equipmentTooling.partners.dialog.fields.phone')}
                   </FormLabel>
                   <FormControl>
@@ -261,7 +261,7 @@ export function PartnerActionDialog({
             name='address'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('equipmentTooling.partners.dialog.fields.address')}
                 </FormLabel>
                 <FormControl>

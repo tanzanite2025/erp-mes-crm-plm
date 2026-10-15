@@ -126,7 +126,7 @@ export function OrdersProgress() {
     return (
       <div className='flex flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-rose-200 bg-rose-50/40 py-20 text-rose-700'>
         <TriangleAlert className='mb-4 size-12 opacity-80' />
-        <p className='text-[10px] font-black tracking-[0.3em] uppercase italic'>
+        <p className='text-[10px] font-black tracking-[0.3em] uppercase'>
           {t('dashboard.page.reports.error.title')}
         </p>
         <p className='mt-2 max-w-md px-6 text-center text-[11px]'>
@@ -151,7 +151,7 @@ export function OrdersProgress() {
     return (
       <div className='flex flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-muted/20 bg-muted/5 py-20 text-muted-foreground'>
         <PackageSearch className='mb-4 size-12 animate-pulse opacity-10' />
-        <p className='text-[10px] font-black tracking-[0.3em] uppercase italic'>
+        <p className='text-[10px] font-black tracking-[0.3em] uppercase'>
           {t('dashboard.page.reports.empty.title')}
         </p>
         <p className='mt-2 text-[9px] tracking-widest uppercase opacity-40'>
@@ -230,11 +230,11 @@ export function OrdersProgress() {
                               <span className='shrink-0 font-mono text-[7px] leading-none font-black tracking-widest text-muted-foreground/30 uppercase md:text-[8px]'>
                                 {t('dashboard.page.reports.labels.batch')}
                               </span>
-                              <span className='shrink truncate text-[9px] font-black text-primary/40 italic'>
+                              <span className='shrink truncate text-[9px] font-black text-primary/40'>
                                 #{order.orderNo}
                               </span>
                             </div>
-                            <h3 className='max-w-[140px] truncate text-xs font-black tracking-tighter text-secondary uppercase italic transition-colors group-hover:text-primary md:max-w-[200px] md:text-sm'>
+                            <h3 className='max-w-[140px] truncate text-xs font-black tracking-tighter text-secondary uppercase transition-colors group-hover:text-primary md:max-w-[200px] md:text-sm'>
                               {order.customer}
                             </h3>
                           </div>
@@ -249,7 +249,7 @@ export function OrdersProgress() {
                                   isCritical ? 'text-rose-500' : 'text-blue-500'
                                 )}
                               />
-                              <span className='text-base font-black tracking-tighter italic tabular-nums md:text-lg'>
+                              <span className='text-base font-black tracking-tighter tabular-nums md:text-lg'>
                                 {order.target}
                               </span>
                             </div>
@@ -298,7 +298,7 @@ export function OrdersProgress() {
                               </span>
                               <span
                                 className={cn(
-                                  'text-[10px] font-black italic tabular-nums',
+                                  'text-[10px] font-black tabular-nums',
                                   gap > 0 ? 'text-rose-500' : 'text-emerald-500'
                                 )}
                               >
@@ -323,7 +323,7 @@ export function OrdersProgress() {
               <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
               <div>
                 <CardHeader className='z-10 border-b border-dashed border-muted/30 p-0 pb-3'>
-                  <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight text-rose-500 uppercase italic'>
+                  <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight text-rose-500 uppercase'>
                     <Compass className='animate-spin-slow size-4' />
                     交付排产延时瓶颈诊断
                   </CardTitle>

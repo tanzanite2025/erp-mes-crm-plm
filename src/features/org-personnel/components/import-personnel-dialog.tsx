@@ -191,7 +191,7 @@ export function ImportPersonnelDialog({
     >
       <DialogContent className='gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-2xl'>
         <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/5 p-8 text-start'>
-          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
+          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase'>
             <FileSpreadsheet className='size-5 text-blue-600' />
             {t('orgPersonnel.importDialog.title')}
           </DialogTitle>
@@ -216,7 +216,7 @@ export function ImportPersonnelDialog({
                 <div className='mb-4 rounded-full bg-blue-500/10 p-4 transition-transform group-hover:scale-110'>
                   <Upload className='size-8 text-blue-600' />
                 </div>
-                <p className='text-sm font-black tracking-tighter uppercase italic'>
+                <p className='text-sm font-black tracking-tighter uppercase'>
                   {t('orgPersonnel.importDialog.clickToUpload')}
                 </p>
                 <p className='mt-2 text-[10px] font-black tracking-widest uppercase opacity-40'>
@@ -500,7 +500,7 @@ export function ImportPersonnelDialog({
 
               <div className='flex items-start gap-2 rounded-xl border border-amber-500/10 bg-amber-500/5 p-3'>
                 <AlertCircle className='mt-0.5 size-4 shrink-0 text-amber-500' />
-                <p className='text-[9px] leading-relaxed font-medium text-amber-700 italic'>
+                <p className='text-[9px] leading-relaxed font-medium text-amber-700'>
                   {t('orgPersonnel.importDialog.warning')}
                 </p>
               </div>

@@ -35,7 +35,7 @@ export default function PDAStocktake() {
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-blue-500/5 via-transparent' />
         <div className='flex items-center gap-2 text-blue-600'>
           <Landmark className='size-5' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic underline decoration-dashed decoration-1 underline-offset-4'>
+          <h3 className='text-lg font-black tracking-tighter uppercase underline decoration-dashed decoration-1 underline-offset-4'>
             PDA_STOCKTAKE_HUB
           </h3>
         </div>
@@ -54,7 +54,7 @@ export default function PDAStocktake() {
             </p>
           </div>
         ) : tasks.length === 0 ? (
-          <div className='rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/5 p-20 text-center italic opacity-30'>
+          <div className='rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/5 p-20 text-center opacity-30'>
             <ClipboardCheck className='mx-auto mb-4 size-12 opacity-5' />
             <p className='text-xs font-black tracking-widest uppercase'>
               No_Active_Stocktake_Task

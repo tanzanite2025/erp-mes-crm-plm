@@ -24,7 +24,7 @@ export function SalesReturnActualAmountRecordHistorySection({
     <div className='rounded-[24px] border border-dashed border-border/70 bg-background/70 p-4'>
       <div className='flex items-start justify-between gap-3 border-b border-dashed border-border/60 pb-3'>
         <div>
-          <p className='text-sm font-black italic'>
+          <p className='text-sm font-black'>
             {t('trading.salesReturns.actualAmountHistory.title')}
           </p>
           <p className='text-[9px] font-black tracking-widest uppercase opacity-60'>

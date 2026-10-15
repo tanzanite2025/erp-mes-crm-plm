@@ -21,13 +21,13 @@ func GetPieceworkRatesHandler(c *gin.Context) {
 }
 
 func SavePieceworkRateHandler(c *gin.Context) {
-	var input services.PieceworkRateWriteDTO
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var input services.PieceworkRateHTTPWriteRequest
+	if err := decodeIndependentPieceworkPayrollJSONRequest(c, &input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 工价格式错误"})
 		return
 	}
 
-	saved, err := services.SavePieceworkRateDTO(auditContextFromGin(c), input)
+	saved, err := services.SavePieceworkRateFromHTTPRequest(auditContextFromGin(c), input)
 	if err != nil {
 		respondPieceworkRateError(c, err)
 		return
@@ -91,7 +91,7 @@ func respondPieceworkRateError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, services.ErrPieceworkRateVersionConflict):
 		respondVersionConflict(c)
-	case errors.Is(err, services.ErrInvalidPieceworkRate):
+	case errors.Is(err, services.ErrInvalidPieceworkRate), errors.Is(err, services.ErrInvalidPieceworkPayItem):
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "工价标准不存在"})

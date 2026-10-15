@@ -61,7 +61,7 @@ export function CADViewerDialog({
         </div>
 
         {/* 页脚提示 */}
-        <div className='flex items-center justify-between border-t border-white/5 bg-[#1a1a1a] px-8 py-4 text-[9px] font-black tracking-tighter text-white/20 uppercase italic'>
+        <div className='flex items-center justify-between border-t border-white/5 bg-[#1a1a1a] px-8 py-4 text-[9px] font-black tracking-tighter text-white/20 uppercase'>
           <span>Autodesk Platform Services (APS) Certified Pipeline</span>
           <span>DO NOT DISTRIBUTE THIS DRAWING WITHOUT AUTHORIZATION</span>
         </div>

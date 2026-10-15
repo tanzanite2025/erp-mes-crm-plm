@@ -145,7 +145,7 @@ export function CustomerListItem({
           </div>
           <div className='min-w-0'>
             <div className='flex min-w-0 items-center gap-2'>
-              <h4 className='min-w-0 truncate text-sm font-black tracking-tight text-foreground italic sm:text-[15px]'>
+              <h4 className='min-w-0 truncate text-sm font-black tracking-tight text-foreground sm:text-[15px]'>
                 {customer.name}
               </h4>
               {getStatusBadge()}
@@ -211,7 +211,7 @@ export function CustomerListItem({
 
         <div className='grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2'>
           <div className={CUSTOMER_INFO_PANEL_CLASS}>
-            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
+            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 sm:text-[9px]'>
               <User className='size-3' />
               {t('trading.customers.contactPerson')}
             </div>
@@ -221,7 +221,7 @@ export function CustomerListItem({
           </div>
 
           <div className={CUSTOMER_INFO_PANEL_CLASS}>
-            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
+            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40 sm:text-[9px]'>
               <Phone className='size-3' />
               {t('trading.customers.contactPhone')}
             </div>
@@ -231,7 +231,7 @@ export function CustomerListItem({
           </div>
 
           <div className={`${CUSTOMER_INFO_PANEL_CLASS} sm:col-span-2`}>
-            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
               <MapPin className='size-3' />
               {t('trading.customers.address')}
             </div>
@@ -241,7 +241,7 @@ export function CustomerListItem({
           </div>
 
           <div className={`${CUSTOMER_INFO_PANEL_CLASS} sm:col-span-2`}>
-            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
               <MessageCircle className='size-3' />
               {t('trading.customers.communication')} /{' '}
               {t('trading.customers.wechat')}
@@ -267,10 +267,10 @@ export function CustomerListItem({
           <div className={`${CUSTOMER_INFO_PANEL_CLASS} sm:col-span-2`}>
             <div className='grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
               <div className='flex min-w-0 flex-col gap-0.5'>
-                <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
+                <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase'>
                   {t('trading.customers.creditBalance')}
                 </span>
-                <div className='text-sm font-black tracking-tighter italic tabular-nums sm:text-base'>
+                <div className='text-sm font-black tracking-tighter tabular-nums sm:text-base'>
                   {customer.balance.toLocaleString(locale)}
                 </div>
               </div>

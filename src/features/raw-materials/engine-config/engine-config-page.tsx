@@ -288,7 +288,7 @@ function CuttingEngineConfigForm({
           <section className='relative flex flex-col gap-4 rounded-[24px] border border-dashed border-border/60 bg-muted/5 p-5'>
             <div className='pointer-events-none absolute inset-0 rounded-[24px] bg-linear-to-br from-primary/5 via-transparent' />
             <div>
-              <h4 className='text-sm font-black tracking-tighter text-foreground/90 uppercase italic'>
+              <h4 className='text-sm font-black tracking-tighter text-foreground/90 uppercase'>
                 {t('rawMaterials.engineConfig.weights.title')}
               </h4>
               <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -356,7 +356,7 @@ function CuttingEngineConfigForm({
           <section className='relative flex flex-col gap-4 rounded-[24px] border border-dashed border-border/60 bg-muted/5 p-5'>
             <div className='pointer-events-none absolute inset-0 rounded-[24px] bg-linear-to-br from-primary/5 via-transparent' />
             <div>
-              <h4 className='text-sm font-black tracking-tighter text-foreground/90 uppercase italic'>
+              <h4 className='text-sm font-black tracking-tighter text-foreground/90 uppercase'>
                 {t('rawMaterials.engineConfig.constraints.ruleStrategy.title')}
               </h4>
               <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -625,7 +625,7 @@ function CuttingEngineConfigForm({
             <div className='pointer-events-none absolute inset-0 rounded-[24px] bg-linear-to-br from-primary/5 via-transparent' />
 
             <div>
-              <h4 className='text-sm font-black tracking-tighter text-foreground/90 uppercase italic'>
+              <h4 className='text-sm font-black tracking-tighter text-foreground/90 uppercase'>
                 {t('rawMaterials.engineConfig.constraints.title')}
               </h4>
               <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

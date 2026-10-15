@@ -30,7 +30,7 @@ export function EmptyState({
       </div>
 
       {/* UDS 1.0 一级标题规范 */}
-      <h3 className='mb-2 text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+      <h3 className='mb-2 text-lg font-black tracking-tighter text-slate-800 uppercase'>
         {title}
       </h3>
 

@@ -42,7 +42,7 @@ export function DrillingBasicInfoSection({
           onValueChange={(value) => updateField('productId', value)}
           items={productOptions}
           placeholder='选择适配的产品 SKU'
-          className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold italic shadow-inner'
+          className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
         />
       </div>
     </div>

@@ -132,9 +132,7 @@ export function MoldLoanCard({ loan, onReturn }: MoldLoanCardProps) {
                   <span className='font-mono text-[10px] font-bold'>
                     {new Date(loan.loanDate).toLocaleDateString()}
                   </span>
-                  <span className='font-black text-muted-foreground/20 italic'>
-                    -
-                  </span>
+                  <span className='font-black text-muted-foreground/20'>-</span>
                   <span
                     className={cn(
                       'font-mono text-[10px] font-bold',
@@ -164,7 +162,7 @@ export function MoldLoanCard({ loan, onReturn }: MoldLoanCardProps) {
                   <p className='text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                     {t('equipmentTooling.loans.card.returnDate')}
                   </p>
-                  <p className='text-base font-black tracking-tighter text-emerald-600 italic sm:text-lg'>
+                  <p className='text-base font-black tracking-tighter text-emerald-600 sm:text-lg'>
                     {new Date(loan.actualReturnDate).toLocaleDateString()}
                   </p>
                 </div>

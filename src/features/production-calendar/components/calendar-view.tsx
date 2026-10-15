@@ -68,7 +68,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
               <CalendarIcon className='size-3.5 transition-transform group-hover:scale-110 md:size-4' />
             </div>
             <div className='flex flex-col gap-0.5 overflow-hidden'>
-              <h1 className='truncate text-sm font-black tracking-tighter text-primary uppercase italic md:text-base'>
+              <h1 className='truncate text-sm font-black tracking-tighter text-primary uppercase md:text-base'>
                 {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
               </h1>
               <p className='truncate text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-60 md:text-[9px]'>
@@ -124,7 +124,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
         {days.map((day, i) => (
           <div
             key={i}
-            className='text-center text-[8px] font-black tracking-[0.26em] text-muted-foreground/30 uppercase italic'
+            className='text-center text-[8px] font-black tracking-[0.26em] text-muted-foreground/30 uppercase'
           >
             {day}
           </div>
@@ -169,7 +169,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
               <div className='flex items-start justify-between'>
                 <span
                   className={cn(
-                    'flex size-6 items-center justify-center rounded-md text-[11px] font-black tracking-tighter italic tabular-nums transition-colors',
+                    'flex size-6 items-center justify-center rounded-md text-[11px] font-black tracking-tighter tabular-nums transition-colors',
                     isToday
                       ? 'bg-primary text-white shadow-md'
                       : 'text-slate-400'
@@ -178,7 +178,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                   {format(day, 'd')}
                 </span>
                 {hasOutput && (
-                  <Badge className='h-4 rounded-md border-none bg-emerald-500/10 px-1.5 py-0 text-[7px] font-black text-emerald-600 italic shadow-none'>
+                  <Badge className='h-4 rounded-md border-none bg-emerald-500/10 px-1.5 py-0 text-[7px] font-black text-emerald-600 shadow-none'>
                     {dayRecord.output} {t('dashboard.page.calendar.units.pcs')}
                   </Badge>
                 )}
@@ -202,7 +202,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                   </div>
                 ))}
                 {dayRecord && dayRecord.items.length > 2 && (
-                  <p className='pt-0.5 pl-2 text-[7px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+                  <p className='pt-0.5 pl-2 text-[7px] font-black tracking-widest text-muted-foreground/30 uppercase'>
                     + {dayRecord.items.length - 2}{' '}
                     {t('dashboard.page.calendar.view.moreNodes')}
                   </p>

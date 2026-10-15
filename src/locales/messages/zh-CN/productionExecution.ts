@@ -14,6 +14,7 @@ export const productionExecution = {
     usb: 'USB 扫码枪',
   },
   fields: {
+    submittedBy: '提交人',
     captureMode: '扫码来源',
     productBarcode: '产品条码',
     action: '执行动作',

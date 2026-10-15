@@ -52,7 +52,7 @@ export function LineMindmapToolbar({
     <Card className='sticky top-0 z-30 rounded-[20px] border border-dashed border-muted/35 bg-background shadow-sm'>
       <CardContent className='overflow-x-auto p-2'>
         <div className='flex min-w-max items-center gap-1.5 whitespace-nowrap'>
-          <span className='shrink-0 text-[10px] font-black tracking-tighter text-foreground uppercase italic'>
+          <span className='shrink-0 text-[10px] font-black tracking-tighter text-foreground uppercase'>
             {title}
           </span>
           <span className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>

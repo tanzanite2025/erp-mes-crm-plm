@@ -190,7 +190,7 @@ export function LabEquipmentPage() {
           <div className='group relative flex h-[400px] flex-col items-center justify-center overflow-hidden rounded-[40px] border-2 border-dashed border-muted-foreground/10 bg-muted/5 text-muted-foreground/20'>
             <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
             <Settings2 className='mb-6 size-16 opacity-20 transition-transform duration-1000 group-hover:rotate-90' />
-            <p className='mb-6 text-[11px] font-black tracking-[0.4em] uppercase italic'>
+            <p className='mb-6 text-[11px] font-black tracking-[0.4em] uppercase'>
               {t('labExperimental.equipment.noAssetVectors')}
             </p>
             <Button

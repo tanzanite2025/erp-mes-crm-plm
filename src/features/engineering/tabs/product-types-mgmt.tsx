@@ -137,7 +137,7 @@ export function ProductTypesMgmt() {
               </>
             ) : (
               <div className='flex min-w-0 items-center gap-2'>
-                <span className='text-sm font-black tracking-tighter text-primary uppercase italic'>
+                <span className='text-sm font-black tracking-tighter text-primary uppercase'>
                   {row.original.name}
                 </span>
                 <Badge
@@ -166,7 +166,7 @@ export function ProductTypesMgmt() {
       cell: ({ row }) => {
         if (!row.original.parentId) {
           return (
-            <span className='text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+            <span className='text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase'>
               {t('engineering.categoryArchive.labels.rootLevel')}
             </span>
           )
@@ -184,7 +184,7 @@ export function ProductTypesMgmt() {
             {parent.name}
           </Badge>
         ) : (
-          <span className='text-[9px] font-black tracking-widest text-amber-700/80 uppercase italic'>
+          <span className='text-[9px] font-black tracking-widest text-amber-700/80 uppercase'>
             {t('engineering.categoryArchive.labels.orphanParent')}
           </span>
         )

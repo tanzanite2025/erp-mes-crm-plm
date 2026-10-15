@@ -349,7 +349,7 @@ export function ProductTypeActionDialog({
       <DialogContent className='flex w-[96vw] flex-col gap-0 overflow-hidden rounded-[24px] border-none p-0 shadow-2xl sm:max-w-4xl sm:rounded-[32px]'>
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <DialogHeader className='relative p-4 pb-2 sm:p-8'>
-          <DialogTitle className='text-base font-black tracking-tighter text-primary uppercase italic sm:text-lg'>
+          <DialogTitle className='text-base font-black tracking-tighter text-primary uppercase sm:text-lg'>
             {isEdit
               ? t('engineering.categoryArchive.dialog.editTitle')
               : t('engineering.categoryArchive.dialog.createTitle')}
@@ -620,7 +620,7 @@ export function ProductTypeActionDialog({
                 render={({ field }) => (
                   <FormItem className='flex flex-row items-center justify-between gap-4 rounded-2xl border border-dashed border-primary/5 bg-muted/30 p-3 shadow-sm sm:p-4'>
                     <div className='min-w-0 flex-1 space-y-0.5 text-left'>
-                      <FormLabel className='text-[10px] leading-tight font-black tracking-widest text-primary uppercase italic sm:text-[11px]'>
+                      <FormLabel className='text-[10px] leading-tight font-black tracking-widest text-primary uppercase sm:text-[11px]'>
                         {t('engineering.categoryArchive.dialog.active')}
                       </FormLabel>
                       <div className='mt-0.5 line-clamp-2 text-[8px] leading-none font-black tracking-tight wrap-break-word text-muted-foreground/50 uppercase opacity-60 sm:text-[9px]'>

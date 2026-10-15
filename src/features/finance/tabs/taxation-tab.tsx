@@ -103,7 +103,7 @@ export function TaxationTab() {
                     <Percent className='size-4 text-emerald-600' />
                   </div>
                   <div>
-                    <CardTitle className='text-sm font-black tracking-tighter text-emerald-800/80 uppercase italic'>
+                    <CardTitle className='text-sm font-black tracking-tighter text-emerald-800/80 uppercase'>
                       {(() => {
                         const translatedName = t(getCardNameKey(rate.code))
                         return translatedName.includes(
@@ -163,7 +163,7 @@ export function TaxationTab() {
             <ShieldAlert className='size-5' />
           </div>
           <div className='space-y-1'>
-            <h4 className='text-xs font-black tracking-tight uppercase italic'>
+            <h4 className='text-xs font-black tracking-tight uppercase'>
               {t('finance.taxation.guard.title')}
             </h4>
             <p className='max-w-3xl text-[10px] leading-relaxed font-medium opacity-80'>

@@ -12,6 +12,7 @@ interface ModuleTabbedLayoutProps {
   children: React.ReactNode
   actions?: React.ReactNode
   title?: string
+  mainClassName?: string
   contentClassName?: string
 }
 
@@ -25,6 +26,7 @@ export function ModuleTabbedLayout({
   tabs,
   children,
   actions,
+  mainClassName,
   contentClassName,
 }: ModuleTabbedLayoutProps) {
   const { pathname } = useLocation()
@@ -62,7 +64,10 @@ export function ModuleTabbedLayout({
 
       <Main
         fixed
-        className='flex-1 overflow-y-auto pt-0 pb-5 [scrollbar-gutter:stable_both-edges]'
+        className={cn(
+          'flex-1 overflow-y-auto pt-0 pb-5 [scrollbar-gutter:stable_both-edges]',
+          mainClassName
+        )}
       >
         <div
           className={cn(

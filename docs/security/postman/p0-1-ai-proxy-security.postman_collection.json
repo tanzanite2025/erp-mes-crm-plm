@@ -263,7 +263,7 @@
     }
   ],
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8020" },
+    { "key": "baseUrl", "value": "http://127.0.0.1:18020" },
     { "key": "jwt", "value": "" },
     { "key": "vendorAuth", "value": "Bearer sk-xxx" },
     { "key": "geminiKey", "value": "" },

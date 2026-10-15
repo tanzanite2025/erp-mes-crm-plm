@@ -42,9 +42,8 @@ export function DeltaPreview({ delta, className }: DeltaPreviewProps) {
   }
 
   const renderValue = (val: unknown) => {
-    if (val === null) return <span className='italic opacity-30'>null</span>
-    if (val === undefined)
-      return <span className='italic opacity-30'>undefined</span>
+    if (val === null) return <span className='opacity-30'>null</span>
+    if (val === undefined) return <span className='opacity-30'>undefined</span>
     if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE'
     if (typeof val === 'object') return JSON.stringify(val)
     return String(val)

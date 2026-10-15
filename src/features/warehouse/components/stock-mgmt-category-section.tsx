@@ -56,7 +56,7 @@ export function StockMgmtCategorySection({
               {getCategoryIcon(category.code)}
             </div>
             <div className='flex flex-row items-center gap-2 overflow-hidden'>
-              <span className='truncate text-left text-xs font-black tracking-tighter text-slate-800 uppercase italic md:text-sm'>
+              <span className='truncate text-left text-xs font-black tracking-tighter text-slate-800 uppercase md:text-sm'>
                 {category.name}
               </span>
               <Badge

@@ -44,15 +44,18 @@ export function BOMToolbar({
     <div className='flex flex-col gap-3 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4'>
       {showOwnerFilter ? (
         <div className='flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:shrink-0'>
-          <div className='flex items-center gap-2'>
-            <Filter className='size-3.5 text-indigo-500' />
+          <div className='flex min-w-0 items-center gap-2'>
+            <Filter className='size-3.5 shrink-0 text-indigo-500' />
+            <span className='shrink-0 text-[11px] font-medium text-muted-foreground'>
+              {t('engineering.bomArchive.filter.ownerLabel')}
+            </span>
             <Select
               value={selectedOwnerValue ?? '__ALL__'}
               onValueChange={(next) => onOwnerChange?.(next)}
             >
               <SelectTrigger
                 aria-label={t('engineering.bomArchive.filter.ownerLabel')}
-                className='h-9 w-full min-w-0 rounded-xl border-dashed border-indigo-200 bg-indigo-50/40 px-3 text-[11px] font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 sm:min-w-[180px] lg:w-[210px]'
+                className='min-h-9 w-full min-w-0 rounded-xl border-dashed border-indigo-200 bg-indigo-50/40 px-3 text-[11px] font-bold whitespace-normal text-indigo-700 shadow-sm hover:bg-indigo-50 data-[size=default]:h-auto *:data-[slot=select-value]:line-clamp-none *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-all sm:min-w-[180px] lg:w-[210px]'
               >
                 <SelectValue
                   placeholder={t(
@@ -60,12 +63,12 @@ export function BOMToolbar({
                   )}
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='max-w-[min(28rem,var(--radix-select-content-available-width))]'>
                 {ownerOptions!.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    className='text-[11px] font-medium'
+                    className='text-[11px] font-medium whitespace-normal *:[span]:last:break-all'
                   >
                     {option.label}
                   </SelectItem>

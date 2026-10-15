@@ -45,7 +45,7 @@ export function MindmapDetailPanel({
   return (
     <Card className='rounded-[24px] border border-dashed border-muted/40 bg-background/90 shadow-none'>
       <CardHeader className='pb-3'>
-        <CardTitle className='text-sm font-black tracking-tighter text-foreground italic'>
+        <CardTitle className='text-sm font-black tracking-tighter text-foreground'>
           节点编辑
         </CardTitle>
       </CardHeader>
@@ -108,7 +108,7 @@ export function MindmapDetailPanel({
         ) : (
           <div className='space-y-4'>
             <div className='rounded-[20px] border border-dashed border-muted/40 bg-muted/5 px-4 py-4'>
-              <p className='text-sm font-black tracking-tighter text-foreground italic'>
+              <p className='text-sm font-black tracking-tighter text-foreground'>
                 还没有选中节点
               </p>
               <p className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>

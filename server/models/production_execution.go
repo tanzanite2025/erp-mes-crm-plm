@@ -97,21 +97,25 @@ func (ProductionExecutionLot) TableName() string {
 // Route progression, warehouse custody, quality release, and outsourcing status remain separate facts.
 type ProductionOperationExecution struct {
 	BaseModel
-	ProductBarcode string     `gorm:"size:120;index;not null" json:"productBarcode"`
-	StateID        string     `gorm:"type:uuid;index" json:"stateId"`
-	ExecutionLotID string     `gorm:"type:uuid;index" json:"executionLotId"`
-	RouteID        string     `gorm:"type:uuid;index" json:"routeId"`
-	RouteStepID    string     `gorm:"type:uuid;index" json:"routeStepId"`
-	ProcessStepID  string     `gorm:"type:uuid;index;not null" json:"processStepId"`
-	ExecutionMode  string     `gorm:"size:30;index;not null;default:'IN_HOUSE'" json:"executionMode"`
-	PartnerID      string     `gorm:"type:uuid;index" json:"partnerId"`
-	Action         string     `gorm:"size:40;index;not null" json:"action"`
-	Status         string     `gorm:"size:30;index;not null" json:"status"`
-	Result         string     `gorm:"size:60" json:"result"`
-	Operator       string     `gorm:"size:120;not null" json:"operator"`
-	StartedAt      *time.Time `json:"startedAt,omitempty"`
-	CompletedAt    *time.Time `json:"completedAt,omitempty"`
-	Notes          string     `gorm:"type:text" json:"notes"`
+	WorkIdentityKey           string     `gorm:"size:64;not null;default:'';index" json:"-"`
+	ExecutionRound            int64      `gorm:"not null;default:0" json:"executionRound"` // Zero denotes an unknown historical round.
+	ScanCommandEffectsApplied bool       `gorm:"not null;default:false" json:"-"`
+	SubmittedByUserID         string     `gorm:"type:uuid;index" json:"submittedByUserId"`
+	ProductBarcode            string     `gorm:"size:120;index;not null" json:"productBarcode"`
+	StateID                   string     `gorm:"type:uuid;index" json:"stateId"`
+	ExecutionLotID            string     `gorm:"type:uuid;index" json:"executionLotId"`
+	RouteID                   string     `gorm:"type:uuid;index" json:"routeId"`
+	RouteStepID               string     `gorm:"type:uuid;index" json:"routeStepId"`
+	ProcessStepID             string     `gorm:"type:uuid;index;not null" json:"processStepId"`
+	ExecutionMode             string     `gorm:"size:30;index;not null;default:'IN_HOUSE'" json:"executionMode"`
+	PartnerID                 string     `gorm:"type:uuid;index" json:"partnerId"`
+	Action                    string     `gorm:"size:40;index;not null" json:"action"`
+	Status                    string     `gorm:"size:30;index;not null" json:"status"`
+	Result                    string     `gorm:"size:60" json:"result"`
+	Operator                  string     `gorm:"size:120;not null" json:"operator"`
+	StartedAt                 *time.Time `json:"startedAt,omitempty"`
+	CompletedAt               *time.Time `json:"completedAt,omitempty"`
+	Notes                     string     `gorm:"type:text" json:"notes"`
 }
 
 func (ProductionOperationExecution) TableName() string {

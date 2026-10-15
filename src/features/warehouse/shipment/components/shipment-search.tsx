@@ -41,7 +41,7 @@ export function ShipmentSearch({
     <div className='relative animate-in rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-4 transition-all duration-500 fade-in hover:bg-muted/10 md:rounded-[32px] md:p-6'>
       <div className='absolute top-0 right-6 flex -translate-y-1/2 items-center gap-1.5 rounded-full border border-dashed border-muted/80 bg-background px-2 py-1 md:right-12 md:gap-2 md:px-3'>
         <div className='h-1 w-1 animate-pulse rounded-full bg-blue-500 md:h-1.5 md:w-1.5' />
-        <span className='max-w-[100px] truncate text-[7px] font-black tracking-widest text-muted-foreground/60 uppercase italic md:max-w-none md:text-[9px]'>
+        <span className='max-w-[100px] truncate text-[7px] font-black tracking-widest text-muted-foreground/60 uppercase md:max-w-none md:text-[9px]'>
           {t('warehouse.shipment.search.locator')}
         </span>
       </div>
@@ -65,7 +65,7 @@ export function ShipmentSearch({
 
         <div className='overflow-hidden rounded-xl border border-dashed border-muted/50 bg-background/50 shadow-inner md:rounded-[24px]'>
           <div className='flex items-center justify-between border-b border-dashed border-muted/50 bg-muted/20 px-4 py-2.5 md:px-6 md:py-3'>
-            <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase italic md:max-w-none md:text-[9px]'>
+            <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase md:max-w-none md:text-[9px]'>
               {t('warehouse.shipment.search.results')}
             </span>
             <span className='shrink-0 font-mono text-[7px] font-black text-muted-foreground/60 md:text-[8px]'>
@@ -136,7 +136,7 @@ export function ShipmentSearch({
                     </div>
                     <div className='space-y-0.5 overflow-hidden'>
                       <div className='flex items-center gap-2 md:gap-3'>
-                        <h4 className='max-w-[140px] truncate text-sm font-black tracking-tighter text-slate-800 uppercase italic transition-colors group-hover:text-blue-700 md:max-w-xs'>
+                        <h4 className='max-w-[140px] truncate text-sm font-black tracking-tighter text-slate-800 uppercase transition-colors group-hover:text-blue-700 md:max-w-xs'>
                           {item.name}
                         </h4>
                         <Badge

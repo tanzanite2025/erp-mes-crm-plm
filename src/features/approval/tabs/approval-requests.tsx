@@ -125,7 +125,7 @@ export function ApprovalRequests() {
       <div className='animate-in space-y-4 duration-500 fade-in'>
         <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
           <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-            <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h2 className='text-lg font-black tracking-tighter uppercase'>
               {t('approval.requests.heroTitle')}
             </h2>
             <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -146,7 +146,7 @@ export function ApprovalRequests() {
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
           <div className='flex items-center gap-2 text-primary'>
             <Shield className='size-5' />
-            <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h2 className='text-lg font-black tracking-tighter uppercase'>
               {t('approval.requests.heroTitle')}
             </h2>
           </div>
@@ -160,7 +160,7 @@ export function ApprovalRequests() {
 
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {pendingForMe.length === 0 ? (
-          <div className='col-span-full flex flex-col items-center justify-center rounded-[28px] border border-dashed bg-muted/5 py-12 text-muted-foreground/20 italic'>
+          <div className='col-span-full flex flex-col items-center justify-center rounded-[28px] border border-dashed bg-muted/5 py-12 text-muted-foreground/20'>
             <Check className='mb-2 size-9 opacity-10' />
             <p className='text-[10px] font-black tracking-widest uppercase'>
               {t('approval.requests.emptyPending')}
@@ -193,16 +193,16 @@ export function ApprovalRequests() {
                 </div>
 
                 <div className='space-y-3'>
-                  <h4 className='flex items-center gap-2 text-base font-black tracking-tighter uppercase italic'>
+                  <h4 className='flex items-center gap-2 text-base font-black tracking-tighter uppercase'>
                     <Lock className='size-4 text-primary' />
                     {getApprovalActionLabel(t, req.action)}
                   </h4>
 
                   <div className='rounded-[18px] border border-dashed border-muted-foreground/10 bg-muted/5 p-3.5 text-xs leading-relaxed font-bold text-muted-foreground/80 shadow-inner'>
-                    <span className='mb-1.5 block text-[9px] font-black tracking-widest uppercase italic opacity-40'>
+                    <span className='mb-1.5 block text-[9px] font-black tracking-widest uppercase opacity-40'>
                       {t('approval.labels.requestReason')} / REQUEST_REASON
                     </span>
-                    <p className='text-xs font-black tracking-tight italic opacity-90'>
+                    <p className='text-xs font-black tracking-tight opacity-90'>
                       {req.reason || t('approval.requests.noReasonProvided')}
                     </p>
                   </div>
@@ -219,7 +219,7 @@ export function ApprovalRequests() {
                     {req.requester?.username?.charAt(0) || 'U'}
                   </div>
                   <div className='flex flex-col'>
-                    <span className='text-xs font-black tracking-tight italic'>
+                    <span className='text-xs font-black tracking-tight'>
                       {req.requester?.username}
                     </span>
                     <span className='text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
@@ -264,7 +264,7 @@ export function ApprovalRequests() {
         <div className='min-w-0 space-y-1'>
           <div className='flex items-center gap-2 text-muted-foreground'>
             <HistoryIcon className='size-4 shrink-0' />
-            <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h3 className='text-lg font-black tracking-tighter uppercase'>
               {t('approval.requests.myLogsTitle')}
             </h3>
           </div>
@@ -332,7 +332,7 @@ export function ApprovalRequests() {
         </table>
 
         {myRequests.length === 0 && (
-          <div className='py-12 text-center text-[10px] font-black tracking-widest text-muted-foreground/20 uppercase italic'>
+          <div className='py-12 text-center text-[10px] font-black tracking-widest text-muted-foreground/20 uppercase'>
             {t('approval.requests.emptyMine')}
           </div>
         )}

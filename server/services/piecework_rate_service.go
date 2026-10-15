@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
-	"xdfc-server/audit"
-	"xdfc-server/models"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"strings"
+	"time"
+	"xdfc-server/models"
 )
 
 var (
@@ -19,34 +18,35 @@ var (
 	ErrInvalidPieceworkRate         = errors.New("invalid piecework rate")
 )
 
-func PatchPieceworkRate(
-	ctx context.Context,
-	id string,
-	command PieceworkRatePatchCommand,
-	expectedVersion int64,
-) (PieceworkRateDTO, error) {
-	return defaultPieceworkService.PatchPieceworkRate(ctx, id, command, expectedVersion)
+type PieceworkRateService struct{ txManager transactionManager }
+
+func NewPieceworkRateService(manager transactionManager) *PieceworkRateService {
+	return &PieceworkRateService{txManager: manager}
 }
 
-func DeletePieceworkRate(ctx context.Context, id string, expectedVersion int64) error {
-	return defaultPieceworkService.DeletePieceworkRate(ctx, id, expectedVersion)
-}
+var defaultPieceworkRateService = NewPieceworkRateService(defaultServiceRuntime().txManager)
 
 func ListPieceworkRates() ([]PieceworkRateDTO, error) {
-	return defaultPieceworkService.ListPieceworkRates()
+	return defaultPieceworkRateService.ListPieceworkRates()
+}
+func CreatePieceworkRate(ctx context.Context, cmd PieceworkRateCommand) (PieceworkRateDTO, error) {
+	return defaultPieceworkRateService.CreatePieceworkRate(ctx, cmd)
+}
+func UpdatePieceworkRate(ctx context.Context, id string, cmd PieceworkRateCommand, version int64) (PieceworkRateDTO, error) {
+	return defaultPieceworkRateService.UpdatePieceworkRate(ctx, id, cmd, version)
+}
+func PatchPieceworkRate(ctx context.Context, id string, cmd PieceworkRatePatchCommand, version int64) (PieceworkRateDTO, error) {
+	return defaultPieceworkRateService.PatchPieceworkRate(ctx, id, cmd, version)
+}
+func DeletePieceworkRate(ctx context.Context, id string, version int64) error {
+	return defaultPieceworkRateService.DeletePieceworkRate(ctx, id, version)
 }
 
-func (s *PieceworkService) ListPieceworkRates() ([]PieceworkRateDTO, error) {
-	var rates []models.PieceworkRate
-	if err := s.txManager.DB().
-		Preload("Product").
-		Preload("ProcessStep").
-		Preload("RouteStep").
-		Order("created_at desc").
-		Find(&rates).Error; err != nil {
+func (s *PieceworkRateService) ListPieceworkRates() ([]PieceworkRateDTO, error) {
+	rates := []models.PieceworkRate{}
+	if err := s.txManager.DB().Order("created_at DESC, id").Find(&rates).Error; err != nil {
 		return nil, err
 	}
-
 	result := make([]PieceworkRateDTO, 0, len(rates))
 	for _, rate := range rates {
 		result = append(result, mapPieceworkRateToDTO(rate))
@@ -54,351 +54,179 @@ func (s *PieceworkService) ListPieceworkRates() ([]PieceworkRateDTO, error) {
 	return result, nil
 }
 
-func SavePieceworkRateDTO(ctx context.Context, input PieceworkRateWriteDTO) (PieceworkRateDTO, error) {
-	return defaultPieceworkService.SavePieceworkRateDTO(ctx, input)
-}
-
-func CreatePieceworkRate(ctx context.Context, command PieceworkRateCommand) (PieceworkRateDTO, error) {
-	return defaultPieceworkService.CreatePieceworkRate(ctx, command)
-}
-
-func UpdatePieceworkRate(
-	ctx context.Context,
-	id string,
-	command PieceworkRateCommand,
-	expectedVersion int64,
-) (PieceworkRateDTO, error) {
-	return defaultPieceworkService.UpdatePieceworkRate(ctx, id, command, expectedVersion)
-}
-
-func (s *PieceworkService) SavePieceworkRateDTO(ctx context.Context, input PieceworkRateWriteDTO) (PieceworkRateDTO, error) {
-	command, err := s.canonicalCommandFromWriteDTO(input)
-	if err != nil {
-		return PieceworkRateDTO{}, err
-	}
-	if strings.TrimSpace(input.ID) == "" {
-		return s.CreatePieceworkRate(ctx, command)
-	}
-
-	expectedVersion := input.Version
-	if expectedVersion <= 0 {
-		var existing models.PieceworkRate
-		if err := s.txManager.DB().First(&existing, "id = ?", strings.TrimSpace(input.ID)).Error; err != nil {
-			return PieceworkRateDTO{}, err
-		}
-		// Compatibility-only behavior for old POST editors that did not send
-		// a version. The canonical PATCH path never takes this branch.
-		expectedVersion = existing.Version
-	}
-	return s.UpdatePieceworkRate(ctx, input.ID, command, expectedVersion)
-}
-
-func (s *PieceworkService) CreatePieceworkRate(
-	ctx context.Context,
-	command PieceworkRateCommand,
-) (PieceworkRateDTO, error) {
+func (s *PieceworkRateService) CreatePieceworkRate(ctx context.Context, command PieceworkRateCommand) (PieceworkRateDTO, error) {
 	rate := pieceworkRateModelFromCommand(command)
-	if err := s.savePieceworkRate(ctx, &rate); err != nil {
-		return PieceworkRateDTO{}, err
-	}
-	return s.pieceworkRateDTOByID(rate.ID)
+	rate.ID, rate.Version = uuid.NewString(), 1
+	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		tx = tx.WithContext(ctx)
+		if err := normalizeAndValidatePieceworkRate(tx, &rate); err != nil {
+			return err
+		}
+		if err := ensurePieceworkRateIntervalAvailable(tx, &rate, ""); err != nil {
+			return err
+		}
+		rate.Operator = auditOperatorFromContext(ctx)
+		if err := tx.Create(&rate).Error; err != nil {
+			return err
+		}
+		return recordPieceworkPayrollSnapshotAudit(ctx, tx, "PieceworkRate", rate.ID, "create", map[string]any{"after": mapPieceworkRateToDTO(rate)})
+	})
+	return mapPieceworkRateToDTO(rate), err
 }
 
-func (s *PieceworkService) UpdatePieceworkRate(
-	ctx context.Context,
-	id string,
-	command PieceworkRateCommand,
-	expectedVersion int64,
-) (PieceworkRateDTO, error) {
-	if expectedVersion <= 0 {
+func (s *PieceworkRateService) UpdatePieceworkRate(ctx context.Context, id string, command PieceworkRateCommand, version int64) (PieceworkRateDTO, error) {
+	patch := PieceworkRatePatchCommand{
+		PayItemID:     PieceworkRatePatchField[string]{Set: true, Value: &command.PayItemID},
+		Unit:          PieceworkRatePatchField[string]{Set: true, Value: &command.Unit},
+		UnitPrice:     PieceworkRatePatchField[float64]{Set: true, Value: &command.UnitPrice},
+		Currency:      PieceworkRatePatchField[string]{Set: true, Value: &command.Currency},
+		EffectiveFrom: PieceworkRatePatchField[time.Time]{Set: true, Value: command.EffectiveFrom},
+		EffectiveTo:   PieceworkRatePatchField[time.Time]{Set: true, Value: command.EffectiveTo},
+		Status:        PieceworkRatePatchField[string]{Set: true, Value: &command.Status},
+		Remarks:       PieceworkRatePatchField[string]{Set: true, Value: &command.Remarks},
+	}
+	return s.PatchPieceworkRate(ctx, id, patch, version)
+}
+
+func (s *PieceworkRateService) PatchPieceworkRate(ctx context.Context, id string, command PieceworkRatePatchCommand, version int64) (PieceworkRateDTO, error) {
+	var rate models.PieceworkRate
+	if strings.TrimSpace(id) == "" {
+		return PieceworkRateDTO{}, fmt.Errorf("%w: id is required", ErrInvalidPieceworkRate)
+	}
+	if version <= 0 {
 		return PieceworkRateDTO{}, ErrPieceworkRateVersionConflict
 	}
-	rate := pieceworkRateModelFromCommand(command)
-	rate.ID = strings.TrimSpace(id)
-	rate.Version = expectedVersion
-	if err := s.savePieceworkRate(ctx, &rate); err != nil {
-		return PieceworkRateDTO{}, err
-	}
-	return s.pieceworkRateDTOByID(rate.ID)
-}
-
-func (s *PieceworkService) pieceworkRateDTOByID(id string) (PieceworkRateDTO, error) {
-	var saved models.PieceworkRate
-	if err := s.txManager.DB().
-		Preload("ProcessStep").
-		Preload("RouteStep").
-		First(&saved, "id = ?", strings.TrimSpace(id)).Error; err != nil {
-		return PieceworkRateDTO{}, err
-	}
-	return mapPieceworkRateToDTO(saved), nil
-}
-
-// SavePieceworkRate remains as a compatibility entry point for existing
-// callers. It adapts the legacy model at the boundary and then delegates to
-// the canonical command path.
-func (s *PieceworkService) SavePieceworkRate(ctx context.Context, rate *models.PieceworkRate) error {
-	input, err := legacyPieceworkRateWriteDTO(rate)
-	if err != nil {
-		return err
-	}
-
-	saved, err := s.SavePieceworkRateDTO(ctx, input)
-	if err != nil {
-		return err
-	}
-	applyPieceworkRateDTOToModel(rate, saved)
-	return nil
-}
-
-func (s *PieceworkService) savePieceworkRate(ctx context.Context, rate *models.PieceworkRate) error {
-	if rate == nil {
-		return fmt.Errorf("%w: rate is required", ErrInvalidPieceworkRate)
-	}
-
-	actor, _ := audit.ActorFromContext(ctx)
-	rate.Operator = strings.TrimSpace(actor.Username)
-	if rate.Operator == "" {
-		rate.Operator = strings.TrimSpace(actor.UserID)
-	}
-	if rate.Operator == "" {
-		rate.Operator = "system"
-	}
-
-	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		if err := normalizeAndValidatePieceworkRate(tx, rate); err != nil {
-			return err
-		}
-
-		if rate.ID == "" {
-			rate.ID = uuid.NewString()
-			if rate.Version <= 0 {
-				rate.Version = 1
-			}
-			if err := ensurePieceworkRateIntervalAvailable(tx, rate, ""); err != nil {
-				return err
-			}
-			if err := tx.Create(rate).Error; err != nil {
-				return err
-			}
-		} else {
-			var existing models.PieceworkRate
-			if err := tx.First(&existing, "id = ?", rate.ID).Error; err != nil {
-				return err
-			}
-			if rate.Version > 0 && existing.Version != rate.Version {
-				return ErrPieceworkRateVersionConflict
-			}
-			if rate.Version <= 0 {
-				rate.Version = existing.Version
-			}
-			if err := ensurePieceworkRateIntervalAvailable(tx, rate, rate.ID); err != nil {
-				return err
-			}
-
-			nextVersion := existing.Version + 1
-			result := tx.Model(&models.PieceworkRate{}).
-				Where("id = ? AND version = ?", rate.ID, existing.Version).
-				Updates(map[string]interface{}{
-					"product_id":      rate.ProductID,
-					"process_step_id": nullablePieceworkID(rate.ProcessStepID),
-					"route_step_id":   nullablePieceworkID(rate.RouteStepID),
-					"process_code":    rate.ProcessCode,
-					"process_name":    rate.ProcessName,
-					"unit":            rate.Unit,
-					"unit_price":      rate.UnitPrice,
-					"currency":        rate.Currency,
-					"effective_from":  rate.EffectiveFrom,
-					"effective_to":    rate.EffectiveTo,
-					"status":          rate.Status,
-					"remarks":         rate.Remarks,
-					"version":         nextVersion,
-					"operator":        rate.Operator,
-					"updated_at":      time.Now().UTC(),
-				})
-			if result.Error != nil {
-				return result.Error
-			}
-			if result.RowsAffected == 0 {
-				return ErrPieceworkRateVersionConflict
-			}
-			rate.Version = nextVersion
-		}
-
-		return recordLegacyAuditEntryWithContext(ctx, tx, "PieceworkRate", rate.ID, "save", nil)
-	})
-}
-
-func (s *PieceworkService) PatchPieceworkRate(
-	ctx context.Context,
-	id string,
-	command PieceworkRatePatchCommand,
-	expectedVersion int64,
-) (PieceworkRateDTO, error) {
-	var updated models.PieceworkRate
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		var existing models.PieceworkRate
-		if err := tx.First(&existing, "id = ?", strings.TrimSpace(id)).Error; err != nil {
+		tx = tx.WithContext(ctx)
+		if err := tx.First(&rate, "id = ?", id).Error; err != nil {
 			return err
 		}
-		if expectedVersion <= 0 || existing.Version != expectedVersion {
+		if rate.Version != version {
 			return ErrPieceworkRateVersionConflict
 		}
-		if err := applyPieceworkRatePatch(&existing, command); err != nil {
+		before := mapPieceworkRateToDTO(rate)
+		if err := applyPieceworkRatePatch(&rate, command); err != nil {
 			return err
 		}
-		if err := normalizeAndValidatePieceworkRate(tx, &existing); err != nil {
+		if before.PayItemID != normalizeUUIDIdentity(rate.PayItemID) {
+			var lockedItems []models.PieceworkPayItem
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id IN ?", []string{before.PayItemID, normalizeUUIDIdentity(rate.PayItemID)}).Order("id").Find(&lockedItems).Error; err != nil {
+				return err
+			}
+		}
+		if err := normalizeAndValidatePieceworkRate(tx, &rate); err != nil {
 			return err
 		}
-		if err := ensurePieceworkRateIntervalAvailable(tx, &existing, existing.ID); err != nil {
+		if err := ensurePieceworkRateIntervalAvailable(tx, &rate, id); err != nil {
 			return err
 		}
-
-		nextVersion := expectedVersion + 1
-		result := tx.Model(&models.PieceworkRate{}).
-			Where("id = ? AND version = ?", existing.ID, expectedVersion).
-			Updates(map[string]interface{}{
-				"product_id":      existing.ProductID,
-				"process_step_id": nullablePieceworkID(existing.ProcessStepID),
-				"route_step_id":   nullablePieceworkID(existing.RouteStepID),
-				"process_code":    existing.ProcessCode,
-				"process_name":    existing.ProcessName,
-				"unit":            existing.Unit,
-				"unit_price":      existing.UnitPrice,
-				"currency":        existing.Currency,
-				"effective_from":  existing.EffectiveFrom,
-				"effective_to":    existing.EffectiveTo,
-				"status":          existing.Status,
-				"remarks":         existing.Remarks,
-				"version":         nextVersion,
-				"operator":        auditOperatorFromContext(ctx),
-				"updated_at":      time.Now().UTC(),
-			})
+		rate.Version, rate.Operator = version+1, auditOperatorFromContext(ctx)
+		result := tx.Model(&models.PieceworkRate{}).Where("id = ? AND version = ?", id, version).Updates(map[string]any{
+			"pay_item_id": rate.PayItemID, "pay_item_code": rate.PayItemCode, "pay_item_name": rate.PayItemName,
+			"unit": rate.Unit, "unit_price": rate.UnitPrice, "currency": rate.Currency, "effective_from": rate.EffectiveFrom, "effective_to": rate.EffectiveTo, "status": rate.Status, "remarks": rate.Remarks, "version": rate.Version, "operator": rate.Operator, "updated_at": time.Now().UTC(),
+		})
 		if result.Error != nil {
 			return result.Error
 		}
-		if result.RowsAffected == 0 {
+		if result.RowsAffected != 1 {
 			return ErrPieceworkRateVersionConflict
 		}
-
-		return tx.Preload("ProcessStep").Preload("RouteStep").First(&updated, "id = ?", existing.ID).Error
+		if err := recordPieceworkPayrollSnapshotAudit(ctx, tx, "PieceworkRate", id, "update", map[string]any{"before": before, "after": mapPieceworkRateToDTO(rate)}); err != nil {
+			return err
+		}
+		return tx.First(&rate, "id = ?", id).Error
 	})
-	if err != nil {
-		return PieceworkRateDTO{}, err
-	}
-	return mapPieceworkRateToDTO(updated), nil
+	return mapPieceworkRateToDTO(rate), err
 }
 
-func (s *PieceworkService) DeletePieceworkRate(ctx context.Context, id string, expectedVersion int64) error {
+func (s *PieceworkRateService) DeletePieceworkRate(ctx context.Context, id string, version int64) error {
+	if version <= 0 {
+		return ErrPieceworkRateVersionConflict
+	}
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		var existing models.PieceworkRate
-		if err := tx.First(&existing, "id = ?", strings.TrimSpace(id)).Error; err != nil {
+		tx = tx.WithContext(ctx)
+		var rate models.PieceworkRate
+		if err := tx.First(&rate, "id = ?", id).Error; err != nil {
 			return err
 		}
-		if expectedVersion <= 0 || existing.Version != expectedVersion {
+		if rate.Version != version {
 			return ErrPieceworkRateVersionConflict
 		}
-		result := tx.Model(&models.PieceworkRate{}).
-			Where("id = ? AND version = ?", existing.ID, expectedVersion).
-			Delete(&models.PieceworkRate{})
+		var item models.PieceworkPayItem
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&item, "id = ?", rate.PayItemID).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id = ? AND version = ?", id, version).Delete(&models.PieceworkRate{})
 		if result.Error != nil {
 			return result.Error
 		}
-		if result.RowsAffected == 0 {
+		if result.RowsAffected != 1 {
 			return ErrPieceworkRateVersionConflict
 		}
-		return recordLegacyAuditEntryWithContext(ctx, tx, "PieceworkRate", existing.ID, "delete", nil)
+		return recordPieceworkPayrollSnapshotAudit(ctx, tx, "PieceworkRate", id, "delete", map[string]any{"before": mapPieceworkRateToDTO(rate)})
 	})
+}
+
+func pieceworkRateModelFromCommand(command PieceworkRateCommand) models.PieceworkRate {
+	return models.PieceworkRate{PayItemID: command.PayItemID, Unit: command.Unit, UnitPrice: command.UnitPrice, Currency: command.Currency, EffectiveFrom: command.EffectiveFrom, EffectiveTo: command.EffectiveTo, Status: command.Status, Remarks: command.Remarks}
 }
 
 func normalizeAndValidatePieceworkRate(tx *gorm.DB, rate *models.PieceworkRate) error {
-	rate.ProductID = strings.TrimSpace(rate.ProductID)
-	rate.Unit = strings.TrimSpace(rate.Unit)
-	rate.Currency = strings.TrimSpace(rate.Currency)
-	rate.Status = strings.ToLower(strings.TrimSpace(rate.Status))
-	rate.Remarks = strings.TrimSpace(rate.Remarks)
-
-	if rate.ProductID == "" {
-		return fmt.Errorf("%w: productId is required", ErrInvalidPieceworkRate)
-	}
-	if rate.Unit == "" {
-		rate.Unit = "PCS"
-	}
+	rate.PayItemID = normalizeUUIDIdentity(rate.PayItemID)
+	rate.Unit, rate.Currency, rate.Status, rate.Remarks = strings.TrimSpace(rate.Unit), strings.ToUpper(strings.TrimSpace(rate.Currency)), strings.ToLower(strings.TrimSpace(rate.Status)), strings.TrimSpace(rate.Remarks)
 	if rate.Currency == "" {
 		rate.Currency = "CNY"
 	}
 	if rate.Status == "" {
 		rate.Status = "active"
 	}
-	if rate.UnitPrice < 0 {
-		return fmt.Errorf("%w: unitPrice cannot be negative", ErrInvalidPieceworkRate)
+	if rate.Status != "active" && rate.Status != "inactive" {
+		return fmt.Errorf("%w: unsupported status", ErrInvalidPieceworkRate)
+	}
+	if len(rate.Currency) != 3 || strings.IndexFunc(rate.Currency, func(r rune) bool { return r < 'A' || r > 'Z' }) >= 0 {
+		return fmt.Errorf("%w: currency must be a three-letter code", ErrInvalidPieceworkRate)
+	}
+	if err := validatePieceworkDecimalPrecision(rate.UnitPrice, 999999.9999); err != nil {
+		return fmt.Errorf("%w: unitPrice: %v", ErrInvalidPieceworkRate, err)
 	}
 	if rate.EffectiveFrom == nil {
-		value := time.Now().UTC()
-		rate.EffectiveFrom = &value
+		return fmt.Errorf("%w: effectiveFrom is required", ErrInvalidPieceworkRate)
 	}
-	if rate.EffectiveTo != nil && !rate.EffectiveTo.After(*rate.EffectiveFrom) {
-		return fmt.Errorf("%w: effectiveTo must be after effectiveFrom", ErrInvalidPieceworkRate)
+	start := rate.EffectiveFrom.UTC()
+	rate.EffectiveFrom = &start
+	if err := validatePieceworkCalendarDate(*rate.EffectiveFrom); err != nil {
+		return fmt.Errorf("%w: effectiveFrom: %v", ErrInvalidPieceworkRate, err)
 	}
-
-	processStepID := optionalPieceworkID(rate.ProcessStepID)
-	routeStepID := optionalPieceworkID(rate.RouteStepID)
-
-	if routeStepID != "" {
-		var routeStep models.ProductionRouteStep
-		if err := tx.Preload("ProcessStep").First(&routeStep, "id = ?", routeStepID).Error; err != nil {
-			return fmt.Errorf("%w: routeStepId does not exist", ErrInvalidPieceworkRate)
+	if rate.EffectiveTo != nil {
+		end := rate.EffectiveTo.UTC()
+		rate.EffectiveTo = &end
+		if err := validatePieceworkCalendarDate(*rate.EffectiveTo); err != nil {
+			return fmt.Errorf("%w: effectiveTo: %v", ErrInvalidPieceworkRate, err)
 		}
-		if routeStep.ProcessStepID != "" && processStepID != "" && routeStep.ProcessStepID != processStepID {
-			return fmt.Errorf("%w: routeStepId does not match processStepId", ErrInvalidPieceworkRate)
-		}
-		if routeStep.ProcessStepID == "" {
-			return fmt.Errorf("%w: routeStepId has no processStepId", ErrInvalidPieceworkRate)
-		}
-		processStepID = routeStep.ProcessStepID
-		rate.ProcessStepID = &processStepID
-		var route models.ProductionRoute
-		if err := tx.First(&route, "id = ?", routeStep.RouteID).Error; err != nil {
-			return fmt.Errorf("%w: route for routeStepId does not exist", ErrInvalidPieceworkRate)
-		}
-		if route.ProductID != "" && route.ProductID != rate.ProductID {
-			return fmt.Errorf("%w: routeStepId does not belong to productId", ErrInvalidPieceworkRate)
+		if !rate.EffectiveTo.After(*rate.EffectiveFrom) {
+			return fmt.Errorf("%w: effectiveTo must be after effectiveFrom", ErrInvalidPieceworkRate)
 		}
 	}
-
-	if processStepID == "" {
-		return fmt.Errorf("%w: processStepId is required", ErrInvalidPieceworkRate)
+	item, err := lockActivePieceworkPayItemTx(tx, rate.PayItemID, rate.Unit)
+	if err != nil {
+		return err
 	}
-
-	var process models.ProcessStep
-	if err := tx.First(&process, "id = ?", processStepID).Error; err != nil {
-		return fmt.Errorf("%w: processStepId does not exist", ErrInvalidPieceworkRate)
-	}
-	rate.ProcessCode = process.Code
-	rate.ProcessName = process.Name
+	rate.PayItemCode, rate.PayItemName = item.Code, item.Name
 	return nil
 }
 
 func ensurePieceworkRateIntervalAvailable(tx *gorm.DB, rate *models.PieceworkRate, excludeID string) error {
-	scopeColumn := "process_step_id"
-	scopeValue := optionalPieceworkID(rate.ProcessStepID)
-	if optionalPieceworkID(rate.RouteStepID) != "" {
-		scopeColumn = "route_step_id"
-		scopeValue = optionalPieceworkID(rate.RouteStepID)
-	}
-	if scopeValue == "" || !strings.EqualFold(rate.Status, "active") {
+	if rate.Status != "active" {
 		return nil
 	}
-
-	query := tx.Model(&models.PieceworkRate{}).
-		Where("product_id = ? AND "+scopeColumn+" = ? AND LOWER(status) = ?", rate.ProductID, scopeValue, "active").
-		Where("COALESCE(effective_to, ?) > ?", time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC), rate.EffectiveFrom)
+	query := tx.Model(&models.PieceworkRate{}).Where("pay_item_id = ? AND unit = ? AND status = 'active'", rate.PayItemID, rate.Unit).
+		Where("effective_to IS NULL OR effective_to > ?", rate.EffectiveFrom)
 	if rate.EffectiveTo != nil {
-		query = query.Where("COALESCE(effective_from, effective_at) < ?", rate.EffectiveTo)
+		query = query.Where("effective_from < ?", rate.EffectiveTo)
 	}
 	if excludeID != "" {
 		query = query.Where("id <> ?", excludeID)
 	}
-
 	var count int64
 	if err := query.Count(&count).Error; err != nil {
 		return err
@@ -409,21 +237,9 @@ func ensurePieceworkRateIntervalAvailable(tx *gorm.DB, rate *models.PieceworkRat
 	return nil
 }
 
-func applyPieceworkRatePatch(
-	rate *models.PieceworkRate,
-	command PieceworkRatePatchCommand,
-) error {
-	if command.ProductID.Set {
-		if command.ProductID.Value == nil {
-			return fmt.Errorf("%w: productId cannot be null", ErrInvalidPieceworkRate)
-		}
-		rate.ProductID = *command.ProductID.Value
-	}
-	if command.ProcessStepID.Set {
-		rate.ProcessStepID = pieceworkIDPointerFromPatch(command.ProcessStepID.Value)
-	}
-	if command.RouteStepID.Set {
-		rate.RouteStepID = pieceworkIDPointerFromPatch(command.RouteStepID.Value)
+func applyPieceworkRatePatch(rate *models.PieceworkRate, command PieceworkRatePatchCommand) error {
+	if command.PayItemID.Set {
+		rate.PayItemID = stringFromPatch(command.PayItemID.Value)
 	}
 	if command.Unit.Set {
 		rate.Unit = stringFromPatch(command.Unit.Value)
@@ -438,9 +254,6 @@ func applyPieceworkRatePatch(
 		rate.Currency = stringFromPatch(command.Currency.Value)
 	}
 	if command.EffectiveFrom.Set {
-		if command.EffectiveFrom.Value == nil {
-			return fmt.Errorf("%w: effectiveFrom cannot be null", ErrInvalidPieceworkRate)
-		}
 		rate.EffectiveFrom = command.EffectiveFrom.Value
 	}
 	if command.EffectiveTo.Set {
@@ -455,21 +268,14 @@ func applyPieceworkRatePatch(
 	return nil
 }
 
-func parsePieceworkTime(value string) (*time.Time, error) {
-	value = strings.TrimSpace(value)
-	if value == "" || value == "null" {
-		return nil, nil
-	}
-	return parsePieceworkTimeValue(value)
-}
-
+func parsePieceworkTime(value string) (*time.Time, error) { return parsePieceworkTimeValue(value) }
 func parsePieceworkTimeValue(value interface{}) (*time.Time, error) {
 	if value == nil {
 		return nil, nil
 	}
 	text, ok := value.(string)
 	if !ok {
-		return nil, fmt.Errorf("unsupported time value")
+		return nil, fmt.Errorf("unsupported date value")
 	}
 	text = strings.TrimSpace(text)
 	if text == "" || text == "null" {
@@ -481,46 +287,14 @@ func parsePieceworkTimeValue(value interface{}) (*time.Time, error) {
 			return &parsed, nil
 		}
 	}
-	return nil, fmt.Errorf("unsupported time format %q", text)
+	return nil, fmt.Errorf("unsupported date format %q", text)
 }
-
 func stringFromPatch(value *string) string {
 	if value == nil {
 		return ""
 	}
 	return *value
 }
-
-func nullablePieceworkID(value *string) interface{} {
-	if normalized := optionalPieceworkID(value); normalized != "" {
-		return normalized
-	}
-	return nil
-}
-
-func pieceworkIDPointerFromPatch(value *string) *string {
-	if value == nil {
-		return nil
-	}
-	valueCopy := strings.TrimSpace(*value)
-	if valueCopy == "" {
-		return nil
-	}
-	return &valueCopy
-}
-
 func ValidatePieceworkRateDelta(delta map[string]json.RawMessage) error {
-	return validateSupportedTopLevelDeltaKeys(
-		delta,
-		"productId",
-		"processStepId",
-		"routeStepId",
-		"unit",
-		"unitPrice",
-		"currency",
-		"effectiveFrom",
-		"effectiveTo",
-		"status",
-		"remarks",
-	)
+	return validateSupportedTopLevelDeltaKeys(delta, "payItemId", "unit", "unitPrice", "currency", "effectiveFrom", "effectiveTo", "status", "remarks")
 }

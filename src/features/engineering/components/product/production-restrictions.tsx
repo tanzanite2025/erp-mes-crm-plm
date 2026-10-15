@@ -32,10 +32,10 @@ export function ProductionRestrictions({
   return (
     <div className='group space-y-1 rounded-[18px] border border-dashed border-muted bg-muted/5 p-1.5 transition-all hover:bg-muted/10'>
       <div className='flex items-center justify-between border-b border-dashed border-muted pb-1'>
-        <h4 className='text-[10px] font-black tracking-widest text-rose-700 uppercase italic dark:text-rose-400'>
+        <h4 className='text-[10px] font-black tracking-widest text-rose-700 uppercase dark:text-rose-400'>
           {t('engineering.productMgmt.restrictions.title')}
         </h4>
-        <p className='text-[8px] font-black tracking-tighter text-slate-500 uppercase italic'>
+        <p className='text-[8px] font-black tracking-tighter text-slate-500 uppercase'>
           {t('engineering.productMgmt.restrictions.separator')}
         </p>
       </div>
@@ -63,7 +63,7 @@ export function ProductionRestrictions({
               </Badge>
             ))
           ) : (
-            <div className='flex items-center gap-2 px-1 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+            <div className='flex items-center gap-2 px-1 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
               <span>{t('engineering.productMgmt.restrictions.null')}</span>
             </div>
           )}
@@ -79,7 +79,7 @@ export function ProductionRestrictions({
               }
             }}
             placeholder={t('engineering.productMgmt.restrictions.placeholder')}
-            className='h-8 flex-1 rounded-xl border-none bg-muted/40 text-[11px] font-black tracking-widest uppercase italic focus-visible:ring-rose-400'
+            className='h-8 flex-1 rounded-xl border-none bg-muted/40 text-[11px] font-black tracking-widest uppercase focus-visible:ring-rose-400'
           />
           <Button
             type='button'

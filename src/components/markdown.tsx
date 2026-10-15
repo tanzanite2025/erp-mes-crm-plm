@@ -17,7 +17,7 @@ export function Markdown({ children, className }: MarkdownProps) {
       className={cn(
         'prose prose-sm dark:prose-invert max-w-none break-words',
         'prose-p:leading-relaxed prose-p:my-2',
-        'prose-headings:font-black prose-headings:italic prose-headings:uppercase prose-headings:tracking-widest prose-headings:mb-3 prose-headings:mt-4',
+        'prose-headings:font-black prose-headings:uppercase prose-headings:tracking-widest prose-headings:mb-3 prose-headings:mt-4',
         'prose-strong:font-bold prose-strong:text-primary',
         'prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none',
         'prose-ul:my-2 prose-li:my-1',

@@ -41,7 +41,7 @@ export function Users({ search, navigate, showLayout = true }: UsersProps) {
         <div className='mb-6 flex flex-col gap-1 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:rounded-[32px] sm:p-6'>
           <div className='flex items-center gap-2 text-primary'>
             <ShieldCheck className='size-4' />
-            <h3 className='text-base font-black tracking-tighter uppercase italic sm:text-lg'>
+            <h3 className='text-base font-black tracking-tighter uppercase sm:text-lg'>
               {t('users.layout.title')}
             </h3>
           </div>

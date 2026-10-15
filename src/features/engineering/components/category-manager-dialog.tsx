@@ -119,7 +119,7 @@ export function CategoryManagerDialog({
               </>
             ) : (
               <div className='flex min-w-0 items-center gap-1.5 sm:gap-2'>
-                <span className='text-[11px] font-black tracking-tighter break-all text-primary uppercase italic sm:text-xs'>
+                <span className='text-[11px] font-black tracking-tighter break-all text-primary uppercase sm:text-xs'>
                   {row.original.name}
                 </span>
                 <Badge
@@ -228,7 +228,7 @@ export function CategoryManagerDialog({
         <DialogHeader className='relative p-4 pb-3 sm:p-8 sm:pb-4'>
           <div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-center'>
             <div className='flex flex-col gap-1'>
-              <DialogTitle className='flex items-center gap-2 text-base font-black tracking-tighter text-primary uppercase italic sm:text-lg'>
+              <DialogTitle className='flex items-center gap-2 text-base font-black tracking-tighter text-primary uppercase sm:text-lg'>
                 <Settings2 className='size-4 sm:size-5' />
                 <span className='truncate'>
                   {t('engineering.categoryArchive.header.title')}

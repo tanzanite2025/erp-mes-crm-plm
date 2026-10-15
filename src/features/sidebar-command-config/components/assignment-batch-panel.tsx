@@ -34,7 +34,7 @@ export function AssignmentBatchPanel({
             <UsersRound className='size-4' />
           </div>
           <div>
-            <h2 className='text-sm font-black tracking-tighter italic'>
+            <h2 className='text-sm font-black tracking-tighter'>
               {t('sidebarCommandConfig.batch.title')}
             </h2>
             <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>

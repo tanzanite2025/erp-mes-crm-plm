@@ -213,7 +213,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
         aria-describedby={undefined}
       >
         <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-8 py-3 text-start'>
-          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter text-slate-800 italic'>
+          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter text-slate-800'>
             <div className='size-2 animate-pulse rounded-full bg-blue-600' />
             {isEdit
               ? t('engineering.productMgmt.dialog.titleEdit')
@@ -415,7 +415,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     <Box className='size-5 animate-pulse text-blue-600/30' />
                   </div>
                   <div className='space-y-1'>
-                    <p className='text-[10px] font-black text-slate-800 italic'>
+                    <p className='text-[10px] font-black text-slate-800'>
                       {t('engineering.productMgmt.dialog.templatePending')}
                     </p>
                     <p className='max-w-[280px] text-[9px] font-black text-muted-foreground/30'>
@@ -439,7 +439,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
         <DialogFooter className='flex shrink-0 flex-col gap-2 border-t border-dashed border-muted/50 bg-white px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
           <div className='min-w-0 flex-1 rounded-[20px] border border-dashed border-blue-600/30 bg-blue-600/5 px-3 py-2'>
             <div className='flex items-center justify-between gap-3 border-b border-dashed border-blue-600/30 pb-1'>
-              <span className='text-[10px] font-black text-blue-800 italic'>
+              <span className='text-[10px] font-black text-blue-800'>
                 {t('engineering.productMgmt.dialog.previewTitle')}
               </span>
               <Badge
@@ -449,7 +449,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 {t('engineering.productArchive.states.live')}
               </Badge>
             </div>
-            <p className='mt-1 text-[11px] leading-tight font-black tracking-tighter break-all text-blue-900 italic dark:text-blue-200'>
+            <p className='mt-1 text-[11px] leading-tight font-black tracking-tighter break-all text-blue-900 dark:text-blue-200'>
               {specPreviewAggregateLabel ||
                 (specPreviewV2
                   ? specPreviewTitle || specPreviewV2.title

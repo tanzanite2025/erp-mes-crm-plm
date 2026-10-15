@@ -20,7 +20,7 @@ export function Overview({ data, levelName }: OverviewProps) {
         <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
           {t('dashboard.page.throughput.empty.title', { levelName })}
         </p>
-        <p className='mt-2 text-[9px] font-black uppercase italic opacity-40'>
+        <p className='mt-2 text-[9px] font-black uppercase opacity-40'>
           {t('dashboard.page.throughput.empty.description', { levelName })}
         </p>
       </div>

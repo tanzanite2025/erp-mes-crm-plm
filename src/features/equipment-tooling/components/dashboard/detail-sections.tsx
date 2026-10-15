@@ -31,7 +31,7 @@ export const DetailSections = ({
         <CardContent className='p-5'>
           <div className='mb-4 flex items-center gap-2'>
             <Activity className='size-4 text-primary' />
-            <h4 className='text-[11px] font-black tracking-widest text-foreground uppercase italic'>
+            <h4 className='text-[11px] font-black tracking-widest text-foreground uppercase'>
               {t('equipmentTooling.dashboard.detail.statusTitle')}
             </h4>
           </div>
@@ -70,7 +70,7 @@ export const DetailSections = ({
         <CardContent className='p-5'>
           <div className='mb-4 flex items-center gap-2'>
             <ShieldCheck className='size-4 text-primary' />
-            <h4 className='text-[11px] font-black tracking-widest text-foreground uppercase italic'>
+            <h4 className='text-[11px] font-black tracking-widest text-foreground uppercase'>
               {t('equipmentTooling.dashboard.detail.lifecycleTitle')}
             </h4>
           </div>
@@ -78,10 +78,10 @@ export const DetailSections = ({
           <div className='flex flex-col gap-6'>
             <div className='flex flex-col gap-1.5'>
               <div className='flex items-baseline justify-between'>
-                <span className='text-[9px] font-black tracking-widest uppercase italic opacity-40'>
+                <span className='text-[9px] font-black tracking-widest uppercase opacity-40'>
                   {t('equipmentTooling.dashboard.detail.avgLife')}
                 </span>
-                <span className='text-xl font-black tracking-tighter italic tabular-nums'>
+                <span className='text-xl font-black tracking-tighter tabular-nums'>
                   {healthVectors.avgLifeConsumpt.toFixed(1)}%
                 </span>
               </div>
@@ -101,7 +101,7 @@ export const DetailSections = ({
                     {t('equipmentTooling.dashboard.detail.activeAssets')}
                   </span>
                 </div>
-                <span className='text-xl font-black tracking-tighter italic tabular-nums'>
+                <span className='text-xl font-black tracking-tighter tabular-nums'>
                   {moldStats.inUse}
                 </span>
               </div>
@@ -115,7 +115,7 @@ export const DetailSections = ({
                     {t('equipmentTooling.dashboard.detail.normal')}
                   </span>
                 </div>
-                <span className='text-xl font-black tracking-tighter text-amber-500 italic tabular-nums'>
+                <span className='text-xl font-black tracking-tighter text-amber-500 tabular-nums'>
                   {t('equipmentTooling.dashboard.detail.optimal')}
                 </span>
               </div>

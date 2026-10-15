@@ -54,7 +54,7 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
     <div className='grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3'>
       <Card className='gap-0 overflow-hidden rounded-[32px] border-dashed border-slate-200 bg-white/50 py-0 shadow-none dark:border-white/10 dark:bg-white/3'>
         <CardHeader className='p-3 pb-1 sm:p-3.5 sm:pb-1.5'>
-          <CardTitle className='flex items-center justify-between text-sm font-black tracking-tighter uppercase italic'>
+          <CardTitle className='flex items-center justify-between text-sm font-black tracking-tighter uppercase'>
             <div className='flex items-center gap-2'>
               <HardDrive className='size-4 text-emerald-600' />
               {t('systemManagement.infrastructure.runtimeMemory')}
@@ -113,7 +113,7 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
 
       <Card className='gap-0 overflow-hidden rounded-[32px] border-dashed border-slate-200 bg-white/50 py-0 shadow-none dark:border-white/10 dark:bg-white/3'>
         <CardHeader className='p-3 pb-1 sm:p-3.5 sm:pb-1.5'>
-          <CardTitle className='flex items-center justify-between text-sm font-black tracking-tighter uppercase italic'>
+          <CardTitle className='flex items-center justify-between text-sm font-black tracking-tighter uppercase'>
             <div className='flex items-center gap-2'>
               <Database className='size-4 text-blue-600' />
               {t('systemManagement.infrastructure.databasePool')}

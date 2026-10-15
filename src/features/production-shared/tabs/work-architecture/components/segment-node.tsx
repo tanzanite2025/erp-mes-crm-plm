@@ -116,7 +116,7 @@ export function SegmentNode({
         )}
 
         {processes.length === 0 && (
-          <span className='ml-1 text-[10px] text-muted-foreground/30 italic'>
+          <span className='ml-1 text-[10px] text-muted-foreground/30'>
             (
             {t('productionShared.workArchitecture.unconfiguredLevel', {
               levelName: level3Name,

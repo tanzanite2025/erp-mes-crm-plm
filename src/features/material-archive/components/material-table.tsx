@@ -66,7 +66,7 @@ export function MaterialTable({
             <TableRow>
               <TableCell colSpan={columnsLength} className='h-64'>
                 <div className='flex flex-col items-center justify-center opacity-30'>
-                  <h4 className='text-sm font-black tracking-tight italic'>
+                  <h4 className='text-sm font-black tracking-tight'>
                     {currentCategoryLabel}
                   </h4>
                   <p className='mt-0.5 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>

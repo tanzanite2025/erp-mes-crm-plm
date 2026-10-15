@@ -84,7 +84,7 @@ export function AuditEntryShell({
       <CollapsibleTrigger className='w-full rounded-[24px] border border-dashed bg-muted/5 px-4 py-4 text-left transition-colors hover:bg-muted/10'>
         <div className='flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between'>
           <div className='flex flex-wrap items-center gap-3'>
-            <span className='text-[10px] font-black tracking-tighter text-primary uppercase italic'>
+            <span className='text-[10px] font-black tracking-tighter text-primary uppercase'>
               {actionLabel}
             </span>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2.5 py-1'>

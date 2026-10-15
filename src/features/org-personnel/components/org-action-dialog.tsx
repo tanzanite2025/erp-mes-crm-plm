@@ -307,7 +307,7 @@ export function OrgActionDialog({
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-lg',
     header: 'text-start',
-    title: 'text-lg font-black italic tracking-tighter uppercase',
+    title: 'text-lg font-black tracking-tighter uppercase',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
   })
 

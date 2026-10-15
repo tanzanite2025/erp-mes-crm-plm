@@ -351,7 +351,7 @@ export function HubsTab() {
       <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
         <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-3xl'>
           <DialogHeader className='border-b border-dashed border-muted-foreground/10 bg-muted/5 p-6'>
-            <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase italic'>
+            <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
               <ImageIcon className='size-4 text-indigo-600' />
               {previewFile?.name} / {t('engineering.spokeLength.table.preview')}
             </DialogTitle>

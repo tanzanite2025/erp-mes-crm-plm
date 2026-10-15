@@ -65,7 +65,7 @@ export function ProductBarcodeMobileCapturePage({
           <div className='flex size-20 items-center justify-center rounded-[28px] bg-emerald-500/10 text-emerald-600'>
             <CheckCircle2 className='size-10' />
           </div>
-          <h1 className='mt-6 text-3xl font-black tracking-tighter italic'>
+          <h1 className='mt-6 text-3xl font-black tracking-tighter'>
             {t(
               'cuttingOperations.productBinding.mobileCapture.page.submitted.title'
             )}
@@ -89,7 +89,7 @@ export function ProductBarcodeMobileCapturePage({
               <Smartphone className='size-7' />
             </div>
             <div>
-              <h1 className='text-2xl font-black tracking-tighter italic'>
+              <h1 className='text-2xl font-black tracking-tighter'>
                 {t('cuttingOperations.productBinding.mobileCapture.page.title')}
               </h1>
               <p className='mt-1 text-xs leading-5 font-bold text-muted-foreground'>

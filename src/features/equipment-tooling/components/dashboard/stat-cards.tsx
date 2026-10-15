@@ -52,7 +52,7 @@ export const StatCard = ({
       <CardContent className='flex h-full flex-col justify-between p-4'>
         <div className='mb-2 flex items-center justify-between'>
           <div className='flex flex-col'>
-            <span className='text-[9px] leading-none font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic'>
+            <span className='text-[9px] leading-none font-black tracking-[0.2em] text-muted-foreground/50 uppercase'>
               {title}
             </span>
             {subtext && (
@@ -73,7 +73,7 @@ export const StatCard = ({
 
         <div className='space-y-2'>
           <div className='flex items-baseline gap-1'>
-            <span className='text-2xl leading-none font-black tracking-tighter italic tabular-nums'>
+            <span className='text-2xl leading-none font-black tracking-tighter tabular-nums'>
               {value}
             </span>
             <span className='text-[10px] font-black opacity-20'>

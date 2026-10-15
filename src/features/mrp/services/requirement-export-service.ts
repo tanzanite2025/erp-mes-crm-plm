@@ -179,7 +179,7 @@ export const RequirementExportService = {
             cell.font = { bold: true, color: { argb: 'FFE11D48' } }
           }
           if (colNumber === 9 && item.packaging) {
-            cell.font = { italic: true, color: { argb: 'FF16A34A' } }
+            cell.font = { color: { argb: 'FF16A34A' } }
           }
         })
         currentRowNum++
@@ -208,7 +208,7 @@ export const RequirementExportService = {
     infoCell.value = translate(locale, 'mrp.requirements.export.recipientInfo')
     infoCell.border = EXCEL_THIN_BORDER
     infoCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
-    infoCell.font = { size: 9, italic: true }
+    infoCell.font = { size: 9 }
 
     const signRowNum = startFooterRow + 1
     const signRow = sheet.getRow(signRowNum)

@@ -106,7 +106,7 @@ export function SecuritySettings() {
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h2 className='text-lg font-black tracking-tighter uppercase'>
             {t('basicSettings.securityPage.title')}
           </h2>
           <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -131,7 +131,7 @@ export function SecuritySettings() {
       <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
         <Card className='overflow-hidden rounded-[24px] border-dashed bg-transparent shadow-none'>
           <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter italic'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter'>
               <Lock className='h-4 w-4' />
               {t('basicSettings.securityPage.authCardTitle')}
             </CardTitle>
@@ -184,7 +184,7 @@ export function SecuritySettings() {
 
         <Card className='rounded-[24px] bg-muted/5 shadow-none'>
           <CardHeader>
-            <CardTitle className='text-sm font-black tracking-tighter italic'>
+            <CardTitle className='text-sm font-black tracking-tighter'>
               {t('basicSettings.securityPage.auditTitle')}
             </CardTitle>
           </CardHeader>

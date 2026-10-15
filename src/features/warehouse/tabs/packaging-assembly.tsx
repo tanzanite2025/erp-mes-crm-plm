@@ -416,7 +416,7 @@ export default function PackagingAssembly() {
       <div className='grid gap-4 xl:grid-cols-[420px_1fr]'>
         <Card className='rounded-lg border border-border/70 shadow-none'>
           <CardHeader className='pb-3'>
-            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter italic'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter'>
               <Smartphone className='size-4 text-primary' />
               {copy.mobileEntry}
             </CardTitle>
@@ -495,7 +495,7 @@ export default function PackagingAssembly() {
 
         <Card className='rounded-lg border border-border/70 shadow-none'>
           <CardHeader className='pb-3'>
-            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight italic'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tight'>
               <CheckCircle2 className='size-4 text-primary' />
               {copy.latestAssemblies}
             </CardTitle>

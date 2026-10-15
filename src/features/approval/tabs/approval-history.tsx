@@ -88,7 +88,7 @@ export function ApprovalHistory() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <HistoryIcon className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h3 className='text-lg font-black tracking-tighter uppercase'>
             {t('approval.history.heroTitle')}
           </h3>
         </div>
@@ -164,7 +164,7 @@ export function ApprovalHistory() {
             ) : filteredHistory.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className='h-[300px] text-center'>
-                  <div className='flex flex-col items-center justify-center text-muted-foreground/20 italic'>
+                  <div className='flex flex-col items-center justify-center text-muted-foreground/20'>
                     <HistoryIcon className='mb-4 size-12 opacity-10' />
                     <p className='text-[11px] font-black tracking-widest uppercase'>
                       {t('approval.history.empty')}

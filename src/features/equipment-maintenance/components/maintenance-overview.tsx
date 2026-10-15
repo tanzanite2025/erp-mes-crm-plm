@@ -203,7 +203,7 @@ export function MaintenanceOverview() {
                   <p className='text-[9px] leading-none font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {card.label}
                   </p>
-                  <p className='text-2xl leading-none font-black tracking-tighter italic'>
+                  <p className='text-2xl leading-none font-black tracking-tighter'>
                     {isLoadingStats ? '...' : card.count}
                   </p>
                 </div>
@@ -229,11 +229,11 @@ export function MaintenanceOverview() {
         >
           <div className={industrialPanelGradientClassName} />
           <div className='z-10 space-y-0.5'>
-            <CardTitle className='flex items-center gap-1 text-[10px] font-black tracking-wider text-emerald-500 uppercase italic'>
+            <CardTitle className='flex items-center gap-1 text-[10px] font-black tracking-wider text-emerald-500 uppercase'>
               <Heart className='size-3' />
               设备总健康度
             </CardTitle>
-            <p className='text-xl font-black tracking-tighter italic'>
+            <p className='text-xl font-black tracking-tighter'>
               {isLoadingStats ? '...' : `${completedPercent}%`}
             </p>
             <p className='text-[8px] leading-none font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -283,7 +283,7 @@ export function MaintenanceOverview() {
           <div className={industrialPanelGradientClassName} />
           <div className='relative z-10'>
             <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <AlertCircle className='size-4.5 text-rose-500' />
                 高优先级待处理
               </CardTitle>
@@ -304,7 +304,7 @@ export function MaintenanceOverview() {
                   加载中...
                 </div>
               ) : highPriorityRecords.length === 0 ? (
-                <div className='py-6 text-center text-xs font-bold text-muted-foreground italic'>
+                <div className='py-6 text-center text-xs font-bold text-muted-foreground'>
                   暂无高优先级待处理记录
                 </div>
               ) : (
@@ -357,7 +357,7 @@ export function MaintenanceOverview() {
           <div className={industrialPanelGradientClassName} />
           <div className='relative z-10'>
             <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <Clock className='size-4.5 text-blue-500' />
                 最近维保动态
               </CardTitle>
@@ -378,7 +378,7 @@ export function MaintenanceOverview() {
                   加载中...
                 </div>
               ) : recentRecords.length === 0 ? (
-                <div className='py-6 text-center text-xs font-bold text-muted-foreground italic'>
+                <div className='py-6 text-center text-xs font-bold text-muted-foreground'>
                   暂无维保动态
                 </div>
               ) : (

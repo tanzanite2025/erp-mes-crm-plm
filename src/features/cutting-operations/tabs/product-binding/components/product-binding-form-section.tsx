@@ -52,7 +52,7 @@ export function ProductBindingFormSection(
               <p className='text-xs font-semibold text-muted-foreground'>
                 {t('cuttingOperations.productBinding.form.steps.step1')}
               </p>
-              <p className='mt-1 text-base font-black tracking-tight text-foreground italic'>
+              <p className='mt-1 text-base font-black tracking-tight text-foreground'>
                 {t('cuttingOperations.productBinding.form.barcode.label')}
               </p>
             </div>
@@ -86,7 +86,7 @@ export function ProductBindingFormSection(
               <p className='text-xs font-semibold text-muted-foreground'>
                 {t('cuttingOperations.productBinding.form.steps.step2')}
               </p>
-              <p className='mt-1 text-base font-black tracking-tight text-foreground italic'>
+              <p className='mt-1 text-base font-black tracking-tight text-foreground'>
                 {t('cuttingOperations.productBinding.form.qr.label')}
               </p>
             </div>

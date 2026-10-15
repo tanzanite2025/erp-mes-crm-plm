@@ -54,7 +54,7 @@ export function HubActionDialog({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+      'text-xl font-black uppercase tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
     footer:

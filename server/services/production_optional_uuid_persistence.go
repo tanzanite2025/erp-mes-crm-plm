@@ -1,15 +1,10 @@
 package services
 
 import (
-	"strings"
-
 	"gorm.io/gorm"
 )
 
-type productionOptionalUUIDWrite struct {
-	Column string
-	Value  string
-}
+type productionOptionalUUIDWrite = optionalUUIDColumnValue
 
 func createProductionRecordWithOptionalUUIDs(tx *gorm.DB, record any, fields ...productionOptionalUUIDWrite) error {
 	return applyProductionOptionalUUIDOmit(tx, fields...).Create(record).Error
@@ -31,26 +26,9 @@ func saveProductionRecordWithOptionalUUIDs(tx *gorm.DB, record any, fields ...pr
 }
 
 func applyProductionOptionalUUIDOmit(tx *gorm.DB, fields ...productionOptionalUUIDWrite) *gorm.DB {
-	emptyColumns := collectEmptyProductionOptionalUUIDColumns(fields...)
-	if len(emptyColumns) == 0 {
-		return tx
-	}
-	return tx.Omit(emptyColumns...)
+	return omitEmptyUUIDColumnsForRecordCreation(tx, fields...)
 }
 
 func collectEmptyProductionOptionalUUIDColumns(fields ...productionOptionalUUIDWrite) []string {
-	columns := make([]string, 0, len(fields))
-	seen := make(map[string]struct{}, len(fields))
-	for _, field := range fields {
-		column := strings.TrimSpace(field.Column)
-		if column == "" || strings.TrimSpace(field.Value) != "" {
-			continue
-		}
-		if _, exists := seen[column]; exists {
-			continue
-		}
-		seen[column] = struct{}{}
-		columns = append(columns, column)
-	}
-	return columns
+	return collectEmptyOptionalUUIDColumns(fields...)
 }

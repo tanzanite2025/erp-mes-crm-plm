@@ -90,7 +90,7 @@ export function DocumentHeaderFields({
         <div className='flex size-3 items-center justify-center rounded-full bg-primary/20'>
           <div className='size-1.5 rounded-full bg-primary' />
         </div>
-        <h4 className='text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase italic'>
+        <h4 className='text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
           {t('tradingSalesOrder.headerFields.sectionTitle')}
         </h4>
       </div>
@@ -144,7 +144,7 @@ export function DocumentHeaderFields({
           )}
         >
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.detail.info.customerPo')}
             </Label>
             <Input
@@ -162,7 +162,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.orderNo')}
             </Label>
             <div className='group relative'>
@@ -179,7 +179,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.customer')}
             </Label>
             <div className='relative'>
@@ -203,7 +203,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.tradeMode')}
             </Label>
             <select
@@ -223,7 +223,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.category')}
             </Label>
             <select
@@ -241,7 +241,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.deliveryDeadline')}
             </Label>
             <div className='relative'>
@@ -262,7 +262,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.paymentCurrency')}
             </Label>
             <div className='relative'>
@@ -288,7 +288,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.paymentMethod')}
             </Label>
             <select
@@ -309,7 +309,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.paymentTerm')}
             </Label>
             <select
@@ -330,7 +330,7 @@ export function DocumentHeaderFields({
           </div>
 
           <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.barcode')}
             </Label>
             <div className='group relative'>

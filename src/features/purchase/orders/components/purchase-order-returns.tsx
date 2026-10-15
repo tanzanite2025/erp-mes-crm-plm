@@ -623,7 +623,7 @@ export function PurchaseOrderReturns() {
                     <p className='text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
                       {t('purchase.orders.returns.pendingLines')}
                     </p>
-                    <p className='mt-2 text-2xl font-black text-amber-600 italic'>
+                    <p className='mt-2 text-2xl font-black text-amber-600'>
                       {selectedPendingLines.length}
                     </p>
                   </CardContent>
@@ -633,7 +633,7 @@ export function PurchaseOrderReturns() {
                     <p className='text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
                       {t('purchase.orders.returns.pendingQty')}
                     </p>
-                    <p className='mt-2 text-2xl font-black text-rose-600 italic'>
+                    <p className='mt-2 text-2xl font-black text-rose-600'>
                       {formatMetric(selectedPendingQty)}
                     </p>
                   </CardContent>
@@ -1055,7 +1055,7 @@ export function PurchaseOrderReturns() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-emerald-600/60 uppercase'>
                 {t('purchase.orders.returns.eligibleOrders')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-600'>
                 {eligibleOrders.length}
               </p>
             </div>
@@ -1067,7 +1067,7 @@ export function PurchaseOrderReturns() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
                 {t('purchase.orders.returns.pendingLines')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-amber-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-amber-600'>
                 {totalPendingLineCount}
               </p>
             </div>
@@ -1079,7 +1079,7 @@ export function PurchaseOrderReturns() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
                 {t('purchase.orders.returns.totalQty')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-rose-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-rose-600'>
                 {formatMetric(totalReturnedQty)}
               </p>
             </div>
@@ -1091,7 +1091,7 @@ export function PurchaseOrderReturns() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-blue-600/60 uppercase'>
                 {t('purchase.orders.returns.totalAmount')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-blue-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-blue-600'>
                 {formatMetric(totalReturnedAmount)}
               </p>
             </div>
@@ -1316,7 +1316,7 @@ export function PurchaseOrderReturns() {
                     <p className='text-[10px] font-black tracking-widest text-amber-700/60 uppercase'>
                       {t('purchase.orders.returns.pendingLines')}
                     </p>
-                    <p className='mt-2 text-2xl font-black text-amber-700 italic'>
+                    <p className='mt-2 text-2xl font-black text-amber-700'>
                       {selectedPendingLines.length}
                     </p>
                   </div>
@@ -1324,7 +1324,7 @@ export function PurchaseOrderReturns() {
                     <p className='text-[10px] font-black tracking-widest text-rose-700/60 uppercase'>
                       {t('purchase.orders.returns.pendingQty')}
                     </p>
-                    <p className='mt-2 text-2xl font-black text-rose-700 italic'>
+                    <p className='mt-2 text-2xl font-black text-rose-700'>
                       {formatMetric(selectedPendingQty)}
                     </p>
                   </div>

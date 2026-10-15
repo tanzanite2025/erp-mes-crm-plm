@@ -2,29 +2,23 @@ export interface PieceworkRateApiDTO {
   id: string
   createdAt?: string
   updatedAt?: string
-  productId: string
-  processStepId?: string | null
-  routeStepId?: string | null
-  processCode?: string
-  processName?: string
-  unit?: string
-  unitPrice?: number
-  piecePrice?: number
-  currency?: string
-  effectiveAt?: string | null
-  effectiveFrom?: string | null
+  payItemId: string
+  payItemCode: string
+  payItemName: string
+  unit: string
+  unitPrice: number
+  currency: string
+  effectiveFrom: string
   effectiveTo?: string | null
-  status?: string
+  status: 'active' | 'inactive'
   remarks?: string
-  version?: number
+  version: number
   operator?: string
 }
 
 export interface PieceworkRateWriteApiDTO {
   id?: string
-  productId: string
-  processStepId?: string
-  routeStepId?: string
+  payItemId: string
   unit?: string
   unitPrice?: number
   currency?: string
@@ -35,9 +29,28 @@ export interface PieceworkRateWriteApiDTO {
   version?: number
 }
 
+export const PIECEWORK_RATE_PATCH_WRITABLE_FIELDS = [
+  'payItemId',
+  'unit',
+  'unitPrice',
+  'currency',
+  'effectiveFrom',
+  'effectiveTo',
+  'status',
+  'remarks',
+] as const satisfies readonly (keyof Omit<
+  PieceworkRateWriteApiDTO,
+  'id' | 'version'
+>)[]
+
 export interface PieceworkRatePatchApiDTO {
   op: 'PATCH'
-  delta: Record<string, { o: unknown; n: unknown }>
+  delta: Partial<
+    Record<
+      (typeof PIECEWORK_RATE_PATCH_WRITABLE_FIELDS)[number],
+      { o: unknown; n: unknown }
+    >
+  >
   metadata: {
     id: string
     version: number

@@ -73,15 +73,15 @@ function DayDetailSheetBody({ date }: { date: Date }) {
               <span className='text-[9px] font-black tracking-widest uppercase opacity-60'>
                 {format(date, 'MMM', { locale: dateLocale })}
               </span>
-              <span className='text-lg leading-none font-black italic'>
+              <span className='text-lg leading-none font-black'>
                 {format(date, 'd')}
               </span>
             </div>
             <div>
-              <SheetTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+              <SheetTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase'>
                 {format(date, dateFormat, { locale: dateLocale })}
               </SheetTitle>
-              <SheetDescription className='text-[10px] font-bold tracking-widest text-muted-foreground/40 uppercase italic'>
+              <SheetDescription className='text-[10px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
                 {t('dashboard.page.calendar.detail.snapshot')}
               </SheetDescription>
             </div>
@@ -94,7 +94,7 @@ function DayDetailSheetBody({ date }: { date: Date }) {
               <Package className='size-3' />{' '}
               {t('dashboard.page.calendar.stats.totalOutput')}
             </div>
-            <div className='text-2xl font-black text-slate-800 italic'>
+            <div className='text-2xl font-black text-slate-800'>
               {detail?.output || 0}{' '}
               <span className='text-[10px] font-black text-muted-foreground/30 uppercase'>
                 {t('dashboard.page.calendar.units.pcs')}
@@ -106,9 +106,7 @@ function DayDetailSheetBody({ date }: { date: Date }) {
               <TrendingUp className='size-3' />{' '}
               {t('dashboard.page.calendar.stats.estPerformance')}
             </div>
-            <div className='text-2xl font-black text-blue-600/20 italic'>
-              --
-            </div>
+            <div className='text-2xl font-black text-blue-600/20'>--</div>
           </div>
         </div>
 
@@ -202,7 +200,7 @@ function DayDetailSheetBody({ date }: { date: Date }) {
         <div className='flex gap-3 rounded-lg border border-slate-500/10 bg-slate-500/5 p-3'>
           <AlertTriangle className='size-5 shrink-0 text-slate-400' />
           <div>
-            <div className='text-xs font-bold text-slate-500 italic'>
+            <div className='text-xs font-bold text-slate-500'>
               {t('dashboard.page.calendar.detail.qualityData')}
             </div>
             <p className='mt-0.5 text-[11px] leading-relaxed text-muted-foreground'>

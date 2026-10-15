@@ -154,6 +154,7 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModulePieceworkRate,
 		"PieceworkRate",
 	},
+	AuditModulePieceworkPayItem: {AuditModulePieceworkPayItem, "PieceworkPayItem"},
 	AuditModuleTeam: {
 		AuditModuleTeam,
 		"Team",

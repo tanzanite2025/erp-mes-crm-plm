@@ -236,7 +236,7 @@ export function SalesReturnRecordMaster({
         >
           <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
             <AlertDialogHeader>
-              <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+              <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase'>
                 {t('trading.salesReturns.queryShell.deleteConfirmTitle')}
               </AlertDialogTitle>
               <AlertDialogDescription className='text-[11px] leading-6 font-bold text-muted-foreground'>

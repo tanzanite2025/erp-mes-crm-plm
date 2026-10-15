@@ -219,7 +219,7 @@ export function MaintenanceAnalyticsPage() {
           <Card className='relative flex flex-col overflow-hidden rounded-[24px] border-dashed bg-muted/5 p-4'>
             <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
             <CardHeader className='p-0 pb-2'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <ShieldAlert className='size-4 text-amber-500' />
                 故障分级统计分析
               </CardTitle>
@@ -284,7 +284,7 @@ export function MaintenanceAnalyticsPage() {
           <Card className='relative flex flex-col overflow-hidden rounded-[24px] border-dashed bg-muted/5 p-4'>
             <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
             <CardHeader className='p-0 pb-2'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <BarChart2 className='size-4 text-blue-500' />
                 设备多维健康雷达
               </CardTitle>
@@ -336,7 +336,7 @@ export function MaintenanceAnalyticsPage() {
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
           <div className='flex flex-1 flex-col'>
             <CardHeader className='flex flex-row items-center justify-between p-0 pb-3'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <TrendingUp className='size-4 text-cyan-500' />
                 维保负荷与响应时效趋势
               </CardTitle>
@@ -429,7 +429,7 @@ export function MaintenanceAnalyticsPage() {
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
           <div className='flex flex-1 flex-col'>
             <CardHeader className='p-0 pb-3'>
-              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+              <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                 <Award className='size-4 text-emerald-500' />
                 设备健康评估 TOP 5
               </CardTitle>
@@ -459,7 +459,7 @@ export function MaintenanceAnalyticsPage() {
                       </div>
                     </div>
                     <div className='flex shrink-0 items-center gap-1.5'>
-                      <span className='font-mono text-xs font-black text-foreground italic'>
+                      <span className='font-mono text-xs font-black text-foreground'>
                         {asset.score}分
                       </span>
                       <span

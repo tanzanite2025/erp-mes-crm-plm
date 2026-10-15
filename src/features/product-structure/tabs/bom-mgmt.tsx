@@ -122,7 +122,12 @@ export function BOMMgmt() {
       },
     ]
     for (const customer of customers) {
-      options.push({ label: customer.name, value: customer.id })
+      options.push({
+        label: t('engineering.bomArchive.filter.customerOwner', {
+          customerName: customer.name,
+        }),
+        value: customer.id,
+      })
     }
     return options
   }, [customers, t])
@@ -148,7 +153,7 @@ export function BOMMgmt() {
         <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:p-6'>
           <div className='flex items-center gap-2 text-primary'>
             <Layers className='size-4 text-primary' />
-            <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h3 className='text-lg font-black tracking-tighter uppercase'>
               {t('engineering.bomArchive.header.title')}
             </h3>
           </div>
@@ -197,7 +202,7 @@ export function BOMMgmt() {
         <div className='flex items-start justify-between gap-3'>
           <div className='flex items-center gap-2 text-primary'>
             <Layers className='size-4 text-primary' />
-            <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h3 className='text-lg font-black tracking-tighter uppercase'>
               {t('engineering.bomArchive.header.title')}
             </h3>
           </div>

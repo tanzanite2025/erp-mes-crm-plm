@@ -77,7 +77,7 @@ export function SystemAnomalyBanner() {
         </div>
         <div className='flex flex-col gap-1'>
           <div className='flex items-center gap-3'>
-            <span className='flex items-center gap-1.5 text-[10px] font-black tracking-widest uppercase italic opacity-80'>
+            <span className='flex items-center gap-1.5 text-[10px] font-black tracking-widest uppercase opacity-80'>
               <ShieldCheck className='size-3' /> System Integrity Watchdog /
               完整性实时监管
             </span>
@@ -125,7 +125,7 @@ export function SystemAnomalyBanner() {
           </Link>
         ) : (
           <div className='flex flex-col items-end gap-1'>
-            <span className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase italic opacity-80'>
+            <span className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-80'>
               Auto-Heal Protocol <Loader2 className='size-3 animate-spin' />
             </span>
             <span className='text-[8px] opacity-60'>

@@ -25,7 +25,7 @@ export function SignIn() {
                   {t('common.auth.layout.connectivity')}
                 </span>
               </div>
-              <h1 className='text-3xl font-black tracking-tighter text-foreground uppercase italic'>
+              <h1 className='text-3xl font-black tracking-tighter text-foreground uppercase'>
                 {t('common.auth.layout.title')}
               </h1>
               <p className='mt-1 text-[11px] leading-none font-black tracking-[0.2em] text-muted-foreground/60 uppercase'>
@@ -71,7 +71,7 @@ export function SignIn() {
 
           <div className='relative z-20 mt-auto p-12 text-white'>
             <div className='max-w-xs translate-y-4 animate-in space-y-2 duration-1000 slide-in-from-bottom'>
-              <h2 className='text-2xl font-black tracking-tighter uppercase italic'>
+              <h2 className='text-2xl font-black tracking-tighter uppercase'>
                 {t('common.auth.layout.smartFactory')}
               </h2>
               <p className='text-[10px] leading-relaxed font-medium tracking-widest uppercase opacity-60'>

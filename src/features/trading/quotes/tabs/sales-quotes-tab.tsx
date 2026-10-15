@@ -16,7 +16,7 @@ export function SalesQuotesTab() {
 
       <Card className='rounded-2xl border border-dashed border-primary/20 bg-muted/5 shadow-inner md:rounded-[32px]'>
         <CardHeader className='gap-2 border-b border-dashed border-muted/50 bg-muted/20 px-5 py-4 md:px-8 md:py-5'>
-          <CardTitle className='text-lg font-black tracking-tighter uppercase italic'>
+          <CardTitle className='text-lg font-black tracking-tighter uppercase'>
             {t('trading.quotes.statusTitle')}
           </CardTitle>
         </CardHeader>

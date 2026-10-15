@@ -28,8 +28,8 @@ export function WorkspaceBoard({
           <p
             className={
               isCompactLayout
-                ? 'text-xs leading-tight font-black tracking-tighter text-foreground uppercase italic md:text-base'
-                : 'text-sm leading-tight font-black tracking-tighter text-foreground uppercase italic md:text-lg'
+                ? 'text-xs leading-tight font-black tracking-tighter text-foreground uppercase md:text-base'
+                : 'text-sm leading-tight font-black tracking-tighter text-foreground uppercase md:text-lg'
             }
           >
             这里先收纳你的便签和链接

@@ -22,6 +22,7 @@ type ConfirmDialogProps = {
   handleConfirm: () => void
   isLoading?: boolean
   className?: string
+  bodyClassName?: string
   children?: React.ReactNode
 }
 
@@ -31,6 +32,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
     desc,
     children,
     className,
+    bodyClassName,
     confirmText,
     cancelBtnText,
     destructive,
@@ -49,7 +51,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
       >
         <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
 
-        <div className='relative p-6 md:p-8'>
+        <div className={cn('relative p-6 md:p-8', bodyClassName)}>
           <AlertDialogHeader className='space-y-4 text-start'>
             <AlertDialogTitle className='text-base leading-tight font-black tracking-tight [overflow-wrap:anywhere] break-words whitespace-normal md:text-lg'>
               {title}

@@ -114,7 +114,7 @@ export function PurchaseLogisticsPage() {
               <div className='space-y-2'>
                 <div className='flex items-center gap-2'>
                   <CloudOff className='size-4 text-amber-700' />
-                  <CardTitle className='text-sm font-black tracking-tighter text-amber-900 uppercase italic'>
+                  <CardTitle className='text-sm font-black tracking-tighter text-amber-900 uppercase'>
                     {t('purchase.logistics.offlineDraftsTitle')}
                   </CardTitle>
                   <Badge className='rounded-full border border-amber-200 bg-white text-amber-700'>

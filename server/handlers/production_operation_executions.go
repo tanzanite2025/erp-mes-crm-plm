@@ -35,12 +35,16 @@ func RecordProductionOperationExecutionHandler(c *gin.Context) {
 	}
 
 	req.Operator = middleware.GetSafeUsername(c)
+	if err := services.ValidateProductionExecutionCommandIdempotencyKey(req.IdempotencyKey); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+		return
+	}
 	response, err := services.RecordProductionOperationExecutionWithContext(auditContextFromGin(c), req)
 	if err != nil {
 		switch {
+		case errors.Is(err, services.ErrProductionExecutionRequestKeyConflict), errors.Is(err, services.ErrProductionExecutionRoundConflict):
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error(), "code": "PRODUCTION_EXECUTION_CONFLICT"})
 		case errors.Is(err, services.ErrInvalidProductionOperationExecution):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
-		case errors.Is(err, services.ErrInvalidPieceworkRecord):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 工序执行记录保存失败: " + err.Error()})

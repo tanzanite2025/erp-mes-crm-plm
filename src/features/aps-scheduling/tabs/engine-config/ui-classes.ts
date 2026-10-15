@@ -24,10 +24,10 @@ export const ENGINE_KICKER_CLASS =
   'text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/55'
 
 export const ENGINE_SECTION_TITLE_CLASS =
-  'mt-1 text-sm font-black tracking-tighter italic text-foreground'
+  'mt-1 text-sm font-black tracking-tighter text-foreground'
 
 export const ENGINE_CARD_TITLE_CLASS =
-  'text-sm font-black tracking-tighter italic text-foreground'
+  'text-sm font-black tracking-tighter text-foreground'
 
 export const ENGINE_HERO_DESC_CLASS =
   'text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'

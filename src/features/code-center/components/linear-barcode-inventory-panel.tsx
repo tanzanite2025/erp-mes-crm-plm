@@ -58,7 +58,7 @@ export function LinearBarcodeInventoryPanel({
     <section className='rounded-xl border border-dashed border-muted/50 bg-muted/5 p-5'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <div className='flex items-center gap-2 text-base font-black tracking-tight italic'>
+          <div className='flex items-center gap-2 text-base font-black tracking-tight'>
             <Database className='size-4 text-primary' />
             {t('codeCenter.linearBarcode.print.sections.inventory.title')}
           </div>

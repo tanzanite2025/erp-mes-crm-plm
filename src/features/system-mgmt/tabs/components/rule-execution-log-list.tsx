@@ -96,7 +96,7 @@ export function RuleExecutionLogList({
                   ) : null}
                 </div>
                 <div>
-                  <p className='text-sm font-black tracking-tighter text-slate-900 italic'>
+                  <p className='text-sm font-black tracking-tighter text-slate-900'>
                     {log.title ||
                       log.segmentTitle ||
                       log.ruleName ||

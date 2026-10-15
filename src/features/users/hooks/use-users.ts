@@ -217,46 +217,47 @@ export const useUserMutations = () => {
       { id: string; payload: ReplaceUserPermissionsPayload }
     >({
       queryClient,
-      invalidateQueryKeys: [
-        USERS_QUERY_KEY,
-        USER_ACCESS_SNAPSHOT_QUERY_KEY,
-      ],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onSuccess: (data, variables) => {
         const normalizedPermissionIDs = normalizePermissionIDs(data.permissions)
         const queryKey = [...USER_PERMISSIONS_QUERY_KEY, variables.id.trim()]
 
-        queryClient.setQueryData<UserPermissionsResponse>(queryKey, (current) => {
-          if (!current) {
-            return current
-          }
-
-          const permissionItemByID = new Map<string, UserPermissionItem>(
-            current.permissions.map((item) => [
-              item.permissionId.trim().toLowerCase(),
-              item,
-            ])
-          )
-          const nextPermissions = normalizedPermissionIDs.map((permissionID) =>
-            permissionItemByID.get(permissionID) ?? {
-              permissionId: permissionID,
+        queryClient.setQueryData<UserPermissionsResponse>(
+          queryKey,
+          (current) => {
+            if (!current) {
+              return current
             }
-          )
-          const nextEffectivePermissions = Array.from(
-            new Set([
-              ...current.presetPermissions
-                .map((permissionID) => permissionID.trim().toLowerCase())
-                .filter(Boolean),
-              ...normalizedPermissionIDs,
-            ])
-          )
 
-          return {
-            ...current,
-            permissions: nextPermissions,
-            effectivePermissions: nextEffectivePermissions,
-            total: nextPermissions.length,
+            const permissionItemByID = new Map<string, UserPermissionItem>(
+              current.permissions.map((item) => [
+                item.permissionId.trim().toLowerCase(),
+                item,
+              ])
+            )
+            const nextPermissions = normalizedPermissionIDs.map(
+              (permissionID) =>
+                permissionItemByID.get(permissionID) ?? {
+                  permissionId: permissionID,
+                }
+            )
+            const nextEffectivePermissions = Array.from(
+              new Set([
+                ...current.presetPermissions
+                  .map((permissionID) => permissionID.trim().toLowerCase())
+                  .filter(Boolean),
+                ...normalizedPermissionIDs,
+              ])
+            )
+
+            return {
+              ...current,
+              permissions: nextPermissions,
+              effectivePermissions: nextEffectivePermissions,
+              total: nextPermissions.length,
+            }
           }
-        })
+        )
 
         return refreshCurrentAccountAccessSnapshotIfMutatedAccountMatches(
           variables.id

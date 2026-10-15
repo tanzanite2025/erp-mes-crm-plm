@@ -16,7 +16,7 @@ export function PurchasePayablesSummaryCards({
         <span className='text-[10px] font-black tracking-widest text-blue-600 uppercase dark:text-blue-400'>
           {t('purchase.payables.summaryTotal')}
         </span>
-        <span className='text-base font-black text-blue-700 italic tabular-nums dark:text-blue-300'>
+        <span className='text-base font-black text-blue-700 tabular-nums dark:text-blue-300'>
           {summary?.totalPayable ?? 0}
         </span>
       </div>
@@ -25,7 +25,7 @@ export function PurchasePayablesSummaryCards({
         <span className='text-[10px] font-black tracking-widest text-rose-600 uppercase dark:text-rose-400'>
           {t('purchase.payables.summaryOverdue')}
         </span>
-        <span className='text-base font-black text-rose-700 italic tabular-nums dark:text-rose-300'>
+        <span className='text-base font-black text-rose-700 tabular-nums dark:text-rose-300'>
           {summary?.overduePayable ?? 0}
         </span>
       </div>
@@ -34,7 +34,7 @@ export function PurchasePayablesSummaryCards({
         <span className='text-[10px] font-black tracking-widest text-amber-600 uppercase dark:text-amber-400'>
           {t('purchase.payables.summaryPending')}
         </span>
-        <span className='text-base font-black text-amber-700 italic tabular-nums dark:text-amber-300'>
+        <span className='text-base font-black text-amber-700 tabular-nums dark:text-amber-300'>
           {summary?.pendingPaymentCount ?? 0}
         </span>
       </div>

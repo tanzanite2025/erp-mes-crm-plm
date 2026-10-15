@@ -289,7 +289,7 @@ export function NotificationCenter({
               <DialogHeader className='border-b border-dashed border-border/60 px-6 py-5 text-left'>
                 <div className='flex items-center justify-between gap-4'>
                   <div className='space-y-1'>
-                    <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+                    <DialogTitle className='text-lg font-black tracking-tighter uppercase'>
                       通知中心
                     </DialogTitle>
                     <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -425,7 +425,7 @@ export function NotificationCenter({
                       <Bell className='size-7' />
                     </div>
                     <div className='space-y-1'>
-                      <p className='text-sm font-black tracking-tighter text-foreground uppercase italic'>
+                      <p className='text-sm font-black tracking-tighter text-foreground uppercase'>
                         暂无待处理通知
                       </p>
                       <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>

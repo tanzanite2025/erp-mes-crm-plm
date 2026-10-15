@@ -87,7 +87,7 @@ export function BOMDetailTable({
             {/* 工序分组标题 */}
             <div className='flex items-center gap-2 px-1'>
               <div className='h-4 w-1 rounded-full bg-amber-600' />
-              <h4 className='text-[10px] font-black tracking-[0.2em] text-slate-800 uppercase italic'>
+              <h4 className='text-[10px] font-black tracking-[0.2em] text-slate-800 uppercase'>
                 {t('engineering.productMgmt.bom.processNode')}:{' '}
                 <span className='text-amber-600'>
                   {resolveBOMSectionLabel(sectionOptions, section, section)}
@@ -153,7 +153,7 @@ export function BOMDetailTable({
                           {t('engineering.productMgmt.bom.unitUsage')}
                         </span>
                         <div className='flex items-baseline gap-1'>
-                          <span className='text-sm font-black text-amber-700 italic tabular-nums'>
+                          <span className='text-sm font-black text-amber-700 tabular-nums'>
                             {requireNumber(item.unitUsage, 'unitUsage').toFixed(
                               4
                             )}
@@ -168,7 +168,7 @@ export function BOMDetailTable({
                           {t('engineering.productMgmt.bom.stdUsage')}
                         </span>
                         <div className='flex items-baseline gap-1'>
-                          <span className='text-sm font-black text-amber-700 italic tabular-nums'>
+                          <span className='text-sm font-black text-amber-700 tabular-nums'>
                             {requireNumber(
                               item.standardUsage,
                               'standardUsage'
@@ -224,7 +224,7 @@ export function BOMDetailTable({
         {items.length === 0 && (
           <div className='flex h-48 flex-col items-center justify-center gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 text-center opacity-20'>
             <Layers className='size-16' />
-            <p className='text-[11px] font-black tracking-[0.3em] text-muted-foreground uppercase italic'>
+            <p className='text-[11px] font-black tracking-[0.3em] text-muted-foreground uppercase'>
               {t('engineering.productMgmt.bom.noData')}
             </p>
           </div>
@@ -236,7 +236,7 @@ export function BOMDetailTable({
         <Table>
           <TableHeader className='border-b border-dashed border-muted bg-muted/30'>
             <TableRow className='hover:bg-transparent'>
-              <TableHead className='w-[100px] border-r text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+              <TableHead className='w-[100px] border-r text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {t('engineering.productMgmt.bom.headerProcess')}
               </TableHead>
               <TableHead className='w-[120px] text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
@@ -254,13 +254,13 @@ export function BOMDetailTable({
               <TableHead className='w-[80px] text-right text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {t('engineering.productMgmt.bom.headerPrice')}
               </TableHead>
-              <TableHead className='w-[100px] bg-amber-500/5 text-right text-[10px] font-black tracking-widest text-amber-600 uppercase italic'>
+              <TableHead className='w-[100px] bg-amber-500/5 text-right text-[10px] font-black tracking-widest text-amber-600 uppercase'>
                 {t('engineering.productMgmt.bom.headerUsage')}
               </TableHead>
               <TableHead className='w-[80px] text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {t('engineering.productMgmt.bom.headerLoss')}
               </TableHead>
-              <TableHead className='w-[100px] border-l border-dashed border-amber-200 bg-amber-500/10 text-right text-[10px] font-black tracking-widest text-amber-700 uppercase italic'>
+              <TableHead className='w-[100px] border-l border-dashed border-amber-200 bg-amber-500/10 text-right text-[10px] font-black tracking-widest text-amber-700 uppercase'>
                 {t('engineering.productMgmt.bom.headerStdUsage')}
               </TableHead>
               <TableHead className='w-[100px] text-center text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
@@ -309,7 +309,7 @@ export function BOMDetailTable({
                         rowSpan={(groupedItems[section] || []).length}
                         className='border-r border-amber-700/50 bg-amber-600 text-center align-middle text-[11px] font-black tracking-[0.3em] text-white uppercase shadow-[inset_-4px_0_8px_rgba(0,0,0,0.1)]'
                       >
-                        <div className='mx-auto rotate-180 transform tracking-[0.4em] italic [writing-mode:vertical-rl]'>
+                        <div className='mx-auto rotate-180 transform tracking-[0.4em] [writing-mode:vertical-rl]'>
                           {resolveBOMSectionLabel(
                             sectionOptions,
                             section,
@@ -335,7 +335,7 @@ export function BOMDetailTable({
                     <td className='px-4 py-3 text-right font-mono text-[10px] font-bold text-slate-500'>
                       楼{requireNumber(item.unitPrice, 'unitPrice').toFixed(2)}
                     </td>
-                    <td className='bg-amber-500/5 px-4 py-3 text-right text-[12px] font-black text-amber-600 italic tabular-nums'>
+                    <td className='bg-amber-500/5 px-4 py-3 text-right text-[12px] font-black text-amber-600 tabular-nums'>
                       {requireNumber(item.unitUsage, 'unitUsage').toFixed(6)}
                     </td>
                     <td className='px-4 py-3 text-center text-[10px] font-black text-slate-400 uppercase'>
@@ -346,7 +346,7 @@ export function BOMDetailTable({
                         {requireNumber(item.wastagePercent, 'wastagePercent')}%
                       </Badge>
                     </td>
-                    <td className='border-l border-dashed border-amber-200 bg-amber-500/10 px-4 py-3 text-right text-[12px] font-black text-amber-700 italic tabular-nums'>
+                    <td className='border-l border-dashed border-amber-200 bg-amber-500/10 px-4 py-3 text-right text-[12px] font-black text-amber-700 tabular-nums'>
                       {requireNumber(
                         item.standardUsage,
                         'standardUsage'

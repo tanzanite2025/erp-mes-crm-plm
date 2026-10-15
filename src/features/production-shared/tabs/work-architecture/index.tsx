@@ -46,7 +46,7 @@ export function WorkArchitecture() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <LayoutGrid className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter italic'>
+          <h3 className='text-lg font-black tracking-tighter'>
             {t('productionShared.workArchitecture.title')}
           </h3>
         </div>
@@ -95,7 +95,7 @@ export function WorkArchitecture() {
             <CardContent className='flex flex-col items-center justify-center space-y-4 py-24'>
               <LayoutGrid className='size-12 text-muted-foreground/20' />
               <div className='space-y-1 text-center'>
-                <p className='text-base font-black tracking-tighter text-muted-foreground/60 italic'>
+                <p className='text-base font-black tracking-tighter text-muted-foreground/60'>
                   {t('productionShared.workArchitecture.emptyTitle')}
                 </p>
                 <p className='text-[9px] font-black tracking-widest text-muted-foreground/40'>
@@ -112,7 +112,7 @@ export function WorkArchitecture() {
                   <LayoutGrid className='size-5' />
                 </div>
                 <div>
-                  <h3 className='text-base font-black tracking-tighter text-slate-800 italic'>
+                  <h3 className='text-base font-black tracking-tighter text-slate-800'>
                     {line.name}
                   </h3>
                   <p className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/50'>

@@ -19,13 +19,17 @@ func ExecuteProductionScanCommandHandler(c *gin.Context) {
 	req.ActorID = middleware.GetSafeUserID(c)
 	req.Operator = middleware.GetSafeUsername(c)
 	req.IP = c.ClientIP()
+	if err := services.ValidateProductionExecutionCommandIdempotencyKey(req.IdempotencyKey); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+		return
+	}
 
 	response, err := services.ExecuteProductionScanCommandWithContext(auditContextFromGin(c), req)
 	if err != nil {
 		switch {
+		case errors.Is(err, services.ErrProductionExecutionRequestKeyConflict), errors.Is(err, services.ErrProductionExecutionRoundConflict):
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error(), "code": "PRODUCTION_EXECUTION_CONFLICT"})
 		case errors.Is(err, services.ErrInvalidProductionScanCommand):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
-		case errors.Is(err, services.ErrInvalidPieceworkRecord):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 扫码执行失败: " + err.Error()})

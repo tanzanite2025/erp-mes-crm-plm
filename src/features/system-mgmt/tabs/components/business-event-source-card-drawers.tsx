@@ -261,9 +261,7 @@ export function StatusEditorContent({
       <div className='flex h-full min-h-0 flex-col'>
         <div className='border-b border-dashed border-muted/30 px-6 py-5'>
           <div className='flex items-center gap-2'>
-            <h3 className='text-sm font-black tracking-tight italic'>
-              状态配置
-            </h3>
+            <h3 className='text-sm font-black tracking-tight'>状态配置</h3>
             <SectionChangeBadge dirty={dirty} summary={changeSummary} />
           </div>
           <p className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -468,7 +466,7 @@ export function StatusEditorContent({
       >
         <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
           <AlertDialogHeader>
-            <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+            <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase'>
               删除已落库状态
             </AlertDialogTitle>
             <AlertDialogDescription className='text-[11px] leading-6 font-bold text-muted-foreground'>
@@ -504,7 +502,7 @@ export function StatusEditorContent({
       >
         <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
           <AlertDialogHeader>
-            <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+            <AlertDialogTitle className='text-lg font-black tracking-tighter uppercase'>
               确认安全重命名迁移
             </AlertDialogTitle>
             <AlertDialogDescription className='text-[11px] leading-6 font-bold text-muted-foreground'>
@@ -590,7 +588,7 @@ export function FieldEditorContent({
     <div className='flex h-full min-h-0 flex-col'>
       <div className='border-b border-dashed border-muted/30 px-6 py-5'>
         <div className='flex items-center gap-2'>
-          <h3 className='text-sm font-black tracking-tight italic'>字段配置</h3>
+          <h3 className='text-sm font-black tracking-tight'>字段配置</h3>
           <SectionChangeBadge dirty={dirty} summary={changeSummary} />
         </div>
         <p className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

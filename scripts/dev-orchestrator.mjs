@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 
 import { spawn, spawnSync } from 'node:child_process'
-import process from 'node:process'
 import { dirname, resolve } from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import {
+  assertLocalDevelopmentPortCanListen,
+  createLocalBackendEnvironmentWithConfiguredServicePorts,
+  loadLocalDevelopmentEnvironmentAndServicePorts,
+} from './local-development-environment-and-service-port-configuration.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -11,12 +16,9 @@ const repoRoot = resolve(__dirname, '..')
 const serverDir = resolve(repoRoot, 'server')
 const viteEntry = resolve(repoRoot, 'node_modules/vite/bin/vite.js')
 
-const devPorts = [8010, 8020]
-const frontendPort = '8010'
-const backendPort = '8020'
-const backendOrigin =
-  'http://localhost:8010,http://127.0.0.1:8010,http://localhost:8020,http://127.0.0.1:8020'
 const prepareOnly = process.argv.includes('--prepare-only')
+const backendOnly = process.argv.includes('--backend-only')
+const frontendOnly = process.argv.includes('--frontend-only')
 
 const children = new Set()
 let shuttingDown = false
@@ -48,70 +50,20 @@ function runOptional(command, args, options = {}) {
   return result.status === 0
 }
 
-function clearWindowsPortConflicts() {
-  const portLiteral = devPorts.join(', ')
-  const script = `
-$ports = @(${portLiteral})
-$selfPid = $PID
-$connections = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
-  Where-Object { $ports -contains $_.LocalPort }
-$processIds = $connections | Select-Object -ExpandProperty OwningProcess -Unique
-foreach ($processId in $processIds) {
-  if (-not $processId -or $processId -eq $selfPid) { continue }
-  $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $processId" -ErrorAction SilentlyContinue
-  $name = if ($processInfo) { $processInfo.Name } else { "unknown" }
-  $cmd = if ($processInfo) { $processInfo.CommandLine } else { "" }
-  Write-Host "[dev] clear port owner pid=$processId name=$name"
-  if ($cmd) { Write-Host "[dev]   $cmd" }
-  Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
-}
-`
-  runChecked(
-    'powershell',
-    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
-    { cwd: repoRoot }
-  )
-}
-
-function clearUnixPortConflicts() {
-  for (const port of devPorts) {
-    const result = spawnSync('sh', [
-      '-lc',
-      `command -v lsof >/dev/null 2>&1 && lsof -tiTCP:${port} -sTCP:LISTEN || true`,
-    ])
-    const pids = result.stdout
-      ?.toString('utf8')
-      .split(/\s+/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-
-    for (const pid of pids || []) {
-      if (pid === String(process.pid)) continue
-      log(`clear port ${port} owner pid=${pid}`)
-      spawnSync('kill', ['-9', pid], { stdio: 'ignore' })
-    }
-  }
-}
-
-function clearLocalConflicts() {
-  log(`clearing local dev port conflicts: ${devPorts.join(', ')}`)
-  if (process.platform === 'win32') {
-    clearWindowsPortConflicts()
-    return
-  }
-  clearUnixPortConflicts()
-}
-
 function cleanGoBuildCache() {
-  log('cleaning Go build cache to avoid stale go-build locks')
+  log('cleaning Go build cache (--clean-go-cache requested)')
   const ok = runOptional('go', ['clean', '-cache'], { cwd: serverDir })
   if (!ok) {
-    log('Go cache cleanup failed; continuing. If backend compile fails, check stale Go processes or antivirus locks.')
+    log(
+      'Go cache cleanup failed; continuing. If backend compile fails, check stale Go processes or antivirus locks.'
+    )
   }
 }
 
 function generateRouteContracts() {
-  log('generating route tree, authenticated route catalog, and permission contracts')
+  log(
+    'generating route tree, authenticated route catalog, and permission contracts'
+  )
   runChecked('node', ['scripts/generate-route-tree.mjs'])
   runChecked('node', ['scripts/generate-authenticated-route-catalog.mjs'])
   runChecked('node', ['scripts/generate-route-permission-contract.mjs'])
@@ -138,7 +90,9 @@ function startChild(label, command, args, options = {}) {
     children.delete(child)
     if (shuttingDown) return
     if (code === 0 || signal) return
-    console.error(`[dev] ${label} exited code=${code ?? 'null'} signal=${signal ?? 'null'}`)
+    console.error(
+      `[dev] ${label} exited code=${code ?? 'null'} signal=${signal ?? 'null'}`
+    )
     shutdown(code ?? 1)
   })
 
@@ -167,53 +121,87 @@ function shutdown(exitCode = 0) {
 process.on('SIGINT', () => shutdown(0))
 process.on('SIGTERM', () => shutdown(0))
 
-clearLocalConflicts()
-cleanGoBuildCache()
-
-log('starting local base services: Postgres / Redis / Search Engine')
-runChecked(
-  'powershell',
-  ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', './server/dev-up.ps1'],
-  { cwd: repoRoot }
-)
-
-generateRouteContracts()
-
-if (prepareOnly) {
-  log('DEV prepare complete: ports cleared, base services running, contracts generated')
-  process.exit(0)
-}
-
-const backendEnv = {
-  ...process.env,
-  PORT: backendPort,
-  SEARCH_ENGINE_URL: 'http://127.0.0.1:8030',
-  ALLOWED_ORIGIN: backendOrigin,
-}
-
-const frontendEnv = {
-  ...process.env,
-  VITE_PROXY_TARGET: `http://localhost:${backendPort}`,
-}
-
 try {
-  startChild('backend API http://localhost:8020', 'go', ['run', 'main.go'], {
-    cwd: serverDir,
-    env: backendEnv,
-  })
-
-  startChild(
-    'frontend Vite http://localhost:8010',
-    process.execPath,
-    [viteEntry, '--host', '127.0.0.1', '--port', frontendPort],
-    {
-      cwd: repoRoot,
-      env: frontendEnv,
-    }
+  if (backendOnly && frontendOnly) {
+    throw new Error('Choose either --backend-only or --frontend-only')
+  }
+  const { environment, ports } =
+    loadLocalDevelopmentEnvironmentAndServicePorts()
+  const backendEnv = createLocalBackendEnvironmentWithConfiguredServicePorts(
+    environment,
+    ports
   )
+  const frontendUrl = `http://127.0.0.1:${ports.DEV_FRONTEND_PORT}`
+  const backendUrl = `http://127.0.0.1:${ports.DEV_BACKEND_PORT}`
+  log(`local service ports: ${JSON.stringify(ports)}`)
+
+  if (!prepareOnly && !backendOnly) {
+    await assertLocalDevelopmentPortCanListen(
+      'DEV_FRONTEND_PORT',
+      ports.DEV_FRONTEND_PORT
+    )
+  }
+  if (!prepareOnly && !frontendOnly) {
+    await assertLocalDevelopmentPortCanListen(
+      'DEV_BACKEND_PORT',
+      ports.DEV_BACKEND_PORT
+    )
+  }
+  if (!frontendOnly) {
+    if (process.argv.includes('--clean-go-cache')) cleanGoBuildCache()
+    log('starting local base services: Postgres / Redis / Search Engine')
+    runChecked(
+      'powershell',
+      [
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        './server/dev-up.ps1',
+      ],
+      { cwd: repoRoot, env: backendEnv }
+    )
+  }
+  if (!backendOnly) generateRouteContracts()
+
+  if (prepareOnly) {
+    log('DEV prepare complete: base services running, contracts generated')
+    process.exit(0)
+  }
+
+  if (!frontendOnly) {
+    startChild(`backend API ${backendUrl}`, 'go', ['run', 'main.go'], {
+      cwd: serverDir,
+      env: backendEnv,
+    })
+  }
+  if (!backendOnly) {
+    startChild(
+      `frontend Vite ${frontendUrl}`,
+      process.execPath,
+      [
+        viteEntry,
+        '--host',
+        '127.0.0.1',
+        '--port',
+        String(ports.DEV_FRONTEND_PORT),
+        '--strictPort',
+      ],
+      {
+        cwd: repoRoot,
+        env: { ...environment, VITE_PROXY_TARGET: backendUrl },
+      }
+    )
+  }
+  log(
+    `DEV processes launched. ${backendOnly ? 'API' : 'Frontend'}: ${backendOnly ? backendUrl : frontendUrl}`
+  )
+  if (!backendOnly) {
+    log(
+      `Frontend API proxy: ${backendUrl}; waiting for backend startup to finish`
+    )
+  }
 } catch (error) {
   console.error('[dev] failed to start dev processes:', error)
   shutdown(1)
 }
-
-log('DEV started. Login: admin / xdfc_local_admin_password')

@@ -94,7 +94,7 @@ export function CustomerSalesClosureSummaryBlock({
   return (
     <div className='grid grid-cols-1 gap-3 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2.5 md:grid-cols-3 md:items-center'>
       <div className='space-y-1'>
-        <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+        <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
           <SummaryIcon className='size-3' />
           {t('trading.customers.summary.orderStatusTitle')}
         </div>
@@ -134,7 +134,7 @@ export function CustomerSalesClosureSummaryBlock({
 
       <div className='grid grid-cols-2 gap-2 md:contents'>
         <div className='min-w-0 space-y-1'>
-          <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+          <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
             <CalendarClock className='size-3' />
             {t('trading.customers.summary.lastOrderDate')}
           </div>
@@ -146,7 +146,7 @@ export function CustomerSalesClosureSummaryBlock({
         </div>
 
         <div className='min-w-0 space-y-1'>
-          <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+          <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
             <CalendarClock className='size-3' />
             {t('trading.customers.summary.idleDays')}
           </div>

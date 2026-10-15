@@ -28,6 +28,8 @@ const (
 var ErrInvalidProductionScanCommand = errors.New("invalid production scan command")
 
 type ExecuteProductionScanCommandRequest struct {
+	IdempotencyKey      string `json:"idempotencyKey"`
+	ExecutionRound      int64  `json:"executionRound,omitempty"`
 	ProductBarcode      string `json:"productBarcode"`
 	ExecutionLotID      string `json:"executionLotId"`
 	RouteID             string `json:"routeId"`
@@ -160,6 +162,16 @@ func (s *ProductionScanCommandService) ExecuteProductionScanCommandWithContext(c
 }
 
 func executeProductionScanCommandTx(ctx context.Context, tx *gorm.DB, normalized ExecuteProductionScanCommandRequest) (productionScanCommandTxResult, error) {
+	return executeProductionCommandWithRequestReplayTx(tx, "SCAN_COMMAND", normalized.IdempotencyKey, normalized,
+		func() (productionScanCommandTxResult, error) {
+			if err := lockProductionBarcodeExecutionTransaction(tx, normalized.ProductBarcode); err != nil {
+				return productionScanCommandTxResult{}, err
+			}
+			return executeProductionScanCommandWithoutRequestReplayTx(ctx, tx, normalized)
+		})
+}
+
+func executeProductionScanCommandWithoutRequestReplayTx(ctx context.Context, tx *gorm.DB, normalized ExecuteProductionScanCommandRequest) (productionScanCommandTxResult, error) {
 	resolved, err := resolveProductionScanCommandContextTx(tx, normalized)
 	if err != nil {
 		return productionScanCommandTxResult{}, err
@@ -175,6 +187,21 @@ func executeProductionScanCommandTx(ctx context.Context, tx *gorm.DB, normalized
 
 	progress := initialProductionScanProgress(recordResult.Operation, resolved.RouteStep)
 	transferEvents := make([]models.ProductBarcodeTransferEvent, 0)
+	if recordResult.Replayed && recordResult.Operation.ScanCommandEffectsApplied {
+		loadedState, events, err := loadProductBarcodeStateWithEvents(tx, normalized.ProductBarcode)
+		if err != nil {
+			return productionScanCommandTxResult{}, err
+		}
+		progress.CurrentRouteStepID = loadedState.RouteStepID
+		progress.CurrentProcessStepID = loadedState.CurrentProcessStepID
+		progress.RouteCompleted = loadedState.Status == ProductBarcodeStateStatusCompleted
+		return productionScanCommandTxResult{
+			CommandSource: normalized.CommandSource, RecordResult: recordResult,
+			StateResponse: mapProductBarcodeStateToResponse(loadedState, events),
+			Progress:      progress, TransferEvents: transferEvents,
+			Message: buildProductionScanCommandMessage(progress, recordResult.Operation),
+		}, nil
+	}
 	if shouldAdvanceProductionScanRoute(normalized) && recordResult.Operation.RouteID != "" && recordResult.Operation.RouteStepID != "" {
 		progressedState, routeProgress, routeTransferEvent, hasRouteTransfer, err := advanceProductionScanRouteTx(tx, normalized, recordResult)
 		if err != nil {
@@ -225,6 +252,11 @@ func executeProductionScanCommandTx(ctx context.Context, tx *gorm.DB, normalized
 	if err := recordProductionScanCommandAuditTx(tx, normalized, recordResult, progress, transferEvents); err != nil {
 		return productionScanCommandTxResult{}, err
 	}
+	if err := tx.Model(&models.ProductionOperationExecution{}).
+		Where("id = ?", recordResult.Operation.ID).
+		UpdateColumn("scan_command_effects_applied", true).Error; err != nil {
+		return productionScanCommandTxResult{}, err
+	}
 
 	loadedState, events, err := loadProductBarcodeStateWithEvents(tx, recordResult.State.ProductBarcode)
 	if err != nil {
@@ -252,15 +284,17 @@ func normalizeExecuteProductionScanCommandRequest(input ExecuteProductionScanCom
 	}
 
 	return ExecuteProductionScanCommandRequest{
+		IdempotencyKey:      strings.TrimSpace(input.IdempotencyKey),
+		ExecutionRound:      input.ExecutionRound,
 		ProductBarcode:      normalizeProductBarcodeValue(input.ProductBarcode),
-		ExecutionLotID:      strings.TrimSpace(input.ExecutionLotID),
-		RouteID:             strings.TrimSpace(input.RouteID),
-		RouteStepID:         strings.TrimSpace(input.RouteStepID),
-		ProcessStepID:       strings.TrimSpace(input.ProcessStepID),
-		TargetRouteStepID:   strings.TrimSpace(input.TargetRouteStepID),
-		TargetProcessStepID: strings.TrimSpace(input.TargetProcessStepID),
+		ExecutionLotID:      normalizeProductionExecutionUUIDIdentity(input.ExecutionLotID),
+		RouteID:             normalizeProductionExecutionUUIDIdentity(input.RouteID),
+		RouteStepID:         normalizeProductionExecutionUUIDIdentity(input.RouteStepID),
+		ProcessStepID:       normalizeProductionExecutionUUIDIdentity(input.ProcessStepID),
+		TargetRouteStepID:   normalizeProductionExecutionUUIDIdentity(input.TargetRouteStepID),
+		TargetProcessStepID: normalizeProductionExecutionUUIDIdentity(input.TargetProcessStepID),
 		ExecutionMode:       strings.ToUpper(strings.TrimSpace(input.ExecutionMode)),
-		PartnerID:           strings.TrimSpace(input.PartnerID),
+		PartnerID:           normalizeProductionExecutionUUIDIdentity(input.PartnerID),
 		Action:              action,
 		Result:              strings.TrimSpace(input.Result),
 		Notes:               strings.TrimSpace(input.Notes),
@@ -303,6 +337,8 @@ func resolveProductionScanCommandContextTx(tx *gorm.DB, req ExecuteProductionSca
 	}
 
 	executionReq := RecordProductionOperationExecutionRequest{
+		IdempotencyKey: req.IdempotencyKey,
+		ExecutionRound: req.ExecutionRound,
 		ProductBarcode: req.ProductBarcode,
 		ExecutionLotID: req.ExecutionLotID,
 		RouteID:        firstNonEmpty(req.RouteID, state.RouteID),
@@ -745,6 +781,7 @@ func recordProductionScanCommandAuditTx(
 	transferEvents []models.ProductBarcodeTransferEvent,
 ) error {
 	metadata := map[string]string{
+		"submittedByUserId":     recordResult.Operation.SubmittedByUserID,
 		"productBarcode":        recordResult.Operation.ProductBarcode,
 		"action":                recordResult.Operation.Action,
 		"status":                recordResult.Operation.Status,

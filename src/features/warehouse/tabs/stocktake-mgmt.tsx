@@ -272,7 +272,7 @@ export function StocktakeMgmt() {
         <div className='relative h-fit w-full rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-4 shadow-inner transition-all hover:bg-muted/10 md:rounded-[32px] md:p-6 lg:col-span-4'>
           <div className='absolute top-0 left-6 flex -translate-y-1/2 items-center gap-2 rounded-full border border-dashed border-muted/80 bg-background px-3 py-1 md:left-12 md:px-4'>
             <History className='size-3 text-muted-foreground/60' />
-            <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/60 uppercase italic md:text-[10px]'>
+            <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[10px]'>
               {t('warehouse.stocktake.queueTitle')}
             </span>
           </div>
@@ -303,7 +303,7 @@ export function StocktakeMgmt() {
                       )}
                     >
                       <div className='mb-3 flex items-start justify-between'>
-                        <h4 className='text-sm font-black tracking-tighter text-foreground uppercase italic transition-colors group-hover:text-blue-600'>
+                        <h4 className='text-sm font-black tracking-tighter text-foreground uppercase transition-colors group-hover:text-blue-600'>
                           {task.title}
                         </h4>
                         <div className='origin-top-right scale-75'>
@@ -346,7 +346,7 @@ export function StocktakeMgmt() {
                 <div className='space-y-0.5 overflow-hidden'>
                   <div className='flex items-center gap-3'>
                     <div className='h-4 w-1 shrink-0 rounded-full bg-blue-600 md:h-5' />
-                    <h3 className='truncate text-sm font-black tracking-tighter text-foreground uppercase italic'>
+                    <h3 className='truncate text-sm font-black tracking-tighter text-foreground uppercase'>
                       {selectedTask.title}
                     </h3>
                   </div>

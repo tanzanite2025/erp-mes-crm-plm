@@ -296,7 +296,7 @@ export default function WarehouseCategory() {
           <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
           <div className='relative z-10 flex items-center gap-3 text-primary'>
             <Warehouse className='size-5' />
-            <h2 className='text-xl font-black tracking-tighter uppercase italic'>
+            <h2 className='text-xl font-black tracking-tighter uppercase'>
               {t('warehouse.category.title')} / WAREHOUSE_BASE_SETUP
             </h2>
           </div>
@@ -370,7 +370,7 @@ export default function WarehouseCategory() {
                         <div className='flex flex-wrap items-center gap-2'>
                           <h4
                             className={cn(
-                              'truncate font-black tracking-tighter text-slate-800 uppercase italic',
+                              'truncate font-black tracking-tighter text-slate-800 uppercase',
                               cat.name.length > 4 ? 'text-sm' : 'text-base'
                             )}
                           >
@@ -503,7 +503,7 @@ export default function WarehouseCategory() {
                   <Settings2 className='size-8 animate-pulse opacity-10' />
                 </div>
               </div>
-              <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+              <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {t('warehouse.category.empty')}
               </p>
             </div>
@@ -517,7 +517,7 @@ export default function WarehouseCategory() {
 
           <div className='relative p-5 md:p-8'>
             <DialogHeader className='mb-6 text-left md:mb-8'>
-              <DialogTitle className='truncate text-lg font-black tracking-tighter uppercase italic md:text-xl'>
+              <DialogTitle className='truncate text-lg font-black tracking-tighter uppercase md:text-xl'>
                 {editingCategory
                   ? t('warehouse.category.dialog.editTitle')
                   : t('warehouse.category.dialog.createTitle')}

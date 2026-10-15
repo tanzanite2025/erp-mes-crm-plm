@@ -642,6 +642,10 @@ function ProductionExecutionResult({
 
             <div className='grid gap-2 sm:grid-cols-2'>
               <ResultCell
+                label={t('productionExecution.fields.submittedBy')}
+                value={displayValue(response.operation.operator)}
+              />
+              <ResultCell
                 label={t('productionExecution.result.operation')}
                 value={`${displayValue(response.operation.action)} · ${displayValue(response.operation.executionMode)}`}
               />

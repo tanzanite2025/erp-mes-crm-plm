@@ -56,7 +56,7 @@ export function AssetDashboard() {
           <AlertCircle className='size-8 animate-pulse text-rose-500' />
         </div>
         <div className='space-y-2 text-center'>
-          <h3 className='text-sm font-black tracking-widest text-rose-600 uppercase italic'>
+          <h3 className='text-sm font-black tracking-widest text-rose-600 uppercase'>
             {t('equipmentTooling.dashboard.error.title')}
           </h3>
           <p className='text-[10px] font-bold tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -114,7 +114,7 @@ export function AssetDashboard() {
           <div className='mb-2 flex items-center justify-between'>
             <div className='flex items-center gap-2'>
               <Activity className='size-4 text-primary' />
-              <h4 className='text-[11px] font-black tracking-widest uppercase italic'>
+              <h4 className='text-[11px] font-black tracking-widest uppercase'>
                 {t('equipmentTooling.dashboard.activity.title')}
               </h4>
             </div>
@@ -143,7 +143,7 @@ export function AssetDashboard() {
                   <div className='absolute top-1.5 left-[-4px] size-2 rounded-full bg-primary/30 transition-colors group-hover/item:bg-primary' />
                   <div className='flex flex-col gap-0.5'>
                     <div className='flex items-center justify-between'>
-                      <span className='text-[10px] font-black tracking-tighter text-foreground uppercase italic'>
+                      <span className='text-[10px] font-black tracking-tighter text-foreground uppercase'>
                         {log.moldSn} / {log.toFactory}
                       </span>
                       <span className='font-mono text-[8px] font-bold opacity-30'>
@@ -165,7 +165,7 @@ export function AssetDashboard() {
           <div className='mt-auto grid grid-cols-2 gap-4 border-t border-dashed border-muted/50 pt-4'>
             <div className='flex flex-col gap-1 rounded-2xl bg-emerald-500/5 p-3'>
               <ShieldCheck className='size-4 text-emerald-500 opacity-50' />
-              <span className='text-[14px] leading-none font-black tracking-tighter italic'>
+              <span className='text-[14px] leading-none font-black tracking-tighter'>
                 {stats.healthVectors.avgLifeConsumpt.toFixed(1)}%
               </span>
               <span className='text-[8px] font-black tracking-widest uppercase opacity-40'>
@@ -179,7 +179,7 @@ export function AssetDashboard() {
                   stats.healthVectors.alertCount > 0 && 'animate-pulse'
                 )}
               />
-              <span className='text-[14px] leading-none font-black tracking-tighter italic'>
+              <span className='text-[14px] leading-none font-black tracking-tighter'>
                 {stats.healthVectors.alertCount}
               </span>
               <span className='text-[8px] font-black tracking-widest uppercase opacity-40'>

@@ -143,7 +143,7 @@ export function SalesOrderPackagingEntryView({
         <div className='min-w-0'>
           <div className='flex items-center gap-2'>
             <Boxes className='size-4 text-primary' />
-            <h3 className='text-sm font-black tracking-tighter italic'>
+            <h3 className='text-sm font-black tracking-tighter'>
               {t('tradingSalesOrder.packagingPreview.title')}
             </h3>
           </div>
@@ -227,7 +227,7 @@ export function SalesOrderPackagingEntryView({
               <p className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 订单行包装选择
               </p>
-              <h4 className='mt-1 text-sm font-black tracking-tight italic'>
+              <h4 className='mt-1 text-sm font-black tracking-tight'>
                 {stateMeta.title}
               </h4>
               <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -281,7 +281,7 @@ export function SalesOrderPackagingEntryView({
                         <p className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                           LINE {line.lineNo}
                         </p>
-                        <h4 className='mt-1 text-sm font-black tracking-tight italic'>
+                        <h4 className='mt-1 text-sm font-black tracking-tight'>
                           {line.productDisplayTitle}
                         </h4>
                         {line.productDisplaySubtitle ? (

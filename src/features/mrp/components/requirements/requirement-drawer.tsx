@@ -57,10 +57,10 @@ export function RequirementDrawer({
             <div className='relative z-10 flex items-center justify-between'>
               <div className='space-y-1'>
                 <div className='flex items-center gap-4'>
-                  <div className='rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-primary uppercase italic'>
+                  <div className='rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-primary uppercase'>
                     {t('mrp.requirements.drawer.badge')}
                   </div>
-                  <SheetTitle className='text-3xl font-black tracking-tighter uppercase italic'>
+                  <SheetTitle className='text-3xl font-black tracking-tighter uppercase'>
                     {t('mrp.requirements.drawer.title')}
                   </SheetTitle>
                 </div>

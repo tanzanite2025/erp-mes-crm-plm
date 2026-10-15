@@ -183,7 +183,7 @@ export function VehicleContactsPage() {
             <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               当前显示
             </div>
-            <div className='mt-1.5 text-3xl font-black tracking-tighter text-foreground italic'>
+            <div className='mt-1.5 text-3xl font-black tracking-tighter text-foreground'>
               {filteredBindings.length}
             </div>
           </div>
@@ -191,7 +191,7 @@ export function VehicleContactsPage() {
             <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               车型范围
             </div>
-            <div className='mt-1.5 text-3xl font-black tracking-tighter text-foreground italic'>
+            <div className='mt-1.5 text-3xl font-black tracking-tighter text-foreground'>
               {vehicleOptions.length}
             </div>
           </div>

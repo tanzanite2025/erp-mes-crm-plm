@@ -9,7 +9,7 @@ export function MindmapCanvasEmptyState({
 }: MindmapCanvasEmptyStateProps) {
   return (
     <div className='flex min-h-full flex-col items-center justify-center rounded-[20px] border border-dashed border-muted/40 bg-muted/5 px-6 py-12 text-center'>
-      <p className='text-sm font-black tracking-tighter text-muted-foreground/70 italic'>
+      <p className='text-sm font-black tracking-tighter text-muted-foreground/70'>
         还没有脑图节点
       </p>
       <p className='mt-2 text-[10px] font-black tracking-widest text-muted-foreground/45 uppercase'>

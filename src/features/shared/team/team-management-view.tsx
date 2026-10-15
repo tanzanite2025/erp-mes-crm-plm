@@ -112,7 +112,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <Users className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h3 className='text-lg font-black tracking-tighter uppercase'>
             {texts.headerTitle}
           </h3>
         </div>
@@ -156,31 +156,31 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         <Table>
           <TableHeader className='border-b border-dashed border-muted/50 bg-muted/10'>
             <TableRow className='border-white/5 hover:bg-transparent'>
-              <TableHead className='w-[120px] py-6 text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='w-[120px] py-6 text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.code}
               </TableHead>
-              <TableHead className='text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.name}
               </TableHead>
-              <TableHead className='text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.step}
               </TableHead>
-              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.section}
               </TableHead>
-              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.type}
               </TableHead>
-              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.maintenance}
               </TableHead>
-              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-center text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.status}
               </TableHead>
-              <TableHead className='text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.audit}
               </TableHead>
-              <TableHead className='pr-8 text-right text-[10px] font-black tracking-widest uppercase italic'>
+              <TableHead className='pr-8 text-right text-[10px] font-black tracking-widest uppercase'>
                 {texts.table.commands}
               </TableHead>
             </TableRow>
@@ -197,7 +197,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
                 <TableCell className='text-sm font-bold tracking-tight'>
                   {team.name}
                 </TableCell>
-                <TableCell className='text-xs font-bold italic opacity-60'>
+                <TableCell className='text-xs font-bold opacity-60'>
                   {team.step || '-'}
                 </TableCell>
                 <TableCell className='text-center'>

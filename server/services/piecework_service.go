@@ -15,10 +15,6 @@ func NewPieceworkService(txManager transactionManager) *PieceworkService {
 
 var defaultPieceworkService = NewPieceworkService(defaultServiceRuntime().txManager)
 
-func SavePieceworkRate(ctx context.Context, rate *models.PieceworkRate) error {
-	return defaultPieceworkService.SavePieceworkRate(ctx, rate)
-}
-
 func SaveTeam(ctx context.Context, team *models.Team) error {
 	return defaultPieceworkService.SaveTeam(ctx, team)
 }

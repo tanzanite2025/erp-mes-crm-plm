@@ -84,7 +84,7 @@ export function PersonalWorkbenchCardEditor({
       <DialogContent className='max-w-2xl overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'>
         <div className='space-y-6 p-6'>
           <DialogHeader>
-            <DialogTitle className='text-lg font-black tracking-tight uppercase italic'>
+            <DialogTitle className='text-lg font-black tracking-tight uppercase'>
               {record ? '编辑个人记录' : '新建个人记录'}
             </DialogTitle>
             <DialogDescription className='text-[10px] font-black tracking-widest uppercase opacity-60'>

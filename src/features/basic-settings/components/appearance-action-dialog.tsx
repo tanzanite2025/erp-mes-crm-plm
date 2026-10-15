@@ -55,7 +55,7 @@ export function AppearanceActionDialog({
             <Palette className='size-6' />
           </div>
           <div className='space-y-1.5'>
-            <div className='text-lg font-black tracking-tight italic sm:text-xl'>
+            <div className='text-lg font-black tracking-tight sm:text-xl'>
               {t('basicSettings.appearanceMapping.title')}
             </div>
             <div className='inline-flex rounded-full border border-dashed border-primary/20 bg-primary/5 px-3 py-1 text-[9px] font-black tracking-[0.22em] text-primary/70 uppercase'>

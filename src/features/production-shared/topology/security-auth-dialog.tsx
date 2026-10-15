@@ -74,7 +74,7 @@ export function SecurityAuthDialog({
           <div className='mb-2 flex size-12 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-500/10'>
             <Lock className='size-6 text-orange-500' />
           </div>
-          <DialogTitle className='text-xl font-black tracking-tighter text-slate-900 italic dark:text-slate-100'>
+          <DialogTitle className='text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100'>
             {finalTitle}
           </DialogTitle>
           <DialogDescription className='px-4 text-center text-[11px] leading-relaxed font-medium tracking-wider text-slate-500 uppercase dark:text-slate-400'>

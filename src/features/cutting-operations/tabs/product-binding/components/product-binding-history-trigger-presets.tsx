@@ -121,7 +121,7 @@ export function HistoryCardTrigger(props: HistoryCardTriggerProps) {
           <span className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
           <span className='relative flex items-start justify-between gap-4'>
             <span className='flex min-w-0 flex-col gap-1'>
-              <span className='flex items-center gap-2 text-sm font-black tracking-tighter text-foreground italic'>
+              <span className='flex items-center gap-2 text-sm font-black tracking-tighter text-foreground'>
                 <History className='size-4 text-primary' />
                 {title || t('cuttingOperations.productBinding.history.title')}
               </span>

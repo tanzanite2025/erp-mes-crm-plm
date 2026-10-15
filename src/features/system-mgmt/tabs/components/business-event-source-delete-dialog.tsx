@@ -76,7 +76,7 @@ export function BusinessEventSourceDeleteDialog({
                 <AlertTriangle className='size-5' />
               )}
             </div>
-            <AlertDialogTitle className='text-base font-black tracking-tight uppercase italic'>
+            <AlertDialogTitle className='text-base font-black tracking-tight uppercase'>
               {isReferenced ? '无法删除业务事件源' : '危险操作：删除业务事件源'}
             </AlertDialogTitle>
           </div>

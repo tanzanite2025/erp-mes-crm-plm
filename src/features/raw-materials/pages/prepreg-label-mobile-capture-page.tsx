@@ -108,7 +108,7 @@ export function PrepregLabelMobileCapturePage({
           <div className='flex size-20 items-center justify-center rounded-[28px] bg-emerald-500/10 text-emerald-600'>
             <CheckCircle2 className='size-10' />
           </div>
-          <h1 className='mt-6 text-3xl font-black tracking-tighter italic'>
+          <h1 className='mt-6 text-3xl font-black tracking-tighter'>
             {t('rawMaterials.catalog.mobileCapture.submitted.title')}
           </h1>
           <p className='mt-3 text-sm leading-6 font-semibold text-muted-foreground'>
@@ -128,7 +128,7 @@ export function PrepregLabelMobileCapturePage({
               <Camera className='size-7' />
             </div>
             <div>
-              <h1 className='text-2xl font-black tracking-tighter italic'>
+              <h1 className='text-2xl font-black tracking-tighter'>
                 {t('rawMaterials.catalog.mobileCapture.title')}
               </h1>
               <p className='mt-1 text-xs leading-5 font-bold text-muted-foreground'>

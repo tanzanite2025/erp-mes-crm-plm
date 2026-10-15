@@ -36,7 +36,7 @@ export function PrepregBindTokenEntryDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='gap-4 rounded-[32px] border-none p-6 sm:max-w-xl'>
         <DialogHeader className='space-y-2'>
-          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase italic'>
+          <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase'>
             <ScanLine className='size-5 text-primary' />
             {t('rawMaterials.catalog.scanBinding.title')}
           </DialogTitle>

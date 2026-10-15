@@ -18,24 +18,10 @@ type TeamValidationKey =
   | 'piecework.validation.teamNameRequired'
   | 'piecework.validation.teamSectionRequired'
 
-type PieceworkRateValidationKey =
-  | 'piecework.validation.pieceworkRateProductRequired'
-  | 'piecework.validation.pieceworkRateProcessNameRequired'
-  | 'piecework.validation.pieceworkRatePriceNonNegative'
-
 const teamValidationFallbacks: Record<TeamValidationKey, string> = {
   'piecework.validation.teamCodeRequired': '请输入群组编码',
   'piecework.validation.teamNameRequired': '请输入群组名称',
   'piecework.validation.teamSectionRequired': '请输入归属区段',
-}
-
-const pieceworkRateValidationFallbacks: Record<
-  PieceworkRateValidationKey,
-  string
-> = {
-  'piecework.validation.pieceworkRateProductRequired': '请选择关联产品 SKU',
-  'piecework.validation.pieceworkRateProcessNameRequired': '请选择作业项目',
-  'piecework.validation.pieceworkRatePriceNonNegative': '单价不能为负数',
 }
 
 function getTeamValidationMessage(
@@ -43,13 +29,6 @@ function getTeamValidationMessage(
   key: TeamValidationKey
 ) {
   return t?.(key) ?? teamValidationFallbacks[key]
-}
-
-function getPieceworkValidationMessage(
-  t: PieceworkTranslate | undefined,
-  key: PieceworkRateValidationKey
-) {
-  return t?.(key) ?? pieceworkRateValidationFallbacks[key]
 }
 
 export function createTeamSchema(t?: PieceworkTranslate) {
@@ -92,57 +71,31 @@ export const teamSchema = createTeamSchema()
 export type Team = z.infer<ReturnType<typeof createTeamSchema>>
 export type TeamType = z.infer<typeof teamTypeEnum>
 
-// --- 计件工价规则 (Piecework Rates/Rules) ---
-
-export function createPieceworkRateSchema(t?: PieceworkTranslate) {
-  return z.object({
-    id: z.string(),
-    createdAt: z.string().optional(),
-    updatedAt: z.string().optional(),
-    productId: z
-      .string()
-      .min(
-        1,
-        getPieceworkValidationMessage(
-          t,
-          'piecework.validation.pieceworkRateProductRequired'
-        )
-      ),
-    processStepId: z
-      .string()
-      .min(
-        1,
-        getPieceworkValidationMessage(
-          t,
-          'piecework.validation.pieceworkRateProcessNameRequired'
-        )
-      ),
-    routeStepId: z.string().optional(),
-    processCode: z.string().optional(),
-    processName: z.string().optional(),
-    unitPrice: z
-      .number()
-      .min(
-        0,
-        getPieceworkValidationMessage(
-          t,
-          'piecework.validation.pieceworkRatePriceNonNegative'
-        )
-      ),
-    unit: z.string().default('PCS'),
-    currency: z.string().default('CNY'),
-    effectiveAt: z.string().optional(),
-    effectiveFrom: z.string().optional(),
-    effectiveTo: z.string().optional(),
-    status: z.enum(['active', 'inactive']).default('active'),
-    remarks: z.string().optional(),
-    version: z.number().default(1),
-    operator: z.string().optional(),
-  })
+export function createPieceworkRateSchema(_t?: PieceworkTranslate) {
+  return z
+    .object({
+      id: z.string(),
+      createdAt: z.string().optional(),
+      updatedAt: z.string().optional(),
+      payItemId: z.string().min(1),
+      payItemCode: z.string().min(1),
+      payItemName: z.string().min(1),
+      unitPrice: z.number().finite().min(0),
+      unit: z.string().min(1),
+      currency: z.string().regex(/^[A-Z]{3}$/),
+      effectiveFrom: z.string().min(1),
+      effectiveTo: z
+        .string()
+        .nullish()
+        .transform((value) => value ?? ''),
+      status: z.enum(['active', 'inactive']),
+      remarks: z.string().optional(),
+      version: z.number().int().positive(),
+      operator: z.string().optional(),
+    })
+    .strict()
 }
-
 export const pieceworkRateSchema = createPieceworkRateSchema()
-
 export type PieceworkRate = z.infer<
   ReturnType<typeof createPieceworkRateSchema>
 >

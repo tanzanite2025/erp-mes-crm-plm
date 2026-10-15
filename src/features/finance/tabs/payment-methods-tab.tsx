@@ -121,7 +121,7 @@ export function PaymentMethodsTab() {
                     <CreditCard className='size-3.5 text-primary sm:size-4' />
                   </div>
                   <div>
-                    <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                    <CardTitle className='text-sm font-black tracking-tighter uppercase'>
                       {method.name}
                     </CardTitle>
                     <CardDescription className='font-mono text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
@@ -186,7 +186,7 @@ export function PaymentMethodsTab() {
             <CreditCard className='size-5' />
           </div>
           <div className='space-y-1'>
-            <h4 className='text-xs font-black tracking-tight uppercase italic'>
+            <h4 className='text-xs font-black tracking-tight uppercase'>
               {t('finance.paymentMethods.guard.title')}
             </h4>
             <p className='max-w-3xl text-[10px] leading-relaxed font-medium opacity-80'>

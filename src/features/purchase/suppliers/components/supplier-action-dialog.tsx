@@ -325,7 +325,7 @@ export function SupplierActionDialog({
             </Badge>
           ))}
           {(!formData.mainProducts || formData.mainProducts.length === 0) && (
-            <span className='p-1 text-[9px] font-black tracking-widest text-muted-foreground/20 uppercase italic'>
+            <span className='p-1 text-[9px] font-black tracking-widest text-muted-foreground/20 uppercase'>
               {t('purchase.suppliers.fields.productEmpty')}
             </span>
           )}

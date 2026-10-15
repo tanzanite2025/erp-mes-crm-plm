@@ -24,7 +24,7 @@ export function AssignmentCommandGrid({
     <section className='rounded-[18px] border border-dashed border-muted/50 bg-background px-4 py-3 shadow-inner'>
       <div className='mb-2 flex items-center justify-between gap-3'>
         <div>
-          <h2 className='text-sm font-black tracking-tighter italic'>
+          <h2 className='text-sm font-black tracking-tighter'>
             {t('sidebarCommandConfig.commandGrid.title')}
           </h2>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>

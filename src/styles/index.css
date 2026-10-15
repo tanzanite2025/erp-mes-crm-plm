@@ -5,6 +5,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  /* Use upright text throughout the app, including rich content and placeholders. */
+  *,
+  ::before,
+  ::after,
+  ::placeholder {
+    font-style: normal !important;
+  }
+
   * {
     @apply border-border outline-ring/50;
     scrollbar-width: thin;
@@ -34,7 +42,7 @@
   /* Pre-standard placeholder sizing to align with UDS 1.0 Labels */
   input::placeholder,
   textarea::placeholder {
-    @apply text-[10px] font-black tracking-widest uppercase italic opacity-30;
+    @apply text-[10px] font-black tracking-widest uppercase opacity-30;
   }
 
   .dark input::placeholder,

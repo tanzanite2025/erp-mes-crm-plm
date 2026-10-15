@@ -238,7 +238,7 @@ export function DrawingMgmt({
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 sm:p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <FileText className='size-4' />
-          <h3 className='text-base font-black tracking-tighter uppercase italic sm:text-lg'>
+          <h3 className='text-base font-black tracking-tighter uppercase sm:text-lg'>
             {t('equipmentTooling.drawings.page.title')}
           </h3>
         </div>
@@ -372,7 +372,7 @@ export function DrawingMgmt({
                     <Clock className='size-2.5' />{' '}
                     {t('equipmentTooling.drawings.card.date')}
                   </span>
-                  <span className='font-mono italic'>
+                  <span className='font-mono'>
                     {new Date(drawing.uploadedAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -458,7 +458,7 @@ export function DrawingMgmt({
                         <span className='text-[9px] font-black tracking-widest text-primary/40 uppercase'>
                           {log.action}
                         </span>
-                        <span className='font-mono text-[8px] font-bold text-muted-foreground/30 italic'>
+                        <span className='font-mono text-[8px] font-bold text-muted-foreground/30'>
                           {new Date(log.timestamp).toLocaleDateString()}
                         </span>
                       </div>
@@ -479,7 +479,7 @@ export function DrawingMgmt({
                                   key={field}
                                   className='flex min-w-0 items-center gap-2 text-[9px]'
                                 >
-                                  <span className='rounded bg-slate-100 px-1.5 py-0.5 font-black whitespace-nowrap text-slate-500 italic'>
+                                  <span className='rounded bg-slate-100 px-1.5 py-0.5 font-black whitespace-nowrap text-slate-500'>
                                     {field}
                                   </span>
                                   <div className='flex min-w-0 flex-1 items-center gap-1.5 font-mono'>

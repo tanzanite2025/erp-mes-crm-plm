@@ -1282,6 +1282,7 @@ export const engineering = {
       ownerPlaceholder: '按归属筛选',
       allOwners: '全部归属',
       internal: '内部型号',
+      customerOwner: '客户：{{customerName}}',
     },
     status: {
       draft: '草稿',

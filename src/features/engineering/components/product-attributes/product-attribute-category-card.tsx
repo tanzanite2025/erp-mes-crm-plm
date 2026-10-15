@@ -53,7 +53,7 @@ export function ProductAttributeCategoryCard({
       <CardContent className='p-0'>
         <div className='flex items-center justify-between gap-4 border-b border-dashed border-muted/40 bg-background/50 px-5 py-5 sm:px-7'>
           <div>
-            <div className='text-base font-black tracking-tight text-foreground italic'>
+            <div className='text-base font-black tracking-tight text-foreground'>
               {isZh ? '分类定义' : 'Category Definitions'}
             </div>
             <div className='mt-1.5 text-[9px] font-black tracking-[0.24em] text-muted-foreground/50 uppercase'>

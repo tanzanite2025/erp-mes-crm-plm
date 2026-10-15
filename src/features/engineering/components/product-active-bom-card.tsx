@@ -64,7 +64,7 @@ export function ProductActiveBOMCard({
       <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-50/40 shadow-none'>
         <div className='flex flex-col items-start justify-between gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4 sm:py-4'>
           <div className='flex items-center gap-3'>
-            <div className='rounded-md bg-slate-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-slate-500/20'>
+            <div className='rounded-md bg-slate-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-500/20'>
               {t('engineering.productMgmt.activeBom.label')}
             </div>
             <span className='text-[11px] font-bold text-slate-600'>
@@ -91,7 +91,7 @@ export function ProductActiveBOMCard({
       <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-amber-400/40 bg-amber-50/40 shadow-none'>
         <div className='flex flex-col items-start justify-between gap-3 px-3 py-3 sm:flex-row sm:items-center sm:px-4 sm:py-4'>
           <div className='flex items-center gap-3'>
-            <div className='rounded-md bg-amber-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-amber-500/20'>
+            <div className='rounded-md bg-amber-500 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-amber-500/20'>
               {t('engineering.productMgmt.activeBom.label')}
             </div>
             <div className='flex flex-col gap-0.5'>
@@ -130,7 +130,7 @@ export function ProductActiveBOMCard({
     <Card className='overflow-hidden rounded-[20px] border-2 border-dashed border-emerald-600/30 bg-emerald-600/5 shadow-none transition-all hover:bg-emerald-600/10'>
       <div className='flex flex-col items-start gap-3 px-3 py-3 sm:flex-row sm:items-center sm:gap-5 sm:px-4 sm:py-4'>
         <div className='flex shrink-0 flex-col gap-1'>
-          <div className='rounded-md bg-emerald-600 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase italic shadow-lg shadow-emerald-600/20'>
+          <div className='rounded-md bg-emerald-600 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-emerald-600/20'>
             {t('engineering.productMgmt.activeBom.label')}
           </div>
           <Badge
@@ -159,7 +159,7 @@ export function ProductActiveBOMCard({
             <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.version')}
             </div>
-            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-blue-600 italic'>
+            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-blue-600'>
               {bom.bomVersion}
             </div>
           </div>
@@ -167,7 +167,7 @@ export function ProductActiveBOMCard({
             <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.weight')}
             </div>
-            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-emerald-700 italic'>
+            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-emerald-700'>
               {weightLabel}
             </div>
           </div>

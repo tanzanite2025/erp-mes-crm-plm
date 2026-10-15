@@ -29,7 +29,7 @@ export function LinearBarcodeStatusLifecycleFlowCard() {
   return (
     <Card className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
       <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight italic'>
+        <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
           <FileClock className='size-4 text-primary' />
           {t('codeCenter.linearBarcode.status.flow.title')}
         </CardTitle>

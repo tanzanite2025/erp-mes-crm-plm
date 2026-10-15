@@ -17,7 +17,7 @@ export function BatchEngineDiffBaselineSelector(
 
   return (
     <div className='rounded-[24px] border border-dashed border-slate-300 bg-white/90 p-4'>
-      <p className='text-[10px] font-black tracking-[0.2em] text-slate-500/75 uppercase italic'>
+      <p className='text-[10px] font-black tracking-[0.2em] text-slate-500/75 uppercase'>
         差异基准
       </p>
       <p className='mt-1 text-[9px] font-black tracking-[0.18em] text-slate-400 uppercase'>

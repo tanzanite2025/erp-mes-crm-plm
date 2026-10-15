@@ -539,7 +539,7 @@ export function PDAShellTab() {
                 <SmartphoneCharging className='size-3.5' />
                 {t('terminalConfig.pdaShell.page.badge')}
               </div>
-              <h1 className='text-2xl font-black tracking-tight italic'>
+              <h1 className='text-2xl font-black tracking-tight'>
                 {t('terminalConfig.pdaShell.page.title')}
               </h1>
               <p

@@ -99,7 +99,7 @@ export function BatchEngineSummaryPanel(props: BatchEngineSummaryPanelProps) {
           <p className='text-[10px] font-black tracking-[0.24em] text-muted-foreground/60 uppercase'>
             {t('rawMaterials.batchEngine.sections.summary.kicker')}
           </p>
-          <h2 className='mt-2 text-base font-black tracking-tight text-foreground italic'>
+          <h2 className='mt-2 text-base font-black tracking-tight text-foreground'>
             {t('rawMaterials.batchEngine.sections.summary.title')}
           </h2>
           <p className='mt-1 text-xs leading-5 text-muted-foreground/80'>

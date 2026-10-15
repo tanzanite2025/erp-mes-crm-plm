@@ -196,7 +196,7 @@ function LevelRow({
       </TableCell>
       <TableCell
         rowSpan={rowSpan}
-        className='border border-t-0 border-l-0 border-white/10 p-3 text-[9px] leading-relaxed font-medium whitespace-nowrap text-muted-foreground italic opacity-70 lg:text-[10px]'
+        className='border border-t-0 border-l-0 border-white/10 p-3 text-[9px] leading-relaxed font-medium whitespace-nowrap text-muted-foreground opacity-70 lg:text-[10px]'
       >
         {remarks || t('quality.standards.dialog.detail.noRemarks')}
       </TableCell>

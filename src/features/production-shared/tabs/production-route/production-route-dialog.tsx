@@ -352,7 +352,7 @@ export function ProductionRouteDialog({
                 <GitBranch className='size-5' />
               </div>
               <div className='space-y-1'>
-                <DialogTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                <DialogTitle className='text-sm font-black tracking-tighter uppercase'>
                   {route
                     ? t('productionArchitecture.routes.dialog.editTitle')
                     : t('productionArchitecture.routes.dialog.createTitle')}

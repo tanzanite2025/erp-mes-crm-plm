@@ -74,7 +74,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
     cell: ({ row }) => {
       const staffId = row.getValue('staffId') as string
       return (
-        <div className='font-mono text-xs font-black tracking-widest text-primary italic'>
+        <div className='font-mono text-xs font-black tracking-widest text-primary'>
           {staffId || '-'}
         </div>
       )
@@ -92,7 +92,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <span className='max-w-[150px] truncate font-black tracking-tighter italic'>
+      <span className='max-w-[150px] truncate font-black tracking-tighter'>
         {row.getValue('name')}
       </span>
     ),

@@ -69,7 +69,7 @@ export function BOMAlertDetailsDialog({
         <div className='relative flex max-h-[90vh] flex-col'>
           <div className='shrink-0 px-6 pt-6 md:px-8 md:pt-8'>
             <DialogHeader className='text-left'>
-              <DialogTitle className='text-lg font-black tracking-tighter uppercase italic md:text-xl'>
+              <DialogTitle className='text-lg font-black tracking-tighter uppercase md:text-xl'>
                 {t('warehouse.stock.bomAlertDetails.title')}
               </DialogTitle>
               <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
@@ -80,7 +80,7 @@ export function BOMAlertDetailsDialog({
             <div className='mt-5 rounded-[24px] border border-dashed border-muted/50 bg-muted/10 p-5'>
               <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
                 <div className='space-y-2'>
-                  <p className='text-sm font-black tracking-tighter text-foreground uppercase italic'>
+                  <p className='text-sm font-black tracking-tighter text-foreground uppercase'>
                     {t('warehouse.stock.bomAlertDetails.summary', {
                       count: total,
                     })}
@@ -133,7 +133,7 @@ export function BOMAlertDetailsDialog({
             ) : items.length === 0 ? (
               <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
                 <Boxes className='size-12 text-muted-foreground/20' />
-                <p className='mt-4 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase italic'>
+                <p className='mt-4 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {t('warehouse.stock.bomAlertDetails.emptyTitle')}
                 </p>
                 <p className='mt-3 max-w-xl text-[11px] leading-5 font-bold text-muted-foreground/70'>
@@ -152,7 +152,7 @@ export function BOMAlertDetailsDialog({
                       <div className='flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between'>
                         <div className='min-w-0 space-y-2'>
                           <div className='flex flex-wrap items-center gap-2'>
-                            <h3 className='truncate text-sm font-black tracking-tighter uppercase italic md:text-base'>
+                            <h3 className='truncate text-sm font-black tracking-tighter uppercase md:text-base'>
                               {detail.productName || detail.bomNo}
                             </h3>
                             <Badge className='h-5 rounded-full border-none bg-primary/10 px-2 text-[8px] font-black tracking-widest text-primary uppercase'>

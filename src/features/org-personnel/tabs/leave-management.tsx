@@ -78,7 +78,7 @@ export default function LeaveManagement() {
       {/* 页眉操作栏 */}
       <header className='flex items-center justify-between rounded-[24px] border border-dashed bg-muted/5 p-6'>
         <div className='space-y-1'>
-          <h2 className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+          <h2 className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
             <Calendar className='h-4 w-4 text-primary' />
             {t('orgPersonnel.leaveMgmt.headerTitle')}
           </h2>
@@ -136,9 +136,7 @@ export default function LeaveManagement() {
               <p className='text-[8px] font-black tracking-widest uppercase opacity-50'>
                 {stat.label}
               </p>
-              <p className='text-lg font-black tracking-tighter italic'>
-                {stat.val}
-              </p>
+              <p className='text-lg font-black tracking-tighter'>{stat.val}</p>
               {isStatsLoadingOnly ? (
                 <p className='text-[8px] font-black tracking-widest uppercase opacity-40'>
                   {t('orgPersonnel.leaveMgmt.summary.syncing')}
@@ -216,13 +214,13 @@ export default function LeaveManagement() {
                 >
                   <div className='flex items-center gap-6'>
                     <div className='flex min-w-[64px] flex-col items-center justify-center rounded-xl bg-primary/5 p-3'>
-                      <span className='text-[10px] font-black text-primary italic'>
+                      <span className='text-[10px] font-black text-primary'>
                         {getLeaveTypeLabel(leave.leaveType, locale)}
                       </span>
                     </div>
                     <div className='space-y-1'>
                       <div className='flex items-center gap-2'>
-                        <h4 className='text-sm font-black tracking-tighter uppercase italic'>
+                        <h4 className='text-sm font-black tracking-tighter uppercase'>
                           {leave.employeeName ||
                             t('orgPersonnel.leaveMgmt.list.unknownApplicant')}
                         </h4>
@@ -243,7 +241,7 @@ export default function LeaveManagement() {
                     </div>
                   </div>
                   <div className='flex flex-col items-end gap-2 text-right'>
-                    <p className='text-xl font-black tracking-tighter text-primary italic'>
+                    <p className='text-xl font-black tracking-tighter text-primary'>
                       {leave.durationDays}
                     </p>
                     <p className='text-[8px] font-black tracking-widest uppercase opacity-50'>

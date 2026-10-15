@@ -107,7 +107,7 @@ export function OrdersAnalysisTab() {
               {t('trading.analytics.activeCustomersDesc')}
             </p>
           </div>
-          <h3 className='shrink-0 text-xl leading-none font-black tracking-tighter italic'>
+          <h3 className='shrink-0 text-xl leading-none font-black tracking-tighter'>
             {analytics?.length || 0}
           </h3>
           <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-blue-500/15 bg-blue-500/5'>
@@ -124,7 +124,7 @@ export function OrdersAnalysisTab() {
               {t('trading.analytics.top10ProductVolumeDesc')}
             </p>
           </div>
-          <h3 className='shrink-0 text-xl leading-none font-black tracking-tighter italic'>
+          <h3 className='shrink-0 text-xl leading-none font-black tracking-tighter'>
             {/* [UI-DISPLAY-ONLY]: Summarizes only the currently loaded Top 10 list. */}
             {top10ProductVolume.toLocaleString()}
           </h3>
@@ -142,7 +142,7 @@ export function OrdersAnalysisTab() {
               {t('trading.analytics.analyzedLinesDesc')}
             </p>
           </div>
-          <h3 className='shrink-0 text-xl leading-none font-black tracking-tighter italic'>
+          <h3 className='shrink-0 text-xl leading-none font-black tracking-tighter'>
             {/* [UI-DISPLAY-ONLY]: Summarizes only currently loaded customer orders. */}
             {analyzedLines}
           </h3>
@@ -157,7 +157,7 @@ export function OrdersAnalysisTab() {
         {/* Left: per-customer ranking list */}
         <div className='flex-1 space-y-6'>
           <div className='flex items-center justify-between border-b border-dashed border-muted/50 pb-2'>
-            <h2 className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+            <h2 className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
               <Package className='size-5 text-primary' />
               {t('trading.analytics.customerProductRanking')}
             </h2>
@@ -189,7 +189,7 @@ export function OrdersAnalysisTab() {
                         {customer.customerId}
                       </span>
                     </div>
-                    <h4 className='text-sm font-black tracking-tight italic'>
+                    <h4 className='text-sm font-black tracking-tight'>
                       {customer.customerName}
                     </h4>
                   </div>
@@ -217,7 +217,7 @@ export function OrdersAnalysisTab() {
                       >
                         <div className='flex items-center gap-3'>
                           <div
-                            className={`flex size-6 items-center justify-center rounded-lg border text-[10px] font-black italic ${
+                            className={`flex size-6 items-center justify-center rounded-lg border text-[10px] font-black ${
                               idx === 0
                                 ? 'border-amber-500/20 bg-amber-500/10 text-amber-600'
                                 : idx === 1
@@ -240,7 +240,7 @@ export function OrdersAnalysisTab() {
                           </div>
                         </div>
                         <div className='text-right'>
-                          <p className='text-[11px] leading-none font-black italic'>
+                          <p className='text-[11px] leading-none font-black'>
                             {prod.totalQty.toLocaleString()}
                           </p>
                           <p className='text-[9px] font-black tracking-[0.16em] text-muted-foreground/60 uppercase'>
@@ -267,7 +267,7 @@ export function OrdersAnalysisTab() {
         <div className='w-full space-y-6 lg:w-[320px]'>
           <div className='flex items-center gap-2 border-b border-dashed border-muted/50 pb-2'>
             <TrendingUp className='size-4 text-emerald-500' />
-            <h3 className='text-sm font-black tracking-tighter uppercase italic'>
+            <h3 className='text-sm font-black tracking-tighter uppercase'>
               {t('trading.analytics.globalHotlist')}
             </h3>
           </div>
@@ -288,7 +288,7 @@ export function OrdersAnalysisTab() {
                 >
                   <div className='flex items-center justify-between'>
                     <div className='min-w-0'>
-                      <span className='block max-w-[150px] truncate text-[10px] font-black tracking-tight italic'>
+                      <span className='block max-w-[150px] truncate text-[10px] font-black tracking-tight'>
                         {display.title}
                       </span>
                       <span className='block max-w-[150px] truncate font-mono text-[8px] uppercase opacity-40'>

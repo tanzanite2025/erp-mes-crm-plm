@@ -135,7 +135,7 @@ export function ItemTable({
                       </div>
 
                       <div className='min-w-0 flex-1'>
-                        <div className='text-sm font-black tracking-tight text-slate-900 uppercase italic'>
+                        <div className='text-sm font-black tracking-tight text-slate-900 uppercase'>
                           {node.label}
                         </div>
                       </div>
@@ -201,7 +201,7 @@ export function ItemTable({
                               ? t('engineering.bomArchive.itemTable.initialize')
                               : 'Read Only'}
                           </p>
-                          <p className='mt-1 text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase italic transition-colors group-hover/add-row:text-blue-100'>
+                          <p className='mt-1 text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase transition-colors group-hover/add-row:text-blue-100'>
                             {canEdit
                               ? t(
                                   'engineering.bomArchive.itemTable.initializeHint'

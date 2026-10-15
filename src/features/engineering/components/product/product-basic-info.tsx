@@ -183,7 +183,7 @@ export function ProductBasicInfo({
               name='modelCode'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 flex items-center justify-between pr-1 text-[10px] font-black tracking-widest text-blue-600 uppercase italic'>
+                  <FormLabel className='ml-1 flex items-center justify-between pr-1 text-[10px] font-black tracking-widest text-blue-600 uppercase'>
                     <span className='flex items-center gap-1'>
                       <RequiredMark />
                       <span>{t('engineering.productMgmt.form.modelCode')}</span>
@@ -243,7 +243,7 @@ export function ProductBasicInfo({
               name='moldGroup'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-blue-800 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-blue-800 uppercase'>
                     {t('engineering.productMgmt.form.mold')}
                   </FormLabel>
                   <SelectDropdown
@@ -282,7 +282,7 @@ export function ProductBasicInfo({
 
           <div className='grid grid-cols-1 gap-2.5'>
             <div className='min-w-0 space-y-0.5'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-blue-800 uppercase italic'>
+              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-blue-800 uppercase'>
                 {t('engineering.productMgmt.form.template')}
               </FormLabel>
               <div className='flex h-[38px] w-full items-center rounded-xl bg-muted/40 px-3 text-[11px] font-bold text-slate-700'>

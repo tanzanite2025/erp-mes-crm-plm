@@ -41,7 +41,7 @@ export function ProviderTemplateSection({
               value={template.code}
               className='rounded-xl py-3'
             >
-              <span className='font-black italic'>{template.code}</span>
+              <span className='font-black'>{template.code}</span>
               {' - '}
               {template.name}
             </SelectItem>

@@ -43,7 +43,7 @@ export function TaxActionDialog({
     content: 'max-w-[95vw] sm:max-w-[500px] rounded-[32px]',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black italic tracking-tighter uppercase flex items-center gap-3',
+      'text-xl font-black tracking-tighter uppercase flex items-center gap-3',
     description: 'text-[10px] font-bold uppercase tracking-widest opacity-50',
     body: 'p-8 pt-4 space-y-6',
     footer:
@@ -160,7 +160,7 @@ export function TaxActionDialog({
               onChange={(e) => {
                 updateFormData({ code: e.target.value.toUpperCase() })
               }}
-              className='h-12 rounded-2xl bg-muted/5 font-black italic'
+              className='h-12 rounded-2xl bg-muted/5 font-black'
             />
           </div>
           <div className='space-y-2'>

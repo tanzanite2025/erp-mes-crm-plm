@@ -324,8 +324,9 @@ export default function AttendanceDevices() {
   )
   const [configError, setConfigError] = useState<string | null>(null)
   const [testMessage, setTestMessage] = useState<string | null>(null)
-  const [mappingDevice, setMappingDevice] =
-    useState<AttendanceDevice | null>(null)
+  const [mappingDevice, setMappingDevice] = useState<AttendanceDevice | null>(
+    null
+  )
   const [mappingEmployeeKey, setMappingEmployeeKey] = useState('')
   const [mappingEmployeeId, setMappingEmployeeId] = useState('')
 
@@ -952,9 +953,7 @@ export default function AttendanceDevices() {
                       <InfoPill
                         icon={KeyRound}
                         label='推送令牌'
-                        value={
-                          device.hasIngressToken ? '已配置' : '未配置'
-                        }
+                        value={device.hasIngressToken ? '已配置' : '未配置'}
                       />
                       <InfoPill
                         icon={UsersRound}
@@ -1016,8 +1015,8 @@ export default function AttendanceDevices() {
                 ISUP / EHOME 对接口径
               </CardTitle>
               <CardDescription className='text-xs leading-relaxed'>
-                设备主动注册到 ERP 侧 ISUP 网关，网关解析注册、心跳和考勤事件后，
-                再进入 ERP 统一考勤流水。
+                设备主动注册到 ERP 侧 ISUP
+                网关，网关解析注册、心跳和考勤事件后， 再进入 ERP 统一考勤流水。
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-3 text-xs leading-relaxed text-muted-foreground'>
@@ -1116,7 +1115,8 @@ export default function AttendanceDevices() {
                         {event.deviceEmployeeKey}
                       </p>
                       <p className='truncate text-[10px] text-muted-foreground'>
-                        {event.deviceCode} / {formatTime(event.occurredAt, locale)}
+                        {event.deviceCode} /{' '}
+                        {formatTime(event.occurredAt, locale)}
                       </p>
                     </div>
                     <Tooltip>
@@ -1166,10 +1166,12 @@ export default function AttendanceDevices() {
                   >
                     <div className='min-w-0'>
                       <p className='truncate text-xs font-black'>
-                        {event.employeeName || `设备员工 ${event.deviceEmployeeKey}`}
+                        {event.employeeName ||
+                          `设备员工 ${event.deviceEmployeeKey}`}
                       </p>
                       <p className='truncate text-[10px] text-muted-foreground'>
-                        {event.deviceCode} / {formatTime(event.occurredAt, locale)}
+                        {event.deviceCode} /{' '}
+                        {formatTime(event.occurredAt, locale)}
                       </p>
                     </div>
                     <Badge
@@ -1370,9 +1372,7 @@ export default function AttendanceDevices() {
                       updateForm({ port: Number(event.target.value) || 0 })
                     }
                     className='h-10 rounded-xl'
-                    placeholder={
-                      form.protocol === 'isup-ehome' ? '7660' : '80'
-                    }
+                    placeholder={form.protocol === 'isup-ehome' ? '7660' : '80'}
                   />
                 </Field>
                 <Field
@@ -1437,8 +1437,8 @@ export default function AttendanceDevices() {
                 </Field>
                 {form.protocol === 'isup-ehome' ? (
                   <div className='rounded-xl border border-dashed bg-muted/20 p-2.5 text-xs leading-relaxed text-muted-foreground md:col-span-2 xl:col-span-3'>
-                    ISUP Key 用于设备注册认证；入站令牌用于 ISUP
-                    网关调用 ERP HTTP 接口，两者应分别设置，不能混用。
+                    ISUP Key 用于设备注册认证；入站令牌用于 ISUP 网关调用 ERP
+                    HTTP 接口，两者应分别设置，不能混用。
                   </div>
                 ) : null}
               </div>
@@ -1639,7 +1639,8 @@ export default function AttendanceDevices() {
               </Select>
             </Field>
             <p className='text-xs leading-relaxed text-muted-foreground'>
-              已有映射会按“设备 + 设备员工编号”更新；事件入库时优先使用手工映射，再尝试按设备配置的系统字段自动匹配。
+              已有映射会按“设备 +
+              设备员工编号”更新；事件入库时优先使用手工映射，再尝试按设备配置的系统字段自动匹配。
             </p>
           </div>
           <DialogFooter>

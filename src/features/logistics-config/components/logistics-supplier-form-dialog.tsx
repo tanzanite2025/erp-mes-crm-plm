@@ -57,7 +57,7 @@ export function LogisticsSupplierFormDialog({
         className='rounded-[32px] border-none bg-white/95 p-8 shadow-2xl backdrop-blur-xl'
       >
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2 text-xl font-black tracking-tighter italic'>
+          <DialogTitle className='flex items-center gap-2 text-xl font-black tracking-tighter'>
             <Truck className='size-5 text-primary' />
             {formData.id
               ? t('logisticsConfig.suppliers.dialog.editTitle')

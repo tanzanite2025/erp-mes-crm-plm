@@ -35,7 +35,7 @@ export function ApsSchedulingBoard() {
         {isSearchEmpty ? (
           <Card className='rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'>
             <CardContent className='flex flex-col items-center justify-center gap-3 py-12 text-center'>
-              <p className='text-base font-black tracking-tighter text-slate-800 italic'>
+              <p className='text-base font-black tracking-tighter text-slate-800'>
                 {t('apsScheduling.board.noResultsTitle')}
               </p>
               <p className='max-w-lg text-[10px] font-black tracking-widest text-muted-foreground/45 uppercase'>

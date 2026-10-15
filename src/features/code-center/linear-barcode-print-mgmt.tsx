@@ -67,7 +67,7 @@ export function LinearBarcodePrintMgmt() {
                 <Printer className='size-5' />
               </div>
               <div>
-                <div className='text-lg font-black tracking-tight italic'>
+                <div className='text-lg font-black tracking-tight'>
                   {t('codeCenter.linearBarcode.print.page.title')}
                 </div>
                 <div className='text-[10px] font-black tracking-[0.24em] text-muted-foreground/60 uppercase'>
@@ -118,7 +118,7 @@ export function LinearBarcodePrintMgmt() {
       <div className='grid gap-6 lg:grid-cols-3'>
         <Card className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight italic'>
+            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
               <FileText className='size-4 text-primary' />
               {t('codeCenter.linearBarcode.print.sections.templates.title')}
             </CardTitle>
@@ -246,7 +246,7 @@ export function LinearBarcodePrintMgmt() {
 
         <Card className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight italic'>
+            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
               <Barcode className='size-4 text-primary' />
               {t('codeCenter.linearBarcode.print.sections.parameters.title')}
             </CardTitle>
@@ -339,7 +339,7 @@ export function LinearBarcodePrintMgmt() {
 
         <Card className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
           <CardHeader>
-            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight italic'>
+            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
               <Printer className='size-4 text-primary' />
               {t('codeCenter.linearBarcode.print.sections.preview.title')}
             </CardTitle>

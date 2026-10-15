@@ -200,7 +200,7 @@ export function MaintenanceRecordsPage({
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-1.5'>
               <Filter className='size-3.5 text-primary' />
-              <h3 className='text-xs font-black tracking-wider uppercase italic'>
+              <h3 className='text-xs font-black tracking-wider uppercase'>
                 快捷多维检索
               </h3>
             </div>
@@ -296,7 +296,7 @@ export function MaintenanceRecordsPage({
               正在同步遥测数据...
             </div>
           ) : records.length === 0 ? (
-            <div className='py-10 text-center text-xs font-bold text-muted-foreground italic'>
+            <div className='py-10 text-center text-xs font-bold text-muted-foreground'>
               {hasActiveFilters ? '未找到符合条件的记录' : '暂无维保记录'}
             </div>
           ) : (

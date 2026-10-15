@@ -85,8 +85,8 @@ export function PersonalWorkbenchBoard({
             <h2
               className={
                 isCompactLayout
-                  ? 'text-base font-black tracking-tight uppercase italic'
-                  : 'text-lg font-black tracking-tight uppercase italic'
+                  ? 'text-base font-black tracking-tight uppercase'
+                  : 'text-lg font-black tracking-tight uppercase'
               }
             >
               个人记录缓冲区

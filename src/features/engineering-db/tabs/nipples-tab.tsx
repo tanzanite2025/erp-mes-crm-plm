@@ -174,7 +174,7 @@ export function NipplesTab() {
       accessorKey: 'item.length',
       header: t('engineering.nipples.table.length'),
       cell: ({ row }) => (
-        <span className='text-sm font-black text-orange-600 italic'>
+        <span className='text-sm font-black text-orange-600'>
           {row.original.item.length ? `${row.original.item.length}mm` : '--'}
         </span>
       ),
@@ -256,7 +256,7 @@ export function NipplesTab() {
               <span className='font-mono text-[8px] tracking-tighter uppercase opacity-40'>
                 SYSTEM_VAULT_STATUS
               </span>
-              <span className='text-[10px] font-black text-orange-600 italic'>
+              <span className='text-[10px] font-black text-orange-600'>
                 SYNCHRONIZED
               </span>
             </div>
@@ -376,7 +376,7 @@ export function NipplesTab() {
       <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
         <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-3xl'>
           <DialogHeader className='relative flex h-20 shrink-0 flex-col justify-center border-b border-dashed border-muted-foreground/10 bg-muted/5 p-6 pb-0 md:p-8'>
-            <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase italic'>
+            <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
               <ImageIcon className='size-4 text-orange-600' />
               {previewFile?.name}
             </DialogTitle>

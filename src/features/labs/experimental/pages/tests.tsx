@@ -115,7 +115,7 @@ export function LabTestsPage() {
         <div className='relative flex h-[400px] flex-col items-center justify-center overflow-hidden rounded-[40px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
           <FlaskConical className='mb-6 size-16 animate-pulse stroke-[1.5px] text-primary opacity-5' />
-          <p className='text-[11px] font-black tracking-[0.4em] text-muted-foreground/20 uppercase italic'>
+          <p className='text-[11px] font-black tracking-[0.4em] text-muted-foreground/20 uppercase'>
             {t('labExperimental.tests.empty')}
           </p>
         </div>
@@ -157,7 +157,7 @@ export function LabTestsPage() {
                   </div>
 
                   <div className='space-y-1'>
-                    <h3 className='line-clamp-1 text-base font-black tracking-tighter text-slate-800 uppercase italic'>
+                    <h3 className='line-clamp-1 text-base font-black tracking-tighter text-slate-800 uppercase'>
                       {task.name}
                     </h3>
                     <div className='flex items-center gap-4 text-[9px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase'>
@@ -212,7 +212,7 @@ export function LabTestsPage() {
                   ) : (
                     <div
                       className={cn(
-                        'flex items-center gap-1.5 text-[10px] font-black uppercase italic',
+                        'flex items-center gap-1.5 text-[10px] font-black uppercase',
                         task.status === 'ARCHIVED'
                           ? 'text-slate-400'
                           : 'text-emerald-500'

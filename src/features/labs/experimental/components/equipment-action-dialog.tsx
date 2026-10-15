@@ -72,7 +72,7 @@ export function EquipmentActionDialog({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+      'text-xl font-black uppercase tracking-tighter flex items-center gap-2',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
     body: 'p-8 pt-4 space-y-8',
     footer:
@@ -214,7 +214,7 @@ export function EquipmentActionDialog({
                 <div className='mb-3 rounded-full bg-primary/10 p-5 transition-transform group-hover:scale-110'>
                   <Upload className='size-6 text-primary' />
                 </div>
-                <span className='px-4 text-[9px] leading-tight font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                <span className='px-4 text-[9px] leading-tight font-black tracking-widest text-muted-foreground/60 uppercase'>
                   点击上传
                   <br />
                   设备实物配图
@@ -241,7 +241,7 @@ export function EquipmentActionDialog({
                 updateFormData({ status: value })
               }}
             >
-              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-[11px] font-black tracking-widest uppercase italic focus:ring-primary/30'>
+              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-[11px] font-black tracking-widest uppercase focus:ring-primary/30'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className='rounded-2xl border-none shadow-2xl'>
@@ -266,7 +266,7 @@ export function EquipmentActionDialog({
               </SelectContent>
             </Select>
             {formData.status === 'Maintenance' && (
-              <div className='animate-pulse rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-[9px] font-black tracking-widest text-amber-600 uppercase italic'>
+              <div className='animate-pulse rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-[9px] font-black tracking-widest text-amber-600 uppercase'>
                 警告：当前设备处于例行巡检或维修状态。
               </div>
             )}
@@ -375,7 +375,7 @@ export function EquipmentActionDialog({
       {isDeleteConfirmOpen && (
         <div className='fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-300 fade-in'>
           <div className='scale-in-95 w-full max-w-md rounded-[40px] border border-dashed bg-background p-10 shadow-2xl duration-300'>
-            <h3 className='mb-4 text-xl font-black tracking-tighter text-destructive uppercase italic'>
+            <h3 className='mb-4 text-xl font-black tracking-tighter text-destructive uppercase'>
               确认永久下线受控资产？
             </h3>
             <p className='mb-8 text-[11px] leading-relaxed font-medium tracking-wide text-muted-foreground uppercase'>

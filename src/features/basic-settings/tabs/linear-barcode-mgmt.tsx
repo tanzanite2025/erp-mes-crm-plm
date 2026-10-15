@@ -250,7 +250,7 @@ export function LinearBarcodeMgmt() {
         <div className='flex h-[400px] w-full items-center justify-center rounded-[24px] border border-dashed border-muted/30 bg-muted/10'>
           <div className='flex flex-col items-center gap-3'>
             <Loader2 className='size-10 animate-spin text-primary' />
-            <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+            <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
               {t('basicSettings.linearBarcode.page.badges.loading')}
             </p>
           </div>
@@ -263,7 +263,7 @@ export function LinearBarcodeMgmt() {
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h2 className='text-lg font-black tracking-tighter uppercase'>
             {t('basicSettings.linearBarcode.page.title')}
           </h2>
           <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -272,7 +272,7 @@ export function LinearBarcodeMgmt() {
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <div className='flex h-9 shrink-0 items-center gap-3 rounded-full border border-dashed border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5'>
-            <span className='text-[9px] font-black tracking-widest text-emerald-600/70 uppercase italic'>
+            <span className='text-[9px] font-black tracking-widest text-emerald-600/70 uppercase'>
               {t('basicSettings.linearBarcode.page.badges.active')}
             </span>
             <div className='size-1.5 animate-pulse rounded-full bg-emerald-500' />
@@ -296,7 +296,7 @@ export function LinearBarcodeMgmt() {
 
       <div className='flex flex-col items-start justify-between gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:flex-row sm:items-center md:p-6'>
         <div className='flex flex-wrap items-center gap-3'>
-          <Badge className='h-6 rounded-full border-none bg-slate-500/10 px-4 text-[9px] font-black tracking-widest text-slate-600 uppercase italic'>
+          <Badge className='h-6 rounded-full border-none bg-slate-500/10 px-4 text-[9px] font-black tracking-widest text-slate-600 uppercase'>
             {statusBadgeLabel}
           </Badge>
         </div>
@@ -389,7 +389,7 @@ export function LinearBarcodeMgmt() {
             <div className='mb-4 flex size-14 items-center justify-center rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-500'>
               <RotateCcw className='size-7' />
             </div>
-            <DialogTitle className='text-xl font-black uppercase italic'>
+            <DialogTitle className='text-xl font-black uppercase'>
               {t('basicSettings.linearBarcode.resetDialog.title')}
             </DialogTitle>
             <DialogDescription className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>

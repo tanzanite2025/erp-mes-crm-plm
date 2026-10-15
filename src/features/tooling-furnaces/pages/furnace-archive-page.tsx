@@ -233,7 +233,7 @@ export function FurnaceArchivePage() {
                         style={{ width: '0%' }}
                       />
                     </div>
-                    <p className='mt-1 text-center text-[7px] font-black tracking-[0.2em] text-muted-foreground/20 uppercase italic'>
+                    <p className='mt-1 text-center text-[7px] font-black tracking-[0.2em] text-muted-foreground/20 uppercase'>
                       {t('toolingFurnaces.card.sensorOffline')}
                     </p>
                   </div>

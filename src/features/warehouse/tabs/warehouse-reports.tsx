@@ -100,7 +100,7 @@ export function WarehouseReports() {
           <div className='relative rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-4 transition-all md:rounded-[24px] md:p-6'>
             <div className='absolute top-0 left-6 flex -translate-y-1/2 items-center gap-2 rounded-full border border-dashed border-muted/50 bg-background px-3 py-0.5 md:left-10'>
               <Filter className='size-3 text-muted-foreground/40' />
-              <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase italic md:text-[9px]'>
+              <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase md:text-[9px]'>
                 {t('warehouse.reports.dynamicFilter')}
               </span>
             </div>

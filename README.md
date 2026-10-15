@@ -71,7 +71,7 @@ pnpm install
 
 `pnpm install` runs `scripts/setup-git-hooks.mjs`, which configures `.githooks` as the repository hook path.
 
-Do not start with `pnpm dev` alone unless a backend is already running. Pick one of the modes below so the frontend proxy, backend port, database, Redis, and Rust search engine all point at the same local stack.
+Run `pnpm dev` to start Docker dependencies, generate route contracts, and launch the host Go API and Vite together. The launcher reads `server/.env.dev`, creating it from `server/.env.dev.example` when missing.
 
 ## Local Development Modes
 
@@ -87,27 +87,25 @@ Run the full Docker business stack:
 pnpm run dev:stack:full
 ```
 
-Then run the frontend against the same `localhost:8020` entrypoint used by the local load balancer:
+Then run only the frontend against the local load balancer:
 
 ```bash
-pnpm dev
+pnpm run dev:frontend
 ```
 
-No root `.env.local` file is required for this mode because Vite defaults the API proxy to `http://localhost:8020`. If you do keep a root `.env.local`, set:
-
-```bash
-VITE_PROXY_TARGET=http://localhost:8020
-```
+No root `.env.local` file is required. The launcher derives the frontend proxy from `DEV_BACKEND_PORT` in `server/.env.dev`.
 
 Flow:
 
-- `frontend:8010 -> nginx_lb:8020 -> app -> search-engine/db/redis`
+- `frontend:18010 -> nginx_lb:18020 -> app -> search-engine/db/redis`
 
 Use this mode when you want behavior that matches production as closely as possible.
 
 ### Mode B: Host Go Hot-Debug Mode
 
-This mode keeps Docker for core dependencies but runs the Go API on the host with non-production ports so it never collides with the production-consistent entrypoint.
+This mode keeps Docker for core dependencies and runs the Go API on the host. It shares the local API port with Mode A, so stop the Docker load balancer before switching to this mode.
+
+Start everything with `pnpm dev`, or use the separate entrypoints below in separate terminals.
 
 Core services:
 
@@ -128,34 +126,50 @@ pnpm run dev:server:debug
 pnpm run dev:frontend:debug
 ```
 
-Ports in this mode:
+### DEV Service Ports
 
-- Frontend dev server: `http://localhost:8010`
-- Frontend proxy target: `http://localhost:8020`
-- Host Go API: `http://localhost:8020`
-- Host-accessible search engine: `http://localhost:8030`
-- Host-accessible Postgres: `localhost:8040`
-- Host-accessible Redis: `localhost:8050`
+The local defaults use the 18xxx range because Windows may reserve the previous 8xxx range. Use the launcher's printed URLs when diagnosing DEV; old 8xxx addresses in earlier logs are obsolete.
+
+| Service                          | Default Local Address    | Configuration in `server/.env.dev` |
+| -------------------------------- | ------------------------ | ---------------------------------- |
+| Frontend                         | `http://127.0.0.1:18010` | `DEV_FRONTEND_PORT`                |
+| Host API or Docker load balancer | `http://127.0.0.1:18020` | `DEV_BACKEND_PORT`                 |
+| Search engine                    | `http://127.0.0.1:18030` | `DEV_SEARCH_PORT`                  |
+| Postgres                         | `127.0.0.1:18040`        | `DEV_POSTGRES_PORT`                |
+| Redis                            | `127.0.0.1:18050`        | `DEV_REDIS_PORT`                   |
 
 Flow:
 
-- `frontend(vite):8010 -> host go api:8020 -> search-engine:8030/db/redis`
+- `frontend(vite):18010 -> host go api:18020 -> search-engine:18030/db/redis`
 
-If your existing local `server/postgres_data` was initialized with different credentials, run:
+Override any `DEV_*_PORT` value in `server/.env.dev` or the current shell; shell overrides take precedence. To print the resolved port configuration without starting services, run `node scripts/local-development-environment-and-service-port-configuration.mjs --print-ports`.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1 -ResetDb
-```
+The same values drive Docker host bindings, host API connections, frontend proxy, and CORS. Docker internal service ports stay unchanged. If Windows reserves a port range, check `netsh interface ipv4 show excludedportrange protocol=tcp` and choose ports outside it. An occupied frontend/API port produces an error without stopping its owner.
+
+Check API health directly at `http://127.0.0.1:18020/api/v1/health` and through Vite at `http://127.0.0.1:18010/api/v1/health`. Both should report `status: up` with connected database and Redis. Backend compilation and schema migration finish before the API starts listening; Vite being ready alone does not mean the backend is ready.
+
+Swagger UI is available at `http://127.0.0.1:18020/swagger/index.html` in DEV. Its API requests follow the address serving the documentation instead of a fixed host or port. Postman's collection `baseUrl` defaults to the local API address; update it when overriding `DEV_BACKEND_PORT`.
+
+### DEV Login and Browser Credentials
+
+The default local account is `admin`, with the development template password `xdfc_local_admin_password`. The password comes from `INITIAL_ADMIN_PASSWORD` in `server/.env.dev` when the admin account is first created. Changing that environment variable does not reset an existing account's password.
+
+Use `http://127.0.0.1:18010` consistently. Changing the port or switching between `localhost` and `127.0.0.1` changes the browser origin: login sessions are separate, and the password manager may not offer the credentials saved for the previous address. Sign in at the new address and let the browser save the credentials there. Port changes do not delete ERP accounts or change their passwords.
+
+These template credentials are for local development only. Keep local overrides in the ignored `server/.env.dev` file.
+
+If the existing database uses different credentials, correct `server/.env.dev` to match it. `dev:stack:reset-db` deletes the local database and is only for intentionally discarding all local data.
 
 Notes:
 
-- Do not run host Go on `8080`; use `8020` through `pnpm run dev:server:debug`.
-- Use `pnpm run dev:server:debug` for host-side Go development. `pnpm run dev:server` loads the Docker-oriented `server/.env.dev` values and can collide with the local load balancer.
+- `dev:server` and `dev:server:debug` use the same configured host environment; `dev:frontend` and `dev:frontend:debug` do likewise.
 - `server/.env.dev` should stay production-consistent for Dockerized app routing.
-- Host Go hot-debug mode overrides `PORT` and `SEARCH_ENGINE_URL` at runtime instead of editing `server/.env.dev`.
+- Host Go mode derives `PORT`, `DATABASE_URL`, `REDIS_URL`, `SEARCH_ENGINE_URL`, and `ALLOWED_ORIGIN` at runtime, preserving credentials and URL options.
+- Go build cache cleanup is opt-in: `pnpm dev --clean-go-cache`.
 - This flow is for local dev only and should never point to production database endpoints.
 - Backend env has a single source of truth: `server/.env.dev`
 - Root `.env.local` is frontend-only and should keep only `VITE_*` variables.
+- For raw Vite/Postman use, update their proxy or base URL when overriding `DEV_BACKEND_PORT`. The package-script frontend entrypoints derive their proxy automatically.
 
 ## Quality Gates
 

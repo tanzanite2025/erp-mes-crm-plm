@@ -81,7 +81,7 @@ export function SupplyAnalysisDetails({
                     {bucket.value}
                   </span>
                   {bucket.isPending && (
-                    <span className='ml-0.5 text-[8px] font-normal italic opacity-40'>
+                    <span className='ml-0.5 text-[8px] font-normal opacity-40'>
                       [{t('mrp.requirements.list.pendingIntegration')}]
                     </span>
                   )}
@@ -103,7 +103,7 @@ export function SupplyAnalysisDetails({
 
       <div className='flex items-center gap-2'>
         <div className='h-px flex-1 bg-gradient-to-r from-muted via-muted/50 to-transparent' />
-        <div className='flex items-center gap-1.5 text-[9px] font-black text-muted-foreground/60 uppercase italic'>
+        <div className='flex items-center gap-1.5 text-[9px] font-black text-muted-foreground/60 uppercase'>
           <span>{t('mrp.requirements.list.totalSupplyLabel')}:</span>
           <span className='non-italic text-[11px] text-primary'>
             {item.totalSupply} {item.unit}

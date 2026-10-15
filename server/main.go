@@ -42,7 +42,6 @@ import (
 // @license.name Proprietary
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8020
 // @BasePath /api/v1
 
 // @securityDefinitions.apikey BearerAuth
@@ -51,8 +50,8 @@ import (
 // @description JWT Token (格式: Bearer {token})
 
 const (
-	defaultServerPort    = "8020"
-	defaultAllowedOrigin = "http://localhost:8010,http://127.0.0.1:8010,http://localhost:8020,http://127.0.0.1:8020"
+	defaultServerPort    = "18020"
+	defaultAllowedOrigin = "http://localhost:18010,http://127.0.0.1:18010,http://localhost:18020,http://127.0.0.1:18020"
 )
 
 func loadBackendEnv() {

@@ -82,7 +82,7 @@ export function TemplateDialog({
       <DialogContent className='max-w-lg overflow-hidden rounded-[32px] border-none shadow-2xl'>
         <DialogHeader className='space-y-4'>
           <div className='flex items-center gap-2 text-primary'>
-            <DialogTitle className='text-lg font-black tracking-tighter uppercase italic'>
+            <DialogTitle className='text-lg font-black tracking-tighter uppercase'>
               {template
                 ? t('orgPersonnel.topologyTemplateMgmt.dialog.editTitle')
                 : t('orgPersonnel.topologyTemplateMgmt.dialog.createTitle')}
@@ -106,7 +106,7 @@ export function TemplateDialog({
               name='name'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('orgPersonnel.topologyTemplateMgmt.dialog.nameLabel')}
                   </FormLabel>
                   <FormControl>
@@ -127,7 +127,7 @@ export function TemplateDialog({
               name='description'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('orgPersonnel.topologyTemplateMgmt.dialog.descLabel')}
                   </FormLabel>
                   <FormControl>

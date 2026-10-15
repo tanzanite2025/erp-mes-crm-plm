@@ -58,7 +58,7 @@ export function MindmapCanvas({
   return (
     <Card className='flex h-full min-h-[calc(100dvh-14rem)] flex-col rounded-[24px] border border-dashed border-muted/40 bg-background/90 shadow-none md:min-h-[calc(100dvh-15rem)]'>
       <CardHeader className='px-4 pt-3 pb-1.5 md:px-5'>
-        <CardTitle className='text-sm font-black tracking-tighter text-foreground italic'>
+        <CardTitle className='text-sm font-black tracking-tighter text-foreground'>
           脑图区
         </CardTitle>
       </CardHeader>

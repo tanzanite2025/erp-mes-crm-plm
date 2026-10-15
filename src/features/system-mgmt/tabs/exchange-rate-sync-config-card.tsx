@@ -54,7 +54,7 @@ export function ExchangeRateSyncConfigCard({
       <CardHeader className='border-b border-dashed border-primary/10 bg-linear-to-br from-primary/5 via-transparent to-transparent px-4 py-3'>
         <div className='flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between'>
           <div className='space-y-0.5'>
-            <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tighter italic'>
+            <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tighter'>
               <PlugZap className='size-4 text-primary' />
               {t('systemManagement.apiManagement.exchangeRateApi.title')}
             </CardTitle>

@@ -40,7 +40,7 @@ export function LogisticsPlatformState({
   return (
     <div className='flex h-64 flex-col items-center justify-center gap-3 rounded-[40px] border-2 border-dashed border-slate-200 text-slate-300'>
       <Truck className='size-12 opacity-20' />
-      <span className='text-sm font-black tracking-tighter uppercase italic'>
+      <span className='text-sm font-black tracking-tighter uppercase'>
         {t('logisticsConfig.platforms.states.emptyTitle')}
       </span>
       <span className='text-[10px] font-bold text-slate-300'>

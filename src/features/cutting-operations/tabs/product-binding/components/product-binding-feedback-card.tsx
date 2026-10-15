@@ -125,9 +125,7 @@ export function ProductBindingFeedbackCard(
       aria-live='polite'
       className={`min-w-0 rounded-[20px] border border-dashed p-4 sm:p-5 ${feedbackToneClass(feedbackState)}`}
     >
-      <p className='text-base font-black tracking-tight italic'>
-        {feedback.title}
-      </p>
+      <p className='text-base font-black tracking-tight'>{feedback.title}</p>
       <p className='mt-2 text-sm leading-6 font-medium opacity-80'>
         {feedback.description}
       </p>

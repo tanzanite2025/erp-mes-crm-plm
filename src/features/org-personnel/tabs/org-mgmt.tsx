@@ -128,7 +128,7 @@ export function OrgMgmt() {
       <div className='flex min-h-[600px] flex-1 flex-col gap-6 overflow-hidden md:flex-row'>
         <Card className='flex w-full shrink-0 flex-col overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-inner md:w-[320px]'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 border-b border-dashed border-muted/50 px-6 py-4'>
-            <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+            <CardTitle className='text-sm font-black tracking-tighter uppercase'>
               {t('orgPersonnel.org.treeTitle')}
             </CardTitle>
             <Button
@@ -182,12 +182,12 @@ export function OrgMgmt() {
                 <CardHeader className='flex flex-col gap-4 border-b border-dashed border-muted/50 px-8 py-6 lg:flex-row lg:items-center lg:justify-between lg:gap-2'>
                   <div className='min-w-0 flex-1 space-y-1'>
                     <div className='flex flex-wrap items-center gap-3'>
-                      <CardTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+                      <CardTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase'>
                         {selectedNode.name}
                       </CardTitle>
                       <Badge
                         variant='outline'
-                        className='h-5 rounded-full border-none bg-blue-600/10 px-3 text-[9px] font-black text-blue-600 uppercase italic'
+                        className='h-5 rounded-full border-none bg-blue-600/10 px-3 text-[9px] font-black text-blue-600 uppercase'
                       >
                         {getOrgLevelBadge(selectedNode.type)}
                       </Badge>
@@ -245,7 +245,7 @@ export function OrgMgmt() {
                       <p className='mb-1 text-[10px] font-black tracking-widest uppercase opacity-40'>
                         {t('orgPersonnel.org.manager')}
                       </p>
-                      <p className='text-sm font-black text-slate-700 italic'>
+                      <p className='text-sm font-black text-slate-700'>
                         {selectedNode.manager || t('orgPersonnel.org.none')}
                       </p>
                     </div>
@@ -258,7 +258,7 @@ export function OrgMgmt() {
                       <p className='mb-1 text-[10px] font-black tracking-widest uppercase opacity-40'>
                         {t('orgPersonnel.org.units')}
                       </p>
-                      <p className='text-sm font-black text-slate-700 italic'>
+                      <p className='text-sm font-black text-slate-700'>
                         {selectedNode.children?.length || 0}{' '}
                         {t('orgPersonnel.org.connected')}
                       </p>
@@ -284,7 +284,7 @@ export function OrgMgmt() {
               <div className='grid grid-cols-1 gap-6 overflow-hidden md:grid-cols-2'>
                 <Card className='flex flex-col overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
                   <CardHeader className='flex shrink-0 flex-row items-center justify-between border-b border-dashed border-muted/50 px-6 py-4'>
-                    <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                    <CardTitle className='text-sm font-black tracking-tighter uppercase'>
                       {t('orgPersonnel.org.childrenTitle')} (
                       {selectedNode.children?.length || 0})
                     </CardTitle>
@@ -304,7 +304,7 @@ export function OrgMgmt() {
                                   <Warehouse className='size-4 text-muted-foreground/60' />
                                 </div>
                                 <div>
-                                  <p className='text-sm font-black text-slate-700 italic'>
+                                  <p className='text-sm font-black text-slate-700'>
                                     {child.name}
                                   </p>
                                   <p className='text-[10px] font-black tracking-widest uppercase opacity-40'>
@@ -338,7 +338,7 @@ export function OrgMgmt() {
 
                 <Card className='flex flex-col overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
                   <CardHeader className='flex shrink-0 flex-row items-center justify-between border-b border-dashed border-muted/50 px-6 py-4'>
-                    <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                    <CardTitle className='text-sm font-black tracking-tighter uppercase'>
                       {t('orgPersonnel.org.linkedTitle')} (
                       {selectedNode.linkedArchitecture?.length || 0})
                     </CardTitle>
@@ -382,7 +382,7 @@ export function OrgMgmt() {
                                     )}
                                   </div>
                                   <div>
-                                    <p className='text-sm font-black text-slate-700 italic'>
+                                    <p className='text-sm font-black text-slate-700'>
                                       {item.name}
                                     </p>
                                     <p className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>

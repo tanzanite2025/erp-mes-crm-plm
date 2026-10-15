@@ -49,10 +49,10 @@ export function useUserPermissionEditor({
   const [search, setSearch] = useState('')
   const [expandedModuleIDs, setExpandedModuleIDs] = useState<string[]>([])
 
-  const {
-    data: permissionsData,
-    isLoading,
-  } = useUserPermissionsQuery(userID, open && userID.length > 0)
+  const { data: permissionsData, isLoading } = useUserPermissionsQuery(
+    userID,
+    open && userID.length > 0
+  )
   const { replaceUserPermissionsMutation } = useUserMutations()
 
   const migratedServerPermissionIDs = useMemo(

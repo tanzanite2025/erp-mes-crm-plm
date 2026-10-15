@@ -478,7 +478,7 @@ export function CuttingPlanTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className='flex h-[85vh] w-[min(96vw,1500px)] flex-col overflow-hidden rounded-[32px] p-0 sm:max-w-[1500px]'>
           <DialogHeader className='border-b border-dashed border-muted-foreground/15 px-6 py-5'>
-            <DialogTitle className='flex items-center gap-2 text-xl font-black tracking-tighter italic'>
+            <DialogTitle className='flex items-center gap-2 text-xl font-black tracking-tighter'>
               <Scissors className='size-5 text-primary' />
               {editingPlan
                 ? t('engineering.cuttingPlan.dialog.editTitle')
@@ -678,7 +678,7 @@ function InvalidCuttingPlanAlert({
           <div className='min-w-0'>
             <div className='flex items-center gap-2'>
               <AlertTriangle className='size-4 shrink-0 text-amber-600' />
-              <div className='text-sm font-black tracking-tighter text-amber-700 italic'>
+              <div className='text-sm font-black tracking-tighter text-amber-700'>
                 {t('engineering.cuttingPlan.alerts.invalidRecordsTitle', {
                   count: invalidItems.length,
                 })}
@@ -739,7 +739,7 @@ function InvalidCuttingPlanAlert({
             {filteredGroupedEntries.map(({ failureType, items }) => (
               <div key={failureType} className='grid gap-3'>
                 <div className='flex items-center justify-between gap-3 rounded-[20px] border border-dashed border-amber-500/25 bg-background/60 px-4 py-3'>
-                  <div className='text-sm font-black tracking-tighter text-amber-700 italic'>
+                  <div className='text-sm font-black tracking-tighter text-amber-700'>
                     {getInvalidCuttingPlanFailureGroupLabel(t, failureType)}
                   </div>
                   <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 font-mono text-[8px] text-amber-700'>

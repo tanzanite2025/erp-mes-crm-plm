@@ -92,7 +92,7 @@ export function LinearBarcodeProductionLocationAnchorContractCard({
   return (
     <Card className='rounded-[28px] border border-dashed border-primary/20 bg-primary/5 shadow-none'>
       <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight italic'>
+        <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
           <Route className='size-4 text-primary' />
           {t('codeCenter.linearBarcode.status.location.title')}
         </CardTitle>

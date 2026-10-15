@@ -69,7 +69,7 @@ export function CommandList({ commands, onEdit, onDelete }: CommandListProps) {
                 {getStandardCommandScopeSummary(cmd)}
               </div>
               <div className='rounded-xl border border-dashed bg-muted/30 p-3'>
-                <p className='text-[11px] leading-relaxed font-bold text-foreground/70 italic'>
+                <p className='text-[11px] leading-relaxed font-bold text-foreground/70'>
                   "{cmd.content}"
                 </p>
               </div>

@@ -73,7 +73,7 @@ export function UsersMultiDeleteDialog<TData>({
       handleConfirm={handleDelete}
       disabled={value.trim() !== CONFIRM_WORD}
       title={
-        <span className='flex items-center gap-2 text-lg font-black tracking-tighter text-rose-600 uppercase italic'>
+        <span className='flex items-center gap-2 text-lg font-black tracking-tighter text-rose-600 uppercase'>
           <AlertTriangle className='size-5' />{' '}
           {t('users.dialogs.multiDelete.title')}
         </span>

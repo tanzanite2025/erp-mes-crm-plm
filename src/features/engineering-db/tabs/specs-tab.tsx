@@ -235,7 +235,7 @@ export function SpecsTab() {
       accessorKey: 'item.description',
       header: t('engineering.specs.table.description'),
       cell: ({ row }) => (
-        <p className='max-w-[200px] truncate text-[12px] font-medium text-muted-foreground italic'>
+        <p className='max-w-[200px] truncate text-[12px] font-medium text-muted-foreground'>
           {row.original.item.description || t('engineering.specs.table.noDesc')}
         </p>
       ),
@@ -411,7 +411,7 @@ export function SpecsTab() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className='h-64 text-center text-[10px] font-black tracking-widest uppercase italic antialiased opacity-20'
+                    className='h-64 text-center text-[10px] font-black tracking-widest uppercase antialiased opacity-20'
                   >
                     {t('common.status.syncing')}
                   </TableCell>
@@ -441,7 +441,7 @@ export function SpecsTab() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className='h-64 text-center text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase italic antialiased'
+                    className='h-64 text-center text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase antialiased'
                   >
                     {t('engineering.specs.table.empty')}
                   </TableCell>
@@ -455,11 +455,11 @@ export function SpecsTab() {
       {/* Mobile Card View */}
       <div className='flex flex-col gap-4 md:hidden'>
         {isLoading ? (
-          <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase italic'>
+          <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase'>
             {t('common.status.syncing')}
           </div>
         ) : filteredData.length === 0 ? (
-          <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase italic opacity-40'>
+          <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase opacity-40'>
             {t('engineering.specs.table.empty')}
           </div>
         ) : (
@@ -498,7 +498,7 @@ export function SpecsTab() {
                     </div>
                     <Badge
                       variant='outline'
-                      className='h-5 rounded-full border-none bg-muted/50 px-3 font-mono text-[10px] font-black text-muted-foreground italic'
+                      className='h-5 rounded-full border-none bg-muted/50 px-3 font-mono text-[10px] font-black text-muted-foreground'
                     >
                       {t('engineering.specs.table.rev')}: {item.version}
                     </Badge>
@@ -516,7 +516,7 @@ export function SpecsTab() {
                         {item.category}
                       </Badge>
                       <div className='size-1 rounded-full bg-muted-foreground/20' />
-                      <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60 italic'>
+                      <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60'>
                         <Hash className='size-2.5 opacity-30' />
                         {item.id.split('-').pop()}
                       </div>
@@ -524,7 +524,7 @@ export function SpecsTab() {
                   </div>
 
                   <div className='flex items-center justify-between border-t border-dashed border-muted-foreground/10 pt-3'>
-                    <div className='flex items-center gap-2 text-[9px] font-medium text-muted-foreground/40 italic'>
+                    <div className='flex items-center gap-2 text-[9px] font-medium text-muted-foreground/40'>
                       <Calendar className='size-3 opacity-30' />
                       {item.createdAt
                         ? new Date(item.createdAt).toLocaleDateString()

@@ -111,7 +111,7 @@ export function BOMRecordsTab() {
           <div className='space-y-2'>
             <div className='flex items-center gap-2 text-primary'>
               <History className='size-4 text-primary' />
-              <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+              <h3 className='text-lg font-black tracking-tighter uppercase'>
                 {t('engineering.bomRecords.header.title')}
               </h3>
             </div>
@@ -150,7 +150,7 @@ export function BOMRecordsTab() {
         <div className='flex flex-col gap-4'>
           <div className='flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between'>
             <div className='space-y-2'>
-              <div className='text-sm font-black tracking-tighter italic'>
+              <div className='text-sm font-black tracking-tighter'>
                 最小筛选
               </div>
               <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

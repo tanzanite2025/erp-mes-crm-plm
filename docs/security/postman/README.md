@@ -12,12 +12,14 @@ This folder stores Postman collections for security regression checks.
 
 1. Import the collection into Postman.
 2. Set collection variables before running:
-   - `baseUrl`: backend base URL, for example `http://localhost:8020` or the current dev backend port.
+   - `baseUrl`: backend base URL, defaulting to `http://127.0.0.1:18020` for local DEV. If `DEV_BACKEND_PORT` is overridden in `server/.env.dev` or the shell, use the API URL printed by the DEV launcher.
    - `jwt`: a valid test JWT for authenticated requests.
    - `vendorAuth`: vendor API authorization header used by positive proxy cases.
    - `geminiKey`: Gemini API key used by the Gemini positive case, if applicable.
    - `veryLargeText`: payload text used by the oversized body test.
 3. Run the collection against a non-production environment first.
+
+See [DEV service ports and login](../../../README.md#dev-service-ports) for the current local service addresses and browser credential behavior after port changes.
 
 ## Safety Notes
 

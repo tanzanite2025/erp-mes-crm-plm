@@ -79,7 +79,7 @@ export function PrimaryMaterialCell({
                 disabled={disabled}
               />
               {form.watch(`items.${index}.materialSpec`) && (
-                <span className='truncate px-2 text-[10px] leading-none font-black tracking-tight text-emerald-700 italic'>
+                <span className='truncate px-2 text-[10px] leading-none font-black tracking-tight text-emerald-700'>
                   {t('engineering.bomArchive.itemTable.specLabel')}:{' '}
                   {form.watch(`items.${index}.materialSpec`)}
                 </span>

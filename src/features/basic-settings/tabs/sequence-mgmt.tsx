@@ -119,7 +119,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
         <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-6'>
           <div className='flex items-center gap-2 text-primary'>
             <Hash className='size-4 text-primary' />
-            <h3 className='text-lg font-black tracking-tighter uppercase italic'>
+            <h3 className='text-lg font-black tracking-tighter uppercase'>
               {t('basicSettings.sequences.page.title')}
             </h3>
           </div>
@@ -133,7 +133,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
         <Alert className='max-w-2xl rounded-[24px] border-dashed border-blue-500/20 bg-blue-500/5 py-4 shadow-none'>
           <ShieldCheck className='mt-1 size-4 text-blue-600' />
           <div className='ml-3 flex-1'>
-            <AlertTitle className='text-[10px] font-black tracking-widest text-blue-700 uppercase italic'>
+            <AlertTitle className='text-[10px] font-black tracking-widest text-blue-700 uppercase'>
               {t('basicSettings.sequences.syncGuard.title')}
             </AlertTitle>
             <AlertDescription className='mt-1 text-[11px] leading-relaxed font-bold text-blue-800/60'>
@@ -251,7 +251,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
         <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[500px]'>
           <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
           <DialogHeader className='relative z-10 p-8 pb-4'>
-            <DialogTitle className='text-xl font-black tracking-tight uppercase italic'>
+            <DialogTitle className='text-xl font-black tracking-tight uppercase'>
               {editingRule?.id
                 ? t('basicSettings.sequences.dialog.editTitle')
                 : t('basicSettings.sequences.dialog.createTitle')}
@@ -263,7 +263,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
 
           <div className='relative z-10 space-y-6 p-8 pt-4'>
             <div className='space-y-3'>
-              <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('basicSettings.sequences.dialog.labels.ruleKey')}
               </Label>
               <Input
@@ -281,7 +281,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
 
             <div className='grid grid-cols-2 gap-6'>
               <div className='space-y-3'>
-                <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('basicSettings.sequences.dialog.labels.prefix')}
                 </Label>
                 <Input
@@ -296,7 +296,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                 />
               </div>
               <div className='space-y-3'>
-                <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('basicSettings.sequences.dialog.labels.padding')}
                 </Label>
                 <Input
@@ -314,7 +314,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
             </div>
 
             <div className='space-y-3'>
-              <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('basicSettings.sequences.dialog.labels.pattern')}
               </Label>
               <Input
@@ -330,7 +330,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
             </div>
 
             <div className='space-y-3'>
-              <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+              <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('basicSettings.sequences.dialog.labels.resetStrategy')}
               </Label>
               <Select
@@ -348,19 +348,19 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                 <SelectContent className='rounded-[24px] border-none p-2 shadow-2xl'>
                   <SelectItem
                     value='MONTHLY'
-                    className='rounded-xl py-3 font-bold italic'
+                    className='rounded-xl py-3 font-bold'
                   >
                     {t('basicSettings.sequences.dialog.resetOptions.monthly')}
                   </SelectItem>
                   <SelectItem
                     value='YEARLY'
-                    className='rounded-xl py-3 font-bold italic'
+                    className='rounded-xl py-3 font-bold'
                   >
                     {t('basicSettings.sequences.dialog.resetOptions.yearly')}
                   </SelectItem>
                   <SelectItem
                     value='NEVER'
-                    className='rounded-xl py-3 font-bold italic'
+                    className='rounded-xl py-3 font-bold'
                   >
                     {t('basicSettings.sequences.dialog.resetOptions.never')}
                   </SelectItem>

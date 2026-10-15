@@ -43,7 +43,7 @@ export function BatchEngineConfigDebugPanel(
               <p className='text-[10px] font-black tracking-[0.24em] text-primary/70 uppercase'>
                 {t('rawMaterials.batchEngine.debug.kicker')}
               </p>
-              <h2 className='mt-2 text-sm font-black tracking-tighter text-foreground uppercase italic'>
+              <h2 className='mt-2 text-sm font-black tracking-tighter text-foreground uppercase'>
                 {t('rawMaterials.batchEngine.debug.title')}
               </h2>
               <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

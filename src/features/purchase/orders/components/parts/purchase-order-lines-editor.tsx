@@ -57,7 +57,7 @@ export function PurchaseOrderLinesEditor({
   return (
     <section className='space-y-2.5'>
       <div className='flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between'>
-        <h3 className='flex items-center gap-2 text-sm font-black tracking-tighter text-slate-800 uppercase italic dark:text-slate-200'>
+        <h3 className='flex items-center gap-2 text-sm font-black tracking-tighter text-slate-800 uppercase dark:text-slate-200'>
           <Package className='size-4 text-primary' />
           {t('purchase.orders.linesEditor.title')}
         </h3>

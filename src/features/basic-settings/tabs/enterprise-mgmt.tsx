@@ -138,7 +138,7 @@ export function EnterpriseMgmt() {
     <div className='flex max-w-2xl animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-          <h2 className='text-lg font-black tracking-tighter uppercase italic'>
+          <h2 className='text-lg font-black tracking-tighter uppercase'>
             {t('basicSettings.enterprisePage.title')}
           </h2>
           <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
@@ -276,7 +276,7 @@ export function EnterpriseMgmt() {
       </div>
 
       <div className='rounded-[32px] border border-dashed border-primary/20 bg-primary/5 p-6'>
-        <p className='text-[10px] leading-relaxed font-black tracking-widest text-primary/60 uppercase italic'>
+        <p className='text-[10px] leading-relaxed font-black tracking-widest text-primary/60 uppercase'>
           {t('basicSettings.enterprisePage.syncNotice')}
         </p>
       </div>

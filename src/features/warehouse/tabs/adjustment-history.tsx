@@ -105,11 +105,11 @@ export function AdjustmentHistory() {
         <div className='flex items-center justify-between border-b border-dashed border-muted/50 bg-muted/20 px-5 py-4 md:px-8 md:py-5'>
           <div className='flex items-center gap-2 overflow-hidden'>
             <History className='size-4 shrink-0 text-amber-600' />
-            <h3 className='truncate text-base font-black tracking-tighter text-foreground uppercase italic md:text-lg'>
+            <h3 className='truncate text-base font-black tracking-tighter text-foreground uppercase md:text-lg'>
               {t('warehouse.adjustment.flowTitle')}
             </h3>
           </div>
-          <p className='hidden text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase italic sm:block'>
+          <p className='hidden text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase sm:block'>
             {t('warehouse.adjustment.auditData')}
           </p>
         </div>

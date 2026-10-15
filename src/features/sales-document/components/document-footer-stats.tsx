@@ -22,15 +22,15 @@ export function DocumentFooterStats({
     <DialogFooter className='sticky bottom-0 z-20 flex flex-col items-stretch justify-between gap-4 border-t bg-background/90 px-4 py-3 backdrop-blur-md sm:flex-row sm:items-center sm:gap-5 sm:px-6 sm:py-2'>
       <div className='grid grid-cols-3 gap-4 sm:flex sm:items-center sm:gap-6'>
         <div className='flex flex-col'>
-          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-muted-foreground/40 uppercase italic sm:text-[8px]'>
+          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-muted-foreground/40 uppercase sm:text-[8px]'>
             {t('tradingSalesOrder.footer.items')}
           </span>
-          <span className='text-base leading-none font-black tracking-tighter italic tabular-nums sm:text-lg'>
+          <span className='text-base leading-none font-black tracking-tighter tabular-nums sm:text-lg'>
             {(formData.lines?.length || 0).toLocaleString()}
           </span>
         </div>
         <div className='flex flex-col'>
-          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-muted-foreground/40 uppercase italic sm:text-[8px]'>
+          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-muted-foreground/40 uppercase sm:text-[8px]'>
             {t('tradingSalesOrder.footer.qty')}
           </span>
           <span className='text-base leading-none font-black tracking-tighter text-muted-foreground/70 tabular-nums sm:text-lg'>
@@ -38,10 +38,10 @@ export function DocumentFooterStats({
           </span>
         </div>
         <div className='flex flex-col'>
-          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-amber-600/60 uppercase italic sm:text-[8px]'>
+          <span className='mb-1.5 text-[7px] leading-none font-bold tracking-widest text-amber-600/60 uppercase sm:text-[8px]'>
             {t('tradingSalesOrder.footer.amount')}
           </span>
-          <span className='text-base leading-none font-black tracking-tighter text-primary italic tabular-nums sm:text-lg'>
+          <span className='text-base leading-none font-black tracking-tighter text-primary tabular-nums sm:text-lg'>
             {formData.currency}{' '}
             {(formData.amount || 0).toLocaleString(undefined, {
               minimumFractionDigits: 1,

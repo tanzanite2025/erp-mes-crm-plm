@@ -71,7 +71,7 @@ export function SidebarCommandLibraryPage() {
         gradient
         statusBadge={
           <div className='flex w-fit shrink-0 items-center gap-4 rounded-full border border-primary/10 bg-primary/5 px-4 py-1'>
-            <span className='text-[10px] font-black tracking-widest text-primary/60 uppercase italic'>
+            <span className='text-[10px] font-black tracking-widest text-primary/60 uppercase'>
               {isCategorySection ? enabledCategoryCount : enabledCount} ENABLED
             </span>
             <div className='size-1.5 animate-pulse rounded-full bg-emerald-500' />

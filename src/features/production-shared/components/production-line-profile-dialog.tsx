@@ -184,7 +184,7 @@ export function ProductionLineProfileDialog({
                 <Factory className='size-4 text-primary' />
               </div>
               <div className='space-y-1'>
-                <DialogTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                <DialogTitle className='text-sm font-black tracking-tighter uppercase'>
                   {isEditing ? `编辑 ${entityLabel}` : `新增 ${entityLabel}`}
                 </DialogTitle>
                 <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -198,7 +198,7 @@ export function ProductionLineProfileDialog({
             <div className='space-y-2'>
               <Label
                 htmlFor='production-line-profile-name'
-                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
               >
                 {entityLabel} 名称
               </Label>
@@ -213,7 +213,7 @@ export function ProductionLineProfileDialog({
             <div className='space-y-2'>
               <Label
                 htmlFor='production-line-profile-code'
-                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
               >
                 {entityLabel} 编码
               </Label>
@@ -230,14 +230,14 @@ export function ProductionLineProfileDialog({
                 placeholder={`自动生成或填写 ${entityLabel} 编码`}
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-black tracking-tight shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
-              <p className='ml-1 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+              <p className='ml-1 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 新增时会根据名称生成编码，编辑时可手动修正。
               </p>
             </div>
             <div className='space-y-2 md:col-span-2'>
               <Label
                 htmlFor='production-line-profile-description'
-                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
               >
                 {entityLabel} 说明
               </Label>

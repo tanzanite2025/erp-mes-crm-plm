@@ -105,7 +105,7 @@ export function SalesOrderActionDialog({
       >
         <div className='sticky top-0 z-30 flex items-center justify-between gap-4 border-b bg-background/95 px-4 py-2 backdrop-blur-sm sm:px-6 sm:py-2.5'>
           <DialogHeader className='min-w-0 flex-1 gap-1 sm:flex-row sm:items-center sm:gap-3'>
-            <DialogTitle className='flex shrink-0 items-center gap-2 text-base font-black tracking-tight uppercase italic sm:text-lg'>
+            <DialogTitle className='flex shrink-0 items-center gap-2 text-base font-black tracking-tight uppercase sm:text-lg'>
               <ClipboardList className='size-4 text-primary sm:size-5' />
               {order
                 ? t('tradingSalesOrder.dialog.editTitle')

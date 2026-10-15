@@ -155,6 +155,12 @@ if (-not (Test-Path -LiteralPath $envFile)) {
 }
 
 $envMap = Read-DotEnv -Path $envFile
+$portConfigurationScript = Join-Path $scriptDir "../scripts/local-development-environment-and-service-port-configuration.mjs"
+$portConfigurationJson = & node $portConfigurationScript --print-ports
+if ($LASTEXITCODE -ne 0) {
+    throw "Invalid local development service port configuration."
+}
+$localServicePorts = $portConfigurationJson | ConvertFrom-Json
 $requiredKeys = @(
     "POSTGRES_USER",
     "POSTGRES_PASSWORD",
@@ -180,6 +186,10 @@ foreach ($key in $requiredKeys) {
 foreach ($pair in $envMap.GetEnumerator()) {
     Set-Item -Path ("Env:" + $pair.Key) -Value $pair.Value
 }
+foreach ($portProperty in $localServicePorts.PSObject.Properties) {
+    Set-Item -Path ("Env:" + $portProperty.Name) -Value ([string]$portProperty.Value)
+}
+$env:ALLOWED_ORIGIN = "http://localhost:$($localServicePorts.DEV_FRONTEND_PORT),http://127.0.0.1:$($localServicePorts.DEV_FRONTEND_PORT),http://localhost:$($localServicePorts.DEV_BACKEND_PORT),http://127.0.0.1:$($localServicePorts.DEV_BACKEND_PORT)"
 
 Write-Step "Starting db + redis + search-engine with local-only dev env..."
 Invoke-Compose @("up", "-d", "db", "redis", "search-engine")
@@ -210,9 +220,9 @@ if (-not (Test-DbCredentials -PgUser $pgUser -PgPassword $pgPassword -PgDb $pgDb
 if (-not $FullStack) {
     $modeLabel = if ($InfraOnly) { "InfraOnly" } else { "Default stable mode" }
     Write-Step "$modeLabel enabled. Leaving local stack at db + redis + search-engine."
-    Write-Host "  Postgres: localhost:8040 (container: xdfc-postgres)"
-    Write-Host "  Redis: localhost:8050 (container: xdfc-redis)"
-    Write-Host "  Search Engine: localhost:8030 (container port: 8081)"
+    Write-Host "  Postgres: localhost:$($localServicePorts.DEV_POSTGRES_PORT) (container: xdfc-postgres)"
+    Write-Host "  Redis: localhost:$($localServicePorts.DEV_REDIS_PORT) (container: xdfc-redis)"
+    Write-Host "  Search Engine: localhost:$($localServicePorts.DEV_SEARCH_PORT) (container port: 8081)"
     Write-Host ""
     Write-Host "Next step from repo root:"
     Write-Host "  pnpm run dev"
@@ -234,9 +244,9 @@ Write-Step "Recreating nginx_lb so it picks up fresh app upstream resolution..."
 Invoke-Compose @("up", "-d", "--force-recreate", "nginx_lb")
 
 Write-Step "Done. Local stack is ready."
-Write-Host "  Search engine: http://localhost:8030"
-Write-Host "  API/LB: http://localhost:8020"
-Write-Host "  Postgres: localhost:8040 (container: xdfc-postgres)"
-Write-Host "  Redis: localhost:8050 (container: xdfc-redis)"
+Write-Host "  Search engine: http://localhost:$($localServicePorts.DEV_SEARCH_PORT)"
+Write-Host "  API/LB: http://localhost:$($localServicePorts.DEV_BACKEND_PORT)"
+Write-Host "  Postgres: localhost:$($localServicePorts.DEV_POSTGRES_PORT) (container: xdfc-postgres)"
+Write-Host "  Redis: localhost:$($localServicePorts.DEV_REDIS_PORT) (container: xdfc-redis)"
 Write-Host ""
 Invoke-Compose @("ps")

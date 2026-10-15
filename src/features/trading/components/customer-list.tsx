@@ -372,10 +372,10 @@ export function CustomerList() {
             <Building2 className='size-10 sm:size-12' />
           </div>
           <div className='relative flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2.5'>
-            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
+            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.total')}
             </span>
-            <span className='shrink-0 text-xl leading-none font-black tracking-tighter italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl leading-none font-black tracking-tighter tabular-nums sm:text-[28px]'>
               {customerStats?.total ?? '—'}
             </span>
           </div>
@@ -389,10 +389,10 @@ export function CustomerList() {
             <User className='size-10 sm:size-12' />
           </div>
           <div className='relative flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2.5'>
-            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
+            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.active')}
             </span>
-            <span className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-500 italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-500 tabular-nums sm:text-[28px]'>
               {customerStats?.active ?? '—'}
             </span>
           </div>
@@ -406,10 +406,10 @@ export function CustomerList() {
             <ExternalLink className='size-10 sm:size-12' />
           </div>
           <div className='relative flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-2.5'>
-            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase italic sm:text-[10px] sm:tracking-[0.18em]'>
+            <span className='max-w-full truncate text-[8px] font-black tracking-[0.08em] text-muted-foreground/50 uppercase sm:text-[10px] sm:tracking-[0.18em]'>
               {t('trading.customers.stats.newThisMonth')}
             </span>
-            <span className='shrink-0 text-xl leading-none font-black tracking-tighter text-primary italic tabular-nums sm:text-[28px]'>
+            <span className='shrink-0 text-xl leading-none font-black tracking-tighter text-primary tabular-nums sm:text-[28px]'>
               {typeof customerStats?.newThisMonth === 'number'
                 ? `+${customerStats.newThisMonth}`
                 : '—'}

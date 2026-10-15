@@ -62,4 +62,19 @@ describe('pdaProductionScanService', () => {
       toHolderId: undefined,
     })
   })
+
+  it('does not forward payroll metadata to production execution', () => {
+    const command = buildPDAProductionScanCommandInput({
+      rawCode: 'PDA-TEAM',
+      scene: 'production',
+      metadata: {
+        pieceworkAttribution: { type: 'TEAM', teamId: 'team-one' },
+        quantity: 3,
+        unitPrice: 2,
+      },
+    })
+    expect(command).not.toHaveProperty('pieceworkAttribution')
+    expect(command).not.toHaveProperty('quantity')
+    expect(command).not.toHaveProperty('unitPrice')
+  })
 })

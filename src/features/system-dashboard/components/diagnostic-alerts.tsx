@@ -71,7 +71,7 @@ export function DiagnosticAlerts() {
       )}
     >
       <CardHeader className='p-3 pb-1 sm:p-3.5 sm:pb-1.5'>
-        <CardTitle className='flex items-center justify-between text-sm font-black tracking-tighter uppercase italic'>
+        <CardTitle className='flex items-center justify-between text-sm font-black tracking-tighter uppercase'>
           <div className='flex items-center gap-2'>
             <ShieldAlert
               className={cn(
@@ -98,7 +98,7 @@ export function DiagnosticAlerts() {
         {!hasAlerts ? (
           <div className='flex items-center gap-1.5 rounded-2xl border border-dashed border-emerald-200/50 bg-emerald-500/5 p-1.5 text-emerald-600 sm:p-2'>
             <CheckCircle2 className='size-3.5' />
-            <span className='text-[10px] font-black tracking-widest uppercase italic'>
+            <span className='text-[10px] font-black tracking-widest uppercase'>
               {t('systemManagement.diagnostic.healthy')}
             </span>
           </div>
@@ -119,7 +119,7 @@ export function DiagnosticAlerts() {
                     </div>
                     <div className='flex-1 space-y-0.5'>
                       <div className='flex items-center justify-between gap-1.5'>
-                        <span className='text-xs font-black tracking-tight text-slate-800 uppercase italic dark:text-slate-100'>
+                        <span className='text-xs font-black tracking-tight text-slate-800 uppercase dark:text-slate-100'>
                           {alert.name}
                         </span>
                         <div className='flex items-center gap-1.5 font-mono text-[9px] text-rose-500 dark:text-rose-300'>
@@ -155,7 +155,7 @@ export function DiagnosticAlerts() {
                     className='rounded-2xl border border-dashed border-rose-200 bg-rose-50/70 p-1.5 sm:p-2 dark:border-rose-500/25 dark:bg-rose-500/10'
                   >
                     <div className='mb-0.5 flex items-center justify-between gap-2'>
-                      <span className='text-[11px] font-black tracking-tight text-rose-700 uppercase italic dark:text-rose-300'>
+                      <span className='text-[11px] font-black tracking-tight text-rose-700 uppercase dark:text-rose-300'>
                         {log.name}
                       </span>
                       <span className='font-mono text-[9px] text-rose-600 dark:text-rose-300'>

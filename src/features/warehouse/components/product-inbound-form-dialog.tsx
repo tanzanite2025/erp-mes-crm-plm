@@ -76,7 +76,7 @@ export function ProductInboundFormDialog({
 
         <div className='relative p-5 md:p-8'>
           <DialogHeader className='mb-6 text-left md:mb-8'>
-            <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase italic md:gap-4 md:text-xl'>
+            <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase md:gap-4 md:text-xl'>
               <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 md:size-10'>
                 <Package className='size-4 text-emerald-600 md:size-5' />
               </div>

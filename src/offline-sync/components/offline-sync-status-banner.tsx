@@ -41,7 +41,7 @@ export function OfflineSyncStatusBanner() {
         )}
       >
         <Icon className={cn('mt-1 size-4', isSyncing && 'animate-spin')} />
-        <AlertTitle className='text-sm font-black tracking-tighter uppercase italic'>
+        <AlertTitle className='text-sm font-black tracking-tighter uppercase'>
           {headline || 'OFFLINE SYNC STATUS'}
         </AlertTitle>
         <AlertDescription className='gap-2'>

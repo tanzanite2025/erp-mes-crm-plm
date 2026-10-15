@@ -70,7 +70,7 @@ export function AiEngineGatewayCard({
     >
       <CardHeader className='flex flex-col items-start justify-between gap-3 border-b border-dashed border-indigo-100 !p-4 sm:flex-row sm:items-center'>
         <div className='space-y-1'>
-          <CardTitle className='text-[11px] font-black tracking-tight uppercase italic md:text-sm'>
+          <CardTitle className='text-[11px] font-black tracking-tight uppercase md:text-sm'>
             {t('aiAssistant.accessControl.api.title')}
           </CardTitle>
           <CardDescription className='text-[8px] font-bold tracking-widest text-indigo-400 uppercase md:text-[9px]'>

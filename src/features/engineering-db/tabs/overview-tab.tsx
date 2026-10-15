@@ -223,7 +223,7 @@ export function OverviewTab() {
         const product = productMap.get(row.original.relationId || '')
         if (!row.original.relationId)
           return (
-            <span className='text-[11px] text-muted-foreground/30 italic'>
+            <span className='text-[11px] text-muted-foreground/30'>
               {t('engineering.db.table.global')}
             </span>
           )
@@ -321,7 +321,7 @@ export function OverviewTab() {
               <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {t('engineering.db.stats.total')}
               </span>
-              <span className='text-sm font-black text-primary italic'>
+              <span className='text-sm font-black text-primary'>
                 {data.length}
               </span>
             </div>
@@ -339,7 +339,7 @@ export function OverviewTab() {
               >
                 {stat.label}
               </span>
-              <div className='shrink-0 text-base font-black tracking-tighter italic tabular-nums'>
+              <div className='shrink-0 text-base font-black tracking-tighter tabular-nums'>
                 {stat.count}
               </div>
             </div>
@@ -404,7 +404,7 @@ export function OverviewTab() {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className='h-64 text-center text-muted-foreground/30 italic'
+                    className='h-64 text-center text-muted-foreground/30'
                   >
                     {t('engineering.db.status.noData')}
                   </TableCell>
@@ -418,11 +418,11 @@ export function OverviewTab() {
       {/* 列表区域 - Mobile Card View */}
       <div className='flex flex-col gap-4 md:hidden'>
         {loading ? (
-          <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase italic'>
+          <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase'>
             {t('engineering.db.status.aggregating')}
           </div>
         ) : filteredData.length === 0 ? (
-          <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase italic opacity-40'>
+          <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase opacity-40'>
             {t('engineering.db.status.noData')}
           </div>
         ) : (
@@ -462,7 +462,7 @@ export function OverviewTab() {
                     {product?.sku && (
                       <Badge
                         variant='outline'
-                        className='h-5 rounded-full border-none bg-primary/5 px-3 font-mono text-[10px] leading-none font-black text-primary italic'
+                        className='h-5 rounded-full border-none bg-primary/5 px-3 font-mono text-[10px] leading-none font-black text-primary'
                       >
                         {product.sku}
                       </Badge>
@@ -474,7 +474,7 @@ export function OverviewTab() {
                       {item.name}
                     </h4>
                     <div className='mt-1.5 flex items-center gap-2'>
-                      <span className='text-[10px] font-black tracking-tighter text-muted-foreground/60 uppercase italic'>
+                      <span className='text-[10px] font-black tracking-tighter text-muted-foreground/60 uppercase'>
                         {mobileCategoryLabel}
                       </span>
                       <div className='size-1 rounded-full bg-muted-foreground/20' />
@@ -494,7 +494,7 @@ export function OverviewTab() {
                       </div>
                       <div className='flex items-center gap-1.5'>
                         <Clock className='size-3 text-muted-foreground/20' />
-                        <span className='text-[9px] font-medium text-muted-foreground/40 italic'>
+                        <span className='text-[9px] font-medium text-muted-foreground/40'>
                           {new Date(item.createdAt).toLocaleDateString()}
                         </span>
                       </div>

@@ -27,7 +27,7 @@ export function ProductBindingHistoryTable(
       <CardContent className='flex h-full min-h-0 flex-col p-0'>
         <div className='flex items-center justify-between border-b border-dashed border-border/70 px-4 py-3'>
           <div className='flex flex-col gap-1'>
-            <p className='text-sm font-black tracking-tighter text-foreground italic'>
+            <p className='text-sm font-black tracking-tighter text-foreground'>
               {t('cuttingOperations.productBinding.history.title')}
             </p>
             <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

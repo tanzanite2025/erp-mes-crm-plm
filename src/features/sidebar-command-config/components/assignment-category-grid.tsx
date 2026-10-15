@@ -23,7 +23,7 @@ export function AssignmentCategoryGrid({
     <section className='rounded-2xl border border-dashed border-muted/50 bg-background px-3 py-2.5 shadow-inner'>
       <div className='mb-1.5 flex items-center justify-between gap-3'>
         <div>
-          <h2 className='text-[13px] font-black tracking-tighter italic'>
+          <h2 className='text-[13px] font-black tracking-tighter'>
             {t('sidebarCommandConfig.categoryGrid.title')}
           </h2>
           <p className='mt-0.5 text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>

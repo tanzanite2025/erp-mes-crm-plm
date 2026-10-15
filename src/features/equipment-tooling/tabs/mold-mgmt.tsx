@@ -129,7 +129,7 @@ export function MoldMgmt() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 sm:p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <Database className='size-4' />
-          <h3 className='text-base font-black tracking-tighter uppercase italic sm:text-lg'>
+          <h3 className='text-base font-black tracking-tighter uppercase sm:text-lg'>
             {t('equipmentTooling.molds.page.title')}
           </h3>
         </div>
@@ -365,7 +365,7 @@ export function MoldMgmt() {
                                     groupToProducts[mold.groupName] ? (
                                       groupToProducts[mold.groupName].join(', ')
                                     ) : (
-                                      <span className='font-black text-muted-foreground/20 italic'>
+                                      <span className='font-black text-muted-foreground/20'>
                                         {t('equipmentTooling.molds.card.unset')}
                                       </span>
                                     )}

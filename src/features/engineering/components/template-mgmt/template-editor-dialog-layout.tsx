@@ -43,7 +43,7 @@ export function TemplateEditorDialogLayout({
           <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/85 px-5 py-4 shadow-sm'>
             <div className='flex items-start justify-between gap-4'>
               <div className='min-w-0 flex-1'>
-                <DialogTitle className='flex items-center gap-3 text-[16px] font-black tracking-tight text-slate-800 uppercase italic'>
+                <DialogTitle className='flex items-center gap-3 text-[16px] font-black tracking-tight text-slate-800 uppercase'>
                   <div className='size-2 animate-pulse rounded-full bg-blue-600' />
                   {title}
                 </DialogTitle>

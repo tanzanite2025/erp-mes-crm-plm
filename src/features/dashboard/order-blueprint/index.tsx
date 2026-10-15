@@ -78,7 +78,7 @@ export function OrderBlueprint({ order, orderNo }: OrderBlueprintProps) {
   return (
     <div className='flex h-full w-full animate-in flex-col gap-8 bg-muted/5 duration-700 fade-in'>
       <div className='flex flex-col gap-2 rounded-[32px] border border-dashed bg-background/50 p-6 backdrop-blur-md'>
-        <h1 className='text-lg font-black tracking-tighter uppercase italic'>
+        <h1 className='text-lg font-black tracking-tighter uppercase'>
           Order Lifecycle Blueprint #{resolvedOrder.orderNo}
         </h1>
         <p className='text-[9px] font-black tracking-widest uppercase opacity-60'>

@@ -88,7 +88,7 @@ export function ProductInboundActionDialog({
             <DialogHeader className='text-left'>
               <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
                 <div className='min-w-0'>
-                  <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase italic md:text-xl'>
+                  <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase md:text-xl'>
                     <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10'>
                       <Package className='size-5 text-emerald-600' />
                     </div>
@@ -164,7 +164,7 @@ export function ProductInboundActionDialog({
                     <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase md:text-[10px]'>
                       {t('warehouse.inbound.results')}
                     </span>
-                    <span className='shrink-0 text-[9px] font-black text-muted-foreground/60 italic md:text-[10px]'>
+                    <span className='shrink-0 text-[9px] font-black text-muted-foreground/60 md:text-[10px]'>
                       {t('warehouse.inbound.resultCount', {
                         count: inbound.searchResults.length,
                       })}
@@ -216,7 +216,7 @@ export function ProductInboundActionDialog({
                             </div>
                             <div className='space-y-0.5 overflow-hidden md:space-y-1'>
                               <div className='flex items-center gap-2 md:gap-3'>
-                                <h4 className='max-w-[150px] truncate text-sm font-black tracking-tighter text-slate-800 uppercase italic transition-colors group-hover:text-emerald-700 md:max-w-xs md:text-[15px]'>
+                                <h4 className='max-w-[150px] truncate text-sm font-black tracking-tighter text-slate-800 uppercase transition-colors group-hover:text-emerald-700 md:max-w-xs md:text-[15px]'>
                                   {item.name}
                                 </h4>
                                 <Badge
@@ -237,7 +237,7 @@ export function ProductInboundActionDialog({
                                   SKU: {item.code}
                                 </span>
                                 {item.spec ? (
-                                  <span className='truncate text-[9px] font-bold text-muted-foreground/40 italic opacity-60 md:text-[10px]'>
+                                  <span className='truncate text-[9px] font-bold text-muted-foreground/40 opacity-60 md:text-[10px]'>
                                     SPEC: {item.spec}
                                   </span>
                                 ) : null}
@@ -259,7 +259,7 @@ export function ProductInboundActionDialog({
                         </div>
                       ))
                     ) : (
-                      <div className='flex h-full flex-col items-center justify-center px-6 text-center text-muted-foreground/20 italic'>
+                      <div className='flex h-full flex-col items-center justify-center px-6 text-center text-muted-foreground/20'>
                         <div className='relative mb-4'>
                           <Search className='size-16 opacity-5' />
                           <div className='absolute inset-0 flex items-center justify-center'>

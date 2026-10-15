@@ -42,7 +42,7 @@ export function CommandMenuKnowledgeTab({
         ) : null}
         {entries.length === 0 ? (
           <div className='space-y-2'>
-            <div className='text-center text-[7px] font-black tracking-[0.2em] text-sky-600/70 uppercase italic'>
+            <div className='text-center text-[7px] font-black tracking-[0.2em] text-sky-600/70 uppercase'>
               {t('commandMenu.headings.knowledgeBase')}
             </div>
             <div className='flex min-h-28 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 py-6 text-center text-[10px] font-bold text-muted-foreground'>
@@ -52,7 +52,7 @@ export function CommandMenuKnowledgeTab({
         ) : (
           <CommandGroup
             heading={t('commandMenu.headings.knowledgeBase')}
-            className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-sky-600/70 **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:italic'
+            className='**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[8px] **:[[cmdk-group-heading]]:font-black **:[[cmdk-group-heading]]:tracking-[0.2em] **:[[cmdk-group-heading]]:text-sky-600/70 **:[[cmdk-group-heading]]:uppercase'
           >
             <div className='grid grid-cols-1 gap-0'>
               {entries.map((entry) => (

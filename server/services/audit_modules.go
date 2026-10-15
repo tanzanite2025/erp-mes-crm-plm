@@ -49,6 +49,8 @@ const (
 	AuditModuleCuttingEngineConfig   = "cutting-engine-config"
 	AuditModuleApprovalRequest       = "approval-request"
 	AuditModuleBusinessAnalysisQuery = "business-analysis-query"
+
+	AuditModulePieceworkPayItem = "piecework-pay-item"
 )
 
 const (

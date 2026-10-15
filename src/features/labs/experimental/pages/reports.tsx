@@ -70,7 +70,7 @@ export function LabReportsPage() {
               {t('labExperimental.reports.totalReports')}
             </span>
             <div className='flex items-baseline gap-1'>
-              <span className='text-2xl font-black tracking-tighter text-primary italic tabular-nums'>
+              <span className='text-2xl font-black tracking-tighter text-primary tabular-nums'>
                 {reports.length}
               </span>
               <span className='text-[10px] font-black opacity-20'>
@@ -93,7 +93,7 @@ export function LabReportsPage() {
         <div className='relative flex h-[400px] flex-col items-center justify-center overflow-hidden rounded-[40px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
           <ClipboardList className='mb-6 size-16 animate-pulse stroke-[1.5px] text-primary opacity-5' />
-          <p className='text-[11px] font-black tracking-[0.4em] text-muted-foreground/20 uppercase italic'>
+          <p className='text-[11px] font-black tracking-[0.4em] text-muted-foreground/20 uppercase'>
             {t('labExperimental.reports.empty')}
           </p>
         </div>
@@ -135,7 +135,7 @@ export function LabReportsPage() {
                         </span>
                       </div>
                     </div>
-                    <h4 className='truncate text-sm font-black tracking-tight text-slate-700 uppercase italic transition-colors group-hover:text-primary'>
+                    <h4 className='truncate text-sm font-black tracking-tight text-slate-700 uppercase transition-colors group-hover:text-primary'>
                       {report.conclusion}
                     </h4>
                   </div>
@@ -160,7 +160,7 @@ export function LabReportsPage() {
                     </span>
                     <div
                       className={cn(
-                        'flex items-center gap-1.5 text-[10px] font-black uppercase italic',
+                        'flex items-center gap-1.5 text-[10px] font-black uppercase',
                         report.result === 'PASS'
                           ? 'text-emerald-500'
                           : 'text-rose-500'

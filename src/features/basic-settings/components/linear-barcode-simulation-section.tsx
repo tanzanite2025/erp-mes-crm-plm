@@ -110,7 +110,7 @@ export function LinearBarcodeSimulationSection({
             <h3 className='text-lg leading-tight font-black tracking-tight wrap-break-word whitespace-normal text-slate-900 lg:text-2xl dark:text-white'>
               {parsedResult.display.fullDescription}
             </h3>
-            <p className='text-[10px] font-bold tracking-[0.2em] text-muted-foreground/30 uppercase italic'>
+            <p className='text-[10px] font-bold tracking-[0.2em] text-muted-foreground/30 uppercase'>
               {t('basicSettings.linearBarcode.simulation.subtitle')}
             </p>
           </div>
@@ -513,7 +513,7 @@ export function LinearBarcodeSimulationSection({
                     'basicSettings.linearBarcode.simulation.sequenceRule.title'
                   )}
                 </h5>
-                <p className='text-[9px] leading-relaxed font-medium text-orange-800/60 italic dark:text-orange-200/50'>
+                <p className='text-[9px] leading-relaxed font-medium text-orange-800/60 dark:text-orange-200/50'>
                   {t(
                     'basicSettings.linearBarcode.simulation.sequenceRule.description',
                     { key: sequenceRuleKey }

@@ -36,7 +36,7 @@ export function ServerIdentity({
                 <Server className='size-3.5 text-emerald-600' />
               </div>
               <div className='space-y-0'>
-                <h3 className='text-lg font-black tracking-tighter text-slate-800 uppercase italic sm:text-xl dark:text-slate-100'>
+                <h3 className='text-lg font-black tracking-tighter text-slate-800 uppercase sm:text-xl dark:text-slate-100'>
                   {hostname ||
                     t('systemManagement.serverIdentity.initializing')}
                 </h3>
@@ -72,7 +72,7 @@ export function ServerIdentity({
                 <Activity className='size-2.5 text-emerald-500' />
                 {t('systemManagement.serverIdentity.environment')}
               </span>
-              <span className='text-sm font-black tracking-widest text-emerald-600 uppercase italic'>
+              <span className='text-sm font-black tracking-widest text-emerald-600 uppercase'>
                 {environment}
               </span>
             </div>

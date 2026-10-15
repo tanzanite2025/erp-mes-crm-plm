@@ -262,7 +262,7 @@ export const MaterialExcelService = {
 
       const exampleCell = row.getCell('I')
       exampleCell.protection = { locked: true }
-      exampleCell.font = { italic: true, color: { argb: 'FF64748B' } }
+      exampleCell.font = { color: { argb: 'FF64748B' } }
       exampleCell.value = {
         formula: `IF(OR(G${idx + 2}="", H${idx + 2}=""), "", "1 " & G${idx + 2} & " = " & H${idx + 2} & " " & F${idx + 2})`,
       }

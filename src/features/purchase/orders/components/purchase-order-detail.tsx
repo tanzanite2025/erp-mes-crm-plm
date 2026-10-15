@@ -69,7 +69,7 @@ export function PurchaseOrderDetail({
     return (
       <div className='flex h-[50vh] flex-col items-center justify-center space-y-3 opacity-50'>
         <Loader2 className='size-10 animate-spin text-primary' />
-        <p className='text-xs font-black tracking-widest uppercase italic'>
+        <p className='text-xs font-black tracking-widest uppercase'>
           {t('purchase.orders.detailLoading')}
         </p>
       </div>
@@ -279,7 +279,7 @@ export function PurchaseOrderDetail({
                 <span
                   className={`text-[11px] font-black ${
                     !order.paymentMethod && !order.paymentMethodName
-                      ? 'font-medium text-muted-foreground/30 italic'
+                      ? 'font-medium text-muted-foreground/30'
                       : ''
                   }`}
                 >
@@ -295,7 +295,7 @@ export function PurchaseOrderDetail({
                 <span
                   className={`text-[11px] font-black ${
                     !order.paymentTerm && !order.paymentTermName
-                      ? 'font-medium text-muted-foreground/30 italic'
+                      ? 'font-medium text-muted-foreground/30'
                       : ''
                   }`}
                 >

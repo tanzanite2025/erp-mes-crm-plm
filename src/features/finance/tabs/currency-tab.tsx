@@ -101,7 +101,7 @@ export function CurrencyTab() {
               className={`group overflow-hidden rounded-[20px] border-dashed border-primary/20 bg-muted/5 transition-all hover:bg-muted/10 ${curr.isBase ? 'bg-emerald-500/5 ring-2 ring-emerald-500/30' : ''}`}
             >
               {curr.isBase && (
-                <div className='bg-emerald-600 py-1 text-center text-[8px] font-black tracking-widest text-white uppercase italic shadow-sm'>
+                <div className='bg-emerald-600 py-1 text-center text-[8px] font-black tracking-widest text-white uppercase shadow-sm'>
                   {t('finance.currencyRates.card.baseBadge')}
                 </div>
               )}
@@ -118,7 +118,7 @@ export function CurrencyTab() {
                       )}
                     </div>
                     <div className='min-w-0'>
-                      <CardTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                      <CardTitle className='text-sm font-black tracking-tighter uppercase'>
                         {(() => {
                           return resolveCurrencyDisplayName(curr)
                         })()}{' '}
@@ -159,7 +159,7 @@ export function CurrencyTab() {
                   <div className='flex items-end justify-between'>
                     <div className='flex flex-col'>
                       <div className='mb-0.5 flex items-center gap-2'>
-                        <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                        <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('finance.currencyRates.card.rateLabel')}
                         </span>
                         {!curr.isBase && curr.rate === 1 && (
@@ -169,7 +169,7 @@ export function CurrencyTab() {
                         )}
                       </div>
                       <span
-                        className={`text-xl font-black tracking-tighter italic tabular-nums ${
+                        className={`text-xl font-black tracking-tighter tabular-nums ${
                           curr.isBase
                             ? 'text-emerald-600'
                             : curr.rate === 1
@@ -188,7 +188,7 @@ export function CurrencyTab() {
                       </p>
                     </div>
                     <div className='text-right'>
-                      <span className='text-lg font-black italic opacity-10'>
+                      <span className='text-lg font-black opacity-10'>
                         {curr.symbol}
                       </span>
                     </div>
@@ -206,7 +206,7 @@ export function CurrencyTab() {
               <Globe2 className='size-3.5' />
             </div>
             <div className='space-y-0.5'>
-              <h4 className='text-[10px] font-black tracking-tight uppercase italic'>
+              <h4 className='text-[10px] font-black tracking-tight uppercase'>
                 {t('finance.currencyRates.guard.title')}
               </h4>
               <p className='max-w-3xl text-[10px] leading-relaxed font-medium opacity-80'>

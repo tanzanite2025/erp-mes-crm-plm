@@ -48,8 +48,8 @@ export function PersonalWorkbenchColumn({
           <h3
             className={
               isCompactLayout
-                ? 'text-[11px] font-black tracking-tight text-foreground uppercase italic'
-                : 'text-sm font-black tracking-tight text-foreground uppercase italic'
+                ? 'text-[11px] font-black tracking-tight text-foreground uppercase'
+                : 'text-sm font-black tracking-tight text-foreground uppercase'
             }
           >
             {column?.label ?? columnKey}

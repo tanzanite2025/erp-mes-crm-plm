@@ -567,8 +567,6 @@ func DeleteProduct(ctx context.Context, id string) error {
 		&models.ProductInventoryMaterialMapping{},
 		&models.ProductionPlan{},
 		&models.InspectionTask{},
-		&models.PieceworkRate{},
-		&models.PieceworkRecord{},
 	}
 
 	for _, model := range referenceChecks {

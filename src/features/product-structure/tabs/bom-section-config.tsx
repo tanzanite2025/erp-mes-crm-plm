@@ -297,7 +297,7 @@ export function BOMSectionConfigTab() {
       <div className='rounded-[32px] border border-dashed border-rose-200 bg-rose-50/60 p-8 text-center'>
         <div className='mx-auto flex max-w-xl flex-col items-center gap-3'>
           <Settings2 className='size-8 text-rose-500' />
-          <h2 className='text-lg font-black tracking-tighter text-rose-700 uppercase italic'>
+          <h2 className='text-lg font-black tracking-tighter text-rose-700 uppercase'>
             {t('engineering.bomSectionConfig.title')}
           </h2>
           <p className='text-[11px] font-bold text-rose-700'>
@@ -323,7 +323,7 @@ export function BOMSectionConfigTab() {
           <div className='space-y-2'>
             <div className='flex items-center gap-3 text-primary'>
               <Settings2 className='size-5' />
-              <h1 className='text-lg font-black tracking-tighter uppercase italic'>
+              <h1 className='text-lg font-black tracking-tighter uppercase'>
                 {t('engineering.bomSectionConfig.title')}
               </h1>
             </div>
@@ -387,7 +387,7 @@ export function BOMSectionConfigTab() {
                 <div className='flex items-start justify-between gap-4'>
                   <div className='space-y-2'>
                     <div className='flex flex-wrap items-center gap-2'>
-                      <h2 className='text-sm font-black tracking-tighter italic'>
+                      <h2 className='text-sm font-black tracking-tighter'>
                         {section.name}
                       </h2>
                       <Badge
@@ -456,7 +456,7 @@ export function BOMSectionConfigTab() {
       {readResource.status === 'ready' && filteredSections.length === 0 ? (
         <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/70 p-10 text-center'>
           <Layers3 className='mx-auto size-10 text-muted-foreground/30' />
-          <div className='mt-4 text-sm font-black tracking-tighter italic'>
+          <div className='mt-4 text-sm font-black tracking-tighter'>
             {t('engineering.bomSectionConfig.emptyTitle')}
           </div>
           <p className='mt-2 text-[11px] font-bold text-muted-foreground/60'>
@@ -468,7 +468,7 @@ export function BOMSectionConfigTab() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className='rounded-[32px] border-none shadow-2xl'>
           <DialogHeader>
-            <DialogTitle className='text-sm font-black tracking-tighter italic'>
+            <DialogTitle className='text-sm font-black tracking-tighter'>
               {editingSection
                 ? t('engineering.bomSectionConfig.dialog.editTitle')
                 : t('engineering.bomSectionConfig.dialog.createTitle')}

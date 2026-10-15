@@ -143,7 +143,7 @@ export function PurchaseOrderLogs() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
                 {t('purchase.logs.canceledOrders')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-rose-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-rose-600'>
                 {orders.length}
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'archive')} />
@@ -160,7 +160,7 @@ export function PurchaseOrderLogs() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
                 {t('purchase.logs.voidedValue')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-amber-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-amber-600'>
                 {totalAmount.toLocaleString()}
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'risk')} />
@@ -177,7 +177,7 @@ export function PurchaseOrderLogs() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-blue-600/60 uppercase'>
                 {t('purchase.logs.auditFrequency')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-blue-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-blue-600'>
                 {t('purchase.logs.daily')}
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'metric')} />
@@ -194,7 +194,7 @@ export function PurchaseOrderLogs() {
               <p className='min-w-0 truncate text-[10px] font-black tracking-widest text-emerald-600/60 uppercase'>
                 {t('purchase.logs.healthStatus')}
               </p>
-              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-600 italic'>
+              <p className='shrink-0 text-xl leading-none font-black tracking-tighter text-emerald-600'>
                 98.2%
               </p>
               <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'health')} />
@@ -207,7 +207,7 @@ export function PurchaseOrderLogs() {
         <Card className='flex h-[360px] min-h-0 flex-col gap-2 rounded-[28px] border-dashed border-muted-foreground/20 bg-muted/5 py-3 shadow-none'>
           <CardHeader className='flex flex-row items-center justify-between px-5 pb-1'>
             <div>
-              <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase italic'>
+              <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
                 <History className='size-4 text-rose-500' />{' '}
                 {t('purchase.logs.deletionArchive')}
               </CardTitle>

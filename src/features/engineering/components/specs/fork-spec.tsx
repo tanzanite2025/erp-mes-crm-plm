@@ -19,7 +19,7 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
   return (
     <div className='space-y-2 rounded-[20px] border border-dashed border-green-200/60 bg-green-50/35 p-2.5'>
       <div className='flex flex-col gap-1 border-b border-dashed border-green-200/60 pb-1.5 sm:flex-row sm:items-center sm:justify-between'>
-        <h4 className='text-[10px] font-black tracking-widest text-green-700 uppercase italic'>
+        <h4 className='text-[10px] font-black tracking-widest text-green-700 uppercase'>
           {t('engineering.specForms.fork.title')}
         </h4>
         <Badge
@@ -120,7 +120,7 @@ export function ForkSpecOverview({ product: _product }: { product: Product }) {
           <span className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
             {t('engineering.specForms.fork.overviewCategory')}
           </span>
-          <span className='text-xl font-black tracking-tighter text-slate-800 uppercase italic sm:text-3xl'>
+          <span className='text-xl font-black tracking-tighter text-slate-800 uppercase sm:text-3xl'>
             {t('engineering.specForms.fork.overviewCategoryValue')}
           </span>
         </div>
@@ -130,16 +130,16 @@ export function ForkSpecOverview({ product: _product }: { product: Product }) {
             {t('engineering.specForms.fork.overviewWeight')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-3xl font-black tracking-tighter text-emerald-600 italic'>
+            <span className='font-mono text-3xl font-black tracking-tighter text-emerald-600'>
               —
             </span>
-            <span className='text-[10px] font-black text-muted-foreground/20 italic'>
+            <span className='text-[10px] font-black text-muted-foreground/20'>
               BOM
             </span>
           </div>
         </div>
         <div className='mx-3 hidden h-10 w-px border-l border-dashed border-muted bg-muted sm:block' />
-        <div className='flex items-center gap-3 text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase italic'>
+        <div className='flex items-center gap-3 text-[10px] font-black tracking-widest text-muted-foreground/30 uppercase'>
           <Settings2 className='size-4 opacity-50' />
           <div className='flex flex-col'>
             <span>{t('engineering.specForms.fork.overviewLocked')}</span>

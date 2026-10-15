@@ -106,7 +106,7 @@ export function DrillingTableCard({
         accessorKey: 'item.standardHoles',
         header: t('engineering.drilling.table.holes'),
         cell: ({ row }) => (
-          <span className='text-sm font-bold text-foreground italic'>
+          <span className='text-sm font-bold text-foreground'>
             {row.original.item.standardHoles
               ? `${row.original.item.standardHoles}H`
               : '--'}

@@ -31,11 +31,11 @@ export function DrillingMobileList({
   return (
     <div className='flex flex-col gap-4 md:hidden'>
       {isLoading ? (
-        <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase italic'>
+        <div className='animate-pulse p-12 text-center text-[10px] font-black text-muted-foreground uppercase'>
           {t('engineering.drilling.placeholders.mobileLoading')}
         </div>
       ) : rows.length === 0 ? (
-        <div className='rounded-[28px] border border-dashed border-muted-foreground/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase italic opacity-40'>
+        <div className='rounded-[28px] border border-dashed border-muted-foreground/50 bg-muted/5 p-12 text-center text-[10px] text-muted-foreground uppercase opacity-40'>
           {t('engineering.drilling.placeholders.noData')}
         </div>
       ) : (
@@ -73,7 +73,7 @@ export function DrillingMobileList({
                   </div>
                   <Badge
                     variant='outline'
-                    className='h-5 rounded-full border-none bg-indigo-500/10 px-3 font-mono text-[10px] leading-none font-black text-indigo-600 italic'
+                    className='h-5 rounded-full border-none bg-indigo-500/10 px-3 font-mono text-[10px] leading-none font-black text-indigo-600'
                   >
                     {row.productSku || 'GENERIC'}
                   </Badge>
@@ -93,7 +93,7 @@ export function DrillingMobileList({
                       {item.standardHoles || '??'}H
                     </div>
                     <div className='size-1 rounded-full bg-muted-foreground/20' />
-                    <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60 italic'>
+                    <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60'>
                       <Hash className='size-2.5 opacity-30' />
                       {item.id.split('-').pop()}
                     </div>
@@ -101,7 +101,7 @@ export function DrillingMobileList({
                 </div>
 
                 <div className='flex items-center justify-between border-t border-dashed border-muted-foreground/10 pt-3'>
-                  <div className='flex items-center gap-2 text-[9px] font-medium text-muted-foreground/40 italic'>
+                  <div className='flex items-center gap-2 text-[9px] font-medium text-muted-foreground/40'>
                     <Calendar className='size-3 opacity-30' />
                     {item.createdAt
                       ? new Date(item.createdAt).toLocaleDateString()

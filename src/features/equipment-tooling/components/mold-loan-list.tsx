@@ -25,7 +25,7 @@ export function MoldLoanList({ loans, onReturn }: MoldLoanListProps) {
             <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
               {t('equipmentTooling.loans.empty.title')}
             </p>
-            <p className='font-mono text-[8px] text-muted-foreground/20 italic'>
+            <p className='font-mono text-[8px] text-muted-foreground/20'>
               {t('equipmentTooling.loans.empty.description')}
             </p>
           </div>

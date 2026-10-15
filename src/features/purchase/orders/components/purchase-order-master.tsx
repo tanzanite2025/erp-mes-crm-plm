@@ -180,7 +180,7 @@ export function PurchaseOrderMaster({
                         )}
                       </div>
                     ) : (
-                      <span className='text-[10px] font-bold text-muted-foreground/30 italic'>
+                      <span className='text-[10px] font-bold text-muted-foreground/30'>
                         {t('purchase.orders.notSet')}
                       </span>
                     )}
@@ -324,12 +324,12 @@ export function PurchaseOrderMaster({
               <div className='mb-4 flex items-start justify-between'>
                 <div className='space-y-1'>
                   <div className='flex items-center gap-2'>
-                    <span className='text-[13px] font-black tracking-tighter italic tabular-nums'>
+                    <span className='text-[13px] font-black tracking-tighter tabular-nums'>
                       {order.orderNo}
                     </span>
                     <StatusBadge status={order.status} />
                   </div>
-                  <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
+                  <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                     <User className='size-2.5' />
                     {t('purchase.orders.buyer')}:{' '}
                     {order.purchaser || t('purchase.orders.systemBuyer')}
@@ -424,7 +424,7 @@ export function PurchaseOrderMaster({
 
                 <div className='flex items-center justify-between border-t border-dashed border-primary/10 pt-3'>
                   <div className='flex flex-col gap-1'>
-                    <div className='flex items-center gap-1.5 text-[8px] font-black text-muted-foreground uppercase italic opacity-40'>
+                    <div className='flex items-center gap-1.5 text-[8px] font-black text-muted-foreground uppercase opacity-40'>
                       <Calendar className='size-2.5' />
                       {t('purchase.orders.mobileDate')}
                     </div>
@@ -433,7 +433,7 @@ export function PurchaseOrderMaster({
                     </span>
                   </div>
                   <div className='flex flex-col gap-1'>
-                    <div className='flex items-center justify-center gap-1.5 text-[8px] font-black text-emerald-600 uppercase italic'>
+                    <div className='flex items-center justify-center gap-1.5 text-[8px] font-black text-emerald-600 uppercase'>
                       {t('purchase.orders.mobileRate')}
                     </div>
                     <span className='font-mono text-[10px] font-bold text-emerald-600'>
@@ -441,11 +441,11 @@ export function PurchaseOrderMaster({
                     </span>
                   </div>
                   <div className='flex flex-col gap-1 text-right'>
-                    <div className='flex items-center justify-end gap-1.5 text-[8px] font-black text-secondary uppercase italic'>
+                    <div className='flex items-center justify-end gap-1.5 text-[8px] font-black text-secondary uppercase'>
                       <Wallet className='size-2.5' />
                       {t('purchase.orders.mobileTotal')}
                     </div>
-                    <span className='text-[15px] font-black tracking-tighter text-primary italic tabular-nums'>
+                    <span className='text-[15px] font-black tracking-tighter text-primary tabular-nums'>
                       {order.amount?.toLocaleString()}{' '}
                       <span className='text-[9px] opacity-40'>
                         {order.currency || 'CNY'}

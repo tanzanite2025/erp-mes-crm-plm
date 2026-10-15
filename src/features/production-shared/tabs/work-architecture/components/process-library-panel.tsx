@@ -184,7 +184,7 @@ export function ProcessLibraryPanel() {
             <div className='space-y-2'>
               <div className='flex items-center gap-2 text-primary'>
                 <Workflow className='size-4' />
-                <CardTitle className='text-base font-black tracking-tighter text-slate-800 italic'>
+                <CardTitle className='text-base font-black tracking-tighter text-slate-800'>
                   全局{level3Name}库
                 </CardTitle>
               </div>
@@ -241,7 +241,7 @@ export function ProcessLibraryPanel() {
             </div>
           ) : filteredProcesses.length === 0 ? (
             <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/70 px-6 py-12 text-center'>
-              <p className='text-sm font-black tracking-tighter text-muted-foreground/70 italic'>
+              <p className='text-sm font-black tracking-tighter text-muted-foreground/70'>
                 暂无{level3Name}资源
               </p>
               <p className='mt-1 text-[10px] font-black tracking-widest text-muted-foreground/40'>
@@ -312,7 +312,7 @@ export function ProcessLibraryPanel() {
         <DialogContent className='max-w-3xl rounded-[32px] border-none p-0 shadow-2xl'>
           <div className='space-y-6 p-8'>
             <DialogHeader className='space-y-1 text-left'>
-              <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 italic'>
+              <DialogTitle className='text-lg font-black tracking-tighter text-slate-800'>
                 {formState.id
                   ? `编辑${level3Name}资源`
                   : `创建${level3Name}资源`}

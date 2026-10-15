@@ -4,7 +4,6 @@ import {
   Bold,
   Heading3,
   ImagePlus,
-  Italic,
   List,
   ListOrdered,
   Quote,
@@ -126,9 +125,6 @@ export function KnowledgeBaseRichTextField({
         </ToolbarButton>
         <ToolbarButton label='加粗' onClick={() => runCommand('bold')}>
           <Bold className='size-3.5' />
-        </ToolbarButton>
-        <ToolbarButton label='斜体' onClick={() => runCommand('italic')}>
-          <Italic className='size-3.5' />
         </ToolbarButton>
         <ToolbarButton label='下划线' onClick={() => runCommand('underline')}>
           <Underline className='size-3.5' />

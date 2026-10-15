@@ -573,10 +573,10 @@ export function EmployeeManagementList() {
         <Card className='animate-in rounded-[24px] border-dashed border-amber-300/60 bg-amber-50/20 p-5 shadow-inner duration-500 fade-in slide-in-from-bottom-4'>
           <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
             <div className='space-y-1.5'>
-              <p className='text-[10px] font-black tracking-[0.2em] text-amber-700/80 uppercase italic'>
+              <p className='text-[10px] font-black tracking-[0.2em] text-amber-700/80 uppercase'>
                 {t('orgPersonnel.list.recentResignTitle')}
               </p>
-              <p className='text-xs font-black text-slate-700 italic'>
+              <p className='text-xs font-black text-slate-700'>
                 {t('orgPersonnel.list.recentResignCount', {
                   count: recentResignSnapshot.employees.length,
                   time: recentResignTimeLabel,

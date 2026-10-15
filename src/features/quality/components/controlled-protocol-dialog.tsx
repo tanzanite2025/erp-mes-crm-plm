@@ -380,7 +380,7 @@ export function ControlledProtocolDialog({
         <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
 
         <DialogHeader className='relative gap-1.5 border-b border-dashed border-muted/40 bg-muted/10 px-6 pt-5 pb-3 text-left'>
-          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase italic'>
+          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter uppercase'>
             <span className='rounded-2xl bg-primary/10 p-2 text-primary'>
               <Link2 className='size-5' />
             </span>
@@ -455,7 +455,7 @@ export function ControlledProtocolDialog({
             </div>
 
             <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-3'>
-              <div className='mb-1.5 flex items-center gap-2 text-sm font-black tracking-tighter italic'>
+              <div className='mb-1.5 flex items-center gap-2 text-sm font-black tracking-tighter'>
                 <Scale className='size-4 text-primary' />
                 {t(
                   'quality.standards.dialog.controlledProtocol.fields.selectedWeights'

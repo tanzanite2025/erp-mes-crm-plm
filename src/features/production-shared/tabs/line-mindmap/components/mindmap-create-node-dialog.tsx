@@ -75,7 +75,7 @@ function MindmapDialogShell({
                 <Icon className='size-4 text-primary' />
               </div>
               <div className='space-y-1'>
-                <DialogTitle className='text-sm font-black tracking-tighter uppercase italic'>
+                <DialogTitle className='text-sm font-black tracking-tighter uppercase'>
                   {title}
                 </DialogTitle>
                 <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

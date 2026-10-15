@@ -64,7 +64,7 @@ export default function ProductionCalendar() {
     <div className='animate-in space-y-2.5 duration-700 fade-in'>
       <div className='flex flex-col justify-between gap-2.5 border-b border-dashed border-muted/50 pb-2.5 xl:flex-row xl:items-end'>
         <div className='min-w-0 flex-1'>
-          <h1 className='flex items-center gap-2 truncate text-sm font-black tracking-tighter text-slate-800 uppercase italic'>
+          <h1 className='flex items-center gap-2 truncate text-sm font-black tracking-tighter text-slate-800 uppercase'>
             <div className='size-2 shrink-0 animate-pulse rounded-full bg-blue-600' />
             {t('dashboard.page.calendar.title')}
           </h1>
@@ -79,7 +79,7 @@ export default function ProductionCalendar() {
             <div className='mb-0.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t('dashboard.page.calendar.stats.totalOutput')}
             </div>
-            <div className='flex items-center gap-1.5 text-[11px] font-black text-blue-600 italic'>
+            <div className='flex items-center gap-1.5 text-[11px] font-black text-blue-600'>
               <Package className='size-3.5' />{' '}
               {monthlyStats.totalOutput.toLocaleString()}{' '}
               <span className='text-[8px] font-black text-muted-foreground/40 uppercase'>
@@ -91,7 +91,7 @@ export default function ProductionCalendar() {
             <div className='mb-0.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t('dashboard.page.calendar.stats.estPerformance')}
             </div>
-            <div className='flex items-center gap-1.5 text-[11px] font-black text-emerald-600 italic'>
+            <div className='flex items-center gap-1.5 text-[11px] font-black text-emerald-600'>
               <TrendingUp className='size-3.5' />{' '}
               {monthlyStats.estimatedValue === 'SYNC_REALTIME'
                 ? t('dashboard.page.calendar.stats.syncRealtime')

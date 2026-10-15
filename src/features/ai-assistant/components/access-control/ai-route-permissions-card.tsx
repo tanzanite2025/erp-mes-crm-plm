@@ -83,7 +83,7 @@ export function AiRoutePermissionsCard({
       )}
     >
       <CardHeader className='gap-1 border-b border-dashed border-slate-100 !px-4 !py-3'>
-        <CardTitle className='text-[11px] font-black tracking-tight uppercase italic md:text-sm'>
+        <CardTitle className='text-[11px] font-black tracking-tight uppercase md:text-sm'>
           {t('aiAssistant.accessControl.permissions.title')}
         </CardTitle>
         <CardDescription className='text-[8px] leading-none font-bold tracking-widest text-slate-400 uppercase md:text-[9px]'>

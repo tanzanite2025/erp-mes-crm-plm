@@ -59,7 +59,7 @@ export function ProfileDropdown() {
                 </AvatarFallback>
               </Avatar>
               <div className='flex min-w-0 flex-1 flex-col gap-1'>
-                <p className='truncate text-base leading-none font-black tracking-tight text-foreground italic'>
+                <p className='truncate text-base leading-none font-black tracking-tight text-foreground'>
                   {displayName}
                 </p>
                 <p className='truncate text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>

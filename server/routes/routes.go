@@ -425,6 +425,10 @@ func registerPieceworkRoutes(authorized *gin.RouterGroup) {
 	piecework := authorized.Group("/piecework")
 	piecework.Use(pieceworkAccess)
 	{
+		piecework.GET("/pay-items", handlers.GetPieceworkPayItemsHandler)
+		piecework.POST("/pay-items", adminOnly, handlers.SavePieceworkPayItemHandler)
+		piecework.GET("/calculation-options", handlers.GetFinancePieceworkCalculationOptionsHandler)
+		piecework.POST("/calculate", handlers.CalculateFinancePieceworkSalaryHandler)
 		piecework.GET("/teams", handlers.GetTeamsHandler)
 		piecework.POST("/teams", adminOnly, handlers.SaveTeamHandler)
 		piecework.DELETE("/teams/:id", adminOnly, handlers.DeleteTeamHandler)

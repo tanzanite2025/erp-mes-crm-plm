@@ -168,7 +168,7 @@ export function QualityInspection() {
               {t('quality.inspection.page.pendingLoad')}
             </span>
             {/* [BACKEND-AUTHORITY]: 权威待检总量由后端统计服务直接返回，解决前端分页数据不全问题 */}
-            <span className='text-sm font-black text-primary italic tabular-nums'>
+            <span className='text-sm font-black text-primary tabular-nums'>
               {stats?.pendingCount ?? 0}
             </span>
           </div>
@@ -179,7 +179,7 @@ export function QualityInspection() {
         <div className='relative flex h-[400px] flex-col items-center justify-center overflow-hidden rounded-[40px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
           <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
           <Activity className='mb-6 size-16 animate-pulse stroke-[1.5px] text-primary opacity-5' />
-          <p className='text-[11px] font-black tracking-[0.4em] text-muted-foreground/20 uppercase italic'>
+          <p className='text-[11px] font-black tracking-[0.4em] text-muted-foreground/20 uppercase'>
             {t('quality.inspection.page.empty')}
           </p>
         </div>
@@ -224,7 +224,7 @@ export function QualityInspection() {
                           {task.batchNo}
                         </Badge>
                       </div>
-                      <h3 className='mt-1 truncate text-sm font-black tracking-tighter text-slate-700 uppercase italic'>
+                      <h3 className='mt-1 truncate text-sm font-black tracking-tighter text-slate-700 uppercase'>
                         {task.productName ||
                           t('quality.inspection.page.unidentified')}
                       </h3>

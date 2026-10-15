@@ -147,7 +147,7 @@ export function CustomerActionDialog({
             <div className='grid gap-1.5 sm:gap-2'>
               <Label
                 htmlFor='name'
-                className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
               >
                 {t('trading.customers.dialog.fields.name')}
               </Label>
@@ -166,7 +166,7 @@ export function CustomerActionDialog({
             <div className='grid gap-1.5 sm:gap-2'>
               <Label
                 htmlFor='code'
-                className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
               >
                 {t('trading.customers.dialog.fields.code')}
               </Label>
@@ -184,7 +184,7 @@ export function CustomerActionDialog({
             <div className='grid gap-2'>
               <Label
                 htmlFor='contactPerson'
-                className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
               >
                 {t('trading.customers.dialog.fields.contactPerson')}
               </Label>
@@ -208,7 +208,7 @@ export function CustomerActionDialog({
               <div className='grid min-w-0 gap-1.5 sm:gap-2'>
                 <Label
                   htmlFor='status'
-                  className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase italic sm:text-[10px]'
+                  className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase sm:text-[10px]'
                 >
                   {t('trading.customers.dialog.fields.status')}
                 </Label>
@@ -242,7 +242,7 @@ export function CustomerActionDialog({
               <div className='grid min-w-0 gap-1.5 sm:gap-2'>
                 <Label
                   htmlFor='contactPhone'
-                  className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase italic sm:text-[10px]'
+                  className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase sm:text-[10px]'
                 >
                   {t('trading.customers.dialog.fields.contactPhone')}
                 </Label>
@@ -278,7 +278,7 @@ export function CustomerActionDialog({
               <div className='grid gap-2'>
                 <Label
                   htmlFor='email'
-                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
                 >
                   {t('trading.customers.dialog.fields.email')}
                 </Label>
@@ -302,7 +302,7 @@ export function CustomerActionDialog({
               <div className='grid gap-2'>
                 <Label
                   htmlFor='wechat'
-                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
                 >
                   微信
                 </Label>
@@ -320,7 +320,7 @@ export function CustomerActionDialog({
               <div className='grid gap-2'>
                 <Label
                   htmlFor='whatsapp'
-                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
                 >
                   WhatsApp
                 </Label>
@@ -338,7 +338,7 @@ export function CustomerActionDialog({
               <div className='grid gap-2'>
                 <Label
                   htmlFor='facebook'
-                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
                 >
                   Facebook
                 </Label>
@@ -356,7 +356,7 @@ export function CustomerActionDialog({
               <div className='grid gap-2'>
                 <Label
                   htmlFor='instagram'
-                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
                 >
                   Instagram
                 </Label>
@@ -374,7 +374,7 @@ export function CustomerActionDialog({
               <div className='grid gap-2'>
                 <Label
                   htmlFor='telegram'
-                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+                  className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
                 >
                   Telegram
                 </Label>
@@ -394,7 +394,7 @@ export function CustomerActionDialog({
           <div className='grid gap-2'>
             <Label
               htmlFor='address'
-              className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'
+              className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
             >
               {t('trading.customers.dialog.fields.address')}
             </Label>

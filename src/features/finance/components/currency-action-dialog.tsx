@@ -68,7 +68,7 @@ export function CurrencyActionDialog({
     content: 'max-w-[95vw] sm:max-w-[500px] rounded-[32px]',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black italic tracking-tighter uppercase flex items-center gap-3',
+      'text-xl font-black tracking-tighter uppercase flex items-center gap-3',
     description: 'text-[10px] font-bold uppercase tracking-widest opacity-50',
     body: 'p-8 pt-4 space-y-6',
     footer:
@@ -217,12 +217,12 @@ export function CurrencyActionDialog({
                     value={p.code}
                     className='rounded-xl py-3'
                   >
-                    <span className='font-black italic'>{p.code}</span> -{' '}
+                    <span className='font-black'>{p.code}</span> -{' '}
                     {t(getCurrencyNameKey(p.code))} ({p.symbol})
                   </SelectItem>
                 ))}
                 {filteredPresets.length === 0 && (
-                  <div className='p-4 text-center text-[10px] font-bold text-muted-foreground uppercase italic'>
+                  <div className='p-4 text-center text-[10px] font-bold text-muted-foreground uppercase'>
                     {t('finance.currencyRates.dialog.allTemplatesAdded')}
                   </div>
                 )}
@@ -243,7 +243,7 @@ export function CurrencyActionDialog({
               onChange={(e) => {
                 updateFormData({ code: e.target.value.toUpperCase() })
               }}
-              className={`h-12 rounded-2xl font-black italic ${isEdit || formData.code ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
+              className={`h-12 rounded-2xl font-black ${isEdit || formData.code ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
             />
           </div>
           <div className='space-y-2'>
@@ -307,7 +307,7 @@ export function CurrencyActionDialog({
                 onChange={(e) => {
                   updateFormData({ rate: parseFloat(e.target.value) })
                 }}
-                className='h-12 rounded-2xl border-dashed border-emerald-500/30 bg-emerald-500/5 font-black text-emerald-600 italic'
+                className='h-12 rounded-2xl border-dashed border-emerald-500/30 bg-emerald-500/5 font-black text-emerald-600'
               />
               {editingCurrency?.isBase && (
                 <div className='absolute top-1/2 right-3 -translate-y-1/2'>
@@ -337,7 +337,7 @@ export function CurrencyActionDialog({
               <RefreshCcw className='animate-spin-slow size-4 text-amber-600' />
             </div>
             <div className='space-y-1.5'>
-              <p className='text-[10px] font-black tracking-tight text-amber-600 uppercase italic'>
+              <p className='text-[10px] font-black tracking-tight text-amber-600 uppercase'>
                 {t('finance.currencyRates.dialog.syncModeTitle')}
               </p>
               <p className='text-[8px] leading-relaxed font-bold tracking-widest text-amber-600/60 uppercase'>

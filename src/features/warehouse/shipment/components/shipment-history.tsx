@@ -73,13 +73,13 @@ export function ShipmentHistory({
           <TabsList className='scrollbar-hide flex h-10 w-full justify-start overflow-x-auto rounded-xl border border-dashed border-muted/50 bg-muted/30 p-1 sm:justify-center md:h-11 md:rounded-2xl'>
             <TabsTrigger
               value='all'
-              className='rounded-lg px-4 text-[9px] font-black tracking-widest uppercase italic data-[state=active]:bg-background data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
             >
               {t('warehouse.shipment.history.all')}
             </TabsTrigger>
             <TabsTrigger
               value='DRAFT'
-              className='gap-2 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase italic data-[state=active]:bg-background data-[state=active]:text-amber-600 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='gap-2 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:text-amber-600 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
             >
               {t('warehouse.shipment.history.draft')}
               <Badge className='h-3.5 border-none bg-amber-500/10 px-1 text-[7px] font-black text-amber-600 md:h-4 md:text-[8px]'>
@@ -88,13 +88,13 @@ export function ShipmentHistory({
             </TabsTrigger>
             <TabsTrigger
               value='COMMITTED'
-              className='shrink-0 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase italic data-[state=active]:bg-background data-[state=active]:text-emerald-600 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='shrink-0 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:text-emerald-600 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
             >
               {t('warehouse.shipment.history.committed')}
             </TabsTrigger>
             <TabsTrigger
               value='VOID'
-              className='shrink-0 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase italic data-[state=active]:bg-background data-[state=active]:text-rose-500 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='shrink-0 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:text-rose-500 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
             >
               {t('warehouse.shipment.history.void')}
             </TabsTrigger>
@@ -347,7 +347,7 @@ export function ShipmentHistory({
                 >
                   <div className='flex flex-col items-center justify-center gap-4 opacity-20'>
                     <HistoryIcon className='size-16' />
-                    <p className='text-[11px] font-black tracking-[0.3em] text-muted-foreground uppercase italic'>
+                    <p className='text-[11px] font-black tracking-[0.3em] text-muted-foreground uppercase'>
                       {t('warehouse.shipment.history.empty')}
                     </p>
                   </div>

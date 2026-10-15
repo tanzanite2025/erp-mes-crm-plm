@@ -57,7 +57,7 @@ export function TopologyTemplateMgmt() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <FileCode className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase italic underline decoration-rose-500'>
+          <h3 className='text-lg font-black tracking-tighter uppercase underline decoration-rose-500'>
             {t('orgPersonnel.topologyTemplateMgmt.header.title')}
           </h3>
         </div>
@@ -103,7 +103,7 @@ export function TopologyTemplateMgmt() {
         <div className='flex flex-col items-center justify-center space-y-4 rounded-[24px] border-dashed border-muted/50 bg-muted/5 p-12 text-center'>
           <FileCode className='size-12 text-muted-foreground/20' />
           <div className='space-y-1'>
-            <p className='text-base font-black tracking-tighter text-muted-foreground/60 uppercase italic'>
+            <p className='text-base font-black tracking-tighter text-muted-foreground/60 uppercase'>
               {t('orgPersonnel.topologyTemplateMgmt.list.noTemplates')}
             </p>
             <p className='max-w-[400px] text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>

@@ -173,7 +173,7 @@ export function DailyInsightModal({
               <Sparkles className='size-7 text-white' />
             </div>
             <div className='space-y-1'>
-              <h2 className='text-xl leading-none font-black tracking-tighter uppercase italic md:text-2xl'>
+              <h2 className='text-xl leading-none font-black tracking-tighter uppercase md:text-2xl'>
                 {modalTitle}
               </h2>
               <p className='flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase opacity-60'>

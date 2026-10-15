@@ -126,7 +126,7 @@ export function DashboardOverviewTab() {
       <div className='flex h-96 animate-in flex-col items-center justify-center gap-4 rounded-[32px] border border-dashed border-destructive/20 bg-destructive/5 p-8 duration-500 zoom-in-95'>
         <AlertCircle className='size-12 text-destructive opacity-40' />
         <div className='space-y-1 text-center'>
-          <h3 className='text-sm font-black tracking-tighter text-destructive uppercase italic'>
+          <h3 className='text-sm font-black tracking-tighter text-destructive uppercase'>
             [CRITICAL] Backend Connectivity Failure
           </h3>
           <p className='text-[10px] font-bold tracking-widest text-destructive/60 uppercase'>
@@ -155,7 +155,7 @@ export function DashboardOverviewTab() {
             <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
             <CardHeader className='z-10 flex flex-row items-center justify-between border-b border-dashed border-muted/30 p-0 pb-3'>
               <div className='space-y-1'>
-                <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase italic'>
+                <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight uppercase'>
                   <Heart className='size-4 text-primary' />
                   {t('dashboard.page.throughput.title')}
                 </CardTitle>
@@ -185,7 +185,7 @@ export function DashboardOverviewTab() {
 
             <div>
               <CardHeader className='z-10 border-b border-dashed border-muted/30 p-0 pb-3'>
-                <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight text-emerald-500 uppercase italic'>
+                <CardTitle className='flex items-center gap-1.5 text-sm font-black tracking-tight text-emerald-500 uppercase'>
                   <ShieldCheck className='size-4' />
                   全厂直通率与合格分析
                 </CardTitle>
@@ -214,7 +214,7 @@ export function DashboardOverviewTab() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className='absolute flex flex-col items-center justify-center'>
-                    <span className='text-2xl font-black tracking-tighter text-emerald-600 italic'>
+                    <span className='text-2xl font-black tracking-tighter text-emerald-600'>
                       {okPercent}%
                     </span>
                     <span className='text-[8px] leading-none font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -228,7 +228,7 @@ export function DashboardOverviewTab() {
                     <span className='text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
                       合格品数 (WIP)
                     </span>
-                    <span className='font-mono text-sm font-black text-emerald-600 italic'>
+                    <span className='font-mono text-sm font-black text-emerald-600'>
                       {stats?.wip || 0} PCS
                     </span>
                   </div>
@@ -236,7 +236,7 @@ export function DashboardOverviewTab() {
                     <span className='text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
                       报废品数 (SCRAP)
                     </span>
-                    <span className='font-mono text-sm font-black text-rose-500 italic'>
+                    <span className='font-mono text-sm font-black text-rose-500'>
                       {stats?.scrap || 0} PCS
                     </span>
                   </div>
@@ -263,7 +263,7 @@ export function DashboardOverviewTab() {
 
           <div className='relative space-y-6 p-8'>
             <DialogHeader className='space-y-1.5 text-left'>
-              <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase italic'>
+              <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase'>
                 {t('dashboard.page.segmentDialog.title', {
                   levelName: level1Name,
                 })}

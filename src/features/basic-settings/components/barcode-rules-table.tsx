@@ -73,7 +73,7 @@ export function BarcodeRulesTable({
                 <span className='font-mono text-[10px] font-black tracking-tighter text-rose-600/70'>
                   {segment.length} {lengthLabel} / {segment.id.toUpperCase()}
                 </span>
-                <span className='text-[10px] font-black tracking-tight text-slate-800 uppercase italic'>
+                <span className='text-[10px] font-black tracking-tight text-slate-800 uppercase'>
                   {t(
                     `${translationPrefix}.table.segments.${segment.id}.name` as TranslationKey
                   ) || segment.name}

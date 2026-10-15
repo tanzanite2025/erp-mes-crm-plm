@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/models"
 
 	"github.com/google/uuid"
@@ -38,6 +40,8 @@ type ProductionOperationExecutionListQuery struct {
 }
 
 type RecordProductionOperationExecutionRequest struct {
+	IdempotencyKey string `json:"idempotencyKey"`
+	ExecutionRound int64  `json:"executionRound,omitempty"`
 	ProductBarcode string `json:"productBarcode"`
 	ExecutionLotID string `json:"executionLotId"`
 	RouteID        string `json:"routeId"`
@@ -52,24 +56,26 @@ type RecordProductionOperationExecutionRequest struct {
 }
 
 type ProductionOperationExecutionResponse struct {
-	ID             string `json:"id"`
-	ProductBarcode string `json:"productBarcode"`
-	StateID        string `json:"stateId"`
-	ExecutionLotID string `json:"executionLotId"`
-	RouteID        string `json:"routeId"`
-	RouteStepID    string `json:"routeStepId"`
-	ProcessStepID  string `json:"processStepId"`
-	ExecutionMode  string `json:"executionMode"`
-	PartnerID      string `json:"partnerId"`
-	Action         string `json:"action"`
-	Status         string `json:"status"`
-	Result         string `json:"result"`
-	Operator       string `json:"operator"`
-	StartedAt      string `json:"startedAt"`
-	CompletedAt    string `json:"completedAt"`
-	Notes          string `json:"notes"`
-	CreatedAt      string `json:"createdAt"`
-	UpdatedAt      string `json:"updatedAt"`
+	SubmittedByUserID string `json:"submittedByUserId"`
+	ID                string `json:"id"`
+	ExecutionRound    int64  `json:"executionRound"`
+	ProductBarcode    string `json:"productBarcode"`
+	StateID           string `json:"stateId"`
+	ExecutionLotID    string `json:"executionLotId"`
+	RouteID           string `json:"routeId"`
+	RouteStepID       string `json:"routeStepId"`
+	ProcessStepID     string `json:"processStepId"`
+	ExecutionMode     string `json:"executionMode"`
+	PartnerID         string `json:"partnerId"`
+	Action            string `json:"action"`
+	Status            string `json:"status"`
+	Result            string `json:"result"`
+	Operator          string `json:"operator"`
+	StartedAt         string `json:"startedAt"`
+	CompletedAt       string `json:"completedAt"`
+	Notes             string `json:"notes"`
+	CreatedAt         string `json:"createdAt"`
+	UpdatedAt         string `json:"updatedAt"`
 }
 
 type ProductionOperationExecutionListResponse struct {
@@ -78,15 +84,15 @@ type ProductionOperationExecutionListResponse struct {
 }
 
 type productionOperationExecutionRecordResult struct {
+	Replayed   bool
 	Operation  models.ProductionOperationExecution
 	State      models.ProductBarcodeState
 	StateEvent models.ProductBarcodeStateEvent
 }
 
-type productionOperationPieceworkContext struct {
+type productionOperationProductContext struct {
 	ProductID   string
 	ProductName string
-	Quantity    float64
 }
 
 type ProductionOperationExecutionService struct {
@@ -161,18 +167,17 @@ func (s *ProductionOperationExecutionService) RecordProductionOperationExecution
 		ctx = context.Background()
 	}
 	normalized := normalizeRecordProductionOperationExecutionRequest(req)
-	if err := validateRecordProductionOperationExecutionRequest(s.txManager.DB(), normalized); err != nil {
-		return ProductionOperationExecutionResponse{}, err
-	}
-
 	var saved productionOperationExecutionRecordResult
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		result, err := recordProductionOperationExecutionTx(ctx, tx, normalized)
-		if err != nil {
-			return err
-		}
-		saved = result
-		return nil
+		var err error
+		saved, err = executeProductionCommandWithRequestReplayTx(tx, "OPERATION_EXECUTION", normalized.IdempotencyKey, normalized,
+			func() (productionOperationExecutionRecordResult, error) {
+				if err := validateRecordProductionOperationExecutionRequest(tx, normalized); err != nil {
+					return productionOperationExecutionRecordResult{}, err
+				}
+				return recordProductionOperationExecutionTx(ctx, tx, normalized)
+			})
+		return err
 	})
 	if err != nil {
 		return ProductionOperationExecutionResponse{}, err
@@ -185,11 +190,26 @@ func recordProductionOperationExecutionTx(
 	tx *gorm.DB,
 	normalized RecordProductionOperationExecutionRequest,
 ) (productionOperationExecutionRecordResult, error) {
+	if err := lockProductionBarcodeExecutionTransaction(tx, normalized.ProductBarcode); err != nil {
+		return productionOperationExecutionRecordResult{}, err
+	}
+	round, lastReworkAt, err := resolveProductionBarcodeExecutionRoundTx(tx, normalized)
+	if err != nil {
+		return productionOperationExecutionRecordResult{}, err
+	}
+	if normalized.Action == ProductionOperationActionComplete {
+		completed, found, err := findCompletedProductionWorkInExecutionRoundTx(tx, normalized, round, lastReworkAt)
+		if err != nil || found {
+			return completed, err
+		}
+	}
+	actor, _ := audit.ActorFromContext(ctx)
+	normalized.ExecutionRound = round
 	state, exists, err := findProductBarcodeStateTx(tx, normalized.ProductBarcode)
 	if err != nil {
 		return productionOperationExecutionRecordResult{}, err
 	}
-	pieceworkContext, err := resolveProductionOperationPieceworkContextTx(tx, &normalized, state)
+	productContext, err := resolveProductionOperationProductContextTx(tx, &normalized, state)
 	if err != nil {
 		return productionOperationExecutionRecordResult{}, err
 	}
@@ -199,8 +219,8 @@ func recordProductionOperationExecutionTx(
 	stateStatus := mapProductionOperationActionToBarcodeStateStatus(normalized.Action)
 	stateReq := SaveProductBarcodeStateRequest{
 		ProductBarcode: normalized.ProductBarcode,
-		ProductID:      pieceworkContext.ProductID,
-		ProductName:    pieceworkContext.ProductName,
+		ProductID:      productContext.ProductID,
+		ProductName:    productContext.ProductName,
 		RouteID:        normalized.RouteID,
 		RouteStepID:    normalized.RouteStepID,
 		ProcessStepID:  normalized.ProcessStepID,
@@ -228,24 +248,28 @@ func recordProductionOperationExecutionTx(
 	}
 
 	operation := models.ProductionOperationExecution{
-		BaseModel:      models.BaseModel{ID: uuid.NewString()},
-		ProductBarcode: normalized.ProductBarcode,
-		StateID:        state.ID,
-		ExecutionLotID: normalized.ExecutionLotID,
-		RouteID:        normalized.RouteID,
-		RouteStepID:    normalized.RouteStepID,
-		ProcessStepID:  normalized.ProcessStepID,
-		ExecutionMode:  normalized.ExecutionMode,
-		PartnerID:      normalized.PartnerID,
-		Action:         normalized.Action,
-		Status:         stateStatus,
-		Result:         normalized.Result,
-		Operator:       resolveProductionOperationOperator(normalized.Operator),
-		StartedAt:      resolveProductionOperationStartedAt(normalized.Action, now),
-		CompletedAt:    resolveProductionOperationCompletedAt(normalized.Action, now),
-		Notes:          normalized.Notes,
+		SubmittedByUserID: normalizeProductionExecutionUUIDIdentity(actor.UserID),
+		BaseModel:         models.BaseModel{ID: uuid.NewString()},
+		WorkIdentityKey:   productionOperationWorkIdentityKey(normalized),
+		ExecutionRound:    round,
+		ProductBarcode:    normalized.ProductBarcode,
+		StateID:           state.ID,
+		ExecutionLotID:    normalized.ExecutionLotID,
+		RouteID:           normalized.RouteID,
+		RouteStepID:       normalized.RouteStepID,
+		ProcessStepID:     normalized.ProcessStepID,
+		ExecutionMode:     normalized.ExecutionMode,
+		PartnerID:         normalized.PartnerID,
+		Action:            normalized.Action,
+		Status:            stateStatus,
+		Result:            normalized.Result,
+		Operator:          resolveProductionOperationOperator(normalized.Operator),
+		StartedAt:         resolveProductionOperationStartedAt(normalized.Action, now),
+		CompletedAt:       resolveProductionOperationCompletedAt(normalized.Action, now),
+		Notes:             normalized.Notes,
 	}
 	if err := createProductionRecordWithOptionalUUIDs(tx, &operation,
+		productionOptionalUUIDWrite{Column: "submitted_by_user_id", Value: operation.SubmittedByUserID},
 		productionOptionalUUIDWrite{Column: "state_id", Value: operation.StateID},
 		productionOptionalUUIDWrite{Column: "execution_lot_id", Value: operation.ExecutionLotID},
 		productionOptionalUUIDWrite{Column: "route_id", Value: operation.RouteID},
@@ -283,9 +307,6 @@ func recordProductionOperationExecutionTx(
 		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to update product barcode last event: %w", err)
 	}
 	state.LastEventID = event.ID
-	if err := recordPieceworkForCompletedProductionOperationTx(ctx, tx, operation, state, pieceworkContext); err != nil {
-		return productionOperationExecutionRecordResult{}, err
-	}
 
 	return productionOperationExecutionRecordResult{
 		Operation:  operation,
@@ -312,15 +333,14 @@ func normalizeProductionOperationExecutionListQuery(query ProductionOperationExe
 	}
 }
 
-func resolveProductionOperationPieceworkContextTx(
+func resolveProductionOperationProductContextTx(
 	tx *gorm.DB,
 	req *RecordProductionOperationExecutionRequest,
 	state models.ProductBarcodeState,
-) (productionOperationPieceworkContext, error) {
-	result := productionOperationPieceworkContext{
+) (productionOperationProductContext, error) {
+	result := productionOperationProductContext{
 		ProductID:   strings.TrimSpace(state.ProductID),
 		ProductName: strings.TrimSpace(state.ProductName),
-		Quantity:    1,
 	}
 
 	var lot models.ProductionExecutionLot
@@ -335,7 +355,7 @@ func resolveProductionOperationPieceworkContextTx(
 		return result, nil
 	}
 	if err != nil {
-		return productionOperationPieceworkContext{}, fmt.Errorf("failed to resolve production execution lot for piecework: %w", err)
+		return productionOperationProductContext{}, fmt.Errorf("failed to resolve production execution lot: %w", err)
 	}
 
 	if req.ExecutionLotID == "" {
@@ -347,52 +367,7 @@ func resolveProductionOperationPieceworkContextTx(
 	if productName := strings.TrimSpace(lot.ProductName); productName != "" {
 		result.ProductName = productName
 	}
-	if lot.Quantity > 0 {
-		result.Quantity = lot.Quantity
-	}
 	return result, nil
-}
-
-func recordPieceworkForCompletedProductionOperationTx(
-	ctx context.Context,
-	tx *gorm.DB,
-	operation models.ProductionOperationExecution,
-	state models.ProductBarcodeState,
-	work productionOperationPieceworkContext,
-) error {
-	if operation.Action != ProductionOperationActionComplete || operation.ExecutionMode != ProductionOperationExecutionModeInHouse {
-		return nil
-	}
-	if strings.TrimSpace(work.ProductID) == "" {
-		return nil
-	}
-
-	workDate := time.Now().UTC()
-	if operation.CompletedAt != nil {
-		workDate = operation.CompletedAt.UTC()
-	}
-	quantity := work.Quantity
-	if quantity <= 0 {
-		quantity = 1
-	}
-
-	_, err := recordPieceworkTx(ctx, tx, PieceworkRecordCommand{
-		WorkDate:          workDate,
-		ProductID:         work.ProductID,
-		ProductName:       work.ProductName,
-		RouteID:           operation.RouteID,
-		RouteStepID:       operation.RouteStepID,
-		ProcessStepID:     operation.ProcessStepID,
-		Quantity:          quantity,
-		SourceExecutionID: operation.ID,
-	})
-	if err != nil {
-		if errors.Is(err, ErrInvalidPieceworkRecord) {
-			return nil
-		}
-		return fmt.Errorf("failed to freeze piecework record for operation execution %s on barcode %s: %w", operation.ID, state.ProductBarcode, err)
-	}
-	return nil
 }
 
 func normalizeRecordProductionOperationExecutionRequest(req RecordProductionOperationExecutionRequest) RecordProductionOperationExecutionRequest {
@@ -410,13 +385,15 @@ func normalizeRecordProductionOperationExecutionRequest(req RecordProductionOper
 	}
 
 	return RecordProductionOperationExecutionRequest{
+		IdempotencyKey: strings.TrimSpace(req.IdempotencyKey),
+		ExecutionRound: req.ExecutionRound,
 		ProductBarcode: normalizeProductBarcodeValue(req.ProductBarcode),
-		ExecutionLotID: strings.TrimSpace(req.ExecutionLotID),
-		RouteID:        strings.TrimSpace(req.RouteID),
-		RouteStepID:    strings.TrimSpace(req.RouteStepID),
-		ProcessStepID:  strings.TrimSpace(req.ProcessStepID),
+		ExecutionLotID: normalizeProductionExecutionUUIDIdentity(req.ExecutionLotID),
+		RouteID:        normalizeProductionExecutionUUIDIdentity(req.RouteID),
+		RouteStepID:    normalizeProductionExecutionUUIDIdentity(req.RouteStepID),
+		ProcessStepID:  normalizeProductionExecutionUUIDIdentity(req.ProcessStepID),
 		ExecutionMode:  executionMode,
-		PartnerID:      strings.TrimSpace(req.PartnerID),
+		PartnerID:      normalizeProductionExecutionUUIDIdentity(req.PartnerID),
 		Action:         action,
 		Result:         result,
 		Notes:          strings.TrimSpace(req.Notes),
@@ -425,6 +402,9 @@ func normalizeRecordProductionOperationExecutionRequest(req RecordProductionOper
 }
 
 func validateRecordProductionOperationExecutionRequest(tx *gorm.DB, req RecordProductionOperationExecutionRequest) error {
+	if req.ExecutionRound < 0 {
+		return fmt.Errorf("%w: executionRound cannot be negative", ErrInvalidProductionOperationExecution)
+	}
 	if req.ProductBarcode == "" {
 		return fmt.Errorf("%w: productBarcode is required", ErrInvalidProductionOperationExecution)
 	}
@@ -556,7 +536,9 @@ func resolveProductionOperationOperator(operator string) string {
 }
 
 func buildProductionOperationStateEventSnapshot(req RecordProductionOperationExecutionRequest, operationID string) string {
-	payload, err := json.Marshal(map[string]string{
+	snapshot := map[string]string{
+		"idempotencyKey":       req.IdempotencyKey,
+		"executionRound":       strconv.FormatInt(req.ExecutionRound, 10),
 		"operationExecutionId": operationID,
 		"productBarcode":       req.ProductBarcode,
 		"executionLotId":       req.ExecutionLotID,
@@ -567,7 +549,8 @@ func buildProductionOperationStateEventSnapshot(req RecordProductionOperationExe
 		"partnerId":            req.PartnerID,
 		"action":               req.Action,
 		"result":               req.Result,
-	})
+	}
+	payload, err := json.Marshal(snapshot)
 	if err != nil {
 		return "{}"
 	}
@@ -584,23 +567,25 @@ func mapProductionOperationExecutionsToResponse(items []models.ProductionOperati
 
 func mapProductionOperationExecutionToResponse(item models.ProductionOperationExecution) ProductionOperationExecutionResponse {
 	return ProductionOperationExecutionResponse{
-		ID:             strings.TrimSpace(item.ID),
-		ProductBarcode: strings.TrimSpace(item.ProductBarcode),
-		StateID:        strings.TrimSpace(item.StateID),
-		ExecutionLotID: strings.TrimSpace(item.ExecutionLotID),
-		RouteID:        strings.TrimSpace(item.RouteID),
-		RouteStepID:    strings.TrimSpace(item.RouteStepID),
-		ProcessStepID:  strings.TrimSpace(item.ProcessStepID),
-		ExecutionMode:  strings.TrimSpace(item.ExecutionMode),
-		PartnerID:      strings.TrimSpace(item.PartnerID),
-		Action:         strings.TrimSpace(item.Action),
-		Status:         strings.TrimSpace(item.Status),
-		Result:         strings.TrimSpace(item.Result),
-		Operator:       strings.TrimSpace(item.Operator),
-		StartedAt:      formatProductBarcodeStateTime(item.StartedAt),
-		CompletedAt:    formatProductBarcodeStateTime(item.CompletedAt),
-		Notes:          strings.TrimSpace(item.Notes),
-		CreatedAt:      formatProductionExecutionLotTime(item.CreatedAt),
-		UpdatedAt:      formatProductionExecutionLotTime(item.UpdatedAt),
+		SubmittedByUserID: strings.TrimSpace(item.SubmittedByUserID),
+		ID:                strings.TrimSpace(item.ID),
+		ExecutionRound:    item.ExecutionRound,
+		ProductBarcode:    strings.TrimSpace(item.ProductBarcode),
+		StateID:           strings.TrimSpace(item.StateID),
+		ExecutionLotID:    strings.TrimSpace(item.ExecutionLotID),
+		RouteID:           strings.TrimSpace(item.RouteID),
+		RouteStepID:       strings.TrimSpace(item.RouteStepID),
+		ProcessStepID:     strings.TrimSpace(item.ProcessStepID),
+		ExecutionMode:     strings.TrimSpace(item.ExecutionMode),
+		PartnerID:         strings.TrimSpace(item.PartnerID),
+		Action:            strings.TrimSpace(item.Action),
+		Status:            strings.TrimSpace(item.Status),
+		Result:            strings.TrimSpace(item.Result),
+		Operator:          strings.TrimSpace(item.Operator),
+		StartedAt:         formatProductBarcodeStateTime(item.StartedAt),
+		CompletedAt:       formatProductBarcodeStateTime(item.CompletedAt),
+		Notes:             strings.TrimSpace(item.Notes),
+		CreatedAt:         formatProductionExecutionLotTime(item.CreatedAt),
+		UpdatedAt:         formatProductionExecutionLotTime(item.UpdatedAt),
 	}
 }

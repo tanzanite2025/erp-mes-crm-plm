@@ -228,7 +228,7 @@ export function LogisticsMgmt() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
         <div className='flex items-center justify-between'>
           <div className='flex flex-col gap-0.5'>
-            <h1 className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary uppercase italic'>
+            <h1 className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary uppercase'>
               <Truck className='size-5' />
               {t('trading.logistics.pageTitle')}
             </h1>
@@ -308,7 +308,7 @@ export function LogisticsMgmt() {
                   <p className='text-[8px] leading-none font-black tracking-widest text-muted-foreground/40 uppercase'>
                     {t('trading.logistics.reference')}
                   </p>
-                  <p className='text-[16px] font-black tracking-tighter text-secondary italic'>
+                  <p className='text-[16px] font-black tracking-tighter text-secondary'>
                     {record.orderNo}
                   </p>
                 </div>
@@ -378,7 +378,7 @@ export function LogisticsMgmt() {
             <div className='animate-spin-slow flex size-20 items-center justify-center rounded-full border-4 border-dashed border-muted/20'>
               <Truck className='size-8 text-muted/20' />
             </div>
-            <p className='text-[11px] font-black tracking-[0.3em] text-muted-foreground uppercase italic opacity-40'>
+            <p className='text-[11px] font-black tracking-[0.3em] text-muted-foreground uppercase opacity-40'>
               {t('trading.logistics.empty')}
             </p>
           </div>
@@ -444,7 +444,7 @@ export function LogisticsMgmt() {
               ) : (
                 <div className='space-y-4'>
                   <div className='flex items-center justify-between'>
-                    <h2 className='text-3xl font-black tracking-tighter text-secondary italic'>
+                    <h2 className='text-3xl font-black tracking-tighter text-secondary'>
                       {displayRecord?.trackingNo}
                     </h2>
                     <Badge className='rounded-lg border-none bg-primary text-[10px] font-black text-white uppercase'>

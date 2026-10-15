@@ -41,7 +41,7 @@ export function ProductAttributeCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-3xl overflow-hidden rounded-[32px] border border-dashed border-muted/40 bg-background p-0 shadow-2xl'>
         <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/5 px-8 py-6 text-start'>
-          <DialogTitle className='text-xl font-black tracking-tight text-slate-800 italic'>
+          <DialogTitle className='text-xl font-black tracking-tight text-slate-800'>
             {category.id
               ? isZh
                 ? '编辑分类定义'

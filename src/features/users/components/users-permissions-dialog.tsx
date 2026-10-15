@@ -43,7 +43,7 @@ export function UsersPermissionsDialog({
         <DialogHeader className='border-b border-dashed border-muted/40 bg-muted/5 px-4 py-3 pe-12 text-left sm:px-6 sm:pe-16'>
           <div className='flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between'>
             <div className='min-w-0'>
-              <DialogTitle className='flex items-center gap-2 text-base font-black tracking-tighter uppercase italic sm:text-lg'>
+              <DialogTitle className='flex items-center gap-2 text-base font-black tracking-tighter uppercase sm:text-lg'>
                 <ShieldPlus
                   className='size-4 text-primary'
                   aria-hidden='true'

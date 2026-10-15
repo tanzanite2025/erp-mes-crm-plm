@@ -150,7 +150,7 @@ export function SelectionTree({
 
               <div className='flex min-w-0 flex-1 flex-col'>
                 <div className='flex items-center gap-3'>
-                  <span className='text-sm font-black tracking-tight italic'>
+                  <span className='text-sm font-black tracking-tight'>
                     {order.orderNo}
                   </span>
                   <Badge
@@ -231,7 +231,7 @@ export function SelectionTree({
                             <div className='flex flex-col gap-1'>
                               <div className='flex max-w-[500px] items-start gap-2'>
                                 <div className='mt-0.5 h-6 w-1.5 shrink-0 rounded-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.6)]' />
-                                <span className='rounded-lg bg-blue-50/80 px-1.5 py-0.5 text-[12px] leading-snug font-black tracking-tight text-blue-600 italic'>
+                                <span className='rounded-lg bg-blue-50/80 px-1.5 py-0.5 text-[12px] leading-snug font-black tracking-tight text-blue-600'>
                                   {line.specification}
                                 </span>
                               </div>
@@ -262,7 +262,7 @@ export function SelectionTree({
                             </div>
                           </div>
                           {line.description && (
-                            <div className='mt-1.5 pl-2 text-[10px] font-medium text-slate-400 italic opacity-60'>
+                            <div className='mt-1.5 pl-2 text-[10px] font-medium text-slate-400 opacity-60'>
                               {line.description}
                             </div>
                           )}

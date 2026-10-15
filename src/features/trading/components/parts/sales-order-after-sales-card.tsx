@@ -118,7 +118,7 @@ export function SalesOrderAfterSalesCard({
           <div className='min-w-0'>
             <div className='flex items-center gap-2'>
               <Icon className='size-4 text-primary' />
-              <h3 className='text-sm font-black tracking-tighter italic'>
+              <h3 className='text-sm font-black tracking-tighter'>
                 退换货售后
               </h3>
             </div>

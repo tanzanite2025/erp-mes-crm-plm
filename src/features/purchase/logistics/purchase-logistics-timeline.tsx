@@ -36,7 +36,7 @@ export function PurchaseLogisticsTimeline({
     return (
       <div className='flex flex-col items-center justify-center py-12 text-slate-300'>
         <Package className='mb-4 size-12 opacity-20' />
-        <p className='text-[10px] font-black tracking-widest uppercase italic'>
+        <p className='text-[10px] font-black tracking-widest uppercase'>
           {t('purchase.logistics.timelineEmpty')}
         </p>
       </div>
@@ -99,13 +99,13 @@ export function PurchaseLogisticsTimeline({
                   )}
                 </span>
                 {isLatest && (
-                  <span className='rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-emerald-600 uppercase italic'>
+                  <span className='rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-emerald-600 uppercase'>
                     {t('purchase.logistics.timelineLatest')}
                   </span>
                 )}
               </div>
 
-              <h4 className='text-xs font-black tracking-tight text-slate-900 italic transition-colors group-hover:text-emerald-600'>
+              <h4 className='text-xs font-black tracking-tight text-slate-900 transition-colors group-hover:text-emerald-600'>
                 {event.location} - {event.description}
               </h4>
 

@@ -145,7 +145,7 @@ export function PartnerMgmt() {
       <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 sm:p-6'>
         <div className='flex items-center gap-2 text-primary'>
           <Globe className='size-4' />
-          <h3 className='text-base font-black tracking-tighter uppercase italic sm:text-lg'>
+          <h3 className='text-base font-black tracking-tighter uppercase sm:text-lg'>
             {t('equipmentTooling.partners.page.title')}
           </h3>
         </div>
@@ -282,7 +282,7 @@ export function PartnerMgmt() {
                     <MapPin className='size-3' />{' '}
                     {t('equipmentTooling.partners.card.location')}
                   </div>
-                  <p className='line-clamp-1 text-[10px] font-semibold text-slate-400 italic'>
+                  <p className='line-clamp-1 text-[10px] font-semibold text-slate-400'>
                     {partner.address}
                   </p>
                 </div>

@@ -119,7 +119,7 @@ export function FurnaceActionDialog({
       headerClassName='shrink-0 border-b border-dashed bg-primary/5 p-6 pb-4 text-left sm:p-8'
       bodyClassName='custom-scrollbar flex-1 overflow-y-auto p-6 sm:p-8'
       footerClassName='flex shrink-0 flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 p-6 sm:justify-end sm:p-8'
-      titleClassName='text-lg font-black italic uppercase tracking-tighter'
+      titleClassName='text-lg font-black uppercase tracking-tighter'
       descriptionClassName='text-[9px] font-black uppercase tracking-widest opacity-60'
       footer={
         <>
@@ -149,13 +149,13 @@ export function FurnaceActionDialog({
               name='sn'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('toolingFurnaces.dialog.fields.sn')}
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder={t('toolingFurnaces.dialog.placeholders.sn')}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black italic shadow-inner'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black shadow-inner'
                       {...field}
                     />
                   </FormControl>
@@ -168,7 +168,7 @@ export function FurnaceActionDialog({
               name='name'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('toolingFurnaces.dialog.fields.name')}
                   </FormLabel>
                   <FormControl>
@@ -192,7 +192,7 @@ export function FurnaceActionDialog({
               name='type'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('toolingFurnaces.dialog.fields.type')}
                   </FormLabel>
                   <FormControl>
@@ -213,7 +213,7 @@ export function FurnaceActionDialog({
               name='location'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                     {t('toolingFurnaces.dialog.fields.location')}
                   </FormLabel>
                   <FormControl>
@@ -236,13 +236,13 @@ export function FurnaceActionDialog({
             name='maxTemp'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('toolingFurnaces.dialog.fields.maxTemp')}
                 </FormLabel>
                 <FormControl>
                   <Input
                     type='number'
-                    className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black italic shadow-inner'
+                    className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black shadow-inner'
                     {...field}
                     onChange={(e) =>
                       field.onChange(Number.parseInt(e.target.value, 10))
@@ -259,7 +259,7 @@ export function FurnaceActionDialog({
             name='description'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase italic'>
+                <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   {t('toolingFurnaces.dialog.fields.description')}
                 </FormLabel>
                 <FormControl>

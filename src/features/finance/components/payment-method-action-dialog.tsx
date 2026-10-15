@@ -44,7 +44,7 @@ export function PaymentMethodActionDialog({
     content: 'max-w-[95vw] sm:max-w-[520px] rounded-[32px]',
     header: 'p-8 pb-4 border-none bg-muted/5',
     title:
-      'text-xl font-black italic tracking-tighter uppercase flex items-center gap-3',
+      'text-xl font-black tracking-tighter uppercase flex items-center gap-3',
     description: 'text-[10px] font-bold uppercase tracking-widest opacity-50',
     body: 'p-8 pt-4 space-y-6',
     footer:
@@ -172,7 +172,7 @@ export function PaymentMethodActionDialog({
               onChange={(e) => {
                 updateFormData({ code: e.target.value.toUpperCase() })
               }}
-              className={`h-12 rounded-2xl font-black italic ${
+              className={`h-12 rounded-2xl font-black ${
                 codeLocked
                   ? 'border-dashed border-blue-500/30 bg-blue-500/5 text-blue-700'
                   : 'bg-muted/5'

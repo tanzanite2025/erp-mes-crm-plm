@@ -305,7 +305,7 @@ export function MaterialThresholdDialog({
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <div className='relative p-6 md:p-8'>
           <DialogHeader className='mb-6 text-left'>
-            <DialogTitle className='text-lg font-black tracking-tighter uppercase italic md:text-xl'>
+            <DialogTitle className='text-lg font-black tracking-tighter uppercase md:text-xl'>
               {rule
                 ? t('warehouseConfig.materialThresholds.dialog.editTitle')
                 : t('warehouseConfig.materialThresholds.dialog.createTitle')}
@@ -345,7 +345,7 @@ export function MaterialThresholdDialog({
             <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/10 p-5'>
               <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
                 <div className='space-y-2'>
-                  <p className='text-sm font-black tracking-tighter text-foreground uppercase italic'>
+                  <p className='text-sm font-black tracking-tighter text-foreground uppercase'>
                     {targetModeTitle}
                   </p>
                   <p className='max-w-2xl text-[11px] leading-5 font-bold text-muted-foreground/80'>

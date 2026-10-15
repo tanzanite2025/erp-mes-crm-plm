@@ -227,7 +227,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
               <History className='h-5 w-5 text-primary' />
             </div>
             <div>
-              <SheetTitle className='text-lg font-black tracking-tighter uppercase italic'>
+              <SheetTitle className='text-lg font-black tracking-tighter uppercase'>
                 {t('common.audit.title')}
               </SheetTitle>
               <SheetDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
@@ -297,7 +297,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                       <div className='space-y-3'>
                         <div className='mb-4 flex flex-col gap-1'>
                           <div className='flex items-center gap-3'>
-                            <span className='text-[10px] font-black tracking-tighter text-primary uppercase italic'>
+                            <span className='text-[10px] font-black tracking-tighter text-primary uppercase'>
                               {formatAuditActionLabel(log.action, t)}
                             </span>
                             <div className='flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5'>

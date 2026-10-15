@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode, type Ref } from 'react'
+import type { AppLocale } from '@/locales'
 import {
   Building2,
   CheckCircle2,
@@ -9,11 +10,11 @@ import {
 } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { cn } from '@/lib/utils'
-import type { AppLocale } from '@/locales'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { pieceworkFinancePageHeaderClassName } from '../components/piecework-finance-page-controls-and-action-dialog.styles'
 
 type MonthlySummaryCopy = {
   title: string
@@ -198,14 +199,17 @@ export function PieceworkTemplates() {
   })
 
   return (
-    <div className='flex animate-in flex-col gap-6 duration-700 fade-in'>
+    <div className='flex min-w-0 animate-in flex-col gap-4 duration-700 fade-in sm:gap-6'>
       <IndustrialHeader
         icon={FileSpreadsheet}
         title={copy.title}
         description={copy.description}
         gradient
         innerClassName='text-cyan-700'
-        className='border-muted-foreground/10'
+        className={cn(
+          'border-muted-foreground/10',
+          pieceworkFinancePageHeaderClassName
+        )}
         statusBadge={
           <div className='flex w-fit items-center gap-3 rounded-full border border-cyan-500/15 bg-cyan-500/8 px-4 py-1'>
             <span className='text-[10px] font-black tracking-widest text-cyan-700/70 uppercase'>
@@ -216,9 +220,9 @@ export function PieceworkTemplates() {
         }
       />
 
-      <div className='grid min-w-0 gap-6 2xl:grid-cols-[320px_minmax(0,1fr)]'>
+      <div className='grid min-w-0 gap-4 sm:gap-6 2xl:grid-cols-[320px_minmax(0,1fr)]'>
         <aside className='space-y-4'>
-          <div className='rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-5'>
+          <div className='rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-3 sm:p-5'>
             <div className='mb-4 flex items-center gap-3'>
               <div className='flex size-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-700'>
                 <Table2 className='size-4' />
@@ -242,7 +246,7 @@ export function PieceworkTemplates() {
                     type='button'
                     onClick={() => setSelectedTemplateId(template.id)}
                     className={cn(
-                      'w-full rounded-xl border p-4 text-left transition-colors',
+                      'w-full rounded-xl border p-3 text-left transition-colors sm:p-4',
                       selected
                         ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-900 dark:text-cyan-100'
                         : 'border-dashed border-muted/50 bg-background/70 hover:bg-muted/20'
@@ -265,9 +269,7 @@ export function PieceworkTemplates() {
                       </div>
                       <div className='flex items-center gap-2'>
                         <Building2 className='size-3.5' />
-                        <span className='truncate'>
-                          {template.departments}
-                        </span>
+                        <span className='truncate'>{template.departments}</span>
                       </div>
                     </div>
                   </button>
@@ -276,7 +278,7 @@ export function PieceworkTemplates() {
             </div>
           </div>
 
-          <div className='rounded-2xl border border-dashed border-muted/50 bg-background p-5'>
+          <div className='rounded-2xl border border-dashed border-muted/50 bg-background p-3 sm:p-5'>
             <div className='space-y-3'>
               <TemplateMetaItem
                 label={copy.templateType}
@@ -295,7 +297,7 @@ export function PieceworkTemplates() {
         </aside>
 
         <section className='min-w-0 space-y-4'>
-          <div className='flex flex-col gap-3 rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-5 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='flex flex-col gap-3 rounded-2xl border border-dashed border-muted/50 bg-muted/5 p-3 sm:p-5 lg:flex-row lg:items-center lg:justify-between'>
             <div className='min-w-0'>
               <div className='flex flex-wrap items-center gap-2'>
                 <Badge
@@ -321,7 +323,7 @@ export function PieceworkTemplates() {
             </Button>
           </div>
 
-          <div className='min-w-0 overflow-x-auto rounded-2xl border border-dashed border-muted/50 bg-slate-100/80 p-4 dark:bg-slate-950/60'>
+          <div className='min-w-0 overflow-x-auto rounded-2xl border border-dashed border-muted/50 bg-slate-100/80 p-2 sm:p-4 dark:bg-slate-950/60'>
             <MoldingOutputSummarySheet
               ref={printRef}
               copy={copy}
@@ -398,13 +400,16 @@ function MoldingOutputSummarySheet({
 
         <div className='mb-1 grid grid-cols-3 gap-6 text-[9px] font-bold'>
           <div>
-            {copy.sheet.month}: <span className='inline-block w-24 border-b border-black' />
+            {copy.sheet.month}:{' '}
+            <span className='inline-block w-24 border-b border-black' />
           </div>
           <div>
-            {copy.sheet.staff}: <span className='inline-block w-24 border-b border-black' />
+            {copy.sheet.staff}:{' '}
+            <span className='inline-block w-24 border-b border-black' />
           </div>
           <div>
-            {copy.sheet.section}: <span className='inline-block w-24 border-b border-black' />
+            {copy.sheet.section}:{' '}
+            <span className='inline-block w-24 border-b border-black' />
           </div>
         </div>
 

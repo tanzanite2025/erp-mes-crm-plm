@@ -111,7 +111,7 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className='cursor-pointer rounded-2xl px-3 py-2 text-[11px] font-black tracking-tighter italic transition-all hover:bg-muted/50 active:scale-95 data-[state=checked]:bg-blue-500/5 data-[state=checked]:text-blue-600'
+                className='cursor-pointer rounded-2xl px-3 py-2 text-[11px] font-black tracking-tighter transition-all hover:bg-muted/50 active:scale-95 data-[state=checked]:bg-blue-500/5 data-[state=checked]:text-blue-600'
                 checked={column.getIsVisible()}
                 onSelect={(event) => {
                   if (keepOpenOnItemSelect) {

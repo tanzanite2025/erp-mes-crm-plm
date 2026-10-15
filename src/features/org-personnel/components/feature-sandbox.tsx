@@ -45,7 +45,7 @@ export class FeatureSandbox extends Component<Props, State> {
               <AlertCircle className='h-6 w-6 animate-pulse text-rose-600' />
             </div>
             <div className='space-y-2'>
-              <h3 className='text-sm font-black tracking-tighter text-rose-600 uppercase italic'>
+              <h3 className='text-sm font-black tracking-tighter text-rose-600 uppercase'>
                 [SANDBOX_FAILURE] {this.props.fallbackName || 'MODULAR_BLOCK'}{' '}
                 UNAVAILABLE
               </h3>

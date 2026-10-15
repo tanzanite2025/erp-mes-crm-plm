@@ -35,7 +35,7 @@ export function ProductBindingTab() {
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
           <div className='relative p-4 sm:p-5'>
             <div className='flex flex-col gap-1.5'>
-              <p className='text-base font-black tracking-tight text-foreground italic'>
+              <p className='text-base font-black tracking-tight text-foreground'>
                 {t('cuttingOperations.productBinding.form.title')}
               </p>
               <p className='max-w-3xl text-xs leading-5 font-medium text-muted-foreground'>

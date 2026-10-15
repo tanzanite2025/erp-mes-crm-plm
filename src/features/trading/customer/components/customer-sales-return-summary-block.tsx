@@ -30,7 +30,7 @@ export function CustomerSalesReturnSummaryBlock({
           : 'space-y-2 border-t border-dashed border-muted/50 pt-2'
       }
     >
-      <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+      <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-40'>
         <RotateCcw className='size-3' />
         {t('trading.customers.summary.returnTitle')}
       </div>
@@ -49,7 +49,7 @@ export function CustomerSalesReturnSummaryBlock({
               {t('trading.customers.summary.returnMetricTitle')}
             </div>
             <div className='flex items-end gap-2'>
-              <span className='text-[16px] font-black tracking-tight text-foreground italic tabular-nums'>
+              <span className='text-[16px] font-black tracking-tight text-foreground tabular-nums'>
                 {hasRealSummary
                   ? `${returnedOrderCount.toLocaleString()} / ${effectiveOrderCount.toLocaleString()}`
                   : '-- / --'}

@@ -76,7 +76,7 @@ export function ProductBarcodeMobileCapturePanel({
         }
       >
         <div className='min-w-0 flex-1 space-y-1'>
-          <div className='flex min-w-0 items-center gap-2 text-sm font-black tracking-tight text-foreground italic'>
+          <div className='flex min-w-0 items-center gap-2 text-sm font-black tracking-tight text-foreground'>
             <Smartphone className='size-4 text-primary' />
             <span className='min-w-0 break-words'>
               {t('cuttingOperations.productBinding.mobileCapture.title')}
@@ -159,7 +159,7 @@ export function ProductBarcodeMobileCapturePanel({
             />
           </div>
           <div className='flex min-w-0 flex-col justify-center gap-1.5'>
-            <div className='flex min-w-0 items-center gap-2 text-sm font-black tracking-tight text-foreground italic'>
+            <div className='flex min-w-0 items-center gap-2 text-sm font-black tracking-tight text-foreground'>
               <LinkIcon className='size-4 text-primary' />
               <span className='min-w-0 break-words'>
                 {t('cuttingOperations.productBinding.mobileCapture.link.title')}

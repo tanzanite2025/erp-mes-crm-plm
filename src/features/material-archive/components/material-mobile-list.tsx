@@ -30,12 +30,12 @@ export function MaterialMobileList({
   return (
     <div className='flex flex-col gap-4 md:hidden'>
       {isLoading ? (
-        <div className='animate-pulse p-8 text-center text-[10px] font-black tracking-widest text-muted-foreground uppercase italic'>
+        <div className='animate-pulse p-8 text-center text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
           {t('materialArchive.mobile.loading')}
         </div>
       ) : materials.length === 0 ? (
         <div className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-12 text-center'>
-          <p className='text-[10px] font-black text-muted-foreground/40 uppercase italic'>
+          <p className='text-[10px] font-black text-muted-foreground/40 uppercase'>
             {t('materialArchive.mobile.empty')}
           </p>
         </div>
@@ -62,7 +62,7 @@ export function MaterialMobileList({
               <div className='absolute top-0 right-0 p-2'>
                 <Badge
                   variant='outline'
-                  className='h-4 rounded-full border-none bg-primary/5 text-[8px] font-black tracking-widest text-primary/60 uppercase italic'
+                  className='h-4 rounded-full border-none bg-primary/5 text-[8px] font-black tracking-widest text-primary/60 uppercase'
                 >
                   {resolveMaterialCategoryLabel(m.category, categoryOptions)}
                 </Badge>
@@ -71,12 +71,12 @@ export function MaterialMobileList({
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-2'>
                   <Hash className='size-3 text-primary opacity-40' />
-                  <span className='text-[10px] font-black tracking-tighter text-muted-foreground/60 italic tabular-nums'>
+                  <span className='text-[10px] font-black tracking-tighter text-muted-foreground/60 tabular-nums'>
                     {m.code}
                   </span>
                 </div>
 
-                <h4 className='text-sm leading-tight font-black tracking-tight uppercase italic'>
+                <h4 className='text-sm leading-tight font-black tracking-tight uppercase'>
                   {m.name}
                 </h4>
 
@@ -97,7 +97,7 @@ export function MaterialMobileList({
                   ) : null}
                   <Badge
                     variant='secondary'
-                    className='h-4 rounded-full border-none bg-muted/30 px-2 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase italic'
+                    className='h-4 rounded-full border-none bg-muted/30 px-2 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'
                   >
                     {m.uom}
                   </Badge>

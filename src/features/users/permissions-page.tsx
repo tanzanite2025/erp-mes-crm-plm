@@ -50,7 +50,7 @@ export function UsersPermissionsPage({
         <div className='flex flex-col gap-1 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:rounded-[32px] sm:p-6'>
           <div className='flex items-center gap-2 text-primary'>
             <ShieldCheck className='size-4' />
-            <h3 className='text-base font-black tracking-tighter uppercase italic sm:text-lg'>
+            <h3 className='text-base font-black tracking-tighter uppercase sm:text-lg'>
               {t('users.permissionPage.title')}
             </h3>
           </div>
@@ -105,7 +105,7 @@ export function UsersPermissionsPage({
           </div>
 
           <div className='rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:rounded-[24px] sm:p-4'>
-            <div className='text-xs font-black tracking-tighter italic sm:text-sm'>
+            <div className='text-xs font-black tracking-tighter sm:text-sm'>
               {t('users.permissionPage.guideTitle')}
             </div>
             <p className='mt-1 text-[8px] font-black tracking-widest text-muted-foreground/60 uppercase sm:text-[9px]'>
@@ -141,7 +141,7 @@ export function UsersPermissionsPage({
         </div>
 
         <div className='px-1'>
-          <h3 className='text-sm font-black tracking-tighter uppercase italic'>
+          <h3 className='text-sm font-black tracking-tighter uppercase'>
             {t('users.permissionPage.listTitle')}
           </h3>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

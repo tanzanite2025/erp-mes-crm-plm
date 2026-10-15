@@ -59,11 +59,11 @@ export function QualityStandardsMobileView({
                     <div
                       className={`size-1 rounded-full ${standard.statusMeta.dotClassName}`}
                     />
-                    <span className='text-[8px] font-black tracking-widest uppercase italic'>
+                    <span className='text-[8px] font-black tracking-widest uppercase'>
                       {standard.statusMeta.label}
                     </span>
                   </div>
-                  <AuditStatusDisplay meta={standard.auditMeta} italic />
+                  <AuditStatusDisplay meta={standard.auditMeta} />
                   <span
                     className={`rounded-full px-2 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}
                   >

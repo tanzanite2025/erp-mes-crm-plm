@@ -125,7 +125,7 @@ export function PrepregBindingQrPage() {
             <p className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t('rawMaterials.bindingQr.hero.kicker')}
             </p>
-            <h1 className='mt-3 text-lg font-black tracking-tighter text-foreground uppercase italic'>
+            <h1 className='mt-3 text-lg font-black tracking-tighter text-foreground uppercase'>
               {t('rawMaterials.bindingQr.hero.title')}
             </h1>
             <p className='mt-3 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -172,7 +172,7 @@ export function PrepregBindingQrPage() {
       <section className='grid gap-8 xl:grid-cols-[360px_minmax(0,1fr)]'>
         <div className='rounded-[24px] border border-dashed border-border/70 bg-background p-5'>
           <div>
-            <p className='text-sm font-black tracking-tighter text-foreground italic'>
+            <p className='text-sm font-black tracking-tighter text-foreground'>
               {t('rawMaterials.bindingQr.form.title')}
             </p>
             <p className='mt-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -182,7 +182,7 @@ export function PrepregBindingQrPage() {
 
           {batchValidity ? (
             <div className='mt-6 rounded-[20px] border border-dashed border-emerald-500/30 bg-emerald-500/5 p-4'>
-              <p className='text-sm font-black tracking-tighter text-emerald-700 italic'>
+              <p className='text-sm font-black tracking-tighter text-emerald-700'>
                 {t('rawMaterials.bindingQr.batchValidity.title')}
               </p>
               <div className='mt-3 grid gap-3'>

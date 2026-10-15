@@ -68,7 +68,6 @@ definitions:
       totalCount:
         type: integer
     type: object
-host: localhost:8020
 info:
   contact:
     email: support@xdfc.com

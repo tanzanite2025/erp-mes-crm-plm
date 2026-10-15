@@ -125,7 +125,7 @@ function ModuleCard({
     >
       <div className='mb-5 flex items-start justify-between gap-3'>
         <div className='min-w-0'>
-          <h4 className='truncate text-sm font-black tracking-tight uppercase italic'>
+          <h4 className='truncate text-sm font-black tracking-tight uppercase'>
             {getModuleLabel(module.id, t)}
           </h4>
           <span className='font-mono text-[8px] tracking-widest text-muted-foreground uppercase'>
@@ -250,7 +250,7 @@ export function AuditEngineTab() {
                 />
                 <span
                   className={cn(
-                    'text-sm font-black tracking-tight italic',
+                    'text-sm font-black tracking-tight',
                     systemStatus === 'operational'
                       ? 'text-emerald-600'
                       : systemStatus === 'unavailable'
@@ -267,7 +267,7 @@ export function AuditEngineTab() {
               <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
                 {t('systemManagement.auditEngine.integrated')}
               </span>
-              <span className='text-sm font-black tracking-tight italic'>
+              <span className='text-sm font-black tracking-tight'>
                 {data
                   ? t('systemManagement.auditEngine.integratedModulesCount', {
                       integrated: connectedCount,

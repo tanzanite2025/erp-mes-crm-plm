@@ -43,7 +43,7 @@ export function PrivateToolsPanel() {
           <ShieldOff className='size-4 text-muted-foreground' />
         </div>
         <div>
-          <h2 className='text-sm font-black tracking-tighter italic'>
+          <h2 className='text-sm font-black tracking-tighter'>
             {t('sidebarCommandConfig.privateTools.title')}
           </h2>
           <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>

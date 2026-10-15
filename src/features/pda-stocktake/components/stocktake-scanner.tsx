@@ -301,7 +301,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
           }}
         />
       ) : (
-        <div className='flex flex-1 flex-col items-center justify-center text-muted-foreground/20 italic'>
+        <div className='flex flex-1 flex-col items-center justify-center text-muted-foreground/20'>
           <Scan className='mb-6 size-24 opacity-5' />
           <p className='text-xs font-black tracking-widest uppercase'>
             Ready_For_Session
@@ -336,7 +336,7 @@ function ScannerItemDetail({
               <Package className='size-6 text-white' />
             </div>
             <div className='flex flex-col'>
-              <h2 className='text-xl leading-none font-black tracking-tighter italic'>
+              <h2 className='text-xl leading-none font-black tracking-tighter'>
                 {item.materialName}
               </h2>
               <span className='mt-1 font-mono text-[10px] font-black tracking-widest text-muted-foreground opacity-60'>
@@ -352,7 +352,7 @@ function ScannerItemDetail({
               </Label>
               <div className='flex items-center gap-2'>
                 <Box className='size-3 text-muted-foreground/40' />
-                <span className='font-mono text-lg font-black italic'>
+                <span className='font-mono text-lg font-black'>
                   {item.theoryQty}{' '}
                   <small className='text-[10px]'>{item.uom}</small>
                 </span>
@@ -376,7 +376,7 @@ function ScannerItemDetail({
               </Label>
               <span
                 className={cn(
-                  'text-[10px] font-black uppercase italic',
+                  'text-[10px] font-black uppercase',
                   isDiff ? 'text-amber-600' : 'text-emerald-600'
                 )}
               >
