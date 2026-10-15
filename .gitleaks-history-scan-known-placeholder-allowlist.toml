@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+# Keep the exception rule-scoped so the example file is still scanned for secrets.
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Non-secret literal in the attendance gateway local configuration example"
+condition = "AND"
+paths = ['''^attendance-gateway/config/config\.local\.example\.json$''']
+regexTarget = "secret"
+regexes = ['''^replace-with-at-least-16-chars$''']

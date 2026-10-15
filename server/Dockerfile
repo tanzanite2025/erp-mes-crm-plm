@@ -1,5 +1,5 @@
 # --- Stage 1: Build Go API ---
-FROM golang:1.26.6-alpine AS api-builder
+FROM golang:1.26.9-alpine AS api-builder
 
 ENV CGO_ENABLED=0 \
     GOOS=linux \
@@ -37,7 +37,8 @@ FROM alpine:latest
 ARG XDFC_APP_UID=10001
 ARG XDFC_APP_GID=10001
 
-RUN apk add --no-cache ca-certificates tzdata curl postgresql-client
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates tzdata curl postgresql-client
 
 # Keep runtime paths aligned with docker-compose volume mounts.
 RUN addgroup -S -g "${XDFC_APP_GID}" xdfcgroup \

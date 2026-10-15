@@ -14,7 +14,8 @@ RUN cargo build --release
 FROM debian:bookworm-slim
 
 # 安装必要的运行时库 (openssl, ca-certificates 为数据库连接/安全验证所需)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
     openssl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*

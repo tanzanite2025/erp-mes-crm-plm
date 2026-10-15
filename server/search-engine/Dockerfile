@@ -21,6 +21,8 @@ RUN cargo build --release
 # --- Run Stage ---
 FROM alpine:latest
 
+RUN apk upgrade --no-cache
+
 WORKDIR /app
 
 # 从构建阶段拷贝二进制文件
