@@ -106,7 +106,10 @@ export function KnowledgeBaseEntryEditor({
   }
 
   return (
-    <div className='fixed inset-0 z-160 flex items-center justify-center bg-background/60 p-4 backdrop-blur-sm'>
+    <div
+      data-slot='knowledge-base-entry-editor-overlay'
+      className='fixed inset-0 z-160 flex items-center justify-center bg-background/60 p-4 backdrop-blur-sm'
+    >
       <div className='flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[32px] border-none bg-background shadow-2xl'>
         <div className='flex items-center justify-between border-b border-dashed border-muted/50 bg-muted/20 px-6 py-4'>
           <div>

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import './theme.css';
+@import './chrome109-overlay-color-fallbacks.css';
 
 @custom-variant dark (&:is(.dark *));
 

@@ -16,7 +16,10 @@ export function VehicleContactDeleteDialog({
   if (!target) return null
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4'>
+    <div
+      data-slot='vehicle-contact-delete-dialog-overlay'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4'
+    >
       <Card className='w-full max-w-lg rounded-[28px] border-dashed bg-background p-6 shadow-2xl'>
         <div className='text-lg font-black'>确认删除车型联系人</div>
         <div className='mt-2 text-sm text-muted-foreground'>
