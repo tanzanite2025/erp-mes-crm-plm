@@ -12,7 +12,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useAuthStore } from '@/stores/auth-store'
-import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { useSidebar } from '@/components/ui/sidebar'
 import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
@@ -28,8 +27,8 @@ import type { NavGroup } from './types'
 type SidebarCategoryScrubberProps = {
   navGroups: NavGroup[]
   navViewportRef: RefObject<HTMLDivElement | null>
-  pinnedCategoryId?: string | null
-  onPinnedCategoryChange?: (categoryId: string | null) => void
+  activeCategoryId?: string | null
+  onActiveCategoryChange?: (categoryId: string | null) => void
 }
 
 const FLOATING_CARD_WIDTH_PX = 560
@@ -39,6 +38,7 @@ const FLOATING_CARD_VIEWPORT_GAP_PX = 48
 const FLOATING_CARD_VIEWPORT_HEIGHT_RATIO = 0.8
 const FLOATING_CARD_EDGE_PADDING_PX = 12
 const FLOATING_CARD_ESTIMATED_INITIAL_HEIGHT_PX = 360
+const CATEGORY_PREVIEW_CLOSE_DELAY_MS = 2000
 
 function resolveFloatingCardViewportBounds() {
   const viewportSafeWidth = Math.max(
@@ -107,24 +107,25 @@ function resolveCenteredFloatingCardTop({
 export function SidebarCategoryScrubber({
   navGroups,
   navViewportRef,
-  pinnedCategoryId,
-  onPinnedCategoryChange,
+  activeCategoryId,
+  onActiveCategoryChange,
 }: SidebarCategoryScrubberProps) {
   const { isMobile } = useSidebar()
   const { t } = useLanguage()
   const user = useAuthStore((store) => store.user)
   const isIdentitySynced = useAuthStore((store) => store.isIdentitySynced)
   const floatingRef = useRef<HTMLDivElement>(null)
-  const [uncontrolledPinnedCategoryId, setUncontrolledPinnedCategoryId] =
+  const categoryPreviewCloseTimerRef = useRef<number | null>(null)
+  const [uncontrolledActiveCategoryId, setUncontrolledActiveCategoryId] =
     useState<string | null>(null)
   const [floatingPosition, setFloatingPosition] = useState({
     top: 0,
     left: 0,
   })
-  const isPinnedCategoryControlled = pinnedCategoryId !== undefined
-  const activePinnedCategoryId = isPinnedCategoryControlled
-    ? pinnedCategoryId
-    : uncontrolledPinnedCategoryId
+  const isActiveCategoryControlled = activeCategoryId !== undefined
+  const activePreviewCategoryId = isActiveCategoryControlled
+    ? activeCategoryId
+    : uncontrolledActiveCategoryId
 
   const categoryPreviews = useMemo(
     () =>
@@ -137,7 +138,6 @@ export function SidebarCategoryScrubber({
       }),
     [isIdentitySynced, navGroups, t, user]
   )
-  const activePreviewCategoryId = activePinnedCategoryId
   const activePreviewCategory = useMemo(
     () =>
       categoryPreviews.find(
@@ -146,21 +146,79 @@ export function SidebarCategoryScrubber({
     [activePreviewCategoryId, categoryPreviews]
   )
 
-  const setPinnedCategory = useCallback(
+  const setActivePreviewCategory = useCallback(
     (categoryId: string | null) => {
-      if (isPinnedCategoryControlled) {
-        onPinnedCategoryChange?.(categoryId)
+      if (isActiveCategoryControlled) {
+        onActiveCategoryChange?.(categoryId)
         return
       }
 
-      setUncontrolledPinnedCategoryId(categoryId)
+      setUncontrolledActiveCategoryId(categoryId)
     },
-    [isPinnedCategoryControlled, onPinnedCategoryChange]
+    [isActiveCategoryControlled, onActiveCategoryChange]
   )
 
-  const closeCategory = useCallback(() => {
-    setPinnedCategory(null)
-  }, [setPinnedCategory])
+  const cancelScheduledCategoryPreviewClose = useCallback(() => {
+    if (categoryPreviewCloseTimerRef.current !== null) {
+      window.clearTimeout(categoryPreviewCloseTimerRef.current)
+      categoryPreviewCloseTimerRef.current = null
+    }
+  }, [])
+
+  const closeCategoryPreview = useCallback(() => {
+    cancelScheduledCategoryPreviewClose()
+    setActivePreviewCategory(null)
+  }, [cancelScheduledCategoryPreviewClose, setActivePreviewCategory])
+
+  const scheduleCategoryPreviewClose = useCallback(() => {
+    cancelScheduledCategoryPreviewClose()
+    categoryPreviewCloseTimerRef.current = window.setTimeout(
+      closeCategoryPreview,
+      CATEGORY_PREVIEW_CLOSE_DELAY_MS
+    )
+  }, [cancelScheduledCategoryPreviewClose, closeCategoryPreview])
+
+  useEffect(() => {
+    if (isMobile || !activePreviewCategoryId) {
+      return
+    }
+
+    const navViewport = navViewportRef.current
+    const closeCategoryPreviewOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeCategoryPreview()
+      }
+    }
+
+    // The menu and the portalled preview share one close timer. Crossing the
+    // gap starts the timer; entering either region cancels it immediately.
+    navViewport?.addEventListener(
+      'pointerenter',
+      cancelScheduledCategoryPreviewClose
+    )
+    navViewport?.addEventListener('pointerleave', scheduleCategoryPreviewClose)
+    window.addEventListener('keydown', closeCategoryPreviewOnEscape)
+
+    return () => {
+      cancelScheduledCategoryPreviewClose()
+      navViewport?.removeEventListener(
+        'pointerenter',
+        cancelScheduledCategoryPreviewClose
+      )
+      navViewport?.removeEventListener(
+        'pointerleave',
+        scheduleCategoryPreviewClose
+      )
+      window.removeEventListener('keydown', closeCategoryPreviewOnEscape)
+    }
+  }, [
+    activePreviewCategoryId,
+    cancelScheduledCategoryPreviewClose,
+    closeCategoryPreview,
+    isMobile,
+    navViewportRef,
+    scheduleCategoryPreviewClose,
+  ])
 
   const updateFloatingPosition = useCallback(() => {
     const floatingBounds = resolveFloatingCardViewportBounds()
@@ -196,12 +254,12 @@ export function SidebarCategoryScrubber({
       return
     }
 
-    const frameId = window.requestAnimationFrame(updateFloatingPosition)
+    // Apply measured bounds before paint so the backdrop never covers the menu.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updateFloatingPosition()
 
     if (typeof ResizeObserver === 'undefined' || floatingRef.current === null) {
-      return () => {
-        window.cancelAnimationFrame(frameId)
-      }
+      return
     }
 
     const resizeObserver = new ResizeObserver(() => {
@@ -210,7 +268,6 @@ export function SidebarCategoryScrubber({
     resizeObserver.observe(floatingRef.current)
 
     return () => {
-      window.cancelAnimationFrame(frameId)
       resizeObserver.disconnect()
     }
   }, [activePreviewCategoryId, updateFloatingPosition])
@@ -227,7 +284,7 @@ export function SidebarCategoryScrubber({
     }
   }, [activePreviewCategoryId, updateFloatingPosition])
 
-  if (isMobile || categoryPreviews.length === 0 || !activePreviewCategory) {
+  if (isMobile || categoryPreviews.length === 0) {
     return null
   }
 
@@ -235,10 +292,11 @@ export function SidebarCategoryScrubber({
     <SidebarCategoryFloatingCard
       category={activePreviewCategory}
       floatingRef={floatingRef}
-      pinned={Boolean(activePinnedCategoryId)}
       position={floatingPosition}
-      onClose={closeCategory}
-      onNavigate={closeCategory}
+      onClose={closeCategoryPreview}
+      onNavigate={closeCategoryPreview}
+      onPointerEnter={cancelScheduledCategoryPreviewClose}
+      onPointerLeave={scheduleCategoryPreviewClose}
     />
   )
 }
@@ -246,17 +304,19 @@ export function SidebarCategoryScrubber({
 function SidebarCategoryFloatingCard({
   category,
   floatingRef,
-  pinned,
   position,
   onClose,
   onNavigate,
+  onPointerEnter,
+  onPointerLeave,
 }: {
   category: SidebarCategoryPreview | null
   floatingRef: RefObject<HTMLDivElement | null>
-  pinned: boolean
   position: { top: number; left: number }
   onClose: () => void
   onNavigate: () => void
+  onPointerEnter: () => void
+  onPointerLeave: () => void
 }) {
   if (typeof document === 'undefined') {
     return null
@@ -266,29 +326,38 @@ function SidebarCategoryFloatingCard({
     <AnimatePresence>
       {category ? (
         <motion.div
+          key='sidebar-category-backdrop'
+          aria-hidden='true'
+          data-sidebar-category-backdrop
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+          className='fixed inset-y-0 right-0 z-50 bg-black/35 dark:bg-black/50'
+          style={{
+            left: Math.max(0, position.left - FLOATING_CARD_EDGE_PADDING_PX),
+          }}
+          onPointerDown={onClose}
+        />
+      ) : null}
+      {category ? (
+        <motion.div
           ref={floatingRef}
           key='sidebar-category-floating-card'
+          id={`sidebar-category-preview-${category.id}`}
           role='dialog'
           aria-label={`${category.title}快捷导航`}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.16, ease: 'easeOut' }}
-          className={cn(
-            'fixed z-50 flex max-h-[min(80vh,48rem)] w-[min(35rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-2xl backdrop-blur-xl',
-            pinned
-              ? 'border-sky-500/40 ring-1 shadow-sky-500/10 ring-sky-500/18'
-              : 'border-border/70 shadow-black/15'
-          )}
+          className='fixed z-[60] flex max-h-[min(80vh,48rem)] w-[min(35rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-sky-500/40 bg-popover text-popover-foreground shadow-2xl ring-1 shadow-sky-500/10 ring-sky-500/18 backdrop-blur-xl'
           style={{
             top: position.top,
             left: position.left,
           }}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              onClose()
-            }
-          }}
+          onPointerEnter={onPointerEnter}
+          onPointerLeave={onPointerLeave}
         >
           <div className='border-b border-border/60 px-3.5 py-3'>
             <div className='flex items-center justify-between gap-3'>
@@ -301,15 +370,8 @@ function SidebarCategoryFloatingCard({
                 </p>
               </div>
               <div className='flex shrink-0 items-center gap-2'>
-                <span
-                  className={cn(
-                    'rounded-full px-2 py-1 text-[10px] leading-none font-black',
-                    pinned
-                      ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300'
-                      : 'bg-orange-500/10 text-orange-600 dark:text-orange-300'
-                  )}
-                >
-                  {pinned ? '已固定' : '快速定位'}
+                <span className='rounded-full bg-sky-500/10 px-2 py-1 text-[10px] leading-none font-black text-sky-700 dark:text-sky-300'>
+                  快捷导航
                 </span>
                 <button
                   type='button'

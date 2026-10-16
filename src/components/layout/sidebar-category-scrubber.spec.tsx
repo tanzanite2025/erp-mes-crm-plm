@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { useRef, useState } from 'react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import { NavGroup as SidebarNavigationGroup } from './nav-group'
 import { SidebarCategoryScrubber } from './sidebar-category-scrubber'
 import type { NavGroup } from './types'
 
@@ -10,6 +12,11 @@ vi.mock('@/hooks/use-mobile', () => ({
 }))
 
 vi.mock('@tanstack/react-router', () => ({
+  useLocation: ({
+    select,
+  }: {
+    select: (location: { pathname: string }) => unknown
+  }) => select({ pathname: '/aps/queue' }),
   Link: ({
     children,
     to,
@@ -91,49 +98,184 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
+  {
+    id: 'warehouse',
+    title: 'Warehouse',
+    children: [{ id: 'inbound', title: 'Inbound', url: '/warehouse/inbound' }],
+  },
 ]
 
-function renderScrubber() {
-  const navViewportRef = {
-    current: document.createElement('div'),
-  }
+function SidebarCategoryHoverPreviewTestLayout() {
+  const navViewportRef = useRef<HTMLDivElement>(null)
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
 
-  return render(
+  return (
     <SidebarProvider>
+      <div ref={navViewportRef} data-testid='sidebar-navigation-viewport'>
+        {navGroups.map((group) => (
+          <SidebarNavigationGroup
+            key={group.id}
+            {...group}
+            onDesktopCategoryActivate={setActiveCategoryId}
+            selectedCategoryId={activeCategoryId}
+          />
+        ))}
+      </div>
       <SidebarCategoryScrubber
         navGroups={navGroups}
         navViewportRef={navViewportRef}
-        pinnedCategoryId='production'
+        activeCategoryId={activeCategoryId}
+        onActiveCategoryChange={setActiveCategoryId}
       />
     </SidebarProvider>
   )
 }
 
+function renderSidebarCategoryHoverPreview() {
+  return render(<SidebarCategoryHoverPreviewTestLayout />)
+}
+
 describe('SidebarCategoryScrubber', () => {
   beforeEach(() => {
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
-      window.setTimeout(() => callback(0), 0)
-    )
-    vi.stubGlobal('cancelAnimationFrame', (handle: number) =>
-      window.clearTimeout(handle)
-    )
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
     cleanup()
-    vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
-  it('opens the floating preview from a pinned sidebar category without making category rows links', async () => {
-    renderScrubber()
+  it('opens on hover with a backdrop while category rows remain labels and tabs remain links', () => {
+    renderSidebarCategoryHoverPreview()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Production' }))
 
     expect(
-      await screen.findByRole('dialog', { name: 'Production快捷导航' })
+      screen.getByRole('dialog', { name: 'Production快捷导航' })
+    ).not.toBeNull()
+    expect(
+      document.querySelector('[data-sidebar-category-backdrop]')
     ).not.toBeNull()
     expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
     expect(screen.getByText('APS')).not.toBeNull()
     expect(
       screen.getByRole('link', { name: 'Queue' }).getAttribute('href')
     ).toBe('/aps/queue')
+  })
+
+  it('closes the preview and backdrop only after the pointer has left for two seconds', () => {
+    renderSidebarCategoryHoverPreview()
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Production' }))
+    fireEvent.pointerLeave(screen.getByTestId('sidebar-navigation-viewport'))
+
+    act(() => vi.advanceTimersByTime(1999))
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(
+      document.querySelector('[data-sidebar-category-backdrop]')
+    ).toBeNull()
+  })
+
+  it('keeps the preview open across the gap and while moving among its contents', () => {
+    renderSidebarCategoryHoverPreview()
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Production' }))
+    fireEvent.pointerLeave(screen.getByTestId('sidebar-navigation-viewport'))
+    act(() => vi.advanceTimersByTime(1500))
+
+    fireEvent.pointerEnter(screen.getByRole('dialog'))
+    fireEvent.pointerEnter(screen.getByText('APS'))
+    fireEvent.pointerEnter(screen.getByRole('link', { name: 'Queue' }))
+    act(() => vi.advanceTimersByTime(5000))
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+
+    fireEvent.pointerLeave(screen.getByRole('dialog'))
+    act(() => vi.advanceTimersByTime(1999))
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('cancels closing when returning to menu whitespace and when hovering another category', () => {
+    renderSidebarCategoryHoverPreview()
+    const viewport = screen.getByTestId('sidebar-navigation-viewport')
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Production' }))
+    fireEvent.pointerLeave(viewport)
+    act(() => vi.advanceTimersByTime(1500))
+
+    fireEvent.pointerEnter(viewport)
+    act(() => vi.advanceTimersByTime(5000))
+    expect(
+      screen.queryByRole('dialog', { name: 'Production快捷导航' })
+    ).not.toBeNull()
+
+    fireEvent.pointerLeave(viewport)
+    act(() => vi.advanceTimersByTime(1500))
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Warehouse' }))
+    act(() => vi.advanceTimersByTime(5000))
+    expect(
+      screen.queryByRole('dialog', { name: 'Warehouse快捷导航' })
+    ).not.toBeNull()
+    expect(
+      screen.queryByRole('dialog', { name: 'Production快捷导航' })
+    ).toBeNull()
+  })
+
+  it('keeps a hovered category open when clicked and closes immediately with Escape', () => {
+    renderSidebarCategoryHoverPreview()
+    const categoryButton = screen.getByRole('button', { name: 'Production' })
+    fireEvent.pointerEnter(categoryButton)
+    fireEvent.click(categoryButton)
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+    expect(categoryButton.getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.keyDown(categoryButton, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(categoryButton.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('closes immediately when clicking the backdrop or the close button', () => {
+    renderSidebarCategoryHoverPreview()
+    const categoryButton = screen.getByRole('button', { name: 'Production' })
+    fireEvent.pointerEnter(categoryButton)
+    fireEvent.pointerDown(
+      document.querySelector('[data-sidebar-category-backdrop]')!
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    fireEvent.click(categoryButton)
+    fireEvent.click(screen.getByRole('button', { name: '关闭快捷导航' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('positions the backdrop to the right of the sidebar, below the preview', () => {
+    renderSidebarCategoryHoverPreview()
+    vi.spyOn(
+      screen.getByTestId('sidebar-navigation-viewport'),
+      'getBoundingClientRect'
+    ).mockReturnValue({ right: 240 } as DOMRect)
+
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Production' }))
+    const backdrop = document.querySelector<HTMLElement>(
+      '[data-sidebar-category-backdrop]'
+    )!
+    expect(backdrop.style.left).toBe('240px')
+    expect(screen.getByRole('dialog').style.left).toBe('252px')
+  })
+
+  it('ignores touch hover and clears a pending close timer on unmount', () => {
+    const { unmount } = renderSidebarCategoryHoverPreview()
+    const categoryButton = screen.getByRole('button', { name: 'Production' })
+    fireEvent.pointerEnter(categoryButton, { pointerType: 'touch' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    fireEvent.pointerEnter(categoryButton, { pointerType: 'mouse' })
+    fireEvent.pointerLeave(screen.getByTestId('sidebar-navigation-viewport'))
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
+
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

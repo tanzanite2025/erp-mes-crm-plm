@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Coins, RefreshCw, type LucideIcon } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,11 +11,7 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { IndustrialActionBar } from '@/components/uds/industrial-action-bar'
-import { IndustrialHeader } from '@/components/uds/industrial-header'
-import {
-  pieceworkFinancePageHeaderClassName,
-  pieceworkFinanceSecondaryActionClassName,
-} from './piecework-finance-page-controls-and-action-dialog.styles'
+import { pieceworkFinanceSecondaryActionClassName } from './piecework-finance-page-controls-and-action-dialog.styles'
 
 export function PieceworkPayrollQueryTable({
   headers,
@@ -69,15 +65,11 @@ export function PieceworkPayrollQueryTable({
 }
 
 export function PieceworkPayrollQueryToolbar({
-  title,
-  icon = Coins,
   search,
   onSearchChange,
   onRefresh,
   children,
 }: {
-  title: string
-  icon?: LucideIcon
   search: string
   onSearchChange: (value: string) => void
   onRefresh: () => void
@@ -85,32 +77,25 @@ export function PieceworkPayrollQueryToolbar({
 }) {
   const { t } = useLanguage()
   return (
-    <div className='min-w-0 space-y-4'>
-      <IndustrialHeader
-        icon={icon}
-        title={title}
-        className={pieceworkFinancePageHeaderClassName}
-      />
-      <IndustrialActionBar
-        searchPlaceholder={t('piecework.payroll.search')}
-        searchValue={search}
-        onSearchChange={onSearchChange}
-        className='min-w-0 gap-3 rounded-[20px] p-3 [&>div]:min-w-0 [&>div:last-child]:flex-wrap'
-        rightContent={
-          <>
-            <Button
-              variant='outline'
-              title={t('piecework.payroll.refresh')}
-              onClick={onRefresh}
-              className={pieceworkFinanceSecondaryActionClassName}
-            >
-              <RefreshCw className='size-4' />
-              {t('piecework.payroll.refresh')}
-            </Button>
-            {children}
-          </>
-        }
-      />
-    </div>
+    <IndustrialActionBar
+      searchPlaceholder={t('piecework.payroll.search')}
+      searchValue={search}
+      onSearchChange={onSearchChange}
+      className='min-w-0 gap-3 rounded-[20px] p-3 [&>div]:min-w-0 [&>div:last-child]:flex-wrap'
+      rightContent={
+        <>
+          <Button
+            variant='outline'
+            title={t('piecework.payroll.refresh')}
+            onClick={onRefresh}
+            className={pieceworkFinanceSecondaryActionClassName}
+          >
+            <RefreshCw className='size-4' />
+            {t('piecework.payroll.refresh')}
+          </Button>
+          {children}
+        </>
+      }
+    />
   )
 }

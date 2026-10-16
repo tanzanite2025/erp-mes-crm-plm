@@ -1,6 +1,7 @@
 export const piecework = {
   calculator: {
     title: '工资计算',
+    description: '按人员、部门和环节数量匹配生效工价，计算并汇总计件工资。',
     date: '工价日期',
     employee: '人员',
     department: '部门',
@@ -82,6 +83,7 @@ export const piecework = {
   },
   rules: {
     title: '计件规则',
+    description: '统一维护工资环节、计量单位、计件单价与工价有效期。',
     toast: {
       saveSuccess: '计件工价已更新',
       saveFailed: '保存工价失败：{{message}}',

@@ -61,8 +61,14 @@ export function NavGroup({
     <SidebarGroup data-sidebar-nav-group={id}>
       <button
         type='button'
-        aria-controls={menuId}
-        aria-expanded={isDesktop ? undefined : isExpanded}
+        aria-controls={
+          isDesktop
+            ? isSelectedForPreview
+              ? `sidebar-category-preview-${id}`
+              : undefined
+            : menuId
+        }
+        aria-expanded={isDesktop ? isSelectedForPreview : isExpanded}
         aria-haspopup={isDesktop ? 'dialog' : undefined}
         data-sidebar-nav-group-anchor={id}
         data-sidebar-active-path={shouldExpandForPath}
@@ -81,6 +87,11 @@ export function NavGroup({
           shouldExpandForPath &&
             'relative z-10 scale-[1.015] border-orange-500/70 bg-orange-500/12 text-orange-700 shadow-[0_0_0_1px_rgb(249_115_22/0.24),0_6px_18px_rgb(249_115_22/0.10)] motion-reduce:scale-100 dark:text-orange-300'
         )}
+        onPointerEnter={(event) => {
+          if (isDesktop && event.pointerType !== 'touch') {
+            onDesktopCategoryActivate?.(id)
+          }
+        }}
         onClick={() => {
           if (isDesktop) {
             onDesktopCategoryActivate?.(id)

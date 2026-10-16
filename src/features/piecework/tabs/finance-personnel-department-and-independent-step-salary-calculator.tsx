@@ -21,7 +21,6 @@ import {
   pieceworkFinanceFieldControlClassName,
   pieceworkFinanceFieldLabelClassName,
   pieceworkFinanceIconActionClassName,
-  pieceworkFinancePageHeaderClassName,
   pieceworkFinancePrimaryActionClassName,
   pieceworkFinanceSecondaryActionClassName,
   pieceworkFinanceViewTabsListClassName,
@@ -98,7 +97,7 @@ function FinancePersonnelDepartmentSalaryCalculator() {
       <IndustrialHeader
         icon={Calculator}
         title={t('piecework.calculator.title')}
-        className={pieceworkFinancePageHeaderClassName}
+        description={t('piecework.calculator.description')}
       />
       <form
         onSubmit={(event) => {

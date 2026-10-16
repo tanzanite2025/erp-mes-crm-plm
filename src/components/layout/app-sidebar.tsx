@@ -30,7 +30,7 @@ export function AppSidebar() {
     plan: localizedSidebarData.teams[0].plan,
     logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
   })
-  const [pinnedSidebarCategoryId, setPinnedSidebarCategoryId] = useState<
+  const [activeSidebarCategoryId, setActiveSidebarCategoryId] = useState<
     string | null
   >(null)
   const navViewportRef = useRef<HTMLDivElement>(null)
@@ -89,9 +89,7 @@ export function AppSidebar() {
   const scrubberIsEnabled = !isMobile && sidebarIsVisible
 
   const requestCategoryActivation = useCallback((categoryId: string) => {
-    setPinnedSidebarCategoryId((currentCategoryId) =>
-      currentCategoryId === categoryId ? null : categoryId
-    )
+    setActiveSidebarCategoryId(categoryId)
   }, [])
 
   useEffect(() => {
@@ -100,7 +98,7 @@ export function AppSidebar() {
     }
 
     const resetTimer = window.setTimeout(() => {
-      setPinnedSidebarCategoryId(null)
+      setActiveSidebarCategoryId(null)
     }, 0)
 
     return () => {
@@ -132,7 +130,7 @@ export function AppSidebar() {
                   key={props.id}
                   {...props}
                   onDesktopCategoryActivate={requestCategoryActivation}
-                  selectedCategoryId={pinnedSidebarCategoryId}
+                  selectedCategoryId={activeSidebarCategoryId}
                 />
               ))}
             </div>
@@ -144,8 +142,8 @@ export function AppSidebar() {
         <SidebarCategoryScrubber
           navGroups={renderedNavGroups}
           navViewportRef={navViewportRef}
-          pinnedCategoryId={pinnedSidebarCategoryId}
-          onPinnedCategoryChange={setPinnedSidebarCategoryId}
+          activeCategoryId={activeSidebarCategoryId}
+          onActiveCategoryChange={setActiveSidebarCategoryId}
         />
       ) : null}
     </>

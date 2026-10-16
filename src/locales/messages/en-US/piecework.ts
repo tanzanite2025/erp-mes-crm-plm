@@ -1,6 +1,8 @@
 export const piecework = {
   calculator: {
     title: 'Salary calculation',
+    description:
+      'Calculate and summarize piecework pay by employee, department, and step quantity using effective rates.',
     date: 'Rate date',
     employee: 'Employee',
     department: 'Department',
@@ -84,6 +86,8 @@ export const piecework = {
   },
   rules: {
     title: 'Piecework Rules',
+    description:
+      'Maintain pay steps, units, piecework rates, and their effective dates.',
     toast: {
       saveSuccess: 'Piecework rate updated',
       saveFailed: 'Failed to save rate: {{message}}',

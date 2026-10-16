@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit, ListChecks, Plus, Save, Trash2 } from 'lucide-react'
+import { Coins, Edit, ListChecks, Plus, Save, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import {
   buildPieceworkFinanceActionDialogShellClasses,
@@ -64,7 +65,12 @@ export function PieceworkRules() {
     (rate.payItemName + ' ' + rate.unit).toLowerCase().includes(filterText)
   )
   return (
-    <div className='min-w-0 space-y-5'>
+    <div className='min-w-0 space-y-6'>
+      <IndustrialHeader
+        icon={Coins}
+        title={t('piecework.layout.tabs.rules')}
+        description={t('piecework.rules.description')}
+      />
       <Tabs defaultValue='rates' className='min-w-0'>
         <TabsList className={pieceworkFinanceViewTabsListClassName}>
           <TabsTrigger
@@ -82,8 +88,6 @@ export function PieceworkRules() {
         </TabsList>
         <TabsContent value='items' className='space-y-4'>
           <PieceworkPayrollQueryToolbar
-            title={t('piecework.payroll.items')}
-            icon={ListChecks}
             search={search}
             onSearchChange={setSearch}
             onRefresh={() => void itemsQuery.refetch()}
@@ -140,7 +144,6 @@ export function PieceworkRules() {
         </TabsContent>
         <TabsContent value='rates' className='space-y-4'>
           <PieceworkPayrollQueryToolbar
-            title={t('piecework.payroll.rates')}
             search={search}
             onSearchChange={setSearch}
             onRefresh={() => void ratesQuery.refetch()}

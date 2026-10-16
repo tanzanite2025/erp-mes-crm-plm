@@ -101,7 +101,7 @@ describe('NavGroup', () => {
     renderNavGroup({ onDesktopCategoryActivate })
     const groupButton = screen.getByRole('button', { name: 'Production' })
 
-    expect(groupButton.getAttribute('aria-expanded')).toBeNull()
+    expect(groupButton.getAttribute('aria-expanded')).toBe('false')
     expect(groupButton.getAttribute('aria-haspopup')).toBe('dialog')
     expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
 
