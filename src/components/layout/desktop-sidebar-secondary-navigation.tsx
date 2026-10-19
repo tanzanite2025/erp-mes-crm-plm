@@ -55,14 +55,14 @@ export function DesktopSidebarSecondaryNavigation({
         className='desktop-sidebar-directory-scroll'
         data-sidebar-secondary-viewport
       >
-        <div className='desktop-sidebar-directory-content space-y-4 p-3'>
+        <div className='desktop-sidebar-directory-content p-3'>
           <DesktopSidebarDirectoryLinks
             links={category.directLinks}
             {...directoryLinkProps}
           />
           {category.sections.map((section) => (
             <section key={section.id} aria-label={section.title}>
-              <h2 className='mb-1 px-2 text-xs font-semibold text-muted-foreground'>
+              <h2 className='mb-2 px-2 text-xs font-semibold text-muted-foreground'>
                 {section.title}
               </h2>
               <DesktopSidebarDirectoryLinks
@@ -100,7 +100,7 @@ function DesktopSidebarDirectoryLinks({
 }) {
   if (!links.length) return null
   return (
-    <ul className='space-y-1'>
+    <ul className='desktop-sidebar-directory-modules'>
       {links.map((link) => {
         const isExpanded = expandedModuleId === link.id
         const containsCurrentPage = link.tabs.some(
