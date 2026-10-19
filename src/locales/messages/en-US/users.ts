@@ -37,6 +37,7 @@ export const users = {
     title: 'Explicit Permission Management',
     subtitle: 'Manage explicit permission assignments for {{username}}',
     loading: 'Loading explicit permission assignments...',
+    loadError: 'Unable to load saved permissions. Retry before making changes.',
     accessLoading: 'Loading access snapshot...',
     empty: 'No explicit permission assignments found',
     summary: {

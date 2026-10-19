@@ -64,6 +64,13 @@ export type UserPermissionItemApiDTO = z.infer<
   typeof userPermissionItemApiDTOSchema
 >
 
+// Older API versions serialize empty Go slices as null. Normalize only that
+// representation; missing fields and invalid permission values remain errors.
+const nullablePermissionIdArrayApiDTOSchema = z
+  .array(z.string())
+  .nullable()
+  .transform((permissionIds) => permissionIds ?? [])
+
 export const userPermissionsApiDTOSchema = z
   .object({
     userId: z.string(),
@@ -72,8 +79,8 @@ export const userPermissionsApiDTOSchema = z
     employeeId: z.string().optional(),
     permissionPresetId: z.string().optional(),
     permissions: z.array(userPermissionItemApiDTOSchema),
-    presetPermissions: z.array(z.string()),
-    effectivePermissions: z.array(z.string()),
+    presetPermissions: nullablePermissionIdArrayApiDTOSchema,
+    effectivePermissions: nullablePermissionIdArrayApiDTOSchema,
     total: z.number(),
   })
   .strict()
@@ -102,10 +109,10 @@ export const userAccessSnapshotApiDTOSchema = z
     username: z.string(),
     employeeId: z.string().optional(),
     permissionPresetId: z.string().optional(),
-    presetPermissionIds: z.array(z.string()),
-    directPermissionIds: z.array(z.string()),
+    presetPermissionIds: nullablePermissionIdArrayApiDTOSchema,
+    directPermissionIds: nullablePermissionIdArrayApiDTOSchema,
     status: userStatusApiDTOSchema.optional(),
-    permissions: z.array(z.string()),
+    permissions: nullablePermissionIdArrayApiDTOSchema,
     diagnostics: z.array(z.string()).optional(),
   })
   .strict()

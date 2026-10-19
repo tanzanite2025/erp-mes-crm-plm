@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input'
 
 type UserPermissionToolbarProps = {
   permissionPresetId?: string
-  presetPermissionCount: number
-  effectivePermissionCount: number
+  presetPermissionCount: number | undefined
+  effectivePermissionCount: number | undefined
   search: string
   allPermissionsSelected: boolean
   canSelectPermissions: boolean
@@ -37,15 +37,18 @@ export function UserPermissionToolbar({
       <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] font-black tracking-widest text-muted-foreground uppercase'>
         <span>
           {t('users.permissionAssignments.summary.permissionPreset')}:{' '}
-          {permissionPresetId || t('users.permissionAssignments.summary.none')}
+          {presetPermissionCount === undefined
+            ? '—'
+            : permissionPresetId ||
+              t('users.permissionAssignments.summary.none')}
         </span>
         <span>
           {t('users.permissionAssignments.summary.presetPermissionCount')}:{' '}
-          {presetPermissionCount}
+          {presetPermissionCount ?? '—'}
         </span>
         <span>
           {t('users.permissionAssignments.summary.effectivePermissionCount')}:{' '}
-          {effectivePermissionCount}
+          {effectivePermissionCount ?? '—'}
         </span>
       </div>
       <div className='space-y-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:space-y-0'>

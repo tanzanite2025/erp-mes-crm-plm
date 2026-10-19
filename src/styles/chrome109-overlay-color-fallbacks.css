@@ -1,11 +1,12 @@
 /*
  * Chrome 109 cannot resolve the OKLCH colors in theme.css. These sRGB
- * equivalents are local to floating surfaces and their descendants.
+ * equivalents are local to floating surfaces, sidebars and their descendants.
  * Browsers with OKLCH support keep the existing theme without overrides.
  * Keep these values aligned with the light and dark tokens in theme.css.
  */
 @supports not (color: oklch(1 0 0)) {
   :where(
+    [data-slot='sidebar'],
     [role='dialog'],
     [role='alertdialog'],
     [role='menu'],
@@ -53,6 +54,7 @@
 
   .dark
     :where(
+      [data-slot='sidebar'],
       [role='dialog'],
       [role='alertdialog'],
       [role='menu'],

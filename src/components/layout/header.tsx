@@ -38,7 +38,7 @@ function SidebarExpandHint() {
       aria-label={t('sidebar.actions.expandAllMenus')}
       onClick={toggleSidebar}
       title={t('sidebar.actions.expandAllMenus')}
-      className='hidden size-8 shrink-0 items-center justify-center rounded-full border border-sky-500/25 bg-sky-500/10 text-sky-600 shadow-[0_0_0_1px_hsl(var(--background))] transition-colors hover:bg-sky-500/16 hover:text-sky-700 md:inline-flex dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300 dark:hover:bg-sky-400/16 dark:hover:text-sky-200'
+      className='hidden size-8 shrink-0 items-center justify-center rounded-full border border-sky-500/25 bg-sky-500/10 text-sky-600 shadow-[0_0_0_1px_hsl(var(--background))] transition-colors hover:bg-sky-500/16 hover:text-sky-700 lg:inline-flex dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300 dark:hover:bg-sky-400/16 dark:hover:text-sky-200'
     >
       <ArrowLeft
         className='sidebar-expand-hint-arrow size-4'

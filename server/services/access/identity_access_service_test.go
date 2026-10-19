@@ -1,6 +1,7 @@
 package access
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -131,6 +132,44 @@ func TestIdentityAccessSnapshotReportsMissingPermissionPresetWithoutInferringAcc
 	}
 	if !containsString(snapshot.Diagnostics, "effective_permissions_empty") {
 		t.Fatalf("diagnostics = %#v, want effective_permissions_empty", snapshot.Diagnostics)
+	}
+}
+
+func TestIdentityAccessSnapshotEncodesUnassignedPresetAndSavedDirectPermissionsAsArrays(t *testing.T) {
+	testDB := openIdentityAccessServiceTestDB(t)
+	if err := testDB.Exec("INSERT INTO users (id, username) VALUES (?, ?)", "user-1", "operator").Error; err != nil {
+		t.Fatalf("insert user: %v", err)
+	}
+	for _, includeDirectPermission := range []bool{false, true} {
+		if includeDirectPermission {
+			if err := testDB.Exec("INSERT INTO user_permissions (id, user_id, permission_id) VALUES (?, ?, ?)", "permission-1", "user-1", "user_view").Error; err != nil {
+				t.Fatalf("insert direct permission: %v", err)
+			}
+		}
+		snapshot, err := NewIdentityAccessServiceWithDB(testDB).ResolveSnapshotByUserID("user-1")
+		if err != nil {
+			t.Fatalf("resolve account without preset: %v", err)
+		}
+		encoded, err := json.Marshal(snapshot)
+		if err != nil {
+			t.Fatalf("encode account access snapshot: %v", err)
+		}
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(encoded, &fields); err != nil {
+			t.Fatalf("decode account access snapshot: %v", err)
+		}
+		for _, field := range []string{"presetPermissionIds", "directPermissionIds", "permissions"} {
+			if len(fields[field]) == 0 || fields[field][0] != '[' {
+				t.Errorf("%s must be an array, got %s", field, fields[field])
+			}
+		}
+		if string(fields["presetPermissionIds"]) != "[]" {
+			t.Errorf("unassigned preset returned %s", fields["presetPermissionIds"])
+		}
+		if includeDirectPermission {
+			assertStringSlicesEqual(t, snapshot.DirectPermissionIDs, []string{"user_view"})
+			assertStringSlicesEqual(t, snapshot.Permissions, []string{"user_view"})
+		}
 	}
 }
 

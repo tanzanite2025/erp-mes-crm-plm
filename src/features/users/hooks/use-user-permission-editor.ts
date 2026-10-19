@@ -49,11 +49,15 @@ export function useUserPermissionEditor({
   const [search, setSearch] = useState('')
   const [expandedModuleIDs, setExpandedModuleIDs] = useState<string[]>([])
 
-  const { data: permissionsData, isLoading } = useUserPermissionsQuery(
-    userID,
-    open && userID.length > 0
-  )
+  const {
+    data: permissionsData,
+    isLoading,
+    isError: hasPermissionsLoadError,
+    refetch: retryLoadingPermissions,
+  } = useUserPermissionsQuery(userID, open && userID.length > 0)
   const { replaceUserPermissionsMutation } = useUserMutations()
+  const canEditPermissions =
+    Boolean(permissionsData) && !isLoading && !hasPermissionsLoadError
 
   const migratedServerPermissionIDs = useMemo(
     () =>
@@ -131,6 +135,7 @@ export function useUserPermissionEditor({
   }, [draftPermissionIDs, hasUnsupportedServerPermissions, serverPermissionIDs])
 
   const togglePermissionIDs = (permissionIDs: string[]) => {
+    if (!canEditPermissions || replaceUserPermissionsMutation.isPending) return
     const normalizedIDs = permissionIDs
       .map((permissionID) => permissionID.trim().toLowerCase())
       .filter(
@@ -154,7 +159,12 @@ export function useUserPermissionEditor({
   }
 
   const save = async () => {
-    if (!userID) return
+    if (
+      !userID ||
+      !canEditPermissions ||
+      replaceUserPermissionsMutation.isPending
+    )
+      return
     try {
       await replaceUserPermissionsMutation.mutateAsync({
         id: userID,
@@ -186,23 +196,31 @@ export function useUserPermissionEditor({
     allPermissionIDs,
     allPermissionsSelected,
     anyMutationPending: replaceUserPermissionsMutation.isPending,
+    canEditPermissions,
     collapseAll: () => setExpandedModuleIDs([]),
     effectivePermissionIDSet,
     expandAll: () =>
       setExpandedModuleIDs(permissionTree.map((node) => node.module.id)),
     expandedModuleIDs,
     hasUnsavedChanges,
+    hasPermissionsLoadError,
     presetPermissionIDSet,
     isLoading,
     permissionsData,
     resetDraft: () => setLocalDraftPermissionIDs(null),
     resetEditor,
+    retryLoadingPermissions,
     permissionPresetId: permissionsData?.permissionPresetId,
     save,
     search,
     selectAll: () =>
+      canEditPermissions &&
+      !replaceUserPermissionsMutation.isPending &&
       setLocalDraftPermissionIDs(directlyAssignablePermissionIDs),
-    clearAll: () => setLocalDraftPermissionIDs([]),
+    clearAll: () =>
+      canEditPermissions &&
+      !replaceUserPermissionsMutation.isPending &&
+      setLocalDraftPermissionIDs([]),
     setSearch,
     toggleModuleExpanded: (moduleID: string) =>
       setExpandedModuleIDs((current) =>

@@ -2,6 +2,9 @@
 @import 'tw-animate-css';
 @import './theme.css';
 @import './chrome109-overlay-color-fallbacks.css';
+@import './chrome109-sidebar-menu-color-fallbacks.css';
+@import './chrome109-bottom-dock-color-fallbacks.css';
+@import './sidebar-navigation-workspace-layout.css';
 
 @custom-variant dark (&:is(.dark *));
 

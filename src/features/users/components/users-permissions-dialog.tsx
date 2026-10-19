@@ -63,7 +63,9 @@ export function UsersPermissionsDialog({
                 className='h-10 min-w-0 rounded-full px-2 text-[9px] font-black tracking-tight whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4 sm:text-[10px] sm:tracking-widest'
                 onClick={editor.resetDraft}
                 disabled={
-                  editor.anyMutationPending || !editor.hasUnsavedChanges
+                  !editor.canEditPermissions ||
+                  editor.anyMutationPending ||
+                  !editor.hasUnsavedChanges
                 }
               >
                 {t('users.permissionAssignments.actions.reset')}
@@ -73,7 +75,9 @@ export function UsersPermissionsDialog({
                 className='h-10 min-w-0 rounded-full px-2 text-[9px] font-black tracking-tight whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4 sm:text-[10px] sm:tracking-widest'
                 onClick={editor.save}
                 disabled={
-                  editor.anyMutationPending || !editor.hasUnsavedChanges
+                  !editor.canEditPermissions ||
+                  editor.anyMutationPending ||
+                  !editor.hasUnsavedChanges
                 }
               >
                 {t('users.permissionAssignments.actions.save')}
@@ -87,27 +91,55 @@ export function UsersPermissionsDialog({
             <div className='space-y-3 xl:flex xl:min-h-0 xl:flex-col'>
               <UserPermissionToolbar
                 permissionPresetId={editor.permissionPresetId}
-                presetPermissionCount={editor.presetPermissionIDSet.size}
-                effectivePermissionCount={editor.effectivePermissionIDSet.size}
+                presetPermissionCount={
+                  editor.canEditPermissions
+                    ? editor.presetPermissionIDSet.size
+                    : undefined
+                }
+                effectivePermissionCount={
+                  editor.canEditPermissions
+                    ? editor.effectivePermissionIDSet.size
+                    : undefined
+                }
                 search={editor.search}
                 allPermissionsSelected={editor.allPermissionsSelected}
-                canSelectPermissions={editor.allPermissionIDs.length > 0}
+                canSelectPermissions={
+                  editor.canEditPermissions &&
+                  !editor.anyMutationPending &&
+                  editor.allPermissionIDs.length > 0
+                }
                 onSearchChange={editor.setSearch}
                 onSelectAll={editor.selectAll}
                 onClearAll={editor.clearAll}
                 onExpandAll={editor.expandAll}
                 onCollapseAll={editor.collapseAll}
               />
-              <UserPermissionTree
-                columns={editor.visibleTreeColumns}
-                visibleTreeCount={editor.visibleTreeCount}
-                isLoading={editor.isLoading}
-                expandedModuleIDs={editor.expandedModuleIDs}
-                effectivePermissionIDSet={editor.effectivePermissionIDSet}
-                presetPermissionIDSet={editor.presetPermissionIDSet}
-                onToggleModule={editor.toggleModuleExpanded}
-                onTogglePermissionIDs={editor.togglePermissionIDs}
-              />
+              {editor.hasPermissionsLoadError ? (
+                <div
+                  role='alert'
+                  className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-destructive/30 p-4 text-sm text-destructive'
+                >
+                  <span>{t('users.permissionAssignments.loadError')}</span>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    onClick={() => void editor.retryLoadingPermissions()}
+                  >
+                    {t('common.actions.retry')}
+                  </Button>
+                </div>
+              ) : (
+                <UserPermissionTree
+                  columns={editor.visibleTreeColumns}
+                  visibleTreeCount={editor.visibleTreeCount}
+                  isLoading={editor.isLoading}
+                  expandedModuleIDs={editor.expandedModuleIDs}
+                  effectivePermissionIDSet={editor.effectivePermissionIDSet}
+                  presetPermissionIDSet={editor.presetPermissionIDSet}
+                  onToggleModule={editor.toggleModuleExpanded}
+                  onTogglePermissionIDs={editor.togglePermissionIDs}
+                />
+              )}
             </div>
           </div>
         </div>

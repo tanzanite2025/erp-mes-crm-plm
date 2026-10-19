@@ -6,6 +6,12 @@ export const sidebar = {
   actions: {
     expandAllMenus: '点击展开所有菜单',
   },
+  navigation: {
+    categories: '业务分类',
+    noAvailableEntries: '当前分类暂无可用功能',
+    collapseDirectory: '收起功能目录',
+    expandDirectory: '展开功能目录',
+  },
   groups: {
     resourceManagement: '资源管理',
     warehouseLogistics: '仓储物流',

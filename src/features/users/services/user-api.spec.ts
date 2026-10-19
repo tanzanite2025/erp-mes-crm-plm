@@ -3,6 +3,7 @@ import {
   bulkDeleteUsers,
   createUser,
   fetchUserOptions,
+  fetchUserAccessSnapshot,
   fetchUserPermissions,
   replaceUser,
   replaceUserPermissions,
@@ -171,6 +172,86 @@ describe('user api contracts', () => {
         reason: 'job responsibility changed',
       }),
     })
+  })
+
+  it('loads saved explicit permissions when an unassigned preset is serialized as null', async () => {
+    apiFetchMock.mockResolvedValue({
+      userId: 'user-1',
+      username: 'operator',
+      status: 'active',
+      permissions: [{ permissionId: 'menu_purchase', source: 'manual' }],
+      presetPermissions: null,
+      effectivePermissions: ['menu_purchase'],
+      total: 1,
+    })
+
+    await expect(fetchUserPermissions('user-1')).resolves.toEqual(
+      expect.objectContaining({
+        permissions: [
+          expect.objectContaining({ permissionId: 'menu_purchase' }),
+        ],
+        presetPermissions: [],
+        effectivePermissions: ['menu_purchase'],
+        total: 1,
+      })
+    )
+  })
+
+  it('normalizes null permission collections for accounts without any grants', async () => {
+    apiFetchMock.mockResolvedValue({
+      userId: 'user-1',
+      username: 'operator',
+      status: 'active',
+      permissions: [],
+      presetPermissions: null,
+      effectivePermissions: null,
+      total: 0,
+    })
+
+    await expect(fetchUserPermissions('user-1')).resolves.toEqual(
+      expect.objectContaining({
+        permissions: [],
+        presetPermissions: [],
+        effectivePermissions: [],
+        total: 0,
+      })
+    )
+
+    apiFetchMock.mockResolvedValue({
+      userId: 'user-1',
+      username: 'operator',
+      presetPermissionIds: null,
+      directPermissionIds: null,
+      permissions: null,
+    })
+    await expect(fetchUserAccessSnapshot('user-1')).resolves.toEqual(
+      expect.objectContaining({
+        presetPermissionIds: [],
+        directPermissionIds: [],
+        permissions: [],
+      })
+    )
+  })
+
+  it('still rejects missing or malformed permission collections', async () => {
+    const response = {
+      userId: 'user-1',
+      username: 'operator',
+      status: 'active',
+      permissions: [],
+      presetPermissions: [],
+      effectivePermissions: [],
+      total: 0,
+    }
+    for (const invalid of [undefined, 'menu_purchase', [123]]) {
+      apiFetchMock.mockResolvedValue({
+        ...response,
+        presetPermissions: invalid,
+      })
+      await expect(fetchUserPermissions('user-1')).rejects.toMatchObject({
+        kind: 'invalid_response',
+      })
+    }
   })
 
   it('submits bulk deletion as one transactional request', async () => {

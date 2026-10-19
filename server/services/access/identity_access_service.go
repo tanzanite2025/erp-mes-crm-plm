@@ -68,9 +68,9 @@ func (s *IdentityAccessService) ResolveSnapshotForUser(user models.User) (Identi
 		Username:            strings.TrimSpace(user.Username),
 		EmployeeID:          strings.TrimSpace(profile.EmployeeID),
 		PermissionPresetID:  strings.TrimSpace(profile.PermissionPresetID),
-		PresetPermissionIDs: append([]string(nil), profile.PresetPermissionIDs...),
-		DirectPermissionIDs: append([]string(nil), profile.DirectPermissionIDs...),
-		Permissions:         append([]string(nil), profile.Permissions...),
+		PresetPermissionIDs: append([]string{}, profile.PresetPermissionIDs...),
+		DirectPermissionIDs: append([]string{}, profile.DirectPermissionIDs...),
+		Permissions:         append([]string{}, profile.Permissions...),
 	}
 	snapshot.Diagnostics = []string{"permission_preset_plus_account_permissions_authoritative"}
 	if strings.TrimSpace(user.PermissionPresetID) == "" {

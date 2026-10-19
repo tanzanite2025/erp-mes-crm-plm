@@ -155,9 +155,9 @@ const sidebarTabPreviewResolvers: Record<string, SidebarTabPreviewResolver> = {
  * 侧边栏三级域到模块 TAB 的唯一预览映射。
  *
  * 职责边界：
- * - 只把已存在的 feature tab config 暴露给 scrubber hover 浮层。
+ * - 只把已存在的 feature tab config 暴露给 桌面端常驻功能目录。
  * - 不改变 sidebar-data 的三层域结构，不在菜单配置里重复维护 TAB。
- * - 没有模块 TAB 的域返回空数组，浮层仍保留默认域入口。
+ * - 没有模块 TAB 的域返回空数组，目录仍保留默认域入口。
  */
 export function resolveSidebarNodeTabPreviews(
   node: NavNode,

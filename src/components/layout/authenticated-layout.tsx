@@ -204,7 +204,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   const sidebarStateCookie = getCookie('sidebar_state')
   const defaultOpen =
-    sidebarStateCookie === undefined ? false : sidebarStateCookie === 'true'
+    sidebarStateCookie === undefined ? true : sidebarStateCookie === 'true'
 
   if (syncGateState.status === 'error') {
     return (
@@ -266,7 +266,11 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   return (
     <LayoutProvider>
-      <SidebarProvider defaultOpen={defaultOpen} data-layout='fixed'>
+      <SidebarProvider
+        defaultOpen={defaultOpen}
+        data-layout='fixed'
+        className='h-svh min-h-0 overflow-hidden'
+      >
         {!isPDAShellRoute && (
           <Suspense fallback={null}>
             <SystemAnomalyBanner />
@@ -276,8 +280,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         {!isPDAShellRoute && <AppSidebar />}
         <SidebarInset
           className={cn(
-            '@container/content',
-            'min-h-0 min-w-0 flex-1 bg-background',
+            'min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-background',
             isPDAShellRoute
               ? 'pt-0'
               : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16',
@@ -286,22 +289,22 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           )}
         >
           {children ?? <Outlet />}
-        </SidebarInset>
-        {showGlobalDock && (
-          <GlobalBottomDock>
-            <DashboardDockButton />
-            <QuickActionsFloating placement='dock' />
-            <Search placement='dock' />
-            <Suspense fallback={null}>
-              <NotificationCenter placement='dock' />
-            </Suspense>
-            {showAssistant && (
+          {showGlobalDock && (
+            <GlobalBottomDock>
+              <DashboardDockButton />
+              <QuickActionsFloating placement='dock' />
+              <Search placement='dock' />
               <Suspense fallback={null}>
-                <AIAssistant placement='dock' />
+                <NotificationCenter placement='dock' />
               </Suspense>
-            )}
-          </GlobalBottomDock>
-        )}
+              {showAssistant && (
+                <Suspense fallback={null}>
+                  <AIAssistant placement='dock' />
+                </Suspense>
+              )}
+            </GlobalBottomDock>
+          )}
+        </SidebarInset>
         <Suspense fallback={null}>
           <PersonalWorkbenchBottomDrawer />
         </Suspense>

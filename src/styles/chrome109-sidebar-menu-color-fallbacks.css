@@ -1,0 +1,85 @@
+/* Keep sidebar opacity and navigation states readable without OKLCH/color-mix.
+   All overrides stay inside the sidebar; modern browsers use the existing CSS. */
+@supports not (color: oklch(1 0 0)) {
+  :where([data-slot='sidebar']) {
+    --chrome109-sidebar-foreground-rgb: 2 6 24;
+    --chrome109-sidebar-accent-rgb: 241 245 249;
+    --chrome109-sidebar-border-rgb: 226 232 240;
+    --chrome109-sidebar-border-opacity: 1;
+    --chrome109-sidebar-preview-foreground: #0069a8;
+    --chrome109-sidebar-active-foreground: #ca3500;
+
+    /* Solid palette utilities cannot use Tailwind's precomputed alpha colors. */
+    --color-orange-300: #ffb86a;
+    --color-orange-400: #ff8904;
+    --color-orange-500: #ff6900;
+    --color-orange-600: #f54a00;
+    --color-orange-700: #ca3500;
+    --color-sky-300: #74d4ff;
+    --color-sky-700: #0069a8;
+    --color-zinc-950: #09090b;
+    --color-rose-500: #ff2056;
+  }
+
+  .dark :where([data-slot='sidebar']) {
+    --chrome109-sidebar-foreground-rgb: 233 239 245;
+    --chrome109-sidebar-accent-rgb: 21 27 36;
+    --chrome109-sidebar-border-rgb: 36 41 51;
+    --chrome109-sidebar-border-opacity: 0.6;
+    --chrome109-sidebar-preview-foreground: #74d4ff;
+    --chrome109-sidebar-active-foreground: #ffb86a;
+  }
+
+  :where([data-slot='sidebar']) [data-sidebar-nav-group-anchor] {
+    border-color: rgb(
+      var(--chrome109-sidebar-border-rgb) /
+        calc(var(--chrome109-sidebar-border-opacity) * 0.45)
+    );
+    background-color: rgb(var(--chrome109-sidebar-accent-rgb) / 0.18);
+    color: rgb(var(--chrome109-sidebar-foreground-rgb) / 0.7);
+  }
+
+  :where([data-slot='sidebar']) [data-sidebar-nav-group-anchor]:where(:hover) {
+    background-color: rgb(var(--chrome109-sidebar-accent-rgb) / 0.28);
+    color: var(--sidebar-accent-foreground);
+  }
+
+  :where([data-slot='sidebar'])
+    [data-sidebar-nav-group-anchor]:where([aria-expanded='true']) {
+    border-color: rgb(
+      var(--chrome109-sidebar-border-rgb) /
+        calc(var(--chrome109-sidebar-border-opacity) * 0.55)
+    );
+    background-color: rgb(var(--chrome109-sidebar-accent-rgb) / 0.4);
+    color: var(--sidebar-accent-foreground);
+  }
+
+  :where([data-slot='sidebar'])
+    [data-sidebar-nav-group-anchor]:where(
+      [aria-expanded='true'][aria-haspopup='dialog']
+    ) {
+    border-color: rgb(0 165 239 / 0.45);
+    background-color: rgb(0 165 239 / 0.1);
+    color: var(--chrome109-sidebar-preview-foreground);
+  }
+
+  /* The current route keeps its orange highlight when its preview is open. */
+  :where([data-slot='sidebar'])
+    [data-sidebar-nav-group-anchor]:where([data-sidebar-active-path='true']) {
+    border-color: rgb(254 110 0 / 0.7);
+    background-color: rgb(254 110 0 / 0.12);
+    color: var(--chrome109-sidebar-active-foreground);
+  }
+
+  :where([data-slot='sidebar']) [data-slot='sidebar-group-label'] {
+    color: rgb(var(--chrome109-sidebar-foreground-rgb) / 0.78);
+  }
+
+  :where([data-slot='sidebar']) .text-sidebar-foreground\/60 {
+    color: rgb(var(--chrome109-sidebar-foreground-rgb) / 0.6);
+  }
+
+  :where([data-slot='sidebar']) .text-sidebar-foreground\/80 {
+    color: rgb(var(--chrome109-sidebar-foreground-rgb) / 0.8);
+  }
+}

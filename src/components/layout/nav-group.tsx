@@ -47,7 +47,7 @@ export function NavGroup({
   const { isMobile } = useSidebar()
   const isDesktop = !isMobile
   const shouldExpandForPath = groupHasActiveItem(pathname, children)
-  const isSelectedForPreview = selectedCategoryId === id
+  const isSelectedCategory = selectedCategoryId === id
   const routeScopedManualExpansion =
     manualExpansion?.pathname === pathname ? manualExpansion.expanded : null
   const isExpanded = routeScopedManualExpansion ?? shouldExpandForPath
@@ -57,86 +57,76 @@ export function NavGroup({
     return null
   }
 
+  if (isDesktop) {
+    return (
+      <div className='px-2 py-0.5' data-sidebar-nav-group={id}>
+        <button
+          type='button'
+          className='desktop-sidebar-category-button'
+          aria-expanded={isSelectedCategory}
+          aria-controls={
+            isSelectedCategory
+              ? 'desktop-sidebar-secondary-navigation'
+              : undefined
+          }
+          aria-current={shouldExpandForPath ? 'location' : undefined}
+          data-sidebar-nav-group-anchor={id}
+          data-sidebar-active-path={shouldExpandForPath}
+          data-sidebar-category-selected={isSelectedCategory}
+          onClick={() => onDesktopCategoryActivate?.(id)}
+        >
+          {Icon ? (
+            <Icon className='size-4 shrink-0' aria-hidden='true' />
+          ) : null}
+          <span className='min-w-0 flex-1 break-words'>{title}</span>
+          {shouldExpandForPath ? (
+            <span
+              aria-hidden='true'
+              className='desktop-sidebar-current-category-marker'
+            />
+          ) : null}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <SidebarGroup data-sidebar-nav-group={id}>
       <button
         type='button'
-        aria-controls={
-          isDesktop
-            ? isSelectedForPreview
-              ? `sidebar-category-preview-${id}`
-              : undefined
-            : menuId
-        }
-        aria-expanded={isDesktop ? isSelectedForPreview : isExpanded}
-        aria-haspopup={isDesktop ? 'dialog' : undefined}
+        aria-controls={menuId}
+        aria-expanded={isExpanded}
         data-sidebar-nav-group-anchor={id}
         data-sidebar-active-path={shouldExpandForPath}
         className={cn(
           'mx-auto flex w-[calc(100%-0.25rem)] origin-center transform-gpu items-center rounded-full border border-sidebar-border/45 bg-sidebar-accent/18 shadow-[0_1px_2px_hsl(var(--sidebar-border)/0.18)] transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none',
-          isDesktop
-            ? 'min-h-9 justify-center gap-2 px-2.5 py-1.5 text-center'
-            : 'min-h-8 justify-between gap-2 px-2.5 py-1.5 text-left',
-          !isDesktop && isExpanded ? 'mb-1.5' : 'mb-1',
+          'min-h-8 justify-between gap-2 px-2.5 py-1.5 text-left',
+          isExpanded ? 'mb-1.5' : 'mb-1',
           'text-sidebar-foreground/70 hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground',
-          isSelectedForPreview &&
-            'border-sky-500/45 bg-sky-500/10 text-sky-700 shadow-[0_0_0_1px_hsl(199_89%_48%/0.18)] dark:text-sky-300',
-          !isDesktop &&
-            isExpanded &&
+          isExpanded &&
             'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground',
           shouldExpandForPath &&
             'relative z-10 scale-[1.015] border-orange-500/70 bg-orange-500/12 text-orange-700 shadow-[0_0_0_1px_rgb(249_115_22/0.24),0_6px_18px_rgb(249_115_22/0.10)] motion-reduce:scale-100 dark:text-orange-300'
         )}
-        onPointerEnter={(event) => {
-          if (isDesktop && event.pointerType !== 'touch') {
-            onDesktopCategoryActivate?.(id)
-          }
-        }}
         onClick={() => {
-          if (isDesktop) {
-            onDesktopCategoryActivate?.(id)
-            return
-          }
-
           setManualExpansion({
             pathname,
             expanded: !isExpanded,
           })
         }}
       >
-        <div
-          className={cn(
-            'flex min-w-0 items-center gap-1.5',
-            isDesktop ? 'justify-center' : 'flex-1'
-          )}
-        >
-          {Icon ? (
-            <Icon
-              className={cn(
-                'shrink-0 opacity-75',
-                isDesktop ? 'size-4' : 'size-3.5'
-              )}
-            />
-          ) : null}
-          <SidebarGroupLabel
-            className={cn(
-              'mb-0 min-h-0 px-0 py-0 text-[13px] leading-tight font-black tracking-tight text-sidebar-foreground/78',
-              isDesktop
-                ? 'h-auto justify-center truncate text-center whitespace-nowrap'
-                : 'flex-1 whitespace-normal'
-            )}
-          >
+        <div className='flex min-w-0 flex-1 items-center gap-1.5'>
+          {Icon ? <Icon className='size-3.5 shrink-0 opacity-75' /> : null}
+          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight font-black tracking-tight whitespace-normal text-sidebar-foreground/78'>
             {title}
           </SidebarGroupLabel>
         </div>
-        {isDesktop ? null : (
-          <ChevronRight
-            className={cn(
-              'size-4 shrink-0 opacity-80 transition-transform',
-              isExpanded && 'rotate-90 opacity-100'
-            )}
-          />
-        )}
+        <ChevronRight
+          className={cn(
+            'size-4 shrink-0 opacity-80 transition-transform',
+            isExpanded && 'rotate-90 opacity-100'
+          )}
+        />
       </button>
       {shouldRenderMenu ? (
         <SidebarMenu id={menuId} className='gap-px'>

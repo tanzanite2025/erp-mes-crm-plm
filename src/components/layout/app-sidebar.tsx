@@ -1,38 +1,43 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from '@tanstack/react-router'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { useLayout } from '@/context/layout-provider'
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
-  SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
 import {
   DEFAULT_ENTERPRISE_LOGO_URL,
   EnterpriseService,
 } from '@/features/basic-settings/services/enterprise-service'
+import { DesktopSidebarSecondaryNavigation } from './desktop-sidebar-secondary-navigation'
 import { NavGroup } from './nav-group'
-import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { SidebarBrand } from './sidebar-brand'
-import { SidebarCategoryScrubber } from './sidebar-category-scrubber'
 import { useSidebarNavigationModel } from './sidebar-navigation-model'
 import { useSidebarActiveCenter } from './use-sidebar-active-center'
+import { useSidebarCategorySelection } from './use-sidebar-category-selection'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
+  const { t } = useLanguage()
   const pathname = useLocation({ select: (location) => location.pathname })
-  const { isMobile, openMobile, state } = useSidebar()
-  const { sidebarData: localizedSidebarData, renderedNavGroups } =
-    useSidebarNavigationModel()
+  const { isMobile, openMobile, state, secondaryOpen, setSecondaryOpen } =
+    useSidebar()
+  const {
+    sidebarData: localizedSidebarData,
+    renderedNavGroups,
+    categoryDirectories,
+  } = useSidebarNavigationModel()
   const [brand, setBrand] = useState({
     name: localizedSidebarData.teams[0].name,
     plan: localizedSidebarData.teams[0].plan,
     logoUrl: DEFAULT_ENTERPRISE_LOGO_URL,
   })
-  const [activeSidebarCategoryId, setActiveSidebarCategoryId] = useState<
-    string | null
-  >(null)
+  const { activePath, selectedCategoryId, selectSidebarCategory } =
+    useSidebarCategorySelection(renderedNavGroups, pathname)
   const navViewportRef = useRef<HTMLDivElement>(null)
 
   /**
@@ -78,74 +83,97 @@ export function AppSidebar() {
     logoUrl: brand.logoUrl,
   }
 
-  const activeSidebarPath = useMemo(
-    () => resolveActiveSidebarPath(renderedNavGroups, pathname),
-    [pathname, renderedNavGroups]
-  )
-
   const sidebarIsVisible = isMobile
     ? openMobile
     : collapsible === 'none' || state === 'expanded'
-  const scrubberIsEnabled = !isMobile && sidebarIsVisible
+  const selectedCategory = categoryDirectories.find(
+    (category) => category.id === selectedCategoryId
+  )
 
-  const requestCategoryActivation = useCallback((categoryId: string) => {
-    setActiveSidebarCategoryId(categoryId)
-  }, [])
-
-  useEffect(() => {
-    if (sidebarIsVisible) {
-      return
-    }
-
-    const resetTimer = window.setTimeout(() => {
-      setActiveSidebarCategoryId(null)
-    }, 0)
-
-    return () => {
-      window.clearTimeout(resetTimer)
-    }
-  }, [sidebarIsVisible])
+  function activateDesktopSidebarCategory(categoryId: string) {
+    selectSidebarCategory(categoryId)
+    setSecondaryOpen(true)
+  }
 
   useSidebarActiveCenter({
     viewportRef: navViewportRef,
-    activePathKey: activeSidebarPath?.key,
+    activePathKey: activePath?.key,
     enabled: sidebarIsVisible,
   })
 
   return (
-    <>
-      <Sidebar collapsible={collapsible} variant={variant}>
-        <SidebarHeader className='md:pointer-events-none md:absolute md:inset-x-0 md:top-0 md:z-20'>
-          <SidebarBrand team={activeTeam} />
-        </SidebarHeader>
-        <SidebarContent className='no-scrollbar overflow-hidden md:h-svh'>
-          <div
-            ref={navViewportRef}
-            data-sidebar-nav-viewport
-            className='no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto [overflow-anchor:none]'
-          >
-            <div className='flex min-h-full w-full flex-col justify-center py-1'>
-              {renderedNavGroups.map((props) => (
-                <NavGroup
-                  key={props.id}
-                  {...props}
-                  onDesktopCategoryActivate={requestCategoryActivation}
-                  selectedCategoryId={activeSidebarCategoryId}
-                />
-              ))}
+    <Sidebar collapsible={collapsible} variant={variant}>
+      <div className='sidebar-navigation-columns'>
+        <div className='sidebar-primary-navigation'>
+          <SidebarHeader className='shrink-0'>
+            <SidebarBrand team={activeTeam} />
+          </SidebarHeader>
+          <SidebarContent className='min-h-0 overflow-hidden'>
+            <div
+              ref={navViewportRef}
+              data-sidebar-nav-viewport
+              className='min-h-0 flex-1 overflow-x-hidden overflow-y-auto [overflow-anchor:none] [scrollbar-width:thin]'
+            >
+              <nav
+                aria-label={t('sidebar.navigation.categories')}
+                className='sidebar-primary-category-list flex w-full flex-col py-1'
+              >
+                {renderedNavGroups.map((props) => (
+                  <NavGroup
+                    key={props.id}
+                    {...props}
+                    onDesktopCategoryActivate={activateDesktopSidebarCategory}
+                    selectedCategoryId={
+                      secondaryOpen ? selectedCategoryId : null
+                    }
+                  />
+                ))}
+              </nav>
             </div>
-          </div>
-        </SidebarContent>
-        {collapsible === 'icon' ? <SidebarRail /> : null}
-      </Sidebar>
-      {scrubberIsEnabled ? (
-        <SidebarCategoryScrubber
-          navGroups={renderedNavGroups}
-          navViewportRef={navViewportRef}
-          activeCategoryId={activeSidebarCategoryId}
-          onActiveCategoryChange={setActiveSidebarCategoryId}
-        />
-      ) : null}
-    </>
+          </SidebarContent>
+          {!isMobile && selectedCategory ? (
+            <div className='shrink-0 border-t border-sidebar-border p-2'>
+              <button
+                type='button'
+                className='desktop-sidebar-secondary-toggle'
+                aria-expanded={secondaryOpen}
+                aria-controls={
+                  secondaryOpen
+                    ? 'desktop-sidebar-secondary-navigation'
+                    : undefined
+                }
+                onClick={() => setSecondaryOpen(!secondaryOpen)}
+              >
+                {secondaryOpen ? (
+                  <PanelLeftClose className='size-4 shrink-0' />
+                ) : (
+                  <PanelLeftOpen className='size-4 shrink-0' />
+                )}
+                <span>
+                  {t(
+                    secondaryOpen
+                      ? 'sidebar.navigation.collapseDirectory'
+                      : 'sidebar.navigation.expandDirectory'
+                  )}
+                </span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+        {!isMobile && secondaryOpen ? (
+          selectedCategory ? (
+            <DesktopSidebarSecondaryNavigation
+              key={selectedCategory.id}
+              category={selectedCategory}
+              pathname={pathname}
+            />
+          ) : (
+            <div className='desktop-sidebar-secondary-navigation p-4 text-sm text-muted-foreground'>
+              {t('sidebar.navigation.noAvailableEntries')}
+            </div>
+          )
+        ) : null}
+      </div>
+    </Sidebar>
   )
 }

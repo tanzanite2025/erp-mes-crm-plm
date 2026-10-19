@@ -67,8 +67,8 @@ func buildUserPermissionsResponse(view services.UserPermissionsView) getUserPerm
 		EmployeeID:           view.EmployeeID,
 		PermissionPresetID:   view.PermissionPresetID,
 		Permissions:          permissions,
-		PresetPermissions:    append([]string(nil), view.PresetPermissionIDs...),
-		EffectivePermissions: append([]string(nil), view.EffectivePermissionIDs...),
+		PresetPermissions:    append([]string{}, view.PresetPermissionIDs...),
+		EffectivePermissions: append([]string{}, view.EffectivePermissionIDs...),
 		Total:                len(permissions),
 	}
 }

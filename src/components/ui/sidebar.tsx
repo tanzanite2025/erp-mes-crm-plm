@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { type VariantProps, cva } from 'class-variance-authority'
 import { PanelLeftIcon } from 'lucide-react'
+import { getCookie, setCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,8 @@ import {
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = '15rem'
+const SIDEBAR_WIDTH =
+  'calc(var(--sidebar-primary-width, 10rem) + var(--sidebar-secondary-visible-width, 15rem))'
 const SIDEBAR_WIDTH_MOBILE = 'min(82vw, 18rem)'
 const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
@@ -37,6 +39,8 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  secondaryOpen: boolean
+  setSecondaryOpen: (open: boolean) => void
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -63,8 +67,16 @@ function SidebarProvider({
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
-  const isMobile = useIsMobile()
+  // Keep this breakpoint aligned with the lg: sidebar layout styles.
+  const isMobile = useIsMobile(1024)
   const [openMobile, setOpenMobile] = React.useState(false)
+  const [secondaryOpen, setSecondaryOpenState] = React.useState(
+    () => getCookie('sidebar_secondary_open') !== 'false'
+  )
+  const setSecondaryOpen = React.useCallback((nextOpen: boolean) => {
+    setSecondaryOpenState(nextOpen)
+    setCookie('sidebar_secondary_open', String(nextOpen))
+  }, [])
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -119,8 +131,20 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      secondaryOpen,
+      setSecondaryOpen,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      setOpenMobile,
+      toggleSidebar,
+      secondaryOpen,
+      setSecondaryOpen,
+    ]
   )
 
   return (
@@ -128,6 +152,7 @@ function SidebarProvider({
       <TooltipProvider delayDuration={0}>
         <div
           data-slot='sidebar-wrapper'
+          data-secondary-open={secondaryOpen}
           style={
             {
               '--sidebar-width': SIDEBAR_WIDTH,
@@ -163,21 +188,6 @@ function Sidebar({
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
-  if (collapsible === 'none') {
-    return (
-      <div
-        data-slot='sidebar'
-        className={cn(
-          'flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground',
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    )
-  }
-
   if (isMobile) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
@@ -205,9 +215,11 @@ function Sidebar({
 
   return (
     <div
-      className='group peer hidden text-sidebar-foreground md:block'
-      data-state={state}
-      data-collapsible={state === 'collapsed' ? collapsible : ''}
+      className='group peer hidden text-sidebar-foreground lg:block'
+      data-state={collapsible === 'none' ? 'expanded' : state}
+      data-collapsible={
+        state === 'collapsed' && collapsible !== 'none' ? collapsible : ''
+      }
       data-variant={variant}
       data-side={side}
       data-slot='sidebar'
@@ -216,7 +228,7 @@ function Sidebar({
       <div
         data-slot='sidebar-gap'
         className={cn(
-          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+          'relative w-(--sidebar-width) bg-transparent',
           'group-data-[collapsible=offcanvas]:w-0',
           'group-data-[side=right]:rotate-180',
           variant === 'floating' || variant === 'inset'
@@ -226,8 +238,9 @@ function Sidebar({
       />
       <div
         data-slot='sidebar-container'
+        inert={collapsible !== 'none' && state === 'collapsed'}
         className={cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[inset-inline,width] duration-200 ease-linear md:flex',
+          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) lg:flex',
           side === 'left'
             ? 'start-0 group-data-[collapsible=offcanvas]:-start-[calc(var(--sidebar-width))]'
             : 'end-0 group-data-[collapsible=offcanvas]:-end-[calc(var(--sidebar-width))]',
@@ -313,9 +326,9 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'div'>) {
       data-slot='sidebar-inset'
       className={cn(
         'relative flex min-w-0 flex-1 flex-col bg-background [--header-fixed-left:0px] [--header-fixed-right:0px] [--header-fixed-top:0px]',
-        'md:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width))] md:peer-data-[collapsible=offcanvas]:[--header-fixed-left:var(--sidebar-gutter-width)] md:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_var(--sidebar-gutter-width))]',
-        'md:peer-data-[variant=inset]:[--header-fixed-left:calc(var(--sidebar-gutter-width)_+_0.5rem)] md:peer-data-[variant=inset]:[--header-fixed-right:0.5rem] md:peer-data-[variant=inset]:[--header-fixed-top:0px] md:peer-data-[variant=inset]:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width)_+_0.5rem)] md:peer-data-[variant=inset]:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_var(--sidebar-gutter-width)_+_0.5rem)]',
-        'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2',
+        'lg:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width))] lg:peer-data-[collapsible=offcanvas]:[--header-fixed-left:var(--sidebar-gutter-width)] lg:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_var(--sidebar-gutter-width))]',
+        'lg:peer-data-[variant=inset]:[--header-fixed-left:calc(var(--sidebar-gutter-width)_+_0.5rem)] lg:peer-data-[variant=inset]:[--header-fixed-right:0.5rem] lg:peer-data-[variant=inset]:[--header-fixed-top:0px] lg:peer-data-[variant=inset]:peer-data-[collapsible=icon]:[--header-fixed-left:calc(var(--sidebar-width-icon)_+_var(--sidebar-gutter-width)_+_0.5rem)] lg:peer-data-[variant=inset]:peer-data-[state=expanded]:[--header-fixed-left:calc(var(--sidebar-width)_+_var(--sidebar-gutter-width))]',
+        'lg:peer-data-[variant=inset]:m-2 lg:peer-data-[variant=inset]:ms-0 lg:peer-data-[variant=inset]:rounded-xl lg:peer-data-[variant=inset]:shadow-sm lg:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2',
         className
       )}
       {...props}
@@ -436,7 +449,7 @@ function SidebarGroupAction({
       className={cn(
         'absolute end-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         // Increases the hit area of the button on mobile.
-        'after:absolute after:-inset-2 md:after:hidden',
+        'after:absolute after:-inset-2 lg:after:hidden',
         'group-data-[collapsible=icon]:hidden',
         className
       )}
@@ -571,13 +584,13 @@ function SidebarMenuAction({
       className={cn(
         'absolute end-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform peer-hover/menu-button:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         // Increases the hit area of the button on mobile.
-        'after:absolute after:-inset-2 md:after:hidden',
+        'after:absolute after:-inset-2 lg:after:hidden',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',
         'peer-data-[size=lg]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
         showOnHover &&
-          'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 md:opacity-0',
+          'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 lg:opacity-0',
         className
       )}
       {...props}

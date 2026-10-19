@@ -6,6 +6,12 @@ export const sidebar = {
   actions: {
     expandAllMenus: 'Click to expand all menus',
   },
+  navigation: {
+    categories: 'Business categories',
+    noAvailableEntries: 'No available destinations in this category',
+    collapseDirectory: 'Hide directory',
+    expandDirectory: 'Show directory',
+  },
   groups: {
     resourceManagement: 'Resource Management',
     warehouseLogistics: 'Warehouse & Logistics',

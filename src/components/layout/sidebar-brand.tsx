@@ -20,7 +20,7 @@ export function SidebarBrand({ team }: SidebarBrandProps) {
           <img
             src={team.logoUrl}
             alt={logoAlt}
-            className='h-16 w-auto max-w-[8.5rem] object-contain transition-all duration-300 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:max-w-9'
+            className='h-16 w-auto max-w-full object-contain transition-all duration-300 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:max-w-9'
             loading='eager'
             decoding='async'
           />

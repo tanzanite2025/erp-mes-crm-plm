@@ -195,9 +195,13 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
     '--dock-content-padding-x': `${mobileDockGeometry.safePaddingX}px`,
   }
   return (
-    <div className='pointer-events-none fixed inset-x-0 bottom-0 z-9 flex items-end justify-center px-2 sm:bottom-3 sm:items-center sm:px-4'>
+    <div
+      data-slot='global-bottom-dock'
+      className='pointer-events-none fixed right-(--header-fixed-right,0px) bottom-0 left-(--header-fixed-left,0px) z-9 flex items-end justify-center px-2 sm:bottom-3 sm:items-center sm:px-4'
+    >
       <div ref={wrapperRef} className='relative isolate overflow-visible'>
         <div
+          data-slot='global-bottom-dock-mobile-surface'
           aria-hidden='true'
           style={mobileDockMaskStyle}
           className={cn(
@@ -222,6 +226,7 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
           />
         </svg>
         <div
+          data-slot='global-bottom-dock-content'
           style={dockContentStyle}
           className={cn(
             'pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-border/70 sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-lg sm:shadow-black/10 sm:backdrop-blur-xl sm:hover:border-primary/25 sm:hover:shadow-2xl sm:hover:shadow-primary/10 dark:sm:bg-(--dock-surface-dark)',

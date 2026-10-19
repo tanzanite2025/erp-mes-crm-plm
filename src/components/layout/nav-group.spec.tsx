@@ -96,13 +96,15 @@ describe('NavGroup', () => {
     routerState.pathname = '/aps'
   })
 
-  it('keeps desktop navigation compact and delegates child entries to the floating preview', () => {
+  it('keeps desktop navigation compact and opens a persistent directory only on click', () => {
     const onDesktopCategoryActivate = vi.fn()
     renderNavGroup({ onDesktopCategoryActivate })
     const groupButton = screen.getByRole('button', { name: 'Production' })
 
     expect(groupButton.getAttribute('aria-expanded')).toBe('false')
-    expect(groupButton.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(groupButton.getAttribute('aria-haspopup')).toBeNull()
+    fireEvent.pointerEnter(groupButton, { pointerType: 'mouse' })
+    expect(onDesktopCategoryActivate).not.toHaveBeenCalled()
     expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
 
     fireEvent.click(groupButton)

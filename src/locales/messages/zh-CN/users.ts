@@ -35,6 +35,7 @@
     title: '显式权限管理',
     subtitle: '管理 {{username}} 的显式权限分配',
     loading: '正在加载显式权限分配...',
+    loadError: '无法读取已保存的权限，请重试后再修改。',
     accessLoading: '正在加载访问画像...',
     empty: '暂无显式权限分配',
     summary: {

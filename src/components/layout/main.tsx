@@ -16,8 +16,9 @@ export function Main({ fixed, className, fluid, ...props }: MainProps) {
         // If layout is fixed, make the main container flex and grow
         fixed && 'flex min-h-0 grow flex-col overflow-hidden',
 
-        // If layout is not fluid, set the max-width
-        !fluid && '@7xl/content:w-full @7xl/content:max-w-none',
+        // Keep fixed workspace controls relative to the viewport. Size-query
+        // containment belongs on tables/pagination, not their page ancestors.
+        !fluid && 'w-full max-w-none',
         className
       )}
       {...props}

@@ -19,7 +19,7 @@ function Table({
   return (
     <div
       data-slot='table-container'
-      className='relative w-full overflow-x-auto'
+      className='@container/content relative w-full overflow-x-auto'
     >
       {table}
     </div>
