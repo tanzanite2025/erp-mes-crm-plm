@@ -12,18 +12,24 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { Standard } from '../data/schema'
+import type { ControlledProtocolInspectionCriterionFormValue } from '../services/controlled-protocol-inspection-criteria-editor'
 import {
   getQualityStandardTypeLabel,
   getQualityStandardStatusLabel,
   normalizeQualityStandardType,
   normalizeQualityStandardStatus,
 } from '../utils/quality-utils'
+import { ControlledProtocolInspectionCriteriaEditor } from './controlled-protocol-inspection-criteria-editor'
 
 interface StandardEditorContentProps {
   mode: 'create' | 'edit'
   formData: Standard
   isDirty: boolean
   readOnly?: boolean
+  inspectionCriteria: ControlledProtocolInspectionCriterionFormValue[] | null
+  onInspectionCriteriaChange: (
+    criteria: ControlledProtocolInspectionCriterionFormValue[]
+  ) => void
   onCodeChange: (value: string) => void
   onNameChange: (value: string) => void
   onTypeChange: (value: Standard['type']) => void
@@ -35,6 +41,8 @@ export function StandardEditorContent({
   formData,
   isDirty,
   readOnly = false,
+  inspectionCriteria,
+  onInspectionCriteriaChange,
   onCodeChange,
   onNameChange,
   onTypeChange,
@@ -76,7 +84,7 @@ export function StandardEditorContent({
                   placeholder={t(
                     'quality.standards.dialog.action.placeholders.code'
                   )}
-                  className='h-11 rounded-xl border-none bg-muted/30 font-mono shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
+                  className='h-11 rounded-xl border-none bg-muted/30 font-maple-ui shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
                   disabled={readOnly}
                   value={formData.code || ''}
                   onChange={(event) => onCodeChange(event.target.value)}
@@ -91,7 +99,7 @@ export function StandardEditorContent({
                 <div className='flex h-11 items-center rounded-xl border border-white/5 bg-muted/20 px-4 shadow-inner'>
                   <Badge
                     variant='secondary'
-                    className='border-none bg-primary/10 py-0.5 font-mono text-[10px] font-black text-primary'
+                    className='border-none bg-primary/10 py-0.5 font-maple-ui text-[10px] font-black text-primary'
                   >
                     VER{' '}
                     {isEdit ? Number(formData.version || 1).toFixed(1) : '1.0'}
@@ -116,6 +124,7 @@ export function StandardEditorContent({
                 )}
                 className='h-11 rounded-xl border-none bg-muted/30 font-bold shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
                 value={formData.name || ''}
+                disabled={readOnly}
                 onChange={(event) => onNameChange(event.target.value)}
               />
             </div>
@@ -215,6 +224,13 @@ export function StandardEditorContent({
           </div>
         </div>
       </div>
+      {inspectionCriteria !== null ? (
+        <ControlledProtocolInspectionCriteriaEditor
+          criteria={inspectionCriteria}
+          readOnly={readOnly}
+          onCriteriaChange={onInspectionCriteriaChange}
+        />
+      ) : null}
     </div>
   )
 }

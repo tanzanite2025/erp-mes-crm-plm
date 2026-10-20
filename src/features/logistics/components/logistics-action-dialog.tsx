@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Phone, Truck, User, X } from 'lucide-react'
+import { Truck, X } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
@@ -57,8 +56,6 @@ export function LogisticsActionDialog({
       trackingNo: '',
       status: 'Pending' as const,
       type: 'Shipment' as const,
-      contactPerson: '',
-      contactPhone: '',
       shipmentId: defaultShipmentId || '',
       lastLocation: '',
       events: [],
@@ -187,8 +184,6 @@ export function LogisticsActionDialog({
           trackingNo: formData.trackingNo,
           status: formData.status,
           lastLocation: formData.lastLocation,
-          contactPerson: formData.contactPerson,
-          contactPhone: formData.contactPhone,
           events: formData.events,
           version: formData.version,
           isDeleted: formData.isDeleted,
@@ -338,42 +333,6 @@ export function LogisticsActionDialog({
                   })}
                 </p>
               ) : null}
-            </div>
-          </div>
-
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-1.5'>
-              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
-                {t('trading.logistics.dialog.contactLabel')}
-              </Label>
-              <div className='relative'>
-                <User className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  value={formData.contactPerson || ''}
-                  onChange={(event) => {
-                    formData.contactPerson = event.target.value
-                  }}
-                  placeholder={t('trading.logistics.dialog.contactPlaceholder')}
-                  className='h-11 rounded-2xl border-none bg-muted/20 pl-9 font-bold'
-                />
-              </div>
-            </div>
-
-            <div className='space-y-1.5'>
-              <Label className='pl-1 text-[10px] font-black tracking-widest text-secondary uppercase'>
-                {t('trading.logistics.dialog.phoneLabel')}
-              </Label>
-              <div className='relative'>
-                <Phone className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  value={formData.contactPhone || ''}
-                  onChange={(event) => {
-                    formData.contactPhone = event.target.value
-                  }}
-                  placeholder={t('trading.logistics.dialog.phonePlaceholder')}
-                  className='h-11 rounded-2xl border-none bg-muted/20 pl-9 font-bold'
-                />
-              </div>
             </div>
           </div>
         </div>

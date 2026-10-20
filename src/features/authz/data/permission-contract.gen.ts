@@ -229,6 +229,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "page_warehouse",
   "page_warehouse_config",
   "page_wheel_trace",
+  "tab_approval_business_approval_policies",
   "tab_approval_history",
   "tab_approval_requests",
   "tab_aps_scheduling_board",

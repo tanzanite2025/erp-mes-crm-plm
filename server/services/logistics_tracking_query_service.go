@@ -2,7 +2,7 @@ package services
 
 import (
 	"bytes"
-	"crypto/md5"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -89,12 +89,6 @@ type logistics17TrackEvent struct {
 	Location string `json:"c"`
 	Detail   string `json:"d"`
 	Context  string `json:"z"`
-}
-
-type normalizedTrackingTrace struct {
-	Time     time.Time
-	Context  string
-	Location string
 }
 
 func RefreshDeliveryTracking(trackingNo string) (LogisticsTrackingRefreshResult, error) {
@@ -268,14 +262,14 @@ func execute17TrackRequest(provider models.LogisticsAPIProvider, pathSuffix stri
 	return nil
 }
 
-func normalize17TrackTraceItems(track logistics17TrackDTO) []normalizedTrackingTrace {
-	traceMap := make(map[string]normalizedTrackingTrace)
+func normalize17TrackTraceItems(track logistics17TrackDTO) []DeliveryTrackingTrace {
+	traceMap := make(map[string]DeliveryTrackingTrace)
 	appendEvent := func(event logistics17TrackEvent) {
 		context := strings.TrimSpace(event.Context)
 		if context == "" {
 			return
 		}
-		eventTime, ok := parse17TrackEventTime(event.Time)
+		eventTime, ok := ParseDeliveryTrackingEventTime(event.Time)
 		if !ok {
 			return
 		}
@@ -283,8 +277,8 @@ func normalize17TrackTraceItems(track logistics17TrackDTO) []normalizedTrackingT
 		if location == "" {
 			location = strings.TrimSpace(event.Detail)
 		}
-		key := fmt.Sprintf("%s|%s|%s", eventTime.UTC().Format(time.RFC3339), context, location)
-		traceMap[key] = normalizedTrackingTrace{
+		key := fmt.Sprintf("%s|%s|%s", eventTime.UTC().Format(time.RFC3339Nano), context, location)
+		traceMap[key] = DeliveryTrackingTrace{
 			Time:     eventTime,
 			Context:  context,
 			Location: location,
@@ -303,7 +297,7 @@ func normalize17TrackTraceItems(track logistics17TrackDTO) []normalizedTrackingT
 		appendEvent(event)
 	}
 
-	traces := make([]normalizedTrackingTrace, 0, len(traceMap))
+	traces := make([]DeliveryTrackingTrace, 0, len(traceMap))
 	for _, trace := range traceMap {
 		traces = append(traces, trace)
 	}
@@ -319,72 +313,11 @@ func normalize17TrackTraceItems(track logistics17TrackDTO) []normalizedTrackingT
 	return traces
 }
 
-func parse17TrackEventTime(value string) (time.Time, bool) {
-	normalized := strings.TrimSpace(value)
-	if normalized == "" {
-		return time.Time{}, false
-	}
-	for _, layout := range []string{
-		"2006-01-02 15:04:05",
-		"2006-01-02 15:04",
-		"2006-01-02",
-		time.RFC3339,
-	} {
-		if parsed, err := time.ParseInLocation(layout, normalized, time.Local); err == nil {
-			return parsed, true
-		}
-	}
-	return time.Time{}, false
-}
-
-func persistDeliveryTrackingRefresh(order models.DeliveryOrder, provider models.LogisticsAPIProvider, traces []normalizedTrackingTrace, checkedAt time.Time) (int, error) {
-	insertedTraces := 0
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, trace := range traces {
-			hashKey := generateDeliveryTrackingHash(order.TrackingNo, trace.Time, trace.Context)
-			detail := models.DeliveryTrackingDetail{
-				DeliveryOrderID: order.ID,
-				Time:            trace.Time,
-				Context:         trace.Context,
-				Location:        trace.Location,
-				HashKey:         hashKey,
-			}
-			result := tx.Where("hash_key = ?", hashKey).FirstOrCreate(&detail)
-			if result.Error != nil {
-				return result.Error
-			}
-			if result.RowsAffected > 0 {
-				insertedTraces++
-			}
-		}
-
-		updates := map[string]any{
-			"last_push_at": checkedAt,
-		}
-		if len(traces) > 0 {
-			latest := traces[len(traces)-1]
-			status := deriveDeliveryTrackingStatus(order.Status, latest.Context)
-			updates["status"] = status
-			updates["last_event"] = latest.Context
-			updates["last_location"] = latest.Location
-			if status == deliveryOrderStatusSigned {
-				updates["signed_at"] = checkedAt
-			}
-		}
-		if err := tx.Model(&models.DeliveryOrder{}).Where("id = ?", order.ID).Updates(updates).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&models.LogisticsAPIProvider{}).Where("id = ?", provider.ID).Update("quota_used", gorm.Expr("quota_used + 1")).Error; err != nil {
-			return err
-		}
-		return nil
+func persistDeliveryTrackingRefresh(order models.DeliveryOrder, provider models.LogisticsAPIProvider, traces []DeliveryTrackingTrace, checkedAt time.Time) (int, error) {
+	return PersistDeliveryOrderTrackingObservation(context.Background(), DeliveryOrderTrackingObservation{
+		TrackingNo: order.TrackingNo, CarrierCode: order.CarrierCode, Traces: traces,
+		ObservedAt: checkedAt, QuotaProviderID: provider.ID,
 	})
-	return insertedTraces, err
-}
-
-func generateDeliveryTrackingHash(trackingNo string, eventTime time.Time, context string) string {
-	raw := fmt.Sprintf("%s|%s|%s", trackingNo, eventTime.Format(time.RFC3339), context)
-	return fmt.Sprintf("%x", md5.Sum([]byte(raw)))
 }
 
 func deriveDeliveryTrackingStatus(currentStatus string, latestContext string) string {
@@ -396,20 +329,26 @@ func deriveDeliveryTrackingStatus(currentStatus string, latestContext string) st
 		}
 		return normalizedCurrent
 	}
-	if strings.Contains(normalizedLatest, "签收") || strings.Contains(normalizedLatest, "delivered") || strings.Contains(normalizedLatest, "received") {
-		return deliveryOrderStatusSigned
-	}
 	if strings.Contains(normalizedLatest, "退回") || strings.Contains(normalizedLatest, "退件") || strings.Contains(normalizedLatest, "returned") {
 		return deliveryOrderStatusReturned
 	}
-	if strings.Contains(normalizedLatest, "异常") || strings.Contains(normalizedLatest, "失败") || strings.Contains(normalizedLatest, "undelivered") || strings.Contains(normalizedLatest, "alert") || strings.Contains(normalizedLatest, "exception") {
+	if strings.Contains(normalizedLatest, "异常") || strings.Contains(normalizedLatest, "失败") || strings.Contains(normalizedLatest, "未签收") || strings.Contains(normalizedLatest, "拒收") || strings.Contains(normalizedLatest, "undelivered") || strings.Contains(normalizedLatest, "not delivered") || strings.Contains(normalizedLatest, "delivery failed") || strings.Contains(normalizedLatest, "alert") || strings.Contains(normalizedLatest, "exception") {
 		return deliveryOrderStatusException
 	}
-	if strings.Contains(normalizedLatest, "派送") || strings.Contains(normalizedLatest, "out for delivery") || strings.Contains(normalizedLatest, "delivery") {
+	if strings.Contains(normalizedLatest, "待签收") || strings.Contains(normalizedLatest, "等待签收") || strings.Contains(normalizedLatest, "派送") || strings.Contains(normalizedLatest, "out for delivery") {
 		return deliveryOrderStatusDelivering
+	}
+	if strings.Contains(normalizedLatest, "已签收") || strings.Contains(normalizedLatest, "签收成功") || normalizedLatest == "签收" || normalizedLatest == "delivered" || strings.HasPrefix(normalizedLatest, "delivered to ") || strings.Contains(normalizedLatest, "successfully delivered") || strings.Contains(normalizedLatest, "received by recipient") {
+		return deliveryOrderStatusSigned
 	}
 	if strings.Contains(normalizedLatest, "揽收") || strings.Contains(normalizedLatest, "收件") || strings.Contains(normalizedLatest, "pickup") || strings.Contains(normalizedLatest, "collected") {
 		return deliveryOrderStatusCollected
 	}
-	return deliveryOrderStatusInTransit
+	if strings.Contains(normalizedLatest, "运输") || strings.Contains(normalizedLatest, "在途") || strings.Contains(normalizedLatest, "转运") || strings.Contains(normalizedLatest, "in transit") || strings.Contains(normalizedLatest, "departed") || strings.Contains(normalizedLatest, "arrived at") || strings.Contains(normalizedLatest, "received at") {
+		return deliveryOrderStatusInTransit
+	}
+	if normalizedCurrent == "" {
+		return deliveryOrderStatusPending
+	}
+	return normalizedCurrent
 }

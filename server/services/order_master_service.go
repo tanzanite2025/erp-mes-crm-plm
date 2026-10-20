@@ -195,7 +195,10 @@ func DeleteSalesOrder(id string) error {
 		if err := tx.Model(&order).Update("version", order.Version+1).Error; err != nil {
 			return err
 		}
-		return tx.Delete(&order).Error
+		if err := tx.Delete(&order).Error; err != nil {
+			return err
+		}
+		return ResolveSystemNotificationInboxEntriesWithinTransaction(tx, SystemNotificationInboxResolutionFilter{SourceCode: businessEventSourceSalesOrder, BusinessTargetID: order.ID})
 	}); err != nil {
 		return err
 	}

@@ -178,7 +178,7 @@ export function PurchaseLogisticsPage() {
                 >
                   <div className='space-y-1'>
                     <div className='flex flex-wrap items-center gap-2'>
-                      <span className='font-mono text-xs font-black tracking-tight text-slate-900'>
+                      <span className='font-maple-ui text-xs font-black tracking-tight text-slate-900'>
                         {draft.trackingNo}
                       </span>
                       <Badge

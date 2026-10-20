@@ -44,6 +44,9 @@ func SaveLogisticsRecord(ctx context.Context, input models.LogisticsRecord) (mod
 	}
 
 	normalized := normalizeLogisticsRecordInput(input)
+	if err := validateLogisticsRecordPersistenceInput(normalized); err != nil {
+		return models.LogisticsRecord{}, err
+	}
 	if strings.TrimSpace(normalized.ID) != "" {
 		return updateLogisticsRecord(ctx, normalized)
 	}
@@ -68,6 +71,16 @@ func UpdateLogisticsStatus(ctx context.Context, id string, input UpdateLogistics
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var record models.LogisticsRecord
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&record, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if record.IsDeleted {
+			return gorm.ErrRecordNotFound
+		}
+		previousStatus := record.Status
+		candidate := record
+		candidate.Status = normalized.Status
+		candidate.Events = normalized.EventsJSON
+		if err := validateLogisticsRecordPersistenceInput(candidate); err != nil {
 			return err
 		}
 
@@ -105,6 +118,9 @@ func UpdateLogisticsStatus(ctx context.Context, id string, input UpdateLogistics
 		if normalized.Description != "" {
 			payload["description"] = normalized.Description
 		}
+		if err := dispatchLogisticsRecordLifecycleNotificationsWithinTransaction(ctx, tx, updated, previousStatus, "STATUS_CHANGED"); err != nil {
+			return err
+		}
 		return writeLogisticsAuditEntryWithContext(ctx, tx, updated.ID, "STATUS_CHANGE", before, payload)
 	})
 	if err != nil {
@@ -134,9 +150,11 @@ func DeleteLogisticsRecord(ctx context.Context, id string) error {
 
 		before := logisticsRecordAuditPayload(record)
 		now := time.Now().UTC()
+		nextVersion := record.Version + 1
 		if err := tx.Model(&record).Updates(map[string]any{
 			"is_deleted": true,
 			"status":     "Canceled",
+			"version":    nextVersion,
 			"updated_at": now,
 		}).Error; err != nil {
 			return err
@@ -144,7 +162,11 @@ func DeleteLogisticsRecord(ctx context.Context, id string) error {
 
 		record.IsDeleted = true
 		record.Status = "Canceled"
+		record.Version = nextVersion
 		record.UpdatedAt = now
+		if err := ResolveSystemNotificationInboxEntriesWithinTransaction(tx, SystemNotificationInboxResolutionFilter{SourceCode: "LOGISTICS_RECORD", BusinessTargetID: record.ID}); err != nil {
+			return err
+		}
 		payload := logisticsRecordAuditPayload(record)
 		payload["deleted"] = true
 		return writeLogisticsAuditEntryWithContext(ctx, tx, record.ID, "DELETE", before, payload)
@@ -159,6 +181,8 @@ func createLogisticsRecord(ctx context.Context, input models.LogisticsRecord) (m
 		input.Events = buildInitialLogisticsEvents(time.Now().UTC())
 	}
 	input.UpdatedAt = time.Now().UTC()
+	input.Version = 1
+	input.IsDeleted = false
 
 	var created models.LogisticsRecord
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -169,20 +193,23 @@ func createLogisticsRecord(ctx context.Context, input models.LogisticsRecord) (m
 			return err
 		}
 
-		createTx := tx
+		omittedFields := []string{clause.Associations}
 		if input.SalesOrderID == "" {
-			createTx = createTx.Omit("SalesOrderID")
+			omittedFields = append(omittedFields, "SalesOrderID")
 		}
 		if input.PurchaseOrderID == "" {
-			createTx = createTx.Omit("PurchaseOrderID")
+			omittedFields = append(omittedFields, "PurchaseOrderID")
 		}
 		if input.ProductID == "" {
-			createTx = createTx.Omit("ProductID")
+			omittedFields = append(omittedFields, "ProductID")
 		}
-		if err := createTx.Create(&input).Error; err != nil {
+		if err := tx.Omit(omittedFields...).Create(&input).Error; err != nil {
 			return err
 		}
 		if err := tx.First(&created, "id = ?", input.ID).Error; err != nil {
+			return err
+		}
+		if err := dispatchLogisticsRecordLifecycleNotificationsWithinTransaction(ctx, tx, created, "", "CREATED"); err != nil {
 			return err
 		}
 		return writeLogisticsAuditEntryWithContext(ctx, tx, created.ID, "CREATE", nil, logisticsRecordAuditPayload(created))
@@ -197,51 +224,92 @@ func createLogisticsRecord(ctx context.Context, input models.LogisticsRecord) (m
 func updateLogisticsRecord(ctx context.Context, input models.LogisticsRecord) (models.LogisticsRecord, error) {
 	var updated models.LogisticsRecord
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var existing models.LogisticsRecord
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, "id = ?", input.ID).Error; err != nil {
-			return err
-		}
-
-		before := logisticsRecordAuditPayload(existing)
-		input.UpdatedAt = time.Now().UTC()
-		updateTx := tx.Model(&existing)
-		if input.SalesOrderID == "" {
-			updateTx = updateTx.Omit("SalesOrderID")
-		}
-		if input.PurchaseOrderID == "" {
-			updateTx = updateTx.Omit("PurchaseOrderID")
-		}
-		if input.ProductID == "" {
-			updateTx = updateTx.Omit("ProductID")
-		}
-		if err := updateTx.Updates(input).Error; err != nil {
-			return err
-		}
-		if input.SalesOrderID == "" {
-			if err := tx.Model(&existing).Update("sales_order_id", nil).Error; err != nil {
-				return err
-			}
-		}
-		if input.PurchaseOrderID == "" {
-			if err := tx.Model(&existing).Update("purchase_order_id", nil).Error; err != nil {
-				return err
-			}
-		}
-		if input.ProductID == "" {
-			if err := tx.Model(&existing).Update("product_id", nil).Error; err != nil {
-				return err
-			}
-		}
-		if err := tx.First(&updated, "id = ?", existing.ID).Error; err != nil {
-			return err
-		}
-		return writeLogisticsAuditEntryWithContext(ctx, tx, updated.ID, "UPDATE", before, logisticsRecordAuditPayload(updated))
+		var err error
+		updated, err = updateLogisticsRecordWithinTransaction(ctx, tx, input)
+		return err
 	})
 	if err != nil {
 		return models.LogisticsRecord{}, err
 	}
 
 	return updated, nil
+}
+
+func updateLogisticsRecordWithinTransaction(ctx context.Context, tx *gorm.DB, input models.LogisticsRecord) (models.LogisticsRecord, error) {
+	var existing models.LogisticsRecord
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, "id = ?", input.ID).Error; err != nil {
+		return models.LogisticsRecord{}, err
+	}
+	if existing.IsDeleted {
+		return models.LogisticsRecord{}, gorm.ErrRecordNotFound
+	}
+	if existing.Version != input.Version {
+		return models.LogisticsRecord{}, ErrLogisticsStatusVersionConflict
+	}
+	if existing.Type != input.Type {
+		return models.LogisticsRecord{}, domainValidationError("物流记录的采购/销售类型不可变更")
+	}
+	before := logisticsRecordAuditPayload(existing)
+	previousStatus := existing.Status
+	input.UpdatedAt = time.Now().UTC()
+	input.Version = existing.Version + 1
+	updates := map[string]any{
+		"order_no": input.OrderNo, "shipment_id": input.ShipmentID,
+		"carrier": input.Carrier, "tracking_no": input.TrackingNo,
+		"status": input.Status, "last_location": input.LastLocation, "events": input.Events,
+		"version": input.Version, "updated_at": input.UpdatedAt,
+	}
+	for key, value := range map[string]string{"sales_order_id": input.SalesOrderID, "purchase_order_id": input.PurchaseOrderID, "product_id": input.ProductID} {
+		if value == "" {
+			updates[key] = nil
+		} else {
+			updates[key] = value
+		}
+	}
+	if err := tx.Model(&existing).Updates(updates).Error; err != nil {
+		return models.LogisticsRecord{}, err
+	}
+	if previousStatus != input.Status {
+		if err := SyncLogisticsBusinessDocumentTx(ctx, tx, &input, input.Status); err != nil {
+			return models.LogisticsRecord{}, err
+		}
+	}
+	var updated models.LogisticsRecord
+	if err := tx.First(&updated, "id = ?", input.ID).Error; err != nil {
+		return models.LogisticsRecord{}, err
+	}
+	if err := dispatchLogisticsRecordLifecycleNotificationsWithinTransaction(ctx, tx, updated, previousStatus, "STATUS_CHANGED"); err != nil {
+		return models.LogisticsRecord{}, err
+	}
+	if err := writeLogisticsAuditEntryWithContext(ctx, tx, updated.ID, "UPDATE", before, logisticsRecordAuditPayload(updated)); err != nil {
+		return models.LogisticsRecord{}, err
+	}
+	return updated, nil
+}
+
+func validateLogisticsRecordPersistenceInput(record models.LogisticsRecord) error {
+	if record.Type != "Shipment" && record.Type != "Receipt" {
+		return domainValidationError("物流类型必须为 Shipment 或 Receipt")
+	}
+	switch record.Status {
+	case "Pending", "InTransit", "Delivered", "Exception", "Canceled":
+	default:
+		return domainValidationError("无效的物流记录状态")
+	}
+	for _, identifier := range []string{record.SalesOrderID, record.PurchaseOrderID, record.ProductID} {
+		if identifier != "" {
+			if _, err := uuid.Parse(identifier); err != nil {
+				return domainValidationError("物流关联对象 ID 必须为有效 UUID")
+			}
+		}
+	}
+	if !logisticsEventsPayloadIsEmpty(record.Events) {
+		var events []json.RawMessage
+		if err := json.Unmarshal(record.Events, &events); err != nil {
+			return domainValidationError("物流轨迹必须为 JSON 数组")
+		}
+	}
+	return nil
 }
 
 func normalizeLogisticsRecordInput(input models.LogisticsRecord) models.LogisticsRecord {
@@ -256,6 +324,14 @@ func normalizeLogisticsRecordInput(input models.LogisticsRecord) models.Logistic
 	input.TrackingNo = strings.TrimSpace(input.TrackingNo)
 	input.Status = strings.TrimSpace(input.Status)
 	input.LastLocation = strings.TrimSpace(input.LastLocation)
+	if input.ID == "" {
+		if input.Type == "" {
+			input.Type = "Shipment"
+		}
+		if input.Status == "" {
+			input.Status = "Pending"
+		}
+	}
 	return input
 }
 

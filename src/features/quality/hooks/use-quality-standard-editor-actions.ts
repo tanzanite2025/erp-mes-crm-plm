@@ -1,8 +1,13 @@
 import { useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import type { Standard } from '../data/schema'
-import { dispatchQualityStandardRoutingEvent } from '../services/quality-routing-service'
+import {
+  QualityStandardApprovalResponseNotConfirmedError,
+  submitQualityStandardWithConfirmedApprovalRequest,
+} from '../services/quality-standard-approval-submission-service'
 import { buildQualityStandardWorkflowChangeSet } from '../services/quality-standard-workflow-service'
 import { normalizeQualityStandardStatus } from '../utils/quality-utils'
 import { useQualityMutations } from './use-quality'
@@ -11,7 +16,6 @@ import type { StandardEditorSubmitPayload } from './use-standard-editor-form'
 interface UseQualityStandardEditorActionsOptions {
   mode: 'create' | 'edit'
   standardId?: string
-  standard?: Standard
   formData: Standard
   isDirty: boolean
   isReadOnly: boolean
@@ -24,7 +28,6 @@ interface UseQualityStandardEditorActionsOptions {
 export function useQualityStandardEditorActions({
   mode,
   standardId,
-  standard,
   formData,
   isDirty,
   isReadOnly,
@@ -32,10 +35,10 @@ export function useQualityStandardEditorActions({
   buildSubmitPayloadWithOverrides,
 }: UseQualityStandardEditorActionsOptions) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { t } = useLanguage()
   const { saveStandardMutation } = useQualityMutations()
   const isEdit = mode === 'edit'
-  const previousStatus = standard?.status ?? formData.status
 
   const handleBack = useCallback(() => {
     navigate({ to: '/quality/standards' })
@@ -66,12 +69,6 @@ export function useQualityStandardEditorActions({
 
     try {
       const saved = await saveStandardMutation.mutateAsync(payload)
-      if (!isEdit) {
-        await dispatchQualityStandardRoutingEvent({
-          standard: saved,
-          semanticAction: 'CREATED',
-        })
-      }
       navigate({
         to: '/quality/standards/$standardId/preview',
         params: { standardId: saved.id },
@@ -90,6 +87,7 @@ export function useQualityStandardEditorActions({
   ])
 
   const handleSubmitForApproval = useCallback(async () => {
+    if (isReadOnly) return
     const workflowChangeSet = buildQualityStandardWorkflowChangeSet({
       type: 'submitForApproval',
     })
@@ -111,20 +109,24 @@ export function useQualityStandardEditorActions({
     }
 
     try {
-      const saved = await saveStandardMutation.mutateAsync({
-        ...payload,
-        successMessage: t('quality.hooks.submitForApprovalSuccess'),
+      const result = await submitQualityStandardWithConfirmedApprovalRequest({
+        savePendingStandard: () =>
+          saveStandardMutation.mutateAsync({
+            ...payload,
+            suppressSuccessToast: true,
+          }),
       })
-      await dispatchQualityStandardRoutingEvent({
-        standard: saved,
-        semanticAction: workflowChangeSet.semanticAction,
-        previousStatus,
-      })
+      await queryClient.invalidateQueries({ queryKey: ['quality_standard'] })
+      await queryClient.invalidateQueries({ queryKey: ['quality_standards'] })
+      toast.success(t('quality.hooks.submitForApprovalSuccess'))
       navigate({
         to: '/quality/standards/$standardId/preview',
-        params: { standardId: saved.id },
+        params: { standardId: result.standard.id },
       })
-    } catch {
+    } catch (error) {
+      if (error instanceof QualityStandardApprovalResponseNotConfirmedError) {
+        toast.error(t('quality.hooks.approvalResponseNotConfirmed'))
+      }
       return
     }
   }, [
@@ -133,8 +135,9 @@ export function useQualityStandardEditorActions({
     handleOpenPreview,
     isDirty,
     isEdit,
+    isReadOnly,
     navigate,
-    previousStatus,
+    queryClient,
     saveStandardMutation,
     t,
   ])

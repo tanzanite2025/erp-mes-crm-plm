@@ -94,6 +94,7 @@ export function RuleExecutionLogToolbar({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>全部结果</SelectItem>
+            <SelectItem value='pending'>待投递</SelectItem>
             <SelectItem value='matched'>命中</SelectItem>
             <SelectItem value='success'>成功</SelectItem>
             <SelectItem value='failed'>失败</SelectItem>

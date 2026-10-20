@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { resolveProductDisplayV2 } from '@/features/engineering/display/product-display-v2'
 import { resolveProductDisplayMetadataV2 } from '@/features/engineering/display/product-display-v2-metadata'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
@@ -30,23 +31,20 @@ import { ProductAttributeCategoryService } from '@/features/engineering/services
 import { ProductAttributeOptionService } from '@/features/engineering/services/product-attribute-option-service'
 import { productTemplateService } from '@/features/engineering/services/product-template-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
+import {
+  getControlledProtocolInspectionCriteriaValidationError,
+  type ControlledProtocolInspectionCriterionFormValue,
+} from '../services/controlled-protocol-inspection-criteria-editor'
 import type { ControlledProtocolDraft } from '../types/controlled-protocol'
+import { ControlledProtocolConfiguredUnitSelect } from './controlled-protocol-configured-unit-select'
 
 export type {
   ControlledProtocolCriterion,
   ControlledProtocolDraft,
 } from '../types/controlled-protocol'
 
-interface ControlledProtocolCriterionFormValue {
-  id: string
-  itemName: string
-  targetWeight: string
-  unit: string
-  qualifiedMin: string
-  qualifiedMax: string
-  scrapBelow: string
-  scrapAbove: string
-}
+type ControlledProtocolCriterionFormValue =
+  ControlledProtocolInspectionCriterionFormValue
 
 interface ControlledProtocolDialogFormState {
   productId: string
@@ -80,18 +78,6 @@ function numberToFormValue(value?: number) {
   return Number.isFinite(value) ? String(value) : ''
 }
 
-function parseOptionalNumber(value: string) {
-  const trimmed = value.trim()
-  if (!trimmed) return undefined
-  const parsed = Number(trimmed)
-  return Number.isNaN(parsed) ? undefined : parsed
-}
-
-function hasInvalidOptionalNumber(value: string) {
-  const trimmed = value.trim()
-  return trimmed !== '' && Number.isNaN(Number(trimmed))
-}
-
 function toFormState(
   value?: ControlledProtocolDraft | null
 ): ControlledProtocolDialogFormState {
@@ -101,11 +87,9 @@ function toFormState(
       (value?.criteria ?? []).map((item) => ({
         ...item,
         targetWeight: numberToFormValue(item.targetWeight),
-        unit: item.unit || 'g',
-        qualifiedMin: numberToFormValue(item.qualifiedMin),
-        qualifiedMax: numberToFormValue(item.qualifiedMax),
-        scrapBelow: numberToFormValue(item.scrapBelow),
-        scrapAbove: numberToFormValue(item.scrapAbove),
+        unit: item.unit || '',
+        aLevelTolerance: numberToFormValue(item.aLevelTolerance),
+        bLevelTolerance: numberToFormValue(item.bLevelTolerance),
       })) ?? [],
   }
 }
@@ -120,6 +104,11 @@ export function ControlledProtocolDialog({
 }: ControlledProtocolDialogProps) {
   const { t, locale } = useLanguage()
   const readonly = mode === 'view'
+  const {
+    units,
+    isLoading: areUnitsLoading,
+    error: unitsError,
+  } = useUnitsQuery({ enabled: open })
   const { data: products = [], isLoading: isProductsLoading } = useGetProducts()
   const productTemplatesQuery = useQuery({
     queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
@@ -225,11 +214,9 @@ export function ControlledProtocolDialog({
         id: createCriterionId(),
         itemName: '',
         targetWeight: '',
-        unit: 'g',
-        qualifiedMin: '',
-        qualifiedMax: '',
-        scrapBelow: '',
-        scrapAbove: '',
+        unit: '',
+        aLevelTolerance: '',
+        bLevelTolerance: '',
       },
     ])
   }
@@ -263,85 +250,27 @@ export function ControlledProtocolDialog({
       return
     }
 
-    if (criteria.length === 0) {
+    if (areUnitsLoading || unitsError) {
       toast.error(
         t(
-          'quality.standards.dialog.controlledProtocol.validation.criterionRequired'
+          areUnitsLoading
+            ? 'quality.standards.dialog.controlledProtocol.validation.unitsLoading'
+            : 'quality.standards.dialog.controlledProtocol.validation.unitsLoadFailed'
         )
       )
       return
     }
-
-    const hasInvalidItemName = criteria.some(
-      (item) => item.itemName.trim() === ''
-    )
-    if (hasInvalidItemName) {
-      toast.error(
-        t(
-          'quality.standards.dialog.controlledProtocol.validation.itemNameRequired'
-        )
+    const validationError =
+      getControlledProtocolInspectionCriteriaValidationError(
+        criteria,
+        units
+          .filter((unit) => unit.status === 'active')
+          .map((unit) => unit.code)
       )
-      return
-    }
-
-    const hasInvalidWeight = criteria.some(
-      (item) =>
-        item.targetWeight.trim() === '' ||
-        Number.isNaN(Number(item.targetWeight))
-    )
-
-    if (hasInvalidWeight) {
+    if (validationError) {
       toast.error(
         t(
-          'quality.standards.dialog.controlledProtocol.validation.weightRequired'
-        )
-      )
-      return
-    }
-
-    const hasInvalidThreshold = criteria.some((item) =>
-      [
-        item.qualifiedMin,
-        item.qualifiedMax,
-        item.scrapBelow,
-        item.scrapAbove,
-      ].some(hasInvalidOptionalNumber)
-    )
-
-    if (hasInvalidThreshold) {
-      toast.error(
-        t(
-          'quality.standards.dialog.controlledProtocol.validation.thresholdNumberInvalid'
-        )
-      )
-      return
-    }
-
-    const hasInvalidQualifiedRange = criteria.some((item) => {
-      const min = parseOptionalNumber(item.qualifiedMin)
-      const max = parseOptionalNumber(item.qualifiedMax)
-      return min !== undefined && max !== undefined && min > max
-    })
-
-    if (hasInvalidQualifiedRange) {
-      toast.error(
-        t(
-          'quality.standards.dialog.controlledProtocol.validation.qualifiedRangeInvalid'
-        )
-      )
-      return
-    }
-
-    const hasInvalidScrapRange = criteria.some((item) => {
-      const below = parseOptionalNumber(item.scrapBelow)
-      const above = parseOptionalNumber(item.scrapAbove)
-      return below !== undefined && above !== undefined && below > above
-    })
-
-    if (hasInvalidScrapRange) {
-      toast.error(
-        t(
-          'quality.standards.dialog.controlledProtocol.validation.scrapRangeInvalid'
+          `quality.standards.dialog.controlledProtocol.validation.${validationError}`
         )
       )
       return
@@ -354,11 +283,9 @@ export function ControlledProtocolDialog({
         id: item.id,
         itemName: item.itemName.trim(),
         targetWeight: Number(item.targetWeight),
-        unit: item.unit.trim() || 'g',
-        qualifiedMin: parseOptionalNumber(item.qualifiedMin),
-        qualifiedMax: parseOptionalNumber(item.qualifiedMax),
-        scrapBelow: parseOptionalNumber(item.scrapBelow),
-        scrapAbove: parseOptionalNumber(item.scrapAbove),
+        unit: item.unit.trim(),
+        aLevelTolerance: Number(item.aLevelTolerance),
+        bLevelTolerance: Number(item.bLevelTolerance),
       })),
     })
   }
@@ -402,7 +329,7 @@ export function ControlledProtocolDialog({
                       'quality.standards.dialog.controlledProtocol.fields.product'
                     )}
                   </span>
-                  <span className='font-mono text-foreground'>
+                  <span className='font-maple-ui text-foreground'>
                     {selectedProductLabel}
                   </span>
                 </div>
@@ -413,7 +340,7 @@ export function ControlledProtocolDialog({
                       'quality.standards.dialog.controlledProtocol.fields.qualityCriteria'
                     )}
                   </span>
-                  <span className='font-mono text-foreground'>
+                  <span className='font-maple-ui text-foreground'>
                     {criteria.length}
                   </span>
                 </div>
@@ -461,6 +388,9 @@ export function ControlledProtocolDialog({
                   'quality.standards.dialog.controlledProtocol.fields.selectedWeights'
                 )}
               </div>
+              <p className='mb-3 text-[11px] leading-relaxed text-muted-foreground'>
+                {t('quality.standards.dialog.controlledProtocol.gradingHint')}
+              </p>
 
               {criteria.length === 0 ? (
                 <div className='rounded-[20px] border border-dashed border-muted/40 bg-muted/5 px-4 py-3 text-center text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -473,7 +403,7 @@ export function ControlledProtocolDialog({
                   {criteria.map((item) => (
                     <div
                       key={item.id}
-                      className='grid gap-2 rounded-[20px] border border-dashed border-muted/40 bg-muted/5 p-2.5 xl:grid-cols-[minmax(180px,1.2fr)_120px_90px_120px_120px_120px_120px_auto]'
+                      className='grid gap-2 rounded-[20px] border border-dashed border-muted/40 bg-muted/5 p-2.5 md:grid-cols-2 xl:grid-cols-[minmax(180px,1.2fr)_120px_90px_150px_150px_auto]'
                     >
                       <div className='space-y-1.5'>
                         <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
@@ -506,7 +436,7 @@ export function ControlledProtocolDialog({
                         </Label>
                         <Input
                           type='number'
-                          step='0.01'
+                          step='any'
                           inputMode='decimal'
                           value={item.targetWeight}
                           disabled={readonly}
@@ -520,50 +450,50 @@ export function ControlledProtocolDialog({
                           placeholder={t(
                             'quality.standards.dialog.controlledProtocol.placeholders.targetWeight'
                           )}
-                          className='h-10 rounded-2xl border-none bg-background px-4 font-mono font-black shadow-inner'
+                          className='h-10 rounded-2xl border-none bg-background px-4 font-maple-ui font-black shadow-inner'
                         />
                       </div>
 
                       <div className='space-y-1.5'>
-                        <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+                        <Label
+                          htmlFor={`controlled-protocol-unit-${item.id}`}
+                          className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'
+                        >
                           {t(
                             'quality.standards.dialog.controlledProtocol.fields.unit'
                           )}
                         </Label>
-                        <Input
+                        <ControlledProtocolConfiguredUnitSelect
+                          id={`controlled-protocol-unit-${item.id}`}
                           value={item.unit}
                           disabled={readonly}
-                          onChange={(event) =>
-                            handleCriterionChange(
-                              item.id,
-                              'unit',
-                              event.target.value
-                            )
+                          enabled={open}
+                          onValueChange={(value) =>
+                            handleCriterionChange(item.id, 'unit', value)
                           }
-                          placeholder={t(
-                            'quality.standards.dialog.controlledProtocol.placeholders.unit'
-                          )}
-                          className='h-10 rounded-2xl border-none bg-background px-4 font-mono text-xs font-black shadow-inner'
                         />
                       </div>
 
                       {(
                         [
-                          ['qualifiedMin', 'qualifiedMin'],
-                          ['qualifiedMax', 'qualifiedMax'],
-                          ['scrapBelow', 'scrapBelow'],
-                          ['scrapAbove', 'scrapAbove'],
+                          ['aLevelTolerance', 'aLevelTolerance'],
+                          ['bLevelTolerance', 'bLevelTolerance'],
                         ] as const
                       ).map(([field, labelKey]) => (
                         <div key={field} className='space-y-1.5'>
-                          <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+                          <Label
+                            htmlFor={`${item.id}-${field}`}
+                            className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'
+                          >
                             {t(
                               `quality.standards.dialog.controlledProtocol.fields.${labelKey}`
                             )}
                           </Label>
                           <Input
+                            id={`${item.id}-${field}`}
                             type='number'
-                            step='0.01'
+                            min='0'
+                            step='any'
                             inputMode='decimal'
                             value={item[field]}
                             disabled={readonly}
@@ -577,7 +507,7 @@ export function ControlledProtocolDialog({
                             placeholder={t(
                               `quality.standards.dialog.controlledProtocol.placeholders.${labelKey}`
                             )}
-                            className='h-10 rounded-2xl border-none bg-background px-4 font-mono font-black shadow-inner'
+                            className='h-10 rounded-2xl border-none bg-background px-4 font-maple-ui font-black shadow-inner'
                           />
                         </div>
                       ))}

@@ -96,6 +96,13 @@ func newOutsourceExecutionTestService(t *testing.T) (*ProductionOutsourcingServi
 	createProductionOperationExecutionTestSchema(t, database)
 	createProductionScanCommandTestSchema(t, database)
 	createOutsourceExecutionTestSchema(t, database)
+	createSystemNotificationInboxAndDeliverySQLiteTestSchema(t, database)
+	require.NoError(t, database.Exec("CREATE TABLE business_event_sources (id TEXT PRIMARY KEY, code TEXT, enabled BOOLEAN, deleted_at DATETIME)").Error)
+	require.NoError(t, database.Exec("INSERT INTO business_event_sources (id,code,enabled) VALUES (?,?,?)", "outsource-source", businessEventSourceProductionOutsource, true).Error)
+	if !database.Migrator().HasColumn(&models.User{}, "status") {
+		require.NoError(t, database.Exec("ALTER TABLE users ADD COLUMN status TEXT").Error)
+	}
+	require.NoError(t, database.Exec("INSERT INTO users (id,username,status) VALUES (?,?,?)", "00000000-0000-0000-0000-000000000777", "planner", "active").Error)
 
 	return NewProductionOutsourcingService(productionOperationExecutionTestTxManager{db: database}), database
 }
@@ -784,7 +791,7 @@ func TestOutsourceReleaseDispatchesBusinessEvent(t *testing.T) {
 		"eventStatus":      OutsourceOrderStatusReleased,
 		"orderStatus":      OutsourceOrderStatusReleased,
 	})
-	notifyLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusReleased, "notify", "success")
+	notifyLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusReleased, "notify", "pending")
 	require.Equal(t, "委外单 OSO-TEST-1 状态 RELEASED", notifyLog.Title)
 	require.Equal(t, "/production-outsourcing/transfers?search=OSO-TEST-1", notifyLog.ActionURL)
 	auditLog := requireOutsourceAuditLog(t, database, order.ID, audit.AuditActionStatus, map[string]string{
@@ -794,18 +801,12 @@ func TestOutsourceReleaseDispatchesBusinessEvent(t *testing.T) {
 	})
 	require.Equal(t, "tester", auditLog.Operator)
 	require.Equal(t, "127.0.0.1", auditLog.IP)
-	require.Len(t, *published, 1)
-	require.Equal(t, notificationChannel, (*published)[0].Channel)
-	payload := decodeCapturedNotificationPayload(t, (*published)[0])
-	require.Equal(t, "Workflow", payload["module"])
-	require.Equal(t, businessEventActionStatusChange, payload["action"])
-	require.Equal(t, "委外单 OSO-TEST-1 状态 RELEASED", payload["title"])
-	require.Equal(t, "planner", payload["targetUser"])
-	innerPayload, ok := payload["payload"].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, order.ID, innerPayload["targetId"])
-	require.Equal(t, businessEventSourceProductionOutsource, innerPayload["sourceCode"])
-	require.Equal(t, OutsourceOrderStatusReleased, innerPayload["status"])
+	require.Empty(t, *published, "business writes never publish before commit")
+	var receipt models.SystemNotificationInboxEntry
+	require.NoError(t, database.Where("business_target_id = ?", order.ID).First(&receipt).Error)
+	require.Equal(t, "委外单 OSO-TEST-1 状态 RELEASED", receipt.Title)
+	require.Equal(t, "00000000-0000-0000-0000-000000000777", receipt.RecipientUserID)
+
 }
 
 func TestOutsourceNotificationPublishFailureWritesRuleExecutionLog(t *testing.T) {
@@ -824,6 +825,9 @@ func TestOutsourceNotificationPublishFailureWritesRuleExecutionLog(t *testing.T)
 
 	require.NoError(t, err)
 	require.Equal(t, OutsourceOrderStatusReleased, released.Status)
+	require.Empty(t, *published)
+	_, deliveryError := DeliverCommittedWorkflowNotifications(context.Background(), database, time.Now().UTC().Add(time.Second), 10)
+	require.NoError(t, deliveryError)
 	require.Len(t, *published, 1)
 	failedLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusReleased, "notify", "failed")
 	require.Equal(t, "redis publish unavailable", failedLog.ErrorMessage)
@@ -850,7 +854,7 @@ func TestOutsourceCancelDispatchesBusinessEvent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OutsourceOrderStatusCanceled, canceled.Status)
 	require.Equal(t, OutsourceOrderStatusCanceled, canceled.Lines[0].Status)
-	cancelLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusCanceled, "notify", "success")
+	cancelLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusCanceled, "notify", "pending")
 	requireOutsourceRuleLogMetadata(t, cancelLog, map[string]any{
 		"outsourceOrderNo": "OSO-TEST-1",
 		"eventStatus":      OutsourceOrderStatusCanceled,
@@ -912,7 +916,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	require.Equal(t, OutsourceTransferTypeSend, send.Transfer.TransferType)
 	require.Equal(t, float64(2), send.Order.Lines[0].SentQuantity)
 	require.Equal(t, OutsourceOrderStatusSent, send.Order.Status)
-	sentLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusSent, "notify", "success")
+	sentLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusSent, "notify", "pending")
 	requireOutsourceRuleLogMetadata(t, sentLog, map[string]any{
 		"outsourceOrderLineId": line.ID,
 		"productBarcode":       "BC-002",
@@ -943,7 +947,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	require.NoError(t, err)
 	require.Equal(t, OutsourceTransferTypeReturn, returned.Transfer.TransferType)
 	require.Equal(t, float64(2), returned.Order.Lines[0].ReturnedQuantity)
-	returnedLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusReturned, "notify", "success")
+	returnedLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusReturned, "notify", "pending")
 	requireOutsourceRuleLogMetadata(t, returnedLog, map[string]any{
 		"outsourceOrderLineId": line.ID,
 		"productBarcode":       "BC-002",
@@ -974,14 +978,14 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	require.Equal(t, "route-1-step-process-b", inspection.Scan.State.RouteStepID)
 	require.Equal(t, float64(2), inspection.Order.Lines[0].AcceptedQuantity)
 	require.Equal(t, OutsourceOrderStatusClosed, inspection.Order.Status)
-	acceptedLog := requireOutsourceRuleExecutionLog(t, database, businessEventOutsourceStatusInspectionAccepted, "notify", "success")
+	acceptedLog := requireOutsourceRuleExecutionLog(t, database, businessEventOutsourceStatusInspectionAccepted, "notify", "skipped")
 	requireOutsourceRuleLogMetadata(t, acceptedLog, map[string]any{
 		"outsourceOrderLineId": line.ID,
 		"productBarcode":       "BC-002",
 		"inspectionResult":     OutsourceInspectionResultPass,
 		"eventStatus":          businessEventOutsourceStatusInspectionAccepted,
 	})
-	closedLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusClosed, "notify", "success")
+	closedLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusClosed, "notify", "pending")
 	requireOutsourceRuleLogMetadata(t, closedLog, map[string]any{
 		"outsourceOrderNo": "OSO-TEST-1",
 		"inspectionId":     inspection.Inspection.ID,

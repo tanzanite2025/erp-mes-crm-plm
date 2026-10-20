@@ -10,18 +10,26 @@ import (
 // InspectionStandard 检验标准/协议模型
 type InspectionStandard struct {
 	BaseModel
-	Code        string          `gorm:"size:50;uniqueIndex;not null" json:"code"`
-	Name        string          `gorm:"size:255;not null" json:"name"`
-	ProductID   string          `gorm:"size:36;index" json:"productId"`
-	ProductName string          `gorm:"size:255" json:"productName"`
-	Type        string          `gorm:"size:50" json:"type"` // IQC, IPQC, FQC, OQC
-	Version     float64         `gorm:"default:1.0" json:"version"`
-	Status      string          `gorm:"size:20;default:'DRAFT'" json:"status"` // DRAFT, PUBLISHED, ARCHIVED
-	Items       json.RawMessage `gorm:"type:jsonb" json:"items"`               // 具体检验项列表 (JSONB)
-	Auditor     string          `gorm:"size:100" json:"auditor"`
-	AuditTime   *time.Time      `json:"auditTime"`
-	Operator    string          `gorm:"size:100" json:"operator"` // 最后修改人
-	Description string          `gorm:"type:text" json:"description"`
+	Code              string          `gorm:"size:50;uniqueIndex;not null" json:"code"`
+	Name              string          `gorm:"size:255;not null" json:"name"`
+	ProductID         string          `gorm:"size:36;index" json:"productId"`
+	ProductName       string          `gorm:"size:255" json:"productName"`
+	Type              string          `gorm:"size:50" json:"type"` // IQC, IPQC, FQC, OQC
+	Version           float64         `gorm:"default:1.0" json:"version"`
+	Status            string          `gorm:"size:20;default:'DRAFT'" json:"status"` // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, PUBLISHED, ARCHIVED
+	Items             json.RawMessage `gorm:"type:jsonb" json:"items"`               // 具体检验项列表 (JSONB)
+	Auditor           string          `gorm:"size:100" json:"auditor"`
+	AuditTime         *time.Time      `json:"auditTime"`
+	Operator          string          `gorm:"size:100" json:"operator"` // 最后修改人
+	Description       string          `gorm:"type:text" json:"description"`
+	ApprovalRequestID *string         `gorm:"type:uuid;index" json:"approvalRequestId,omitempty"`
+	ReviewComment     string          `gorm:"type:text" json:"reviewComment"`
+	RejectReason      string          `gorm:"type:text" json:"rejectReason"`
+	PublishedBy       string          `gorm:"size:100" json:"publishedBy"`
+	PublishedAt       *time.Time      `json:"publishedAt"`
+	ArchiveReason     string          `gorm:"type:text" json:"archiveReason"`
+	ArchivedBy        string          `gorm:"size:100" json:"archivedBy"`
+	ArchivedAt        *time.Time      `json:"archivedAt"`
 }
 
 // --- 检验执行流水 (Inspection Tasks) ---

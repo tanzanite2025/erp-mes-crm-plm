@@ -217,7 +217,7 @@ export function ExchangeRateSyncConfigCard({
                         'systemManagement.apiManagement.exchangeRateApi.apiBaseUrlPlaceholder'
                       )}
                       disabled={isLoading || isSaving}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-[12px]'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px]'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-3'>
@@ -239,7 +239,7 @@ export function ExchangeRateSyncConfigCard({
                         'systemManagement.apiManagement.exchangeRateApi.apiKeyPlaceholder'
                       )}
                       disabled={isLoading || isSaving}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-[12px]'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px]'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-3'>
@@ -261,7 +261,7 @@ export function ExchangeRateSyncConfigCard({
                         'systemManagement.apiManagement.exchangeRateApi.latestPathTemplatePlaceholder'
                       )}
                       disabled={isLoading || isSaving}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-[12px]'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px]'
                     />
                   </div>
                 </div>

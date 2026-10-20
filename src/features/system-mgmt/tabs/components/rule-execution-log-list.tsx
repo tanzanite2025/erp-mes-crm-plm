@@ -58,7 +58,14 @@ export function RuleExecutionLogList({
         const hasActionUrl = Boolean(log.actionUrl)
         const readableError = getReadableExecutionError(log.errorMessage)
         const canRetryNotification =
-          log.executionType === 'notify' && log.executionStatus === 'failed'
+          log.executionType === 'notify' &&
+          log.executionStatus === 'failed' &&
+          Boolean(
+            log.result &&
+            typeof log.result === 'object' &&
+            'delivery' in log.result &&
+            log.result.delivery === 'outbox'
+          )
         const isRetrying = retryingLogId === log.id
 
         return (
@@ -121,7 +128,7 @@ export function RuleExecutionLogList({
                   })}
                 </p>
                 {log.executionStatus === 'failed' && log.eventKey ? (
-                  <p className='font-mono text-[8px] leading-tight'>
+                  <p className='font-maple-ui text-[8px] leading-tight'>
                     {log.eventKey}
                   </p>
                 ) : null}
@@ -167,7 +174,7 @@ export function RuleExecutionLogList({
                     <p className='text-[10px] font-black tracking-widest text-slate-500 uppercase'>
                       跳转链接
                     </p>
-                    <p className='mt-0.5 font-mono text-xs break-all text-slate-700'>
+                    <p className='mt-0.5 font-maple-ui text-xs break-all text-slate-700'>
                       {log.actionUrl}
                     </p>
                   </div>

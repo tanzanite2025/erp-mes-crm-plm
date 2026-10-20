@@ -34,6 +34,7 @@ export interface QualityStandardApiDTO {
   status?: string
   items?: unknown
   auditor?: string
+  operator?: string
   auditTime?: string | null
   reviewComment?: string
   rejectReason?: string
@@ -73,22 +74,22 @@ export interface QualityStandardsListApiResponseDTO {
 }
 
 function normalizeStandardType(type?: string): Standard['type'] {
-  const normalized = type?.toUpperCase()
-  if (type === '巡检' || normalized === 'IPQC') return 'IPQC'
-  if (type === '首检' || normalized === 'FQC') return 'FQC'
-  if (type === '出货检验' || normalized === 'OQC') return 'OQC'
-  return 'IQC'
+  if (type === 'IQC' || type === 'IPQC' || type === 'FQC' || type === 'OQC')
+    return type
+  throw new Error('Invalid quality standard type received from the server')
 }
 
 function normalizeStandardStatus(status?: string): Standard['status'] {
-  const normalized = status?.toUpperCase()
-  if (status === '草稿' || normalized === 'DRAFT') return 'DRAFT'
-  if (status === '待审核' || normalized === 'PENDING_APPROVAL')
-    return 'PENDING_APPROVAL'
-  if (status === '审批通过' || normalized === 'APPROVED') return 'APPROVED'
-  if (status === '已驳回' || normalized === 'REJECTED') return 'REJECTED'
-  if (status === '已归档' || normalized === 'ARCHIVED') return 'ARCHIVED'
-  return 'PUBLISHED'
+  if (
+    status === 'DRAFT' ||
+    status === 'PENDING_APPROVAL' ||
+    status === 'APPROVED' ||
+    status === 'REJECTED' ||
+    status === 'PUBLISHED' ||
+    status === 'ARCHIVED'
+  )
+    return status
+  throw new Error('Invalid quality standard status received from the server')
 }
 
 function normalizeStandardItems(items: unknown): Standard['items'] {
@@ -167,7 +168,7 @@ export function toQualityStandardContract(
     archiveReason: dto.archiveReason || '',
     archivedBy: dto.archivedBy || undefined,
     archivedAt: dto.archivedAt || undefined,
-    operator: undefined,
+    operator: dto.operator || undefined,
     operateTime: dto.updatedAt || undefined,
     remarks: dto.remarks ?? dto.description ?? '',
     approvalRequestSummary: normalizeApprovalRequestSummary(
@@ -192,15 +193,7 @@ export function toQualityStandardApiDTO(
       ? normalizeStandardStatus(standard.status)
       : 'DRAFT',
     items: standard.items ?? [],
-    auditor: standard.auditor?.trim() || '',
-    auditTime: standard.auditTime || null,
-    reviewComment: standard.reviewComment?.trim() || '',
-    rejectReason: standard.rejectReason?.trim() || '',
-    publishedBy: standard.publishedBy?.trim() || '',
-    publishedAt: standard.publishedAt || null,
     archiveReason: standard.archiveReason?.trim() || '',
-    archivedBy: standard.archivedBy?.trim() || '',
-    archivedAt: standard.archivedAt || null,
     remarks: standard.remarks?.trim() || '',
   }
 }

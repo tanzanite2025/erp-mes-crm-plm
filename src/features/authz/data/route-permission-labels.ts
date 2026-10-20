@@ -191,6 +191,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/approval': 'sidebar.items.approvalCenter',
   '/approval/requests': 'approval.tabs.requests',
   '/approval/history': 'approval.tabs.history',
+  '/approval/business-approval-policies': 'approval.tabs.policies',
   '/message-center': 'sidebar.items.messageCenter',
   '/message-center/rules': 'messageCenter.tabs.rules',
   '/message-center/sources': 'messageCenter.tabs.sources',

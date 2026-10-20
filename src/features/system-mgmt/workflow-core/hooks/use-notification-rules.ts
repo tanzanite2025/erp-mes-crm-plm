@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createLogger } from '@/lib/logger'
 import { type NotificationRule } from '../data/notification-rule-schema'
-import {
-  startNotificationRulesScanScheduler,
-  triggerNotificationRulesScanNow,
-} from '../services/notification-rules-scan-scheduler'
 import { RoutingService } from '../services/routing-service'
 
 const logger = createLogger('NotificationRules')
@@ -51,7 +47,6 @@ export function useNotificationRules() {
         const newRule = await RoutingService.saveRule(ruleWithVersion)
         setRules((prev) => {
           const next = [newRule, ...prev]
-          void triggerNotificationRulesScanNow(next)
           return next
         })
         return newRule
@@ -76,7 +71,6 @@ export function useNotificationRules() {
 
         setRules((prev) => {
           const next = prev.map((rule) => (rule.id === id ? updated : rule))
-          void triggerNotificationRulesScanNow(next)
           return next
         })
       } catch (err) {
@@ -107,22 +101,12 @@ export function useNotificationRules() {
       })
       setRules((prev) => {
         const next = prev.map((rule) => (rule.id === id ? updated : rule))
-        if (updated.enabled) {
-          void triggerNotificationRulesScanNow(next)
-        }
         return next
       })
     } catch (err) {
       logger.error('切换通知规则状态失败', err)
     }
   }, [])
-
-  // 周期扫描走单例 scheduler，多组件并发挂载也只跑一份
-  useEffect(() => {
-    if (!isLoaded) return
-    const stop = startNotificationRulesScanScheduler(() => rulesRef.current)
-    return stop
-  }, [isLoaded])
 
   return {
     rules,

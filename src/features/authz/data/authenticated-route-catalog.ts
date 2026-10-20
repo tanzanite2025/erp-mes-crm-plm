@@ -23,6 +23,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/basic-settings/permission-tree-smoke',
   '/shipping-management/vehicle-contacts',
   '/warehouse-config/material-thresholds',
+  '/approval/business-approval-policies',
   '/cutting-operations/cutting-issuance',
   '/warehouse-config/packaging-assembly',
   '/attendance-management/hall-of-fame',

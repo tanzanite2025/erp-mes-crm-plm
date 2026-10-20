@@ -39,6 +39,7 @@ type ApproveRequestInput struct {
 	Status         string
 	AuthCode       string
 	ApproverUserID string
+	Comment        string
 }
 
 type VerifyAuthCodeInput struct {
@@ -49,10 +50,7 @@ type VerifyAuthCodeInput struct {
 }
 
 type ApprovalWorkflowResult struct {
-	Request          models.ApprovalRequest
-	NotifyAction     string
-	NotifyTitle      string
-	NotifyTargetUser string
+	Request models.ApprovalRequest
 }
 
 type ApprovalRequestSummary = models.ApprovalRequest
@@ -111,17 +109,26 @@ func RequestApprovalTx(tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflo
 // writes. A nil transaction gets its own transaction for compatibility with
 // legacy callers.
 func RequestApprovalTxWithContext(ctx context.Context, tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+	return defaultApprovalService.RequestApprovalWithinTransaction(ctx, tx, input)
+}
+
+func (service *ApprovalService) RequestApprovalWithinTransaction(ctx context.Context, tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
 	if tx == nil {
 		var result ApprovalWorkflowResult
 		err := db.DB.Transaction(func(inner *gorm.DB) error {
 			var err error
-			result, err = RequestApprovalTxWithContext(ctx, inner, input)
+			result, err = service.RequestApprovalWithinTransaction(ctx, inner, input)
 			return err
 		})
 		if err != nil {
 			return ApprovalWorkflowResult{}, err
 		}
 		return result, nil
+	}
+	if contract := service.businessTransactionContracts[input.Module]; contract != nil {
+		if err := contract.ValidateRequestWithinTransaction(ctx, tx, input); err != nil {
+			return ApprovalWorkflowResult{}, err
+		}
 	}
 
 	approver1ID, approver2ID := resolveRequestApprovers(input)
@@ -152,20 +159,29 @@ func RequestApprovalTxWithContext(ctx context.Context, tx *gorm.DB, input Reques
 	if err := recordLegacyAuditEntryWithContext(ctx, tx, AuditModuleApprovalRequest, request.ID, "request", nil); err != nil {
 		return ApprovalWorkflowResult{}, err
 	}
+	if err := service.createApprovalNotificationInboxEntryWithinTransaction(tx, request); err != nil {
+		return ApprovalWorkflowResult{}, err
+	}
 
 	return ApprovalWorkflowResult{
-		Request:          request,
-		NotifyAction:     "REQUEST",
-		NotifyTitle:      "您有一条新的待处理审批申请",
-		NotifyTargetUser: approver1ID,
+		Request: request,
 	}, nil
 }
 
 func RequestApproval(ctx context.Context, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+	return defaultApprovalService.RequestApproval(ctx, input)
+}
+
+func (service *ApprovalService) RequestApproval(ctx context.Context, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+	if contract := service.businessTransactionContracts[input.Module]; contract != nil {
+		if err := contract.ValidateStandaloneRequest(input); err != nil {
+			return ApprovalWorkflowResult{}, err
+		}
+	}
 	var result ApprovalWorkflowResult
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var err error
-		result, err = RequestApprovalTxWithContext(ctx, tx, input)
+		result, err = service.RequestApprovalWithinTransaction(ctx, tx, input)
 		return err
 	})
 	if err != nil {
@@ -175,7 +191,27 @@ func RequestApproval(ctx context.Context, input RequestApprovalInput) (ApprovalW
 	return result, nil
 }
 
+func (service *ApprovalService) recordApprovalDecisionAndSynchronizeBusinessWithinTransaction(ctx context.Context, tx *gorm.DB, request models.ApprovalRequest, action string, input ApproveRequestInput, now time.Time) error {
+	decisionDetails := mustJSONRawMessage(map[string]any{"comment": strings.TrimSpace(input.Comment), "status": request.Status, "currentLevel": request.CurrentLevel})
+	if err := recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, action, decisionDetails); err != nil {
+		return err
+	}
+	if contract := service.businessTransactionContracts[request.Module]; contract != nil {
+		if err := contract.ApplyDecisionWithinTransaction(ctx, tx, request, input.Comment, now); err != nil {
+			return err
+		}
+	}
+	if err := service.resolvePreviousApprovalNotificationInboxEntriesWithinTransaction(tx, request); err != nil {
+		return err
+	}
+	return service.createApprovalNotificationInboxEntryWithinTransaction(tx, request)
+}
+
 func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Time, generateCode func() string) (ApprovalWorkflowResult, error) {
+	return defaultApprovalService.ApproveRequest(ctx, input, now, generateCode)
+}
+
+func (service *ApprovalService) ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Time, generateCode func() string) (ApprovalWorkflowResult, error) {
 	var request models.ApprovalRequest
 	result := ApprovalWorkflowResult{Request: request}
 
@@ -187,6 +223,12 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 			return err
 		}
 		result.Request = request
+		if input.Status != "APPROVED" && input.Status != "REJECTED" {
+			return domainValidationError("审批决定必须为通过或驳回")
+		}
+		if request.Status != "PENDING" && request.Status != "APPROVED_L1" {
+			return domainConflictError("该审批申请已处理，请刷新后查看结果")
+		}
 		auditAction := "approve_" + strings.ToLower(input.Status)
 
 		switch request.CurrentLevel {
@@ -200,7 +242,7 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 				if err := tx.Model(&request).Update("status", request.Status).Error; err != nil {
 					return err
 				}
-				return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
+				return service.recordApprovalDecisionAndSynchronizeBusinessWithinTransaction(ctx, tx, request, auditAction, input, now)
 			}
 
 			if effectiveApprover2(request) != "" {
@@ -212,21 +254,12 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 				}).Error; err != nil {
 					return err
 				}
-
-				result.NotifyAction = "L2_WAITING"
-				result.NotifyTitle = "一级审批已通过，等待二级审批"
-				result.NotifyTargetUser = effectiveApprover2(request)
-				return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
+				return service.recordApprovalDecisionAndSynchronizeBusinessWithinTransaction(ctx, tx, request, auditAction, input, now)
 			}
 
-			code := strings.TrimSpace(input.AuthCode)
-			if code == "" && generateCode != nil {
-				code = generateCode()
-			}
-			expiresAt := now.Add(1 * time.Hour)
 			request.Status = "APPROVED"
-			request.AuthCode = code
-			request.ExpiresAt = &expiresAt
+			input.AuthCode = strings.TrimSpace(input.AuthCode)
+			service.assignFinalDecisionAuthorizationCode(&request, input, now, generateCode)
 			if err := tx.Model(&request).Updates(map[string]interface{}{
 				"status":     request.Status,
 				"auth_code":  request.AuthCode,
@@ -234,11 +267,7 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 			}).Error; err != nil {
 				return err
 			}
-
-			result.NotifyAction = "APPROVED"
-			result.NotifyTitle = "您的审批申请已被批准，授权码已发送"
-			result.NotifyTargetUser = request.RequesterID
-			return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
+			return service.recordApprovalDecisionAndSynchronizeBusinessWithinTransaction(ctx, tx, request, auditAction, input, now)
 
 		case 2:
 			if effectiveApprover2(request) != input.ApproverUserID {
@@ -250,17 +279,12 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 				if err := tx.Model(&request).Update("status", request.Status).Error; err != nil {
 					return err
 				}
-				return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
+				return service.recordApprovalDecisionAndSynchronizeBusinessWithinTransaction(ctx, tx, request, auditAction, input, now)
 			}
 
-			code := strings.TrimSpace(input.AuthCode)
-			if code == "" && generateCode != nil {
-				code = generateCode()
-			}
-			expiresAt := now.Add(1 * time.Hour)
 			request.Status = "APPROVED"
-			request.AuthCode = code
-			request.ExpiresAt = &expiresAt
+			input.AuthCode = strings.TrimSpace(input.AuthCode)
+			service.assignFinalDecisionAuthorizationCode(&request, input, now, generateCode)
 			if err := tx.Model(&request).Updates(map[string]interface{}{
 				"status":     request.Status,
 				"auth_code":  request.AuthCode,
@@ -268,11 +292,7 @@ func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Tim
 			}).Error; err != nil {
 				return err
 			}
-
-			result.NotifyAction = "APPROVED"
-			result.NotifyTitle = "您的二级审批已通过，内容已授权"
-			result.NotifyTargetUser = request.RequesterID
-			return recordLegacyAuditEntryWithContext(ctx, tx, "ApprovalRequest", request.ID, auditAction, nil)
+			return service.recordApprovalDecisionAndSynchronizeBusinessWithinTransaction(ctx, tx, request, auditAction, input, now)
 
 		default:
 			return errors.New("unrecognized approval level")
@@ -388,9 +408,20 @@ func hasApprovalFullAccess(permissionIDs []string) bool {
 }
 
 func VerifyAuthCode(ctx context.Context, input VerifyAuthCodeInput, now time.Time) (models.ApprovalRequest, error) {
+	return defaultApprovalService.VerifyAuthCode(ctx, input, now)
+}
+
+func (service *ApprovalService) VerifyAuthCode(ctx context.Context, input VerifyAuthCodeInput, now time.Time) (models.ApprovalRequest, error) {
 	actor, _ := audit.ActorFromContext(ctx)
 	if actor.UserID == "" {
 		return models.ApprovalRequest{}, errors.New("[CRITICAL] Identity required for auth code verification")
+	}
+	input.AuthCode = strings.TrimSpace(input.AuthCode)
+	if input.AuthCode == "" {
+		return models.ApprovalRequest{}, ErrApprovalAuthCodeInvalid
+	}
+	if contract := service.businessTransactionContracts[input.Module]; contract != nil && !contract.IssuesAuthorizationCode() {
+		return models.ApprovalRequest{}, ErrApprovalAuthCodeInvalid
 	}
 
 	var request models.ApprovalRequest

@@ -25,7 +25,7 @@ export function StandardPreviewContent({
     <>
       <div className='absolute top-0 left-0 z-50 h-1 w-full bg-linear-to-r from-primary/20 via-primary/60 to-primary/20 transition-opacity' />
 
-      <div className='shrink-0 space-y-4 border-b border-white/5 bg-muted/20 p-4 pt-6 lg:p-6 lg:pt-8'>
+      <div className='shrink-0 space-y-4 border-b border-white/5 bg-muted/20 p-4 lg:p-5'>
         <StandardPreviewHero standard={standard} />
         <StandardPreviewAuditPanel standard={standard} />
       </div>

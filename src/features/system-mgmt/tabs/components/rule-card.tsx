@@ -12,6 +12,7 @@
  * 大于 500 行因为单卡片承担"展示 + 编辑 + 校验 + 操作"四态,后续可拆 RuleCardView / RuleCardForm。
  */
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import {
   BellRing,
   ChevronDown,
@@ -28,6 +29,7 @@ import {
   ApprovalService,
   type ApprovalUserOption,
 } from '@/features/approval/services/approval-service'
+import { usesIndependentBusinessApprovalConfiguration } from '@/features/approval/services/business-approval-policy-configuration-service'
 import { CommandForm } from '../../workflow-core/components/command-mgmt/command-form'
 import {
   type BusinessEventSource,
@@ -72,6 +74,8 @@ export function RuleCard({
   eventSources,
   autoExpand = false,
 }: RuleCardProps) {
+  const independentApprovalConfiguration =
+    usesIndependentBusinessApprovalConfiguration(rule.sourceCode)
   const [users, setUsers] = useState<ApprovalUserOption[]>([])
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -170,7 +174,9 @@ export function RuleCard({
     const fragments = [
       `已配置 ${configuredCount} 个状态`,
       `通知 ${notifyCount} 个状态`,
-      `审批 ${approvalCount} 个状态`,
+      ...(!independentApprovalConfiguration
+        ? [`审批 ${approvalCount} 个状态`]
+        : []),
     ]
 
     if (completenessSummary.incomplete > 0) {
@@ -180,6 +186,7 @@ export function RuleCard({
     return fragments.join(' / ')
   }, [
     approvalCount,
+    independentApprovalConfiguration,
     completenessSummary.incomplete,
     configuredCount,
     notifyCount,
@@ -387,11 +394,14 @@ export function RuleCard({
           <div className='min-w-0 flex-1'>
             <div className='flex flex-wrap items-center gap-2'>
               <h3 className='text-sm leading-5 font-bold tracking-normal text-foreground'>
-                {currentSource.name} 状态通知与审批
+                {currentSource.name}{' '}
+                {independentApprovalConfiguration
+                  ? '状态通知'
+                  : '状态通知与审批'}
               </h3>
               <Badge
                 variant='outline'
-                className='rounded-full font-mono text-[10px]'
+                className='rounded-full font-maple-ui text-[10px]'
               >
                 {currentSource.code}
               </Badge>
@@ -432,8 +442,18 @@ export function RuleCard({
             </div>
             <p className='mt-1 text-xs font-bold text-muted-foreground'>
               {expanded
-                ? '直接按业务状态配置：进入某个状态时通知谁、是否创建审批、由谁审批。'
+                ? independentApprovalConfiguration
+                  ? '配置各业务状态的通知对象和内容。审批人请在审批中心单独维护。'
+                  : '直接按业务状态配置：进入某个状态时通知谁、是否创建审批、由谁审批。'
                 : collapsedSummary}
+              {expanded && independentApprovalConfiguration && (
+                <Link
+                  to='/approval/business-approval-policies'
+                  className='ml-2 font-medium text-primary underline underline-offset-4'
+                >
+                  管理审批配置
+                </Link>
+              )}
             </p>
           </div>
         </div>
@@ -589,9 +609,11 @@ export function RuleCard({
             <span className='flex items-center gap-1.5'>
               <BellRing className='size-3.5' /> 通知 {notifyCount} 个状态
             </span>
-            <span className='flex items-center gap-1.5'>
-              <ShieldCheck className='size-3.5' /> 审批 {approvalCount} 个状态
-            </span>
+            {!independentApprovalConfiguration && (
+              <span className='flex items-center gap-1.5'>
+                <ShieldCheck className='size-3.5' /> 审批 {approvalCount} 个状态
+              </span>
+            )}
           </div>
         </>
       ) : (
@@ -599,9 +621,11 @@ export function RuleCard({
           <span className='flex items-center gap-1.5'>
             <BellRing className='size-3.5' /> 通知 {notifyCount} 个状态
           </span>
-          <span className='flex items-center gap-1.5'>
-            <ShieldCheck className='size-3.5' /> 审批 {approvalCount} 个状态
-          </span>
+          {!independentApprovalConfiguration && (
+            <span className='flex items-center gap-1.5'>
+              <ShieldCheck className='size-3.5' /> 审批 {approvalCount} 个状态
+            </span>
+          )}
           <span className='rounded-full border border-muted/40 bg-background px-3 py-1 text-[10px] font-black text-muted-foreground'>
             展开后查看具体状态配置
           </span>

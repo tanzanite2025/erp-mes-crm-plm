@@ -196,14 +196,14 @@ export function ApprovalHistory() {
                   </TableCell>
                   <TableCell>
                     {req.authCode ? (
-                      <code className='rounded border border-primary/10 bg-primary/5 px-2 py-1 font-mono text-[13px] font-black text-primary'>
+                      <code className='rounded border border-primary/10 bg-primary/5 px-2 py-1 font-maple-ui text-[13px] font-black text-primary'>
                         {req.authCode}
                       </code>
                     ) : (
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className='pr-6 text-right font-mono text-[10px] text-muted-foreground'>
+                  <TableCell className='pr-6 text-right font-maple-ui text-[10px] text-muted-foreground'>
                     {new Date(req.createdAt).toLocaleString(locale)}
                   </TableCell>
                 </TableRow>

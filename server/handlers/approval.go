@@ -76,12 +76,12 @@ func RequestApprovalHandler(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		if status := mapDomainErrorToHTTPStatus(err); status != http.StatusInternalServerError {
+			c.JSON(status, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "提交申请失败"})
 		return
-	}
-
-	if result.NotifyTargetUser != "" {
-		NotifyTrigger("Approval", result.NotifyAction, result.NotifyTitle, result.NotifyTargetUser, result.Request)
 	}
 
 	c.JSON(http.StatusOK, result.Request)
@@ -91,19 +91,21 @@ func ApproveRequestHandler(c *gin.Context) {
 	var input struct {
 		Status   string `json:"status"`
 		AuthCode string `json:"authCode"`
+		Comment  string `json:"comment"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效参数"})
 		return
 	}
 
-	result, err := services.ApproveRequest(
+	_, err := services.ApproveRequest(
 		auditContextFromGin(c),
 		services.ApproveRequestInput{
 			RequestID:      c.Param("id"),
 			Status:         input.Status,
 			AuthCode:       input.AuthCode,
 			ApproverUserID: middleware.GetSafeUserID(c),
+			Comment:        input.Comment,
 		},
 		time.Now(),
 		func() string { return fmt.Sprintf("%06d", rand.Intn(1000000)) },
@@ -113,12 +115,12 @@ func ApproveRequestHandler(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		if status := mapDomainErrorToHTTPStatus(err); status != http.StatusInternalServerError {
+			c.JSON(status, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
-	}
-
-	if result.NotifyTargetUser != "" {
-		NotifyTrigger("Approval", result.NotifyAction, result.NotifyTitle, result.NotifyTargetUser, result.Request)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "审批操作成功"})

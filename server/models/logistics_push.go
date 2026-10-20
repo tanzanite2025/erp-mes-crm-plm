@@ -8,8 +8,7 @@ import (
 )
 
 // =========================================================================
-// 物流推送制模型 (Logistics Push - Hot-Pluggable)
-// 该文件可安全删除，不影响系统其余任何功能
+// 承运商轨迹投影及服务商配置；与人工 LogisticsRecord 分属不同数据模型。
 // =========================================================================
 
 // DeliveryOrder 物流主表 (推送制)
@@ -26,6 +25,7 @@ type DeliveryOrder struct {
 	Status       string     `gorm:"size:30;default:'Pending';index" json:"status"`
 	SubscribedAt *time.Time `json:"subscribedAt,omitempty"`
 	LastPushAt   *time.Time `json:"lastPushAt,omitempty"`
+	LastEventAt  *time.Time `json:"lastEventAt,omitempty"`
 	LastLocation string     `gorm:"size:255" json:"lastLocation"`
 	LastEvent    string     `gorm:"size:500" json:"lastEvent"`
 	SignedAt     *time.Time `json:"signedAt,omitempty"`

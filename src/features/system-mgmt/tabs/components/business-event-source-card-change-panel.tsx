@@ -187,7 +187,7 @@ export function BusinessEventSourceChangePanel({
                       <span className='min-w-0 truncate text-xs font-black'>
                         {item.label}
                       </span>
-                      <span className='font-mono text-xs text-muted-foreground'>
+                      <span className='font-maple-ui text-xs text-muted-foreground'>
                         {item.code}
                       </span>
                       <span className='text-xs text-muted-foreground'>

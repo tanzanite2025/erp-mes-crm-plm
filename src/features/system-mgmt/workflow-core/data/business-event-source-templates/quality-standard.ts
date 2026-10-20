@@ -12,11 +12,6 @@ export const DEFAULT_QUALITY_STANDARD_EVENT_SOURCE: BusinessEventSourceTemplate 
       actions: [
         { code: 'CREATED', name: '新建', kind: 'created' },
         { code: 'STATUS_CHANGED', name: '状态变更', kind: 'status' },
-        { code: 'SUBMITTED_FOR_APPROVAL', name: '提交审批', kind: 'custom' },
-        { code: 'APPROVED', name: '审批通过', kind: 'custom' },
-        { code: 'REJECTED', name: '驳回', kind: 'custom' },
-        { code: 'PUBLISHED', name: '发布', kind: 'custom' },
-        { code: 'ARCHIVED', name: '归档', kind: 'custom' },
       ],
       statuses: [
         { code: 'DRAFT' },

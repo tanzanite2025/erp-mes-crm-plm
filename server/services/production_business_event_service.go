@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +53,7 @@ func DispatchProductionPlanStatusChangedTx(tx *gorm.DB, plan models.ProductionPl
 	}
 	actionURL := renderTemplateValues("/dashboard/calendar?planId=[PlanId]", templateValues)
 	return DispatchBusinessStatusChangedTx(tx, BusinessStatusChangedEvent{
+		EventKey:       strings.Join([]string{businessEventSourceProductionPlan, plan.ID, previous, next, plan.UpdatedAt.UTC().Format(time.RFC3339Nano)}, ":"),
 		Entity:         businessEventEntitySystem,
 		SourceCode:     businessEventSourceProductionPlan,
 		TargetID:       plan.ID,
@@ -100,6 +102,7 @@ func DispatchProductionTaskStatusChangedTx(tx *gorm.DB, plan models.ProductionPl
 	}
 	actionURL := renderTemplateValues("/dashboard/calendar?planId=[PlanId]", templateValues)
 	return DispatchBusinessStatusChangedTx(tx, BusinessStatusChangedEvent{
+		EventKey:       strings.Join([]string{businessEventSourceProductionTask, task.ID, previous, next}, ":"),
 		Entity:         businessEventEntitySystem,
 		SourceCode:     businessEventSourceProductionTask,
 		TargetID:       task.ID,
@@ -149,6 +152,7 @@ func DispatchProductionOperationStatusChangedTx(tx *gorm.DB, operation models.Pr
 	}
 	actionURL := renderTemplateValues("/production-architecture/routes?barcode=[ProductBarcode]", templateValues)
 	return DispatchBusinessStatusChangedTx(tx, BusinessStatusChangedEvent{
+		EventKey:       strings.Join([]string{businessEventSourceProductionOperation, operation.ID, previous, next}, ":"),
 		Entity:         businessEventEntitySystem,
 		SourceCode:     businessEventSourceProductionOperation,
 		TargetID:       operation.ID,
@@ -360,6 +364,7 @@ func buildOutsourceExecutionEventBase(order models.OutsourceOrder, line models.O
 
 	metadata := map[string]any{
 		"outsourceOrderId":     order.ID,
+		"orderVersion":         order.Version,
 		"outsourceOrderNo":     order.OrderNo,
 		"orderNo":              order.OrderNo,
 		"sourceType":           order.SourceType,
@@ -495,15 +500,20 @@ func dispatchOutsourceExecutionStatusChangedTx(
 		templateValues = map[string]string{}
 	}
 
+	businessTargetID := strings.TrimSpace(targetID)
+	if orderID, ok := metadata["outsourceOrderId"].(string); ok && orderID != "" {
+		businessTargetID = orderID
+	}
+	metadata["factId"] = targetID
 	metadata["eventStatus"] = next
 	templateValues["EventStatus"] = next
 	templateValues["TargetId"] = strings.TrimSpace(targetID)
 	actionURL := renderTemplateValues("/production-outsourcing/transfers?search=[OutsourceOrderNo]", templateValues)
 	return DispatchBusinessStatusChangedTx(tx, BusinessStatusChangedEvent{
-		EventKey:       strings.Join([]string{businessEventSourceProductionOutsource, strings.TrimSpace(targetID), businessEventActionStatusChange, previous, next}, ":"),
+		EventKey:       strings.Join([]string{businessEventSourceProductionOutsource, strings.TrimSpace(targetID), businessEventActionStatusChange, previous, next, fmt.Sprint(metadata["orderVersion"]), fmt.Sprint(metadata["inspectionId"])}, ":"),
 		Entity:         businessEventEntitySystem,
 		SourceCode:     businessEventSourceProductionOutsource,
-		TargetID:       strings.TrimSpace(targetID),
+		TargetID:       businessTargetID,
 		PreviousStatus: previous,
 		NextStatus:     next,
 		ActorID:        actorID,

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 	"xdfc-server/models"
@@ -76,7 +75,7 @@ func TestOutsourceDiagnosticsDetectsMissingInventoryLedger(t *testing.T) {
 	require.Equal(t, "0", issue.Metadata["ledgerCount"])
 }
 
-func TestOutsourceDiagnosticsIgnoresRecoveredNotificationFailure(t *testing.T) {
+func TestOutsourceDiagnosticsTracksOriginalNotificationLogThroughRecoveryAndDelivery(t *testing.T) {
 	service, database := newOutsourceExecutionTestService(t)
 	now := time.Now().UTC()
 	failed := models.RuleExecutionLog{
@@ -90,19 +89,6 @@ func TestOutsourceDiagnosticsIgnoresRecoveredNotificationFailure(t *testing.T) {
 		ErrorMessage:    "channel offline",
 		TriggeredAt:     now.Add(-time.Minute),
 	}
-	retryResult, err := json.Marshal(map[string]string{"retryOfLogId": failed.ID})
-	require.NoError(t, err)
-	retry := models.RuleExecutionLog{
-		BaseModel:       models.BaseModel{ID: "notify-retry-1"},
-		SourceCode:      businessEventSourceProductionOutsource,
-		ActionCode:      businessEventActionStatusChange,
-		StatusCode:      OutsourceOrderStatusReleased,
-		ExecutionType:   "notify",
-		ExecutionStatus: "success",
-		RuleName:        "委外通知",
-		Result:          retryResult,
-		TriggeredAt:     now,
-	}
 	unresolved := models.RuleExecutionLog{
 		BaseModel:       models.BaseModel{ID: "notify-failed-2"},
 		SourceCode:      businessEventSourceProductionOutsource,
@@ -115,15 +101,24 @@ func TestOutsourceDiagnosticsIgnoresRecoveredNotificationFailure(t *testing.T) {
 		TriggeredAt:     now,
 	}
 	require.NoError(t, database.Create(&failed).Error)
-	require.NoError(t, database.Create(&retry).Error)
 	require.NoError(t, database.Create(&unresolved).Error)
-
-	response, err := service.GetOutsourceDiagnostics()
-
-	require.NoError(t, err)
-	require.Equal(t, 1, response.Summary.NotificationFailed)
-	issue := requireOutsourceDiagnosticsIssue(t, response, outsourceDiagnosticsIssueNotificationFailure)
-	require.Equal(t, "notify-failed-2", issue.Metadata["logId"])
+	for _, status := range []string{"failed", "pending", "failed", "success", "skipped"} {
+		require.NoError(t, database.Model(&failed).Update("execution_status", status).Error)
+		response, err := service.GetOutsourceDiagnostics()
+		require.NoError(t, err)
+		expectedFailures := 1
+		if status == "failed" {
+			expectedFailures++
+		}
+		require.Equal(t, expectedFailures, response.Summary.NotificationFailed)
+		if status != "failed" {
+			issue := requireOutsourceDiagnosticsIssue(t, response, outsourceDiagnosticsIssueNotificationFailure)
+			require.Equal(t, unresolved.ID, issue.Metadata["logId"])
+		}
+	}
+	var logCount int64
+	require.NoError(t, database.Model(&models.RuleExecutionLog{}).Count(&logCount).Error)
+	require.EqualValues(t, 2, logCount, "recovery and delivery continue to use the original execution log")
 }
 
 func requireOutsourceDiagnosticsIssue(t *testing.T, response OutsourceDiagnosticsResponse, issueType string) OutsourceDiagnosticsIssue {

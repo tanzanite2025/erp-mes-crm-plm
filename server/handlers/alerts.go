@@ -6,7 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"xdfc-server/authz"
+	"xdfc-server/db"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -91,9 +92,22 @@ func AlertWebhookHandler(c *gin.Context) {
 			severity = "warning"
 		}
 
+		startsAt := a.StartsAt
+		if startsAt.IsZero() {
+			if previous, exists := activeAlerts[fingerprint]; exists {
+				startsAt = previous.StartsAt
+			}
+		}
+		persisted, err := services.PersistSystemAlertNotificationInboxEvent(c.Request.Context(), db.DB, services.SystemAlertNotificationEvent{Fingerprint: fingerprint, Status: a.Status, Severity: severity, Name: alertName, Description: translatedDesc, StartsAt: startsAt})
+		if err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "告警收件状态保存失败，请重试本次事件"})
+			return
+		}
 		if strings.EqualFold(a.Status, "resolved") {
 			previous, existed := activeAlerts[fingerprint]
-			delete(activeAlerts, fingerprint)
+			if existed && previous.StartsAt.Equal(startsAt) {
+				delete(activeAlerts, fingerprint)
+			}
 
 			startsAt := a.StartsAt
 			if startsAt.IsZero() && existed {
@@ -112,16 +126,12 @@ func AlertWebhookHandler(c *gin.Context) {
 			)
 			alertHistory = append(alertHistory, entry)
 
-			NotifyTrigger("System", "ALERT_RESOLVED", "系统自诊断已恢复: "+translatedDesc, notificationTargetPermission(authz.PermissionManage), map[string]interface{}{
-				"fingerprint":     fingerprint,
-				"status":          "resolved",
-				"severity":        severity,
-				"name":            alertName,
-				"description":     translatedDesc,
-				"startsAt":        startsAt,
-				"endsAt":          now,
-				"durationSeconds": entry.DurationSeconds,
-			})
+			continue
+		}
+		if !persisted.Active {
+			continue
+		}
+		if previous, exists := activeAlerts[fingerprint]; exists && previous.StartsAt.After(startsAt) {
 			continue
 		}
 
@@ -132,10 +142,9 @@ func AlertWebhookHandler(c *gin.Context) {
 			Severity:    severity,
 			Name:        alertName,
 			Description: translatedDesc,
-			StartsAt:    a.StartsAt,
+			StartsAt:    startsAt,
 		}
 
-		previous, existed := activeAlerts[fingerprint]
 		activeAlerts[fingerprint] = alert
 
 		now := time.Now()
@@ -145,17 +154,11 @@ func AlertWebhookHandler(c *gin.Context) {
 			severity,
 			alertName,
 			translatedDesc,
-			a.StartsAt,
+			startsAt,
 			nil,
 			now,
 		))
 
-		shouldBroadcast := !existed ||
-			previous.Severity != alert.Severity ||
-			previous.Description != alert.Description
-		if shouldBroadcast {
-			NotifyTrigger("System", "ALERT", "系统自诊断异常: "+translatedDesc, notificationTargetPermission(authz.PermissionManage), alert)
-		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "processed"})

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,7 +22,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -123,11 +121,6 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("fixture=production-outsource-acceptance cleaned=true")
-	case "redis-notification":
-		db.InitRedis()
-		if err := runRedisNotificationAcceptance(); err != nil {
-			log.Fatal(err)
-		}
 	case "concurrency":
 		if err := runPostgresConcurrencyAcceptance(); err != nil {
 			log.Fatal(err)
@@ -137,7 +130,7 @@ func main() {
 			log.Fatal(err)
 		}
 	default:
-		log.Fatalf("unsupported command %q; use seed, cleanup, redis-notification, concurrency, or authorization", command)
+		log.Fatalf("unsupported command %q; use seed, cleanup, concurrency, or authorization", command)
 	}
 }
 
@@ -424,31 +417,6 @@ func seedNotificationRule(tx *gorm.DB) error {
 		Segments:   segments,
 		Version:    1,
 	}).Error
-}
-
-func runRedisNotificationAcceptance() error {
-	if db.RDB == nil {
-		return fmt.Errorf("redis client is required")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	if err := db.RDB.Ping(ctx).Err(); err != nil {
-		return fmt.Errorf("redis ping failed: %w", err)
-	}
-
-	if err := runSuccessfulRedisNotificationAcceptance(); err != nil {
-		_ = cleanupFixture()
-		return err
-	}
-	if err := runFailedNotificationRetryAcceptance(); err != nil {
-		_ = cleanupFixture()
-		return err
-	}
-	if err := cleanupFixture(); err != nil {
-		return err
-	}
-	fmt.Println("fixture=production-outsource-acceptance redisNotification=true normalTarget=admin retryTarget=admin cleaned=true")
-	return nil
 }
 
 type acceptanceTransactionManager struct {
@@ -1090,188 +1058,6 @@ func acceptHTTPScanPermissionDenied() error {
 		return fmt.Errorf("scan without execution permission returned unexpected body: %s", recorder.Body.String())
 	}
 	return nil
-}
-
-func runSuccessfulRedisNotificationAcceptance() error {
-	if err := cleanupFixture(); err != nil {
-		return err
-	}
-	if err := seedFixture(); err != nil {
-		return err
-	}
-
-	pubsub, messages, err := subscribeAcceptanceNotifications()
-	if err != nil {
-		return err
-	}
-	defer pubsub.Close()
-
-	if _, err := services.ReleaseOutsourceOrder(services.ReleaseOutsourceOrderRequest{
-		ID:       fixtureOrderID,
-		ActorID:  fixtureOperator,
-		Operator: fixtureOperator,
-		IP:       "127.0.0.1",
-	}); err != nil {
-		return fmt.Errorf("release fixture order for redis notification: %w", err)
-	}
-
-	message, err := waitForAcceptanceNotification(messages, func(payload map[string]any) bool {
-		inner := notificationPayload(payload)
-		return payload["module"] == "Workflow" &&
-			payload["action"] == fixtureActionCode &&
-			payload["targetUser"] == "admin" &&
-			inner["eventKey"] == fixtureReleaseEventKey() &&
-			inner["sourceCode"] == fixtureSourceCode &&
-			inner["status"] == services.OutsourceOrderStatusReleased
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := findFixtureNotifyExecutionLog(services.OutsourceOrderStatusReleased, "success"); err != nil {
-		return err
-	}
-	fmt.Printf("redisNotification=normal received=true target=%s title=%s\n", message["targetUser"], message["title"])
-	return nil
-}
-
-func runFailedNotificationRetryAcceptance() error {
-	if err := cleanupFixture(); err != nil {
-		return err
-	}
-	if err := seedFixture(); err != nil {
-		return err
-	}
-
-	realRDB := db.RDB
-	failingRDB := redis.NewClient(&redis.Options{
-		Addr:         "127.0.0.1:1",
-		DB:           0,
-		DialTimeout:  100 * time.Millisecond,
-		ReadTimeout:  100 * time.Millisecond,
-		WriteTimeout: 100 * time.Millisecond,
-		MaxRetries:   0,
-	})
-	db.RDB = failingRDB
-	_, releaseErr := services.ReleaseOutsourceOrder(services.ReleaseOutsourceOrderRequest{
-		ID:       fixtureOrderID,
-		ActorID:  fixtureOperator,
-		Operator: fixtureOperator,
-		IP:       "127.0.0.1",
-	})
-	_ = failingRDB.Close()
-	db.RDB = realRDB
-	if releaseErr != nil {
-		return fmt.Errorf("release fixture order with failing redis should keep business fact: %w", releaseErr)
-	}
-
-	failedLog, err := findFixtureNotifyExecutionLog(services.OutsourceOrderStatusReleased, "failed")
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(failedLog.ErrorMessage) == "" {
-		return fmt.Errorf("expected failed notification log to keep redis error message")
-	}
-
-	pubsub, messages, err := subscribeAcceptanceNotifications()
-	if err != nil {
-		return err
-	}
-	defer pubsub.Close()
-
-	retryLog, err := services.RetryRuleExecutionNotificationLog(failedLog.ID)
-	if err != nil {
-		return fmt.Errorf("retry failed notification log: %w", err)
-	}
-	if retryLog.ExecutionStatus != "success" {
-		return fmt.Errorf("expected retry log success, got %s: %s", retryLog.ExecutionStatus, retryLog.ErrorMessage)
-	}
-
-	message, err := waitForAcceptanceNotification(messages, func(payload map[string]any) bool {
-		inner := notificationPayload(payload)
-		return payload["module"] == "Workflow" &&
-			payload["targetUser"] == "admin" &&
-			inner["retryOfLogId"] == failedLog.ID &&
-			inner["eventKey"] == failedLog.EventKey
-	})
-	if err != nil {
-		return err
-	}
-	fmt.Printf(
-		"redisNotification=retry received=true failedLogId=%s retryLogId=%s target=%s title=%s\n",
-		failedLog.ID,
-		retryLog.ID,
-		message["targetUser"],
-		message["title"],
-	)
-	return nil
-}
-
-func subscribeAcceptanceNotifications() (*redis.PubSub, <-chan *redis.Message, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	pubsub := db.RDB.Subscribe(ctx, "xdfc_notifications")
-	if _, err := pubsub.Receive(ctx); err != nil {
-		_ = pubsub.Close()
-		return nil, nil, fmt.Errorf("subscribe redis notification channel: %w", err)
-	}
-	return pubsub, pubsub.Channel(), nil
-}
-
-func waitForAcceptanceNotification(messages <-chan *redis.Message, matches func(map[string]any) bool) (map[string]any, error) {
-	timeout := time.After(5 * time.Second)
-	for {
-		select {
-		case <-timeout:
-			return nil, fmt.Errorf("timed out waiting for acceptance notification on Redis")
-		case message, ok := <-messages:
-			if !ok {
-				return nil, fmt.Errorf("redis notification channel closed")
-			}
-			var payload map[string]any
-			if err := json.Unmarshal([]byte(message.Payload), &payload); err != nil {
-				continue
-			}
-			if matches(payload) {
-				return payload, nil
-			}
-		}
-	}
-}
-
-func notificationPayload(message map[string]any) map[string]any {
-	payload, ok := message["payload"].(map[string]any)
-	if !ok || payload == nil {
-		return map[string]any{}
-	}
-	return payload
-}
-
-func fixtureReleaseEventKey() string {
-	return strings.Join([]string{
-		fixtureSourceCode,
-		fixtureOrderID,
-		fixtureActionCode,
-		services.OutsourceOrderStatusDraft,
-		services.OutsourceOrderStatusReleased,
-	}, ":")
-}
-
-func findFixtureNotifyExecutionLog(statusCode string, executionStatus string) (models.RuleExecutionLog, error) {
-	var logEntry models.RuleExecutionLog
-	err := db.DB.
-		Where("rule_id = ? AND command_id = ? AND status_code = ? AND execution_type = ? AND execution_status = ?",
-			fixtureRuleID,
-			fixtureCommandID,
-			statusCode,
-			"notify",
-			executionStatus,
-		).
-		Order("created_at desc").
-		First(&logEntry).Error
-	if err != nil {
-		return models.RuleExecutionLog{}, fmt.Errorf("find %s fixture notify execution log: %w", executionStatus, err)
-	}
-	return logEntry, nil
 }
 
 func cleanupFixture() error {

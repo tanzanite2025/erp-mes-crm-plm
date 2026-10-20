@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"xdfc-server/db"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -39,37 +40,15 @@ func GetRuleExecutionLogsHandler(c *gin.Context) {
 	})
 }
 
-func SaveRuleExecutionLogHandler(c *gin.Context) {
-	var input services.RuleExecutionLogRequest
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 规则执行日志数据格式错误: " + err.Error()})
-		return
-	}
-
-	logEntry, err := services.MapRuleExecutionLogRequestToModel(input)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 规则执行日志数据校验失败: " + err.Error()})
-		return
-	}
-
-	saved, err := services.CreateRuleExecutionLog(logEntry)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存规则执行日志失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, services.MapRuleExecutionLogToResponse(saved))
-}
-
 func RetryRuleExecutionNotificationLogHandler(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
-	retried, err := services.RetryRuleExecutionNotificationLog(id)
+	retried, err := services.RetryRuleExecutionNotificationLogWithContext(auditContextFromGin(c), db.DB, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrRuleExecutionLogNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 规则执行日志不存在"})
 		case errors.Is(err, services.ErrRuleExecutionLogNotRetryable):
-			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] 只有失败的通知执行日志可以重试"})
+			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] 仅可恢复仍然有效的原通知投递任务"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 重试通知失败: " + err.Error()})
 		}

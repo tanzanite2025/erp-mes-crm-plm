@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // GetLogisticsRecordsHandler 获取物流记录 (支持分页与过滤)
@@ -101,9 +101,16 @@ func GetLogisticsRecordHandler(c *gin.Context) {
 
 // SaveLogisticsRecordHandler 保存或更新物流记录
 func SaveLogisticsRecordHandler(c *gin.Context) {
-	var input models.LogisticsRecord
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var request LogisticsRecordWriteRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 物流数据格式错误"})
+		return
+	}
+	input := mapLogisticsRecordWriteRequestToModel(request)
+	if !authorizeLogisticsRecordWriteTypeScope(c, input.ID, input.Type) {
+		return
+	}
+	if !authorizeLogisticsRecordFullSaveStatusChange(c, input) {
 		return
 	}
 
@@ -136,22 +143,8 @@ func SaveLogisticsRecordHandler(c *gin.Context) {
 
 	record, err := services.SaveLogisticsRecord(auditContextFromGin(c), input)
 	if err != nil {
-		var conflictErr *services.LogisticsTrackingNoConflictError
-		switch {
-		case errors.As(err, &conflictErr):
-			c.JSON(http.StatusConflict, gin.H{"error": conflictErr.Error()})
-			return
-		case errors.Is(err, gorm.ErrRecordNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
-			return
-		default:
-			if strings.TrimSpace(input.ID) != "" {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建失败"})
-			return
-		}
+		respondLogisticsRecordWriteError(c, err)
+		return
 	}
 	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(record))
 }
@@ -160,20 +153,18 @@ func SaveLogisticsRecordHandler(c *gin.Context) {
 func UpdateLogisticsStatusHandler(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Status      string `json:"status"`
-		Location    string `json:"location"`
-		Description string `json:"description"`
-		EventsJSON  []byte `json:"events"`
-		Version     int    `json:"version"` // 乐观锁版本号
+		Status      string          `json:"status"`
+		Location    string          `json:"location"`
+		Description string          `json:"description"`
+		EventsJSON  json.RawMessage `json:"events"`
+		Version     int             `json:"version"` // 乐观锁版本号
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
 		return
 	}
 
-	var record models.LogisticsRecord
-	if err := db.DB.First(&record, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
+	if !authorizeLogisticsRecordWriteTypeScope(c, id, "") {
 		return
 	}
 
@@ -185,15 +176,7 @@ func UpdateLogisticsStatusHandler(c *gin.Context) {
 		Version:     req.Version,
 	})
 	if err != nil {
-		if errors.Is(err, services.ErrLogisticsStatusVersionConflict) {
-			respondVersionConflict(c)
-			return
-		}
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败: " + err.Error()})
+		respondLogisticsRecordWriteError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(updated))
@@ -201,6 +184,9 @@ func UpdateLogisticsStatusHandler(c *gin.Context) {
 
 func DeleteLogisticsRecordHandler(c *gin.Context) {
 	id := c.Param("id")
+	if !authorizeLogisticsRecordWriteTypeScope(c, id, "") {
+		return
+	}
 
 	if err := services.DeleteLogisticsRecord(auditContextFromGin(c), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})

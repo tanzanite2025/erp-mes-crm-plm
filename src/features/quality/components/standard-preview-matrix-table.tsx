@@ -29,6 +29,9 @@ export function StandardPreviewMatrixTable({
 }: StandardPreviewMatrixTableProps) {
   const { t } = useLanguage()
   const hasItems = standard.items && standard.items.length > 0
+  const hasDeviationBands = standard.items?.some((item) =>
+    item.levels.some((level) => level.deviationMinExclusive !== undefined)
+  )
 
   return (
     <div className='relative flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/5'>
@@ -39,7 +42,12 @@ export function StandardPreviewMatrixTable({
           </div>
 
           <div className='scrollbar-thin flex-1 overflow-auto p-4 lg:p-6 lg:pt-4'>
-            <Table className='min-w-[1650px] border-separate border-spacing-0'>
+            {hasDeviationBands && (
+              <p className='mb-3 text-[11px] leading-relaxed text-muted-foreground'>
+                {t('quality.standards.dialog.detail.deviationGradingHint')}
+              </p>
+            )}
+            <Table className='min-w-[1390px] border-separate border-spacing-0'>
               <TableHeader className='sticky top-0 z-30 bg-background/95 backdrop-blur-xl'>
                 <TableRow className='hover:bg-transparent'>
                   <TableHead className='sticky left-0 z-40 h-12 w-[180px] border border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] backdrop-blur-xl lg:h-14 lg:text-[10px]'>
@@ -56,19 +64,17 @@ export function StandardPreviewMatrixTable({
                     {t('quality.standards.dialog.detail.table.level')}
                   </TableHead>
                   <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
-                    {t('quality.standards.dialog.detail.table.tolerance')}
+                    {t(
+                      hasDeviationBands
+                        ? 'quality.standards.dialog.detail.table.deviationRule'
+                        : 'quality.standards.dialog.detail.table.tolerance'
+                    )}
                   </TableHead>
                   <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
                     {t('quality.standards.dialog.detail.table.min')}
                   </TableHead>
                   <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
                     {t('quality.standards.dialog.detail.table.max')}
-                  </TableHead>
-                  <TableHead className='w-[130px] border border-l-0 border-white/10 bg-red-500/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-red-500 uppercase lg:text-[10px]'>
-                    {t('quality.standards.dialog.detail.table.errorCodeLower')}
-                  </TableHead>
-                  <TableHead className='w-[130px] border border-l-0 border-white/10 bg-red-500/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-red-500 uppercase lg:text-[10px]'>
-                    {t('quality.standards.dialog.detail.table.errorCodeUpper')}
                   </TableHead>
                   <TableHead className='w-[80px] border border-l-0 border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase lg:text-[10px]'>
                     {t('quality.standards.dialog.detail.table.unit')}
@@ -94,7 +100,7 @@ export function StandardPreviewMatrixTable({
                       </TableCell>
                       <TableCell
                         rowSpan={item.levels.length}
-                        className='border border-t-0 border-l-0 border-white/10 text-center font-mono text-[9px] whitespace-nowrap opacity-40 lg:text-[10px]'
+                        className='border border-t-0 border-l-0 border-white/10 text-center font-maple-ui text-[9px] whitespace-nowrap opacity-40 lg:text-[10px]'
                       >
                         {item.order}
                       </TableCell>
@@ -132,10 +138,10 @@ export function StandardPreviewMatrixTable({
             <Inbox className='size-16 text-muted-foreground/10 transition-colors duration-500 group-hover:text-primary/10 lg:size-24' />
             <ShieldCheck className='absolute top-1/2 left-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-primary/20 lg:size-10' />
           </div>
-          <h3 className='mb-2 text-base font-black tracking-tight uppercase lg:text-xl'>
+          <h3 className='mb-2 text-xs font-bold tracking-tight'>
             {t('quality.standards.dialog.detail.emptyTitle')}
           </h3>
-          <p className='max-w-xs text-[10px] leading-relaxed font-medium text-muted-foreground opacity-50 lg:text-xs'>
+          <p className='max-w-xs text-[10px] leading-relaxed font-medium text-muted-foreground opacity-50'>
             {t('quality.standards.dialog.detail.emptyDescription', {
               code: standard.code,
             })}
@@ -196,9 +202,10 @@ function LevelRow({
       </TableCell>
       <TableCell
         rowSpan={rowSpan}
-        className='border border-t-0 border-l-0 border-white/10 p-3 text-[9px] leading-relaxed font-medium whitespace-nowrap text-muted-foreground opacity-70 lg:text-[10px]'
+        className='max-w-sm border border-t-0 border-l-0 border-white/10 p-3 text-[9px] leading-relaxed font-medium whitespace-pre-line text-muted-foreground opacity-70 lg:text-[10px]'
       >
-        {remarks || t('quality.standards.dialog.detail.noRemarks')}
+        {remarks?.replace(/；/g, '\n') ||
+          t('quality.standards.dialog.detail.noRemarks')}
       </TableCell>
     </>
   )
@@ -210,7 +217,7 @@ function LevelCells({ level }: { level: LevelConfig }) {
       <TableCell
         className={cn(
           'border border-t-0 border-l-0 border-white/10 px-2 text-center text-[10px] font-black whitespace-nowrap lg:text-[11px]',
-          level.level === 'B' && 'border-primary/30 bg-primary/20 text-primary'
+          level.level === 'S' && 'border-primary/30 bg-primary/20 text-primary'
         )}
       >
         {level.level}
@@ -218,22 +225,21 @@ function LevelCells({ level }: { level: LevelConfig }) {
       <TableCell
         className={cn(
           'border border-t-0 border-l-0 border-white/10 text-center text-[10px] font-bold whitespace-nowrap lg:text-[11px]',
-          level.level === 'B' && 'bg-primary/5'
+          level.level === 'S' && 'bg-primary/5'
         )}
       >
-        {level.tolerance?.toFixed(3)}
+        {level.deviationMinExclusive !== undefined &&
+        level.tolerance !== undefined
+          ? `${level.deviationMinExclusive} < |Δ| ≤ ${level.tolerance}`
+          : level.level === 'S' && level.tolerance === 0
+            ? '|Δ| = 0'
+            : level.tolerance?.toFixed(3)}
       </TableCell>
       <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[10px] font-black whitespace-nowrap lg:text-[11px]'>
         {level.min?.toFixed(3)}
       </TableCell>
       <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[10px] font-black whitespace-nowrap lg:text-[11px]'>
         {level.max?.toFixed(3)}
-      </TableCell>
-      <TableCell className='border border-t-0 border-l-0 border-white/10 px-1 text-center text-[9px] font-black whitespace-nowrap text-red-500/80'>
-        {level.errorCodeLower || '-'}
-      </TableCell>
-      <TableCell className='border border-t-0 border-l-0 border-white/10 px-1 text-center text-[9px] font-black whitespace-nowrap text-red-500/80'>
-        {level.errorCodeUpper || '-'}
       </TableCell>
     </>
   )

@@ -1,120 +1,44 @@
-# 审批工作流挂载与轻量 BPM 设计
+# 审批工作流挂载与轻量 BPM 历史方案关闭说明
 
-## 1. 目标与边界
+> 核查日期：2026-10-20。
+> 文档状态：旧轻量 BPM 方案已退出当前架构；本文只说明关闭依据与当前审批入口，不再作为待开发方案。
 
-本文档聚焦“审批流与业务单据解耦”的实现方案，目标是：
+## 1. 关闭依据
 
-1. 业务单据模型不再硬编码审批人和审批节点；
-2. 审批状态流转由 `WorkflowService` 统一托管；
-3. 支持通过 JSON 定义快速扩展“三级审批、金额阈值加签”等规则；
-4. 保持后端裁决为唯一真源，前端仅展示流程状态。
+旧文档提出以 `WorkflowDefinition / WorkflowInstance / WorkflowTask` 三层模型托管销售、采购和发票审批，并要求单据持有 `WorkflowInstanceID`。这些表述不符合当前代码：
 
----
+- 当前仓库不存在旧 `WorkflowService`、创建流程实例或审批 Workflow 任务的运行服务。
+- `server/db/db.go` 中的 `dropLegacyWorkflowArtifacts` 明确删除旧三张表，并移除销售、采购的 `workflow_instance_id` 字段。
+- 当前审批持久化模型为 `server/models/approval.go` 的 `ApprovalRequest`，表名为 `approval_requests`。
 
-## 2. 挂载模式（Attachment Pattern）
+因此不再采用旧文档中的实例挂载、迁移窗口、JSON 三级审批示例和未实现的错误码。不能因为旧设计文件仍存在就重建这些表、服务和单据字段，也不能把收件箱建设扩展成第二套审批引擎。
 
-每个需要审批的业务单据（PO/SO/发票）增加：
+## 2. 当前真实入口
 
-- `WorkflowInstanceID`（流程实例 ID）
+| 职责                                     | 当前实现                                                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 审批申请、一级/二级审批与状态            | `server/models/approval.go`、`server/services/approval_service.go`                                                         |
+| 申请、我的审批、审批决定、授权码验证接口 | `server/routes/routes_approval.go`、`server/handlers/approval.go`                                                          |
+| 品质标准提审与当前申请关联               | `quality_standard_approval_routing_service.go`，与标准保存使用同一事务                                                     |
+| 独立业务审批配置                         | `business_approval_policy_configuration_service.go`，目前接入品质标准；页面为 `/approval/business-approval-policies`       |
+| 公共审批与业务装配                       | `approval_business_transaction_contract.go` 定义契约，`approval_business_transaction_contract_composition.go` 注入业务实现 |
+| 品质审批结果回写                         | `quality_standard_approval_decision_service.go` 实现业务事务契约，由公共审批决定事务调用                                   |
+| 规则配置与其他来源执行                   | `workflow_routing_service.go`、各业务事务事件服务、统一收件和提交后队列；浏览器只维护配置与查询                            |
 
-### 2.1 职责分离
+表中的品质与规则服务位于 `server/services/`。`workflow-core` 目录名和 `ApprovalWorkflowResult` 类型名不代表旧 BPM 引擎仍在运行。
 
-- 业务单据：只维护业务字段（金额、币种、交易对象、明细等）；
-- 工作流模块：维护节点、审批人分配、状态机流转和审批意见。
+公共审批服务当前支持一级/二级审批；不能据此承诺已经支持任意层级、金额条件、并行会签或 BPMN。通用授权码机制与品质标准审批的差异，以各业务接口和[品质标准专项契约](../../quality-standard-approval-transaction-and-notification-delivery-contract.md)为准，不能把授权码写成所有审批统一必经步骤。
 
-### 2.2 状态托管原则
+## 3. 审批与消息中心的长期边界
 
-单据状态（示例）：
+审批申请保存真实办理状态，消息中心只提供指向真实申请的提醒。标记已读、关闭弹窗和归档都不会完成审批；通知投递恢复也不能再次创建申请。
 
-- `Draft -> Pending -> Approved -> Rejected/Cancelled`
+品质标准已通过明确的 `approval_request_id` 关联当前轮次。其他来源不能据此被描述为均已具备相同关联和事务保障，接入范围需逐项核查。
 
-由 `WorkflowService` 驱动状态跃迁，业务 Handler 不直接写“最终审批态”。
+品质审批链配置已从监听规则迁至独立存储，通知源或规则停用不影响提审。品质监听规则只控制通知，不创建审批申请；在途申请保留原审批人快照。公共审批引擎不再包含品质专用分支。其他来源的规则内审批动作尚未迁移，不能据此声称全系统已完成相同分离。
 
----
+全系统收件、投递、跨设备同步和迁移统一维护在[消息中心长期契约](system-notification-inbox-cross-device-synchronization-and-delivery-contract.md)；运行入口见[各域拓扑](current-domain-topology-map.md)。本文件不再维护第二份通知或审批迁移清单。
 
-## 3. 轻量 BPM 三层模型
+## 4. 未来扩展条件
 
-## 3.1 WorkflowDefinition（流程定义）
-
-定义层用于描述流程模板，建议字段：
-
-- `ID`
-- `Code`（如 `PO_APPROVAL_V1`）
-- `Name`
-- `Version`
-- `Module`（PO/SO/INVOICE）
-- `DefinitionJSON`（节点、路由、审批策略）
-- `IsActive`
-
-## 3.2 WorkflowInstance（流程实例）
-
-实例层绑定业务单据，建议字段：
-
-- `ID`
-- `DefinitionID`
-- `BusinessType`
-- `BusinessRefID`
-- `CurrentNodeID`
-- `Status`（RUNNING / APPROVED / REJECTED / CANCELLED）
-- `StartedAt`
-- `FinishedAt`
-
-## 3.3 WorkflowTask（流程任务）
-
-任务层承载待办执行，建议字段：
-
-- `ID`
-- `InstanceID`
-- `NodeID`
-- `AssigneeUserID`
-- `TaskStatus`（TODO / DONE / REJECTED / SKIPPED）
-- `Action`
-- `Comment`
-- `ActionAt`
-
----
-
-## 4. JSON 定义可扩展策略
-
-通过定义层 JSON 承载审批策略，避免改业务模型代码：
-
-1. 节点链路（顺序流）
-2. 条件路由（金额阈值、部门、币种）
-3. 会签/加签占位（后续启用）
-
-示例策略：
-
-- 当 `amount > 1_000_000` 时增加 `L3_FINANCE_REVIEW` 节点；
-- 当 `currency != CNY` 时自动加入汇率复核节点。
-
----
-
-## 5. Fail Loudly 约束
-
-1. 未绑定实例：
-   - 进入 `Pending` 前若 `WorkflowInstanceID` 为空，返回 `[CRITICAL_WORKFLOW_BINDING_MISSING]`。
-2. 非法跳转：
-   - 状态跃迁不满足状态机规则时，返回 `[CRITICAL_WORKFLOW_TRANSITION_INVALID]`。
-3. 越权审批：
-   - 非任务指派人提交审批动作，返回 `[SECURITY_WORKFLOW_ASSIGNEE_MISMATCH]`。
-4. 并发审批：
-   - 同任务重复处理需幂等保护，冲突返回 409 并记录审计日志。
-
----
-
-## 6. 迁移策略（低风险）
-
-1. 先引入三层模型与服务层，不影响现有单据读写；
-2. 单据新增 `WorkflowInstanceID` 并允许空值（迁移窗口期）；
-3. 新建单据逐步切流到 `WorkflowService`；
-4. 旧审批配置逐步映射到 `WorkflowDefinition` 并下线。
-
----
-
-## 7. 验证清单
-
-1. 新建 PO：成功创建实例并生成首个待办任务；
-2. 审批通过：实例状态变更并同步业务单据状态；
-3. 金额越阈值：按 JSON 增加额外审批节点；
-4. 非指派人审批：被拒绝且返回受控错误；
-5. 重复审批提交：幂等处理不产生重复流转。
+如果以后实际业务需要任意层级、条件审批或会签，应先对当前审批模型、权限、业务回写和数据迁移做专项设计，再决定是否需要新的流程模型。该需求尚不属于消息中心收件箱的实施范围，不能把旧 BPM 提案视为已确认的下一阶段。

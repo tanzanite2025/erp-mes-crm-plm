@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { type ApprovalUserOption } from '@/features/approval/services/approval-service'
+import { usesIndependentBusinessApprovalConfiguration } from '@/features/approval/services/business-approval-policy-configuration-service'
 import {
   type BusinessEventSource,
   type BusinessStatus,
@@ -70,6 +71,8 @@ export function RuleStatusRow({
   const enabled = Boolean(segment)
   const statusLabel = getBusinessEventStatusLabel(sourceCode, status.code)
   const approval = segment?.approval ?? defaultApproval
+  const independentApprovalConfiguration =
+    usesIndependentBusinessApprovalConfiguration(sourceCode)
   const selectedUsernames = segment?.assigneeUsernames ?? []
   const selectedCommandId = segment?.commandIds[0] ?? ''
   const selectedCommand = commands.find(
@@ -104,6 +107,7 @@ export function RuleStatusRow({
     notifyTargets,
     commandTitle: selectedCommand?.title,
     approvalTarget: approvalTarget || undefined,
+    independentApprovalConfiguration,
   })
 
   useEffect(() => {
@@ -132,7 +136,14 @@ export function RuleStatusRow({
             : 'border-muted/30 bg-muted/10'
       )}
     >
-      <div className='grid grid-cols-1 gap-4 xl:grid-cols-[220px_1fr_1fr] xl:items-start'>
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-4 xl:items-start',
+          independentApprovalConfiguration
+            ? 'xl:grid-cols-[220px_1fr]'
+            : 'xl:grid-cols-[220px_1fr_1fr]'
+        )}
+      >
         <div className='flex items-start gap-3'>
           <Switch
             checked={enabled}
@@ -144,7 +155,7 @@ export function RuleStatusRow({
               <span className='text-sm font-black'>{statusLabel}</span>
               <Badge
                 variant='outline'
-                className='rounded-full font-mono text-[10px]'
+                className='rounded-full font-maple-ui text-[10px]'
               >
                 {status.code}
               </Badge>
@@ -202,31 +213,33 @@ export function RuleStatusRow({
           </select>
         </div>
 
-        <div className='flex flex-col gap-2'>
-          <div className='flex items-center gap-2 text-xs font-black'>
-            <ShieldCheck className='size-4 text-emerald-600' />
-            是否需要审批
+        {!independentApprovalConfiguration && (
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center gap-2 text-xs font-black'>
+              <ShieldCheck className='size-4 text-emerald-600' />
+              是否需要审批
+            </div>
+            <select
+              disabled={!enabled}
+              value={approval.enabled ? approval.approver1Id : ''}
+              onChange={(event) => onApprovalUserChange(event.target.value)}
+              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50'
+            >
+              <option value=''>不创建审批</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {getUserLabel(user)}
+                </option>
+              ))}
+            </select>
+            {approval.enabled && (
+              <p className='flex items-center gap-1.5 text-[10px] font-bold text-emerald-700'>
+                <Check className='size-3.5' />
+                命中后会创建审批申请
+              </p>
+            )}
           </div>
-          <select
-            disabled={!enabled}
-            value={approval.enabled ? approval.approver1Id : ''}
-            onChange={(event) => onApprovalUserChange(event.target.value)}
-            className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50'
-          >
-            <option value=''>不创建审批</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {getUserLabel(user)}
-              </option>
-            ))}
-          </select>
-          {approval.enabled && (
-            <p className='flex items-center gap-1.5 text-[10px] font-bold text-emerald-700'>
-              <Check className='size-3.5' />
-              命中后会创建审批申请
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
       {enabled ? (
@@ -266,21 +279,25 @@ export function RuleStatusRow({
             </select>
           </label>
 
-          <label className='flex flex-col gap-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-            动态审批人
-            <select
-              value={approval.dynamicApproverField ?? ''}
-              onChange={(event) => onApprovalDynamicChange(event.target.value)}
-              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold tracking-normal text-foreground normal-case'
-            >
-              <option value=''>不使用动态审批人</option>
-              {resolverOptions.map((resolver) => (
-                <option key={resolver.code} value={resolver.code}>
-                  {resolver.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          {!independentApprovalConfiguration && (
+            <label className='flex flex-col gap-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+              动态审批人
+              <select
+                value={approval.dynamicApproverField ?? ''}
+                onChange={(event) =>
+                  onApprovalDynamicChange(event.target.value)
+                }
+                className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold tracking-normal text-foreground normal-case'
+              >
+                <option value=''>不使用动态审批人</option>
+                {resolverOptions.map((resolver) => (
+                  <option key={resolver.code} value={resolver.code}>
+                    {resolver.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       ) : null}
 

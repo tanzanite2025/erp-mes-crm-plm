@@ -8,6 +8,7 @@ import (
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var ErrBusinessEventSourceNotFound = errors.New("business event source not found")
@@ -83,6 +84,16 @@ var defaultBusinessEventSourceSeeds = []defaultBusinessEventSourceSeed{
 		Enabled:     true,
 		Description: "委外下达、发出、退回和检验处置等执行事实事件。",
 		Config:      defaultProductionOutsourceEventSourceConfig(),
+	},
+	{
+		ID:          "77777777-7777-7777-7777-777777777777",
+		Code:        "QUALITY_STANDARD",
+		Name:        "品质标准",
+		Module:      "Quality",
+		Entity:      "QUALITY",
+		Enabled:     true,
+		Description: "品质标准围绕草稿、提审、审批、发布与归档的受控流程事件。",
+		Config:      defaultQualityStandardEventSourceConfig(),
 	},
 }
 
@@ -335,7 +346,7 @@ func EnsureDefaultBusinessEventSources() error {
 			return err
 		}
 
-		if err := db.DB.Create(&models.BusinessEventSource{
+		if err := db.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&models.BusinessEventSource{
 			BaseModel:   models.BaseModel{ID: seed.ID},
 			Code:        seed.Code,
 			Name:        seed.Name,

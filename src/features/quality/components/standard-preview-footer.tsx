@@ -31,17 +31,17 @@ export function StandardPreviewFooter({
         <div className='flex w-full gap-2 sm:w-auto lg:gap-3'>
           <Button
             variant='ghost'
-            className='h-10 flex-1 rounded-xl px-6 text-[10px] font-black uppercase opacity-50 transition-opacity hover:bg-white/5 lg:h-11 lg:flex-none lg:text-xs'
+            className='h-10 flex-1 rounded-xl px-6 text-[10px] font-black uppercase opacity-50 transition-opacity hover:bg-white/5 lg:h-11 lg:flex-none'
             onClick={onClose}
           >
             {closeLabel}
           </Button>
           {showPrimaryAction ? (
             <Button
-              className='h-10 flex-1 rounded-xl bg-primary px-8 text-[10px] font-black text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95 lg:h-11 lg:flex-none lg:px-12 lg:text-xs'
+              className='h-10 flex-1 rounded-xl bg-primary px-8 text-[10px] font-black text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95 lg:h-11 lg:flex-none lg:px-12'
               onClick={onPrimaryAction}
             >
-              <Check className='mr-2 size-3.5 lg:size-4' />
+              <Check className='size-3.5' />
               {primaryActionLabel}
             </Button>
           ) : null}

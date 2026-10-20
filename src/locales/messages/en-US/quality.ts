@@ -33,7 +33,7 @@ export const quality = {
       statusViewAllDescription:
         'View all quality standards under the current query conditions.',
       statusViewDraftDescription:
-        'Only show standards that are still in draft and have not entered the approval workflow.',
+        'Only show quality standards that are still drafts.',
       statusViewPendingApprovalDescription:
         'Only show standards that have been submitted and are waiting for review.',
       statusViewApprovedDescription:
@@ -98,22 +98,18 @@ export const quality = {
       rejectReasonPlaceholder: 'Please enter the rejection reason...',
       archiveReasonLabel: 'Archive Reason',
       archiveReasonPlaceholder: 'Please enter the archive reason...',
-      phaseTag: 'Phase A Page Shell',
-      currentStandardId: 'Current Standard ID',
       editorCreateTitle: 'Create Quality Standard Workspace',
       editorEditTitle: 'Edit Quality Standard Workspace',
       editorCreateDescription:
-        'Use the standalone editor page to create the standard basics, then continue through the controlled preview flow.',
+        'Enter the standard information, then save and review the preview.',
       editorEditDescription:
-        'Use the standalone editor page to maintain the standard basics, then return to the preview page for confirmation.',
-      editorHint:
-        'The editing flow now lives in the standalone page. The legacy dialog remains only as a compatibility shell.',
+        'Edit the standard information and controlled protocol inspection rules, then save and review the preview.',
       editorFormTitle: 'Standard Basics',
       editorFormDescription:
-        'This phase migrates the standard code, name, type, status, and remarks into the standalone editor. Deep matrix editing will follow in later phases.',
+        'Review the standard information. For controlled protocols, edit the center, unit, and grade A/B deviation limits below.',
       editorDirty: 'Unsaved Changes',
       approvalControlledHint:
-        'Status is controlled by the approval flow. Save the current edits first, then use Submit for Approval to enter the pending review stage.',
+        'Saving records standard changes. Configure quality standard approval rules and approvers before submitting for approval.',
       readOnlyHint:
         'This standard is already under controlled status. The editor remains view-only and no direct changes are allowed here.',
       backToPreview: 'Back to Preview',
@@ -125,9 +121,7 @@ export const quality = {
         'The standard may have been deleted, or it is not accessible in the current scope.',
       previewTitle: 'Quality Standard Preview Page',
       previewDescription:
-        'The standalone preview page shell is ready. The next phase will migrate the standard summary, matrix preview, printing, and pre-release confirmation here.',
-      previewHint:
-        'This phase does not introduce a new standard detail query yet, so the page currently focuses on the preview route shell and navigation chain before matrix content migration.',
+        'Review inspection rules, approval progress, and publication and archive records.',
       previewLoadFailedTitle: 'Failed to Load Standard Preview',
       previewLoadFailedDescription:
         'Unable to load preview data for the current standard ID. Please return to the list and try again.',
@@ -162,9 +156,9 @@ export const quality = {
           'Please complete the required fields (code and name).',
         toastUpdated: 'Quality standard updated to VER {{version}}',
         toastCreated: 'Quality standard created successfully (VER 1.0)',
-        versionNoticeTitle: 'Auto versioning is enabled',
+        versionNoticeTitle: 'Version History',
         versionNoticeEdit:
-          'A change was detected in the current standard. After saving, the version will advance to VER {{version}}.',
+          'Saving changes creates a new version. Check the saved record for the resulting version number.',
         versionNoticeCreate:
           'New quality standards start at VER 1.0 automatically.',
         cancel: 'Discard',
@@ -175,28 +169,26 @@ export const quality = {
         titleEdit: 'Edit Controlled Protocol',
         titleView: 'View Controlled Protocol',
         description:
-          'Define inspection items, target weight, qualified bounds, and scrap thresholds for the product as the single source of quality rules.',
+          'The center value is grade S. Absolute deviation determines grades A and B; deviation beyond the B limit is scrap.',
+        gradingHint:
+          'Both directions use the same rule: center = S; 0 < deviation ≤ A limit = A; A limit < deviation ≤ B limit = B; beyond B = scrap. Deviation uses the inspection item unit.',
         fields: {
           product: 'Product',
           qualityCriteria: 'Quality Criteria',
           selectedWeights: 'Inspection Items & Rules',
           itemName: 'Inspection Item',
-          targetWeight: 'Target Weight',
+          targetWeight: 'Center (Grade S)',
           unit: 'Unit',
-          qualifiedMin: 'Qualified Min',
-          qualifiedMax: 'Qualified Max',
-          scrapBelow: 'Scrap Below',
-          scrapAbove: 'Scrap Above',
+          aLevelTolerance: 'Grade A Deviation (±)',
+          bLevelTolerance: 'Grade B Deviation (±)',
         },
         placeholders: {
           product: 'Select product',
           itemName: 'e.g. Finished weight',
           targetWeight: 'Target',
-          unit: 'g',
-          qualifiedMin: 'Minimum qualified value',
-          qualifiedMax: 'Maximum qualified value',
-          scrapBelow: 'Scrap below this value',
-          scrapAbove: 'Scrap above this value',
+          unit: 'Select unit',
+          aLevelTolerance: 'e.g. 5',
+          bLevelTolerance: 'e.g. 10',
         },
         actions: {
           addCriterion: 'Add Inspection Item',
@@ -208,19 +200,22 @@ export const quality = {
         empty: {
           criteria:
             'No inspection items have been added yet. Add a weight, size, or other rule first.',
+          units:
+            'No active units. Add or activate a unit in Unit Settings first.',
         },
         validation: {
           productRequired: 'Please select a product first.',
           criterionRequired: 'Please add at least one inspection item.',
           itemNameRequired: 'Please enter a name for every inspection item.',
+          unitRequired:
+            'Select an active configured unit for every inspection item.',
+          unitUnavailable: 'Please select a unit again.',
+          unitsLoading: 'Units are loading. Please try again shortly.',
+          unitsLoadFailed: 'Unable to load units. Please retry.',
           weightRequired:
-            'Please fill in the target weight for every inspection item.',
-          thresholdNumberInvalid:
-            'Bounds and scrap thresholds must be valid numbers.',
-          qualifiedRangeInvalid:
-            'Qualified minimum cannot be greater than qualified maximum.',
-          scrapRangeInvalid:
-            'Scrap-below threshold cannot be greater than scrap-above threshold.',
+            'Please enter a finite center value for every inspection item.',
+          deviationLimitsInvalid:
+            'Enter finite deviation limits satisfying: 0 < A limit < B limit.',
         },
         toastCreated:
           'Controlled protocol created as a quality standard with {{count}} items.',
@@ -232,6 +227,8 @@ export const quality = {
         auditHint:
           'Shows the current standard owner, last update, and review confirmation for quality traceability.',
         auditPending: 'Pending Review',
+        deviationGradingHint:
+          '|Δ| is the absolute difference between the measurement and center. Both directions use the same rule; each deviation upper limit is inclusive.',
         fields: {
           code: 'Standard Code',
           name: 'Standard Name',
@@ -254,6 +251,7 @@ export const quality = {
           centerValue: 'Center Value',
           level: 'Level',
           tolerance: 'Tolerance',
+          deviationRule: 'Deviation Rule / Tolerance',
           min: 'Min (Lower)',
           max: 'Max (Upper)',
           errorCodeLower: 'Error Code (Lower)',
@@ -268,7 +266,7 @@ export const quality = {
         emptyDescription:
           'Quality standard ({{code}}) has no inspection items configured yet.',
         startEditing: 'Start Editing',
-        footerHint: 'Global Quality Standard Verification Node',
+        footerHint: 'Review inspection rules and the current approval status',
         close: 'Close Details',
         confirm: 'Confirm',
         noRemarks: 'No special remarks',
@@ -356,7 +354,9 @@ export const quality = {
     saveStandardSuccess: 'Quality standard synced successfully',
     saveAbnormalityDisposalSuccess: 'Quality abnormality disposal saved',
     submitForApprovalSuccess:
-      'Quality standard submitted for approval and moved into pending review.',
+      'A quality standard approval request was created. View it in Tasks & Requests.',
+    approvalResponseNotConfirmed:
+      'The submission result could not be confirmed. Refresh the standard and check Tasks & Requests.',
     approveStandardSuccess:
       'Quality standard approved and moved into the pending release stage.',
     rejectStandardSuccess:

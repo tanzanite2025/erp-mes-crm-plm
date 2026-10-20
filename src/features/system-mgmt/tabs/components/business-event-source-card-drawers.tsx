@@ -322,7 +322,7 @@ export function StatusEditorContent({
                           onUpdate(index, { code: event.target.value })
                         }
                         className={cn(
-                          'h-10 rounded-2xl border-none bg-background/85 font-mono text-xs shadow-inner',
+                          'h-10 rounded-2xl border-none bg-background/85 font-maple-ui text-xs shadow-inner',
                           drawerReadonlyFieldClass(false)
                         )}
                         placeholder='Pending'
@@ -628,7 +628,7 @@ export function FieldEditorContent({
                     onUpdate(index, { key: event.target.value })
                   }
                   className={cn(
-                    'h-9 rounded-2xl font-mono text-xs',
+                    'h-9 rounded-2xl font-maple-ui text-xs',
                     drawerReadonlyFieldClass(isFieldIdentityLocked)
                   )}
                   placeholder='orderNo'
@@ -648,7 +648,7 @@ export function FieldEditorContent({
                     onUpdate(index, { path: event.target.value })
                   }
                   className={cn(
-                    'h-9 rounded-2xl font-mono text-xs',
+                    'h-9 rounded-2xl font-maple-ui text-xs',
                     drawerReadonlyFieldClass(isFieldIdentityLocked)
                   )}
                   placeholder='orderNo'
@@ -677,7 +677,7 @@ export function FieldEditorContent({
                   onChange={(event) =>
                     onUpdate(index, { templateKey: event.target.value })
                   }
-                  className='h-9 rounded-2xl font-mono text-xs'
+                  className='h-9 rounded-2xl font-maple-ui text-xs'
                   placeholder='OrderNo'
                 />
                 <MiniToggle

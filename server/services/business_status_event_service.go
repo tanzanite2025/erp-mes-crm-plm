@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/models"
@@ -22,18 +21,20 @@ const (
 )
 
 type BusinessStatusChangedEvent struct {
-	EventKey       string
-	Entity         string
-	SourceCode     string
-	TargetID       string
-	PreviousStatus string
-	NextStatus     string
-	ActorID        string
-	Operator       string
-	ActionURL      string
-	Metadata       map[string]any
-	TemplateValues map[string]string
-	TriggeredAt    time.Time
+	EventKey             string
+	ActionCode           string
+	Entity               string
+	SourceCode           string
+	TargetID             string
+	PreviousStatus       string
+	NextStatus           string
+	ActorID              string
+	Operator             string
+	ActionURL            string
+	VisibilityPermission string
+	Metadata             map[string]any
+	TemplateValues       map[string]string
+	TriggeredAt          time.Time
 }
 
 func DispatchBusinessStatusChangedTx(tx *gorm.DB, event BusinessStatusChangedEvent) error {
@@ -42,7 +43,20 @@ func DispatchBusinessStatusChangedTx(tx *gorm.DB, event BusinessStatusChangedEve
 	}
 
 	event = normalizeBusinessStatusChangedEvent(event)
-	if event.SourceCode == "" || event.Entity == "" || event.TargetID == "" || event.NextStatus == "" || event.PreviousStatus == event.NextStatus {
+	if event.SourceCode == "" || event.Entity == "" || event.TargetID == "" || event.NextStatus == "" || event.ActionCode == businessEventActionStatusChange && event.PreviousStatus == event.NextStatus {
+		return nil
+	}
+	if event.EventKey == "" {
+		return domainValidationError("通知事件必须提供来源业务事实的稳定业务事件键")
+	}
+	sourceEnabled, err := LockBusinessEventNotificationSourceWithinTransaction(tx, event.SourceCode)
+	if err != nil {
+		return err
+	}
+	if err := ResolveBusinessRuleNotificationInboxEntriesForStatusWithinTransaction(tx, event.SourceCode, event.Entity, event.TargetID, event.NextStatus); err != nil {
+		return err
+	}
+	if !sourceEnabled {
 		return nil
 	}
 	if !tx.Migrator().HasTable(&models.NotificationRule{}) || !tx.Migrator().HasTable(&models.RuleExecutionLog{}) {
@@ -55,7 +69,7 @@ func DispatchBusinessStatusChangedTx(tx *gorm.DB, event BusinessStatusChangedEve
 		true,
 		event.Entity,
 		event.SourceCode,
-		businessEventActionStatusChange,
+		event.ActionCode,
 	).Find(&rules).Error; err != nil {
 		return err
 	}
@@ -69,6 +83,11 @@ func DispatchBusinessStatusChangedTx(tx *gorm.DB, event BusinessStatusChangedEve
 }
 
 func normalizeBusinessStatusChangedEvent(event BusinessStatusChangedEvent) BusinessStatusChangedEvent {
+	event.EventKey = strings.TrimSpace(event.EventKey)
+	event.ActionCode = strings.TrimSpace(event.ActionCode)
+	if event.ActionCode == "" {
+		event.ActionCode = businessEventActionStatusChange
+	}
 	event.Entity = strings.TrimSpace(event.Entity)
 	event.SourceCode = strings.TrimSpace(event.SourceCode)
 	event.TargetID = strings.TrimSpace(event.TargetID)
@@ -96,21 +115,7 @@ func normalizeBusinessStatusChangedEvent(event BusinessStatusChangedEvent) Busin
 	if event.TriggeredAt.IsZero() {
 		event.TriggeredAt = time.Now().UTC()
 	}
-	if strings.TrimSpace(event.EventKey) == "" {
-		event.EventKey = buildBusinessStatusChangedEventKey(event)
-	}
 	return event
-}
-
-func buildBusinessStatusChangedEventKey(event BusinessStatusChangedEvent) string {
-	return strings.Join([]string{
-		event.SourceCode,
-		event.TargetID,
-		businessEventActionStatusChange,
-		event.PreviousStatus,
-		event.NextStatus,
-		strconv.FormatInt(event.TriggeredAt.UnixNano(), 10),
-	}, ":")
 }
 
 func dispatchBusinessStatusChangedRuleTx(tx *gorm.DB, event BusinessStatusChangedEvent, rule models.NotificationRule) error {
@@ -124,7 +129,7 @@ func dispatchBusinessStatusChangedRuleTx(tx *gorm.DB, event BusinessStatusChange
 	}
 
 	for _, segment := range segments {
-		if !stringListContains(segment.TargetStatuses, event.NextStatus) {
+		if len(segment.TargetStatuses) > 0 && !stringListContains(segment.TargetStatuses, event.NextStatus) {
 			continue
 		}
 		if err := writeBusinessStatusRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
@@ -163,42 +168,13 @@ func dispatchBusinessStatusChangedCommandsTx(tx *gorm.DB, event BusinessStatusCh
 		title := renderBusinessStatusEventTemplate(command.Title, event)
 		content := renderBusinessStatusEventTemplate(command.Content, event)
 		actionURL := renderBusinessStatusEventTemplate(command.TargetLink, event)
-		status := "success"
-		errorMessage := ""
-		for _, target := range targets {
-			if err := PublishNotification("Workflow", businessEventActionStatusChange, title, target, map[string]any{
-				"eventKey":   event.EventKey,
-				"targetId":   event.TargetID,
-				"status":     event.NextStatus,
-				"actionUrl":  actionURL,
-				"commandId":  command.ID,
-				"ruleId":     rule.ID,
-				"segmentId":  segment.ID,
-				"sourceCode": event.SourceCode,
-				"metadata":   event.Metadata,
-			}); err != nil {
-				status = "failed"
-				errorMessage = err.Error()
-			}
+		if actionURL == "" {
+			actionURL = event.ActionURL
 		}
-		if len(targets) == 0 {
-			status = "skipped"
-			errorMessage = "notification target is empty"
-		}
-
-		if err := writeBusinessStatusRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
-			ExecutionType:   "notify",
-			ExecutionStatus: status,
-			CommandID:       command.ID,
-			Title:           title,
-			Content:         content,
-			ActionURL:       actionURL,
-			Targets:         mustJSONRawMessage(targets),
-			Metadata:        mustJSONRawMessage(event.Metadata),
-			ErrorMessage:    errorMessage,
-		}); err != nil {
+		if err := createBusinessRuleNotificationInboxEntriesWithinTransaction(tx, event, rule, segment, command, targets, title, content, actionURL); err != nil {
 			return err
 		}
+
 	}
 	return nil
 }
@@ -238,18 +214,9 @@ func dispatchBusinessStatusChangedApprovalTx(tx *gorm.DB, event BusinessStatusCh
 		Approver2ID: segment.Approval.Approver2ID,
 	})
 	if err != nil {
-		return writeBusinessStatusRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
-			ExecutionType:   "approval",
-			ExecutionStatus: "failed",
-			Metadata:        mustJSONRawMessage(event.Metadata),
-			ErrorMessage:    err.Error(),
-		})
+		return err
 	}
 
-	if result.NotifyTargetUser != "" {
-		_ = PublishNotification("Approval", result.NotifyAction, result.NotifyTitle, result.NotifyTargetUser, result.Request)
-	}
-	syncApprovalRequestToSearch(result.Request)
 	return writeBusinessStatusRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
 		ExecutionType:   "approval",
 		ExecutionStatus: "success",
@@ -264,7 +231,9 @@ func writeBusinessStatusRuleExecutionLogTx(tx *gorm.DB, event BusinessStatusChan
 	logEntry.EventKey = event.EventKey
 	logEntry.Entity = event.Entity
 	logEntry.SourceCode = event.SourceCode
-	logEntry.ActionCode = businessEventActionStatusChange
+	if logEntry.ActionCode == "" {
+		logEntry.ActionCode = event.ActionCode
+	}
 	logEntry.StatusCode = event.NextStatus
 	logEntry.RuleID = strings.TrimSpace(rule.ID)
 	logEntry.RuleName = strings.TrimSpace(rule.Name)

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 	"xdfc-server/db"
 )
@@ -48,14 +49,14 @@ func publishNotificationPayload(ctx context.Context, channel string, payload str
 	publisher := currentNotificationPublisher
 	notificationPublisherMu.RUnlock()
 	if publisher == nil {
-		return nil
+		return errors.New("notification publisher is unavailable")
 	}
 	return publisher(ctx, channel, payload)
 }
 
 func publishNotificationToRedis(ctx context.Context, channel string, payload string) error {
 	if db.RDB == nil {
-		return nil
+		return errors.New("notification Redis connection is unavailable")
 	}
 	return db.RDB.Publish(ctx, channel, payload).Err()
 }

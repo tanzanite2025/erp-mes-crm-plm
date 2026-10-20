@@ -1,4 +1,5 @@
 import { type ApprovalUserOption } from '@/features/approval/services/approval-service'
+import { usesIndependentBusinessApprovalConfiguration } from '@/features/approval/services/business-approval-policy-configuration-service'
 import {
   type BusinessEventSource,
   type BusinessStatus,
@@ -145,6 +146,7 @@ export function buildStatusPreview({
   notifyTargets,
   commandTitle,
   approvalTarget,
+  independentApprovalConfiguration = false,
 }: {
   sourceName: string
   statusLabel: string
@@ -152,9 +154,10 @@ export function buildStatusPreview({
   notifyTargets: string[]
   commandTitle?: string
   approvalTarget?: string
+  independentApprovalConfiguration?: boolean
 }) {
   if (!enabled) {
-    return `${sourceName}进入「${statusLabel}」时，当前不触发通知或审批。`
+    return `${sourceName}进入「${statusLabel}」时，当前不触发${independentApprovalConfiguration ? '通知' : '通知或审批'}。`
   }
 
   const notifyText =
@@ -162,9 +165,11 @@ export function buildStatusPreview({
       ? `通知 ${joinBusinessList(notifyTargets)}`
       : '不指定通知账号'
   const commandText = commandTitle ? `，使用「${commandTitle}」模板` : ''
-  const approvalText = approvalTarget
-    ? `，并创建给 ${approvalTarget} 的审批`
-    : '，不创建审批'
+  const approvalText = independentApprovalConfiguration
+    ? ''
+    : approvalTarget
+      ? `，并创建给 ${approvalTarget} 的审批`
+      : '，不创建审批'
 
   return `${sourceName}进入「${statusLabel}」时，${notifyText}${commandText}${approvalText}。`
 }
@@ -182,11 +187,14 @@ export function createStatusSegment(
     assigneeUsernames: [],
     resolveOnStatuses: getDefaultResolveStatuses(source),
     dynamicTargetField: null,
-    approval: {
-      ...defaultApproval,
-      module: source.module,
-      action: `${source.code}_${status.code}_APPROVAL`,
-    },
+    approval: usesIndependentBusinessApprovalConfiguration(source.code)
+      ? undefined
+      : {
+          ...defaultApproval,
+          module: source.module,
+          action: `${source.code}_${status.code}_APPROVAL`,
+          reasonTemplate: defaultApproval.reasonTemplate,
+        },
   }
 }
 
@@ -200,6 +208,6 @@ export function normalizeSegment(segment: RuleSegment): RuleSegment {
     dynamicTargetField: segment.dynamicTargetField ?? null,
     approval: segment.approval
       ? { ...defaultApproval, ...segment.approval }
-      : defaultApproval,
+      : undefined,
   }
 }

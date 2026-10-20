@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 
 const searchSchema = z.object({
+  logisticsId: z.string().uuid().optional(),
   search: z.string().optional(),
   bindOrderNo: z.string().optional(),
   bindShipmentId: z.string().optional(),

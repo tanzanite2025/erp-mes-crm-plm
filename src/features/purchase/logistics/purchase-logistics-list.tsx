@@ -1,6 +1,7 @@
 import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ColumnDef, flexRender } from '@tanstack/react-table'
+import { Route } from '@/routes/_authenticated/purchase/logistics'
 import {
   Truck,
   Package,
@@ -11,7 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { isForbiddenError } from '@/lib/error-status'
+import { isForbiddenError, isNotFoundError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { useUdsClientTable } from '@/hooks/use-uds-table'
@@ -39,12 +40,16 @@ import {
 
 function PurchaseLogisticsDetailSheet({
   record,
+  defaultOpen = false,
+  onClose,
 }: {
   record: PurchaseLogisticsRecord
+  defaultOpen?: boolean
+  onClose?: () => void
 }) {
   const { locale, t } = useLanguage()
   const queryClient = useQueryClient()
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(defaultOpen)
   const localEvents = React.useMemo(
     () => (Array.isArray(record.events) ? record.events : []),
     [record.events]
@@ -143,17 +148,26 @@ function PurchaseLogisticsDetailSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='size-7 rounded-full hover:bg-emerald-50 hover:text-emerald-600'
-        >
-          <ChevronRight className='size-4' />
-        </Button>
-      </SheetTrigger>
+    <Sheet
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (!nextOpen) onClose?.()
+      }}
+    >
+      {!defaultOpen && (
+        <SheetTrigger asChild>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='size-7 rounded-full hover:bg-emerald-50 hover:text-emerald-600'
+          >
+            <ChevronRight className='size-4' />
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent
+        aria-describedby={undefined}
         side='right'
         className='flex w-[400px] flex-col p-0 sm:w-[500px] sm:max-w-full'
       >
@@ -172,11 +186,11 @@ function PurchaseLogisticsDetailSheet({
               <div className='flex items-center gap-2'>
                 <Badge
                   variant='outline'
-                  className='border-dashed bg-white font-mono text-[8px]'
+                  className='border-dashed bg-white font-maple-ui text-[8px]'
                 >
                   {displayCarrier}
                 </Badge>
-                <span className='font-mono text-[10px] text-slate-400'>
+                <span className='font-maple-ui text-[10px] text-slate-400'>
                   {record.trackingNo}
                 </span>
               </div>
@@ -187,14 +201,14 @@ function PurchaseLogisticsDetailSheet({
             <div className='flex flex-wrap items-center gap-2'>
               <Badge
                 variant='outline'
-                className='rounded-full border-dashed bg-white font-mono text-[8px]'
+                className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
               >
                 {isShowingTrustedTracking
                   ? t('purchase.logistics.detailSourceTrusted')
                   : t('purchase.logistics.detailSourceLocal')}
               </Badge>
               {latestRefresh?.checkedAt ? (
-                <span className='font-mono text-[8px] text-slate-400'>
+                <span className='font-maple-ui text-[8px] text-slate-400'>
                   {t('purchase.logistics.detailRefreshCheckedAt')}:{' '}
                   {new Date(latestRefresh.checkedAt).toLocaleString(locale)}
                 </span>
@@ -244,18 +258,18 @@ function PurchaseLogisticsDetailSheet({
                     <div className='flex items-center gap-2'>
                       <Badge
                         variant='outline'
-                        className='rounded-full border-dashed bg-white font-mono text-[8px]'
+                        className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
                       >
                         {latestRefresh.providerCode ||
                           t('purchase.logistics.detailSourceTrusted')}
                       </Badge>
-                      <span className='font-mono text-[8px] text-slate-400 uppercase'>
+                      <span className='font-maple-ui text-[8px] text-slate-400 uppercase'>
                         {latestRefresh.status ||
                           t('purchase.logistics.notAvailable')}
                       </span>
                     </div>
                     {latestRefresh.checkedAt ? (
-                      <span className='font-mono text-[8px] text-slate-400'>
+                      <span className='font-maple-ui text-[8px] text-slate-400'>
                         {new Date(latestRefresh.checkedAt).toLocaleString(
                           locale
                         )}
@@ -282,7 +296,7 @@ function PurchaseLogisticsDetailSheet({
         </div>
 
         <div className='flex items-center justify-between border-t bg-slate-50 p-4'>
-          <span className='font-mono text-[9px] text-slate-300'>
+          <span className='font-maple-ui text-[9px] text-slate-300'>
             UUID: {record.id}
           </span>
           <span className='text-[9px] font-black tracking-widest text-slate-400 uppercase'>
@@ -296,6 +310,13 @@ function PurchaseLogisticsDetailSheet({
 
 export function PurchaseLogisticsList() {
   const { t } = useLanguage()
+  const { logisticsId } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const linkedRecord = useQuery({
+    queryKey: PURCHASE_LOGISTICS_KEYS.detail(logisticsId || ''),
+    queryFn: () => PurchaseLogisticsService.getRecordById(logisticsId!),
+    enabled: Boolean(logisticsId),
+  })
   const [search, setSearch] = React.useState('')
 
   const { data, error, isLoading } = useQuery<PurchaseLogisticsListResponse>({
@@ -313,7 +334,7 @@ export function PurchaseLogisticsList() {
       cell: ({ row }) => (
         <div className='flex items-center gap-2'>
           <Package className='size-3 text-slate-400' />
-          <span className='font-mono text-xs font-black tracking-tighter text-blue-600'>
+          <span className='font-maple-ui text-xs font-black tracking-tighter text-blue-600'>
             {row.original.orderNo}
           </span>
         </div>
@@ -328,7 +349,7 @@ export function PurchaseLogisticsList() {
             {row.original.purchaseOrder?.supplierName ||
               t('purchase.logistics.supplierFallback')}
           </span>
-          <span className='font-mono text-[8px] text-slate-400 opacity-60'>
+          <span className='font-maple-ui text-[8px] text-slate-400 opacity-60'>
             {t('purchase.logistics.supplierHint')}
           </span>
         </div>
@@ -347,7 +368,7 @@ export function PurchaseLogisticsList() {
       accessorKey: 'trackingNo',
       header: t('purchase.logistics.columns.trackingNo'),
       cell: ({ row }) => (
-        <span className='font-mono text-xs font-medium text-slate-900 transition-colors group-hover:text-blue-600'>
+        <span className='font-maple-ui text-xs font-medium text-slate-900 transition-colors group-hover:text-blue-600'>
           {row.original.trackingNo}
         </span>
       ),
@@ -414,102 +435,142 @@ export function PurchaseLogisticsList() {
   }
 
   return (
-    <Card className='animate-in border-none bg-transparent shadow-none duration-700 fade-in'>
-      <CardHeader className='flex-row items-center justify-between px-0 pb-6'>
-        <div className='space-y-1'>
-          <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
-            <Truck className='size-4 text-emerald-600' />
-            {t('purchase.logistics.trackingTitle')}
-          </CardTitle>
-          <p className='text-[9px] font-black tracking-widest text-slate-400 uppercase'>
-            {t('purchase.logistics.trackingDesc')}
+    <>
+      {logisticsId && linkedRecord.error && (
+        <div role='alert' className='space-y-2 text-sm text-destructive'>
+          <p>
+            {isForbiddenError(linkedRecord.error)
+              ? t('errors.forbidden.description')
+              : t(
+                  isNotFoundError(linkedRecord.error)
+                    ? 'trading.logistics.recordNotFound'
+                    : 'trading.logistics.recordLoadFailed'
+                )}
           </p>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              void linkedRecord.refetch()
+            }}
+          >
+            {t('common.actions.retry')}
+          </Button>
         </div>
-
-        <div className='flex items-center gap-2'>
-          <div className='relative'>
-            <Search className='absolute top-1/2 left-3 size-3 -translate-y-1/2 text-slate-400' />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('purchase.logistics.searchPlaceholder')}
-              className='h-9 w-64 rounded-full border-dashed border-slate-200 bg-white pr-4 pl-9 text-[11px] font-black tracking-tight'
-            />
+      )}
+      {logisticsId && linkedRecord.isLoading && (
+        <Loader2 className='size-5 animate-spin' />
+      )}
+      {logisticsId && linkedRecord.data && (
+        <PurchaseLogisticsDetailSheet
+          key={logisticsId}
+          record={linkedRecord.data}
+          defaultOpen
+          onClose={() => {
+            void navigate({ search: {}, replace: true })
+          }}
+        />
+      )}
+      <Card className='animate-in border-none bg-transparent shadow-none duration-700 fade-in'>
+        <CardHeader className='flex-row items-center justify-between px-0 pb-6'>
+          <div className='space-y-1'>
+            <CardTitle className='flex items-center gap-2 text-sm font-black tracking-tighter uppercase'>
+              <Truck className='size-4 text-emerald-600' />
+              {t('purchase.logistics.trackingTitle')}
+            </CardTitle>
+            <p className='text-[9px] font-black tracking-widest text-slate-400 uppercase'>
+              {t('purchase.logistics.trackingDesc')}
+            </p>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className='px-0'>
-        <div className='overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-white/50'>
-          <table className='w-full'>
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr
-                  key={headerGroup.id}
-                  className='border-b border-dashed border-slate-200 bg-slate-50/50'
-                >
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className='h-10 px-4 text-left text-[9px] font-black tracking-widest text-slate-400 uppercase'
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
+
+          <div className='flex items-center gap-2'>
+            <div className='relative'>
+              <Search className='absolute top-1/2 left-3 size-3 -translate-y-1/2 text-slate-400' />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('purchase.logistics.searchPlaceholder')}
+                className='h-9 w-64 rounded-full border-dashed border-slate-200 bg-white pr-4 pl-9 text-[11px] font-black tracking-tight'
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className='px-0'>
+          <div className='overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-white/50'>
+            <table className='w-full'>
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
                   <tr
-                    key={index}
-                    className='h-12 animate-pulse border-b border-dashed border-slate-100 last:border-0'
+                    key={headerGroup.id}
+                    className='border-b border-dashed border-slate-200 bg-slate-50/50'
                   >
-                    <td colSpan={columns.length} className='px-4 align-middle'>
-                      <div className='h-4 w-full rounded-full bg-slate-100 opacity-50' />
-                    </td>
-                  </tr>
-                ))
-              ) : records.length === 0 ? (
-                <tr className='h-64'>
-                  <td
-                    colSpan={columns.length}
-                    className='text-center align-middle text-slate-300'
-                  >
-                    <Package className='mx-auto mb-2 size-12 opacity-10' />
-                    <span className='text-[10px] font-black tracking-widest uppercase'>
-                      {t('purchase.logistics.empty')}
-                    </span>
-                  </td>
-                </tr>
-              ) : (
-                table.getRowModel().rows.map((row, index) => (
-                  <tr
-                    key={row.id}
-                    className={cn(
-                      'group h-14 border-b border-dashed border-slate-100 transition-all last:border-0 hover:bg-emerald-50/30',
-                      'animate-in duration-300 fill-mode-both fade-in slide-in-from-bottom-1'
-                    )}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className='px-4 align-middle'>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className='h-10 px-4 text-left text-[9px] font-black tracking-widest text-slate-400 uppercase'
+                      >
                         {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
+                          header.column.columnDef.header,
+                          header.getContext()
                         )}
-                      </td>
+                      </th>
                     ))}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
+                ))}
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr
+                      key={index}
+                      className='h-12 animate-pulse border-b border-dashed border-slate-100 last:border-0'
+                    >
+                      <td
+                        colSpan={columns.length}
+                        className='px-4 align-middle'
+                      >
+                        <div className='h-4 w-full rounded-full bg-slate-100 opacity-50' />
+                      </td>
+                    </tr>
+                  ))
+                ) : records.length === 0 ? (
+                  <tr className='h-64'>
+                    <td
+                      colSpan={columns.length}
+                      className='text-center align-middle text-slate-300'
+                    >
+                      <Package className='mx-auto mb-2 size-12 opacity-10' />
+                      <span className='text-[10px] font-black tracking-widest uppercase'>
+                        {t('purchase.logistics.empty')}
+                      </span>
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map((row, index) => (
+                    <tr
+                      key={row.id}
+                      className={cn(
+                        'group h-14 border-b border-dashed border-slate-100 transition-all last:border-0 hover:bg-emerald-50/30',
+                        'animate-in duration-300 fill-mode-both fade-in slide-in-from-bottom-1'
+                      )}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className='px-4 align-middle'>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </>
   )
 }

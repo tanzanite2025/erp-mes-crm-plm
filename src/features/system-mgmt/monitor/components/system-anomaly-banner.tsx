@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { AlertCircle, ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { canOpenRouteEntry } from '@/features/authz/guards/route-entry-access'
-import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
+import { useSystemMonitor } from '../hooks/use-system-monitor'
 
 type SystemAnomalyMetadata = {
   uniqueKey?: string
@@ -17,27 +17,27 @@ type SystemAnomalyMetadata = {
  * 支持多重异常指纹详情展示、实时自愈感知及高层级视觉反馈
  */
 export function SystemAnomalyBanner() {
-  const messages = useNotificationStore((s) => s.messages)
+  const { data } = useSystemMonitor()
   const user = useAuthStore((state) => state.user)
   const canOpenBasicSettings = canOpenRouteEntry(user, '/basic-settings')
   const bannerRef = useRef<HTMLDivElement>(null)
 
-  // 提取系统级核心异常
-  const criticalAnomalies = messages.filter(
-    (m) =>
-      m.priority === 'critical' &&
-      ((m.metadata as SystemAnomalyMetadata | undefined)?.uniqueKey?.startsWith(
-        'system_anomaly'
-      ) ??
-        false) &&
-      !m.isArchived
-  )
-
-  // 始终以首条报警为核心上下文
+  const integrity = data?.integrity
+  const criticalAnomalies = (integrity?.anomalies ?? []).map((code) => ({
+    title:
+      code === 'FS_PERMISSION_DENIED' ? '文件存储权限告警' : '系统完整性异常',
+    content:
+      code === 'FS_PERMISSION_DENIED'
+        ? '存储目录无法写入，请检查上传与备份服务。'
+        : code,
+    metadata: {
+      errorCode: code,
+      details: integrity?.details ?? [],
+      isHealing: integrity?.isHealing ?? false,
+    },
+  }))
   const mainAnomaly = criticalAnomalies[0]
-  const mainMetadata = mainAnomaly?.metadata as
-    | SystemAnomalyMetadata
-    | undefined
+  const mainMetadata: SystemAnomalyMetadata | undefined = mainAnomaly?.metadata
   const isHealing = mainMetadata?.isHealing ?? false
   const details = mainMetadata?.details ?? []
 
@@ -103,7 +103,7 @@ export function SystemAnomalyBanner() {
                 {details.map((d: string) => (
                   <span
                     key={d}
-                    className='rounded-sm border border-white/10 bg-black/40 px-2 py-0.5 font-mono text-[7px] text-white/90'
+                    className='rounded-sm border border-white/10 bg-black/40 px-2 py-0.5 font-maple-ui text-[7px] text-white/90'
                   >
                     {d}
                   </span>

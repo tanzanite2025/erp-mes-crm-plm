@@ -11,7 +11,7 @@ This system bridges complex industrial workflows with cloud-native architecture,
 - Real-time persistence with Go (Gin) + PostgreSQL.
 - Modular React + Vite frontend architecture.
 - Product lifecycle, engineering BOM, manufacturing BOM, and MRP-oriented workflows.
-- Workflow, approval, permission, and audit infrastructure.
+- Backend domain transactions, approval requests, permissions, audit, and a durable account notification inbox.
 - Full lifecycle tracking for molds and equipment.
 - JWT-based auth and enterprise security controls.
 - Atomic warehouse/inventory transaction flows.
@@ -53,6 +53,14 @@ For the current file responsibility and layering assessment, see `docs/architect
 - Do not commit one-off repair notes, local cleanup scripts, generated completion reports, date-stamped local checklists, or docs that reference another upstream template project.
 - When a checklist becomes permanent practice, move the durable rule into the nearest source-of-truth doc and delete the historical checklist.
 - Prefer linking from this README to canonical docs instead of duplicating long instructions in multiple places.
+
+Canonical development, messaging, and approval references:
+
+- [Development boundaries](GEMINI.md) and [SDRTS implementation contract](DELTA_SYSTEM.md): frontend/backend responsibilities, version checks, and the boundary between editing deltas and semantic business transactions.
+
+- [System notification inbox, cross-device synchronization, and delivery contract](docs/architecture/workflow/system-notification-inbox-cross-device-synchronization-and-delivery-contract.md): implemented account inbox, synchronized read/archive/resolution states, shared delivery queue, retention, cutover, and actual source coverage limits.
+- [Quality standard approval transaction and notification delivery contract](docs/quality-standard-approval-transaction-and-notification-delivery-contract.md): quality approval transactions and their integration with the shared inbox and delivery queue. Production deployment requires separate verification.
+- [Logistics record transaction and notification delivery contract](docs/logistics-record-transaction-and-notification-delivery-contract.md): actual logistics states, versioned writes, sales/purchase visibility, record links, and shared inbox integration.
 
 ## Type Safety and Validation
 

@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { usesIndependentBusinessApprovalConfiguration } from '@/features/approval/services/business-approval-policy-configuration-service'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import { getBusinessEventSourceRuntimeCoverage } from '../workflow-core/data/business-event-source-runtime-coverage'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from '../workflow-core/data/business-event-source-templates/sales-order'
@@ -165,16 +166,20 @@ export function NotificationRuleList({
           assigneeUsernames: [],
           resolveOnStatuses: defaultResolveStatuses,
           dynamicTargetField: null,
-          approval: {
-            enabled: false,
-            module: 'Trading',
-            action: 'ORDER_REVIEW',
-            approver1Id: '',
-            approver2Id: '',
-            dynamicApproverField: null,
-            reasonTemplate:
-              '业务规则 [RuleName] / [SegmentTitle] 已命中，请审批单据 [OrderNo]。',
-          },
+          approval: usesIndependentBusinessApprovalConfiguration(source.code)
+            ? undefined
+            : {
+                enabled: false,
+                module: source.module,
+                action: `${source.code}_${source.config.statuses[0]?.code ?? 'DRAFT'}_APPROVAL`,
+                approver1Id: '',
+                approver2Id: '',
+                dynamicApproverField: null,
+                reasonTemplate:
+                  source.code === 'QUALITY_STANDARD'
+                    ? '业务规则 [RuleName] / [SegmentTitle] 已命中，请审批品质标准 [StandardCode]（[StandardName]）。'
+                    : '业务规则 [RuleName] / [SegmentTitle] 已命中，请审批单据 [OrderNo]。',
+              },
         },
       ],
     }
@@ -303,7 +308,7 @@ export function NotificationRuleList({
               <span>
                 {createSourceCoverage.status === 'preconnected'
                   ? `当前选择的是${createSource.name}，属于预接入业务源。可以先准备规则骨架，但 APS 业务定义确认前，不建议当作正式生产规则启用。`
-                  : `选择${createSource.name}后直接建立规则，再配置进入某个状态时通知谁、是否需要审批。`}
+                  : `选择${createSource.name}后直接建立规则，再配置进入某个状态时通知谁。`}
               </span>
             </div>
           </div>
@@ -362,7 +367,7 @@ export function NotificationRuleList({
         <div className='px-2 pt-2'>
           <p className='max-w-2xl text-[10px] leading-relaxed text-muted-foreground/60'>
             <b>提示：</b>{' '}
-            每个规则可以包含多个业务分支阶段。建议按业务实体分类规则，再在同一规则内管理不同生命周期阶段的通知与审批配置。
+            每个规则可以包含多个业务状态阶段。品质标准在此配置通知，审批人请在审批中心的审批配置中维护。
           </p>
         </div>
       )}

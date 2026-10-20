@@ -7,19 +7,18 @@ import (
 )
 
 type InspectionStandardRequest struct {
-	ID          string          `json:"id"`
-	Code        string          `json:"code"`
-	Name        string          `json:"name"`
-	ProductID   string          `json:"productId"`
-	ProductName string          `json:"productName"`
-	Type        string          `json:"type"`
-	Version     float64         `json:"version"`
-	Status      string          `json:"status"`
-	Items       json.RawMessage `json:"items"`
-	Auditor     string          `json:"auditor"`
-	AuditTime   *time.Time      `json:"auditTime"`
-	Remarks     string          `json:"remarks"`
-	Description string          `json:"description"`
+	ID            string          `json:"id"`
+	Code          string          `json:"code"`
+	Name          string          `json:"name"`
+	ProductID     string          `json:"productId"`
+	ProductName   string          `json:"productName"`
+	Type          string          `json:"type"`
+	Version       float64         `json:"version"`
+	Status        string          `json:"status"`
+	Items         json.RawMessage `json:"items"`
+	Remarks       string          `json:"remarks"`
+	Description   string          `json:"description"`
+	ArchiveReason string          `json:"archiveReason"`
 }
 
 type ApprovalRequestSummaryResponse struct {
@@ -53,6 +52,14 @@ type InspectionStandardResponse struct {
 	AuditTime              *time.Time                      `json:"auditTime"`
 	Remarks                string                          `json:"remarks"`
 	Description            string                          `json:"description"`
+	Operator               string                          `json:"operator"`
+	ReviewComment          string                          `json:"reviewComment"`
+	RejectReason           string                          `json:"rejectReason"`
+	PublishedBy            string                          `json:"publishedBy"`
+	PublishedAt            *time.Time                      `json:"publishedAt"`
+	ArchiveReason          string                          `json:"archiveReason"`
+	ArchivedBy             string                          `json:"archivedBy"`
+	ArchivedAt             *time.Time                      `json:"archivedAt"`
 	ApprovalRequestSummary *ApprovalRequestSummaryResponse `json:"approvalRequestSummary,omitempty"`
 }
 
@@ -74,10 +81,13 @@ type InspectionStandardsListPaginationMetadata struct {
 }
 
 type InspectionStandardsListStatsMetadata struct {
-	Total     int64 `json:"total"`
-	Published int64 `json:"published"`
-	Draft     int64 `json:"draft"`
-	Archived  int64 `json:"archived"`
+	Total           int64 `json:"total"`
+	Published       int64 `json:"published"`
+	Draft           int64 `json:"draft"`
+	Archived        int64 `json:"archived"`
+	PendingApproval int64 `json:"pendingApproval"`
+	Approved        int64 `json:"approved"`
+	Rejected        int64 `json:"rejected"`
 }
 
 type InspectionStandardsListMetadata struct {
@@ -229,18 +239,17 @@ func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models
 	}
 
 	return models.InspectionStandard{
-		BaseModel:   models.BaseModel{ID: input.ID},
-		Code:        input.Code,
-		Name:        input.Name,
-		ProductID:   input.ProductID,
-		ProductName: input.ProductName,
-		Type:        input.Type,
-		Version:     input.Version,
-		Status:      input.Status,
-		Items:       input.Items,
-		Auditor:     input.Auditor,
-		AuditTime:   input.AuditTime,
-		Description: remarks,
+		BaseModel:     models.BaseModel{ID: input.ID},
+		Code:          input.Code,
+		Name:          input.Name,
+		ProductID:     input.ProductID,
+		ProductName:   input.ProductName,
+		Type:          input.Type,
+		Version:       input.Version,
+		Status:        input.Status,
+		Items:         input.Items,
+		Description:   remarks,
+		ArchiveReason: input.ArchiveReason,
 	}
 }
 
@@ -282,6 +291,14 @@ func mapInspectionStandardToResponse(model models.InspectionStandard, approvalSu
 		AuditTime:              model.AuditTime,
 		Remarks:                model.Description,
 		Description:            model.Description,
+		Operator:               model.Operator,
+		ReviewComment:          model.ReviewComment,
+		RejectReason:           model.RejectReason,
+		PublishedBy:            model.PublishedBy,
+		PublishedAt:            model.PublishedAt,
+		ArchiveReason:          model.ArchiveReason,
+		ArchivedBy:             model.ArchivedBy,
+		ArchivedAt:             model.ArchivedAt,
 		ApprovalRequestSummary: mapApprovalRequestSummaryToResponse(approvalSummary),
 	}
 }

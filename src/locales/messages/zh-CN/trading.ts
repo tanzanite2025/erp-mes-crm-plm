@@ -458,6 +458,8 @@ export const trading = {
     pendingLocation: '待更新',
     empty: '未找到匹配的物流记录',
     detailTitle: '物流详情矩阵',
+    recordNotFound: '物流记录不存在或已删除。',
+    recordLoadFailed: '暂时无法加载物流记录，请重试。',
     syncing: '正在同步轨迹...',
     detailRefresh: '实时刷新',
     detailRefreshing: '刷新中...',

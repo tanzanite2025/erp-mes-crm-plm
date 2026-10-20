@@ -1,17 +1,41 @@
 export const approval = {
   centerTitle: 'Approval Center',
   tabs: {
+    policies: 'Approval Configuration',
     requests: 'Inbox & Requests',
     routing: 'Message Center',
     history: 'Approval History',
   },
+  policies: {
+    title: 'Business Approval Configuration',
+    description:
+      'Configure approvers for business submissions. Notification rules only control reminders.',
+    enabled: 'Enable approval chain',
+    selectPrimary: 'Select the primary approver',
+    noSecondary: 'No second approval level',
+    unavailableAccount:
+      'The previous approver is unavailable; select another account',
+    existingRequests:
+      'Changes apply to new requests. Pending requests retain their original approvers.',
+    readOnly:
+      'Your account has read access. Management permission is required to make changes.',
+    save: 'Save approval configuration',
+    saving: 'Saving…',
+    saved: 'Approval configuration saved',
+    saveFailed: 'Failed to save approval configuration',
+    refresh: 'Refresh',
+    loading: 'Loading approval configuration…',
+    loadFailed: 'Failed to load approval configuration',
+  },
   modules: {
+    quality: 'Quality',
     inventory: 'Inventory',
     trading: 'Trading',
     production: 'Production',
     materials: 'Materials',
   },
   actions: {
+    quality_standard_review: 'Quality standard review',
     void: 'Void / Reverse',
     delete: 'Hard Delete',
     price_override: 'Price Override',

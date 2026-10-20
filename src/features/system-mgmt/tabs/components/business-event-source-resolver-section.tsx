@@ -116,7 +116,7 @@ export function BusinessEventSourceResolverSection({
                 readOnly={isResolverIdentityLocked}
                 onChange={(event) => onCodeChange(index, event.target.value)}
                 className={cn(
-                  'h-9 rounded-2xl font-mono text-xs',
+                  'h-9 rounded-2xl font-maple-ui text-xs',
                   readonlyFieldClass(isResolverIdentityLocked)
                 )}
               />
@@ -130,7 +130,7 @@ export function BusinessEventSourceResolverSection({
                 readOnly={isResolverIdentityLocked}
                 onChange={(event) => onPathChange(index, event.target.value)}
                 className={cn(
-                  'h-9 rounded-2xl font-mono text-xs',
+                  'h-9 rounded-2xl font-maple-ui text-xs',
                   readonlyFieldClass(isResolverIdentityLocked)
                 )}
               />

@@ -35,13 +35,13 @@ export function QualityStandardsMobileView({
                   <h3 className='truncate text-sm font-bold tracking-tight text-slate-700'>
                     {standard.name}
                   </h3>
-                  <span className='font-mono text-[10px] text-muted-foreground/40'>
+                  <span className='font-maple-ui text-[10px] text-muted-foreground/40'>
                     {standard.code}
                   </span>
                 </div>
               </div>
               <div className='flex shrink-0 flex-col items-end gap-1.5'>
-                <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-1.5 font-mono text-[8px] font-black tracking-tighter text-primary uppercase'>
+                <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-1.5 font-maple-ui text-[8px] font-black tracking-tighter text-primary uppercase'>
                   {standard.versionText}
                 </div>
                 <span className='rounded-md bg-muted/20 px-2 py-0.5 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -65,9 +65,9 @@ export function QualityStandardsMobileView({
                   </div>
                   <AuditStatusDisplay meta={standard.auditMeta} />
                   <span
-                    className={`rounded-full px-2 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}
+                    className={`rounded-full px-2 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalRequestClassName}`}
                   >
-                    {standard.approvalChainLabel}
+                    {standard.approvalRequestLabel}
                   </span>
                   {standard.processSummaryLabel &&
                   standard.processSummaryClassName ? (
@@ -87,7 +87,7 @@ export function QualityStandardsMobileView({
                   </div>
                   <div className='flex items-center gap-1'>
                     <Clock className='size-2.5 text-muted-foreground/40' />
-                    <span className='font-mono text-[9px] text-muted-foreground/40 tabular-nums'>
+                    <span className='font-maple-ui text-[9px] text-muted-foreground/40 tabular-nums'>
                       {standard.operateTimeText}
                     </span>
                   </div>
@@ -107,7 +107,7 @@ export function QualityStandardsMobileView({
                     </span>
                   ) : null}
                   {standard.decisionTimestampText ? (
-                    <span className='font-mono text-[8px] text-muted-foreground/35 tabular-nums'>
+                    <span className='font-maple-ui text-[8px] text-muted-foreground/35 tabular-nums'>
                       {standard.decisionTimestampText}
                     </span>
                   ) : null}

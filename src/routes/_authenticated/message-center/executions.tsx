@@ -14,7 +14,7 @@ const executionsSearchSchema = z.object({
     .optional()
     .catch('all'),
   executionStatus: z
-    .enum(['all', 'matched', 'success', 'failed', 'skipped'])
+    .enum(['all', 'pending', 'matched', 'success', 'failed', 'skipped'])
     .optional()
     .catch('all'),
 })

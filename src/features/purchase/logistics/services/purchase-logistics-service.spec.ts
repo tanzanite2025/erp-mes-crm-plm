@@ -54,4 +54,31 @@ describe('PurchaseLogisticsService receipt scope', () => {
       'Purchase logistics received non-receipt record'
     )
   })
+
+  it('opens a notification target directly without depending on a list page', async () => {
+    apiFetch.mockResolvedValue(receiptRecord)
+    expect(
+      await PurchaseLogisticsService.getRecordById('logistics-1')
+    ).toMatchObject(receiptRecord)
+    expect(apiFetch).toHaveBeenCalledWith('/logistics/logistics-1')
+    apiFetch.mockResolvedValue({ ...receiptRecord, type: 'Shipment' })
+    await expect(
+      PurchaseLogisticsService.getRecordById('logistics-1')
+    ).rejects.toThrow('non-receipt record')
+  })
+
+  it('uses the registered status command with a version and JSON events', async () => {
+    const payload = {
+      status: 'InTransit',
+      location: 'test',
+      description: 'test',
+      events: [],
+      version: 1,
+    }
+    await PurchaseLogisticsService.updateStatus('logistics-1', payload)
+    expect(apiFetch).toHaveBeenCalledWith('/logistics/logistics-1/status', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  })
 })

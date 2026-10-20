@@ -21,7 +21,6 @@ import { useQualityMutations } from '../hooks/use-quality'
 import { useQualityStandardsMgmt } from '../hooks/use-quality-standards-mgmt'
 import { buildQualityStandardListPresenter } from '../presenters/quality-standard-list-presenter'
 import { buildControlledProtocolStandard } from '../services/controlled-protocol-standard-factory'
-import { dispatchQualityStandardRoutingEvent } from '../services/quality-routing-service'
 import type { QualityStandardsListSearchState } from '../types/quality-standards-list'
 
 type SearchStateUpdater = (
@@ -111,11 +110,6 @@ export function StandardsIndexPage({
           'quality.standards.dialog.controlledProtocol.toastCreated',
           { count: draft.criteria.length }
         ),
-      })
-
-      await dispatchQualityStandardRoutingEvent({
-        standard: saved,
-        semanticAction: 'CREATED',
       })
 
       setIsControlledProtocolDialogOpen(false)

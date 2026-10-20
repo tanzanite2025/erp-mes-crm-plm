@@ -3,10 +3,8 @@ export interface ControlledProtocolCriterion {
   itemName: string
   targetWeight: number
   unit: string
-  qualifiedMin?: number
-  qualifiedMax?: number
-  scrapBelow?: number
-  scrapAbove?: number
+  aLevelTolerance: number
+  bLevelTolerance: number
 }
 
 export interface ControlledProtocolDraft {

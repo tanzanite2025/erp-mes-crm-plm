@@ -82,7 +82,7 @@ export function ApprovalGuard({
             <div className='relative'>
               <KeyRound className='absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-primary opacity-40' />
               <Input
-                className='h-14 rounded-2xl border-none bg-muted/50 pl-12 text-center font-mono text-2xl font-black tracking-[0.5em] transition-all focus-visible:ring-2 focus-visible:ring-primary/20'
+                className='h-14 rounded-2xl border-none bg-muted/50 pl-12 text-center font-maple-ui text-2xl font-black tracking-[0.5em] transition-all focus-visible:ring-2 focus-visible:ring-primary/20'
                 maxLength={6}
                 placeholder='123456'
                 value={pinCode}

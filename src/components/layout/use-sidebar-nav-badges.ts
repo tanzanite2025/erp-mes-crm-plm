@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNotificationStore } from '@/stores/notification-store'
+import { useAuthStore } from '@/stores/auth-store'
 import { apiFetch } from '@/lib/api-client'
+import { ApprovalService } from '@/features/approval/services/approval-service'
 import { hasSystemAlertConsumer, withDynamicBadges } from './sidebar-nav-utils'
 import type { NavGroup } from './types'
 
@@ -12,7 +13,22 @@ type SidebarSystemAlert = {
 export function useSidebarNavGroupsWithBadges(
   navGroups: NavGroup[]
 ): NavGroup[] {
-  const { unreadApprovals } = useNotificationStore()
+  const user = useAuthStore((state) => state.user)
+  const { data: approvals = [] } = useQuery({
+    queryKey: ['my-approvals', user?.id, user?.permissions],
+    queryFn: ApprovalService.getMyApprovals,
+    enabled: Boolean(user?.id && user.permissions?.includes('menu_approval')),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: 'always',
+    staleTime: 5_000,
+    retry: false,
+    gcTime: 0,
+  })
+  const unreadApprovals = approvals.filter(
+    (request) =>
+      (request.status === 'PENDING' && request.approver1Id === user?.id) ||
+      (request.status === 'APPROVED_L1' && request.approver2Id === user?.id)
+  ).length
   const shouldWatchSystemAlerts = useMemo(
     () => navGroups.some((group) => hasSystemAlertConsumer(group.children)),
     [navGroups]

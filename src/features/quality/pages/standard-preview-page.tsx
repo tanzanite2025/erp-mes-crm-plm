@@ -37,7 +37,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
   const { t } = useLanguage()
   const { data: standard, isLoading, error } = useGetQualityStandard(standardId)
   const {
-    saveStandardMutation,
+    isWorkflowActionPending,
     availableActions,
     isApproveDialogOpen,
     setIsApproveDialogOpen,
@@ -100,10 +100,10 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <Button
             variant='outline'
-            className='rounded-full'
+            className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
             onClick={handleBack}
           >
-            <ArrowLeft className='mr-2 size-4' />
+            <ArrowLeft className='size-3.5' />
             {t('quality.standards.workspace.backToList')}
           </Button>
         </div>
@@ -130,10 +130,10 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           <CardContent>
             <Button
               variant='outline'
-              className='rounded-full'
+              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
               onClick={handleBack}
             >
-              <ArrowLeft className='mr-2 size-4' />
+              <ArrowLeft className='size-3.5' />
               {t('quality.standards.workspace.backToList')}
             </Button>
           </CardContent>
@@ -156,7 +156,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
         cancelText={t('common.actions.cancel')}
         value={approveComment}
         onValueChange={setApproveComment}
-        isLoading={saveStandardMutation.isPending}
+        isLoading={isWorkflowActionPending}
       />
 
       <StandardStatusActionDialog
@@ -171,7 +171,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
         cancelText={t('common.actions.cancel')}
         value={rejectReason}
         onValueChange={setRejectReason}
-        isLoading={saveStandardMutation.isPending}
+        isLoading={isWorkflowActionPending}
         required
       />
 
@@ -187,13 +187,17 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
         cancelText={t('common.actions.cancel')}
         value={archiveReason}
         onValueChange={setArchiveReason}
-        isLoading={saveStandardMutation.isPending}
+        isLoading={isWorkflowActionPending}
         required
       />
 
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <Button variant='outline' className='rounded-full' onClick={handleBack}>
-          <ArrowLeft className='mr-2 size-4' />
+        <Button
+          variant='outline'
+          className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+          onClick={handleBack}
+        >
+          <ArrowLeft className='size-3.5' />
           {t('quality.standards.workspace.backToList')}
         </Button>
         <div className='flex flex-wrap items-center gap-3'>
@@ -202,19 +206,19 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
             targetId={standard.id}
             targetName={standard.name}
             label={t('common.audit.trigger')}
-            className='h-10 rounded-full px-4'
+            className='h-9 rounded-full px-4'
           />
           {availableActions.canSubmitForApproval ? (
             <Button
               variant='outline'
-              className='rounded-full border-dashed'
-              disabled={saveStandardMutation.isPending}
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              disabled={isWorkflowActionPending}
               onClick={handleSubmitForApproval}
             >
-              {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+              {isWorkflowActionPending ? (
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <GitPullRequestArrow className='mr-2 size-4' />
+                <GitPullRequestArrow className='size-3.5' />
               )}
               {t('quality.standards.workspace.submitForApproval')}
             </Button>
@@ -222,14 +226,14 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canApprove ? (
             <Button
               variant='outline'
-              className='rounded-full border-dashed'
-              disabled={saveStandardMutation.isPending}
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              disabled={isWorkflowActionPending}
               onClick={handleOpenApproveDialog}
             >
-              {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+              {isWorkflowActionPending ? (
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <CheckCheck className='mr-2 size-4' />
+                <CheckCheck className='size-3.5' />
               )}
               {t('quality.standards.workspace.approve')}
             </Button>
@@ -237,14 +241,14 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canReject ? (
             <Button
               variant='outline'
-              className='rounded-full border-dashed text-rose-600'
-              disabled={saveStandardMutation.isPending}
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest text-rose-600 uppercase'
+              disabled={isWorkflowActionPending}
               onClick={handleOpenRejectDialog}
             >
-              {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+              {isWorkflowActionPending ? (
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <XCircle className='mr-2 size-4' />
+                <XCircle className='size-3.5' />
               )}
               {t('quality.standards.workspace.reject')}
             </Button>
@@ -252,14 +256,14 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canPublish ? (
             <Button
               variant='outline'
-              className='rounded-full border-dashed'
-              disabled={saveStandardMutation.isPending}
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              disabled={isWorkflowActionPending}
               onClick={handlePublish}
             >
-              {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+              {isWorkflowActionPending ? (
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <SendToBack className='mr-2 size-4' />
+                <SendToBack className='size-3.5' />
               )}
               {t('quality.standards.workspace.publish')}
             </Button>
@@ -267,21 +271,24 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canArchive ? (
             <Button
               variant='outline'
-              className='rounded-full border-dashed'
-              disabled={saveStandardMutation.isPending}
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              disabled={isWorkflowActionPending}
               onClick={handleOpenArchiveDialog}
             >
-              {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+              {isWorkflowActionPending ? (
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <Archive className='mr-2 size-4' />
+                <Archive className='size-3.5' />
               )}
               {t('quality.standards.workspace.archive')}
             </Button>
           ) : null}
           {availableActions.canEdit ? (
-            <Button className='rounded-full' onClick={handleOpenEditor}>
-              <SquarePen className='mr-2 size-4' />
+            <Button
+              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+              onClick={handleOpenEditor}
+            >
+              <SquarePen className='size-3.5' />
               {t('quality.standards.workspace.openEditor')}
             </Button>
           ) : null}
