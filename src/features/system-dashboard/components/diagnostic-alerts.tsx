@@ -122,7 +122,7 @@ export function DiagnosticAlerts() {
                         <span className='text-xs font-black tracking-tight text-slate-800 uppercase dark:text-slate-100'>
                           {alert.name}
                         </span>
-                        <div className='flex items-center gap-1.5 font-mono text-[9px] text-rose-500 dark:text-rose-300'>
+                        <div className='flex items-center gap-1.5 font-maple-ui text-[9px] text-rose-500 dark:text-rose-300'>
                           <Clock className='size-3' />
                           {t(
                             'systemManagement.diagnostic.durationPrefix'
@@ -158,7 +158,7 @@ export function DiagnosticAlerts() {
                       <span className='text-[11px] font-black tracking-tight text-rose-700 uppercase dark:text-rose-300'>
                         {log.name}
                       </span>
-                      <span className='font-mono text-[9px] text-rose-600 dark:text-rose-300'>
+                      <span className='font-maple-ui text-[9px] text-rose-600 dark:text-rose-300'>
                         {new Date(log.receivedAt).toLocaleString(locale)}
                       </span>
                     </div>

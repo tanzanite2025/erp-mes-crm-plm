@@ -243,7 +243,7 @@ export function ApprovalRequests() {
                   className='h-9 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20'
                   onClick={() => {
                     const isFinal = req.currentLevel === 2 || !req.approver2Id
-                    if (isFinal) {
+                    if (isFinal && req.module !== 'Quality') {
                       setPinModal({ id: req.id, open: true })
                     } else {
                       handleApprove(req.id)
@@ -303,7 +303,7 @@ export function ApprovalRequests() {
                     {getApprovalModuleLabel(t, req.module)} -{' '}
                     {getApprovalActionLabel(t, req.action)}
                   </div>
-                  <div className='font-mono text-[10px] text-muted-foreground/60'>
+                  <div className='font-maple-ui text-[10px] text-muted-foreground/60'>
                     ID: {req.targetId}
                   </div>
                 </td>
@@ -315,7 +315,7 @@ export function ApprovalRequests() {
                 </td>
                 <td className='px-4'>
                   {req.authCode ? (
-                    <div className='flex items-center gap-2 font-mono text-sm font-black text-primary'>
+                    <div className='flex items-center gap-2 font-maple-ui text-sm font-black text-primary'>
                       <Lock className='h-3 w-3 opacity-40' />
                       {req.authCode}
                     </div>
@@ -323,7 +323,7 @@ export function ApprovalRequests() {
                     <span className='text-muted-foreground/30'>-</span>
                   )}
                 </td>
-                <td className='px-4 text-right font-mono text-[10px] text-muted-foreground'>
+                <td className='px-4 text-right font-maple-ui text-[10px] text-muted-foreground'>
                   {new Date(req.createdAt).toLocaleString(locale)}
                 </td>
               </tr>
@@ -356,7 +356,7 @@ export function ApprovalRequests() {
             <Input
               type='text'
               maxLength={6}
-              className='text-center font-mono text-2xl tracking-[1em]'
+              className='text-center font-maple-ui text-2xl tracking-[1em]'
               placeholder='000000'
               value={pinCode}
               onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}

@@ -180,7 +180,7 @@ export function OverviewTab() {
                   {ext || t('engineering.db.table.na')}
                 </Badge>
                 <span className='text-[10px] text-muted-foreground/50'>•</span>
-                <span className='font-mono text-[10px] text-muted-foreground'>
+                <span className='font-maple-ui text-[10px] text-muted-foreground'>
                   {item.id}
                 </span>
               </div>
@@ -229,7 +229,7 @@ export function OverviewTab() {
           )
         return (
           <div className='flex flex-col'>
-            <span className='font-mono text-[11px] font-black text-muted-foreground uppercase'>
+            <span className='font-maple-ui text-[11px] font-black text-muted-foreground uppercase'>
               {product?.sku || 'UNKNOWN'}
             </span>
             <span className='max-w-[120px] truncate text-[10px] text-muted-foreground'>
@@ -462,7 +462,7 @@ export function OverviewTab() {
                     {product?.sku && (
                       <Badge
                         variant='outline'
-                        className='h-5 rounded-full border-none bg-primary/5 px-3 font-mono text-[10px] leading-none font-black text-primary'
+                        className='h-5 rounded-full border-none bg-primary/5 px-3 font-maple-ui text-[10px] leading-none font-black text-primary'
                       >
                         {product.sku}
                       </Badge>
@@ -488,7 +488,7 @@ export function OverviewTab() {
                     <div className='flex items-center gap-3'>
                       <div className='flex items-center gap-1.5'>
                         <Hash className='size-3 text-muted-foreground/30' />
-                        <span className='font-mono text-[9px] text-muted-foreground/60 uppercase'>
+                        <span className='font-maple-ui text-[9px] text-muted-foreground/60 uppercase'>
                           {item.id}
                         </span>
                       </div>

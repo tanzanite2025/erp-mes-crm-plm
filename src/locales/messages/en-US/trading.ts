@@ -480,6 +480,8 @@ export const trading = {
     pendingLocation: 'Pending Update',
     empty: 'No logistics records matched',
     detailTitle: 'Logistics Detail Matrix',
+    recordNotFound: 'The logistics record does not exist or has been deleted.',
+    recordLoadFailed: 'Unable to load the logistics record. Please try again.',
     syncing: 'Syncing timeline...',
     detailRefresh: 'Refresh Tracking',
     detailRefreshing: 'Refreshing...',

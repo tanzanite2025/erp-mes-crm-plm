@@ -8,6 +8,7 @@ import {
   formatQualityDateTime,
   getQualityAuditMeta,
   getQualityStandardStatusLabel,
+  normalizeQualityStandardStatus,
 } from '../utils/quality-utils'
 import { StandardPreviewInfoCard } from './standard-preview-info-card'
 
@@ -20,9 +21,19 @@ export function StandardPreviewAuditPanel({
 }: StandardPreviewAuditPanelProps) {
   const { t, locale } = useLanguage()
   const operatorName = formatQualityActorName(standard.operator)
-  const auditorName = formatQualityActorName(standard.auditor)
+  const hasReviewDecision = [
+    'APPROVED',
+    'REJECTED',
+    'PUBLISHED',
+    'ARCHIVED',
+  ].includes(normalizeQualityStandardStatus(standard.status))
+  const auditorName = hasReviewDecision
+    ? formatQualityActorName(standard.auditor)
+    : undefined
   const operateTimeText = formatQualityDateTime(standard.operateTime)
-  const auditTimeText = formatQualityDateTime(standard.auditTime)
+  const auditTimeText = hasReviewDecision
+    ? formatQualityDateTime(standard.auditTime)
+    : undefined
   const reviewComment = standard.reviewComment?.trim()
   const rejectReason = standard.rejectReason?.trim()
   const archiveReason = standard.archiveReason?.trim()
@@ -53,7 +64,7 @@ export function StandardPreviewAuditPanel({
   const operateTimeLabel = locale === 'zh-CN' ? '更新时间' : 'Updated At'
   const auditorLabel = locale === 'zh-CN' ? '审核人' : 'Reviewer'
   const auditTimeLabel = locale === 'zh-CN' ? '审核时间' : 'Reviewed At'
-  const auditPendingText = locale === 'zh-CN' ? '待审核' : 'Pending Review'
+  const auditPendingText = locale === 'zh-CN' ? '尚未审核' : 'Not Reviewed'
 
   return (
     <div className='rounded-2xl border border-dashed border-white/10 bg-background/50 p-4 shadow-inner lg:p-5'>
@@ -110,7 +121,7 @@ export function StandardPreviewAuditPanel({
               label={t('quality.standards.dialog.detail.fields.reviewComment')}
               value={reviewComment}
               className='md:col-span-2 xl:col-span-4'
-              valueClassName='whitespace-pre-wrap break-words text-[11px] leading-6 lg:text-xs'
+              valueClassName='whitespace-pre-wrap break-words text-[11px] leading-5'
             />
           ) : null}
           {rejectReason ? (
@@ -119,7 +130,7 @@ export function StandardPreviewAuditPanel({
               label={t('quality.standards.dialog.detail.fields.rejectReason')}
               value={rejectReason}
               className='md:col-span-2 xl:col-span-4'
-              valueClassName='whitespace-pre-wrap break-words text-[11px] leading-6 lg:text-xs'
+              valueClassName='whitespace-pre-wrap break-words text-[11px] leading-5'
             />
           ) : null}
           {archiveReason ? (
@@ -128,7 +139,7 @@ export function StandardPreviewAuditPanel({
               label={t('quality.standards.dialog.detail.fields.archiveReason')}
               value={archiveReason}
               className='md:col-span-2 xl:col-span-4'
-              valueClassName='whitespace-pre-wrap break-words text-[11px] leading-6 lg:text-xs'
+              valueClassName='whitespace-pre-wrap break-words text-[11px] leading-5'
             />
           ) : null}
           {publishedByText ? (

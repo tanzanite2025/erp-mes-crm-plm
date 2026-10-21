@@ -552,7 +552,7 @@ export default function WarehouseCategory() {
                       updateForm({ code: normalizeMachineCode(e.target.value) })
                     }
                     placeholder={t('warehouse.category.dialog.codePlaceholder')}
-                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-mono text-xs font-black shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui text-xs font-black shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
                   />
                 </div>
               </div>
@@ -584,7 +584,7 @@ export default function WarehouseCategory() {
                       updateForm({ sortOrder: Number(e.target.value) || 0 })
                     }
                     placeholder='0'
-                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-mono text-xs font-black shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui text-xs font-black shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
                   />
                   <div className='flex items-center justify-between rounded-xl bg-muted/40 px-4 py-3'>
                     <span className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>

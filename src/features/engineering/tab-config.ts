@@ -15,7 +15,7 @@ export const engineeringTabs: TabItem[] = [
   },
   {
     key: 'product-attributes',
-    label: '产品属性配置',
+    label: '产品模板属性分类',
     href: '/engineering/product-attributes',
   },
   { key: 'templates', label: '产品模板', href: '/engineering/templates' },

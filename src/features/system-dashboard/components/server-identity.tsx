@@ -47,7 +47,7 @@ export function ServerIdentity({
                   >
                     {os} / {arch}
                   </Badge>
-                  <span className='font-mono text-[9px] text-slate-400 opacity-60 sm:text-[10px] dark:text-slate-500'>
+                  <span className='font-maple-ui text-[9px] text-slate-400 opacity-60 sm:text-[10px] dark:text-slate-500'>
                     {t('systemManagement.serverIdentity.runtimeLabel', {
                       runtime,
                     })}
@@ -63,7 +63,7 @@ export function ServerIdentity({
                 <Clock className='size-2.5' />
                 {t('systemManagement.serverIdentity.systemUptime')}
               </span>
-              <span className='font-mono text-sm font-bold text-slate-700 dark:text-slate-200'>
+              <span className='font-maple-ui text-sm font-bold text-slate-700 dark:text-slate-200'>
                 {uptime}
               </span>
             </div>

@@ -91,6 +91,7 @@ export function useQualityMutations() {
       isPatch?: boolean
       delta?: DeltaSet
       successMessage?: string
+      suppressSuccessToast?: boolean
     }) => QualityMaintenanceService.saveStandard(params),
     ...buildMutationOptions<
       Standard,
@@ -100,12 +101,14 @@ export function useQualityMutations() {
         isPatch?: boolean
         delta?: DeltaSet
         successMessage?: string
+        suppressSuccessToast?: boolean
       }
     >({
       queryClient,
       invalidateQueryKeys: [['quality_standards'], ['quality_standard']],
       onError: handleServerError,
       onSuccess: (_, variables) => {
+        if (variables.suppressSuccessToast) return
         toast.success(
           variables.successMessage || t('quality.hooks.saveStandardSuccess')
         )

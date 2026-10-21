@@ -284,7 +284,7 @@ export function KnowledgeBaseEntryEditor({
                                 )}
                               />
                             </div>
-                            <div className='mt-1 truncate font-mono text-[8px] leading-none text-muted-foreground/70'>
+                            <div className='mt-1 truncate font-maple-ui text-[8px] leading-none text-muted-foreground/70'>
                               {option.value}
                             </div>
                           </button>

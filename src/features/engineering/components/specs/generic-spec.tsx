@@ -31,7 +31,7 @@ export function GenericSpecOverview({
             {t('engineering.productMgmt.estimatedWeight')}
           </span>
           <div className='flex items-baseline gap-1'>
-            <span className='font-mono text-xl font-black text-foreground sm:text-2xl'>
+            <span className='font-maple-ui text-xl font-black text-foreground sm:text-2xl'>
               —
             </span>
             <span className='text-[10px] font-bold opacity-40'>BOM</span>

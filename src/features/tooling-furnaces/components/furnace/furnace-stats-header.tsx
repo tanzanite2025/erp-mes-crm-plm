@@ -20,7 +20,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
             <p className='text-[10px] font-black tracking-widest uppercase opacity-80'>
               {t('toolingFurnaces.stats.totalUnits')}
             </p>
-            <h3 className='font-mono text-3xl font-black tracking-tighter'>
+            <h3 className='font-maple-ui text-3xl font-black tracking-tighter'>
               {stats.total}
             </h3>
           </div>
@@ -35,12 +35,12 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
               {t('toolingFurnaces.stats.runningNow')}
             </p>
             <div className='flex items-center gap-2'>
-              <h3 className='font-mono text-3xl font-black tracking-tighter text-primary'>
+              <h3 className='font-maple-ui text-3xl font-black tracking-tighter text-primary'>
                 {stats.running}
               </h3>
               <Badge
                 variant='outline'
-                className='h-4 animate-pulse rounded-full border-primary/20 bg-background/50 px-1.5 font-mono text-[8px] font-bold text-primary'
+                className='h-4 animate-pulse rounded-full border-primary/20 bg-background/50 px-1.5 font-maple-ui text-[8px] font-bold text-primary'
               >
                 {t('toolingFurnaces.stats.live')}
               </Badge>
@@ -56,7 +56,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
             <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('toolingFurnaces.stats.maintenance')}
             </p>
-            <h3 className='font-mono text-3xl font-black tracking-tighter text-amber-600'>
+            <h3 className='font-maple-ui text-3xl font-black tracking-tighter text-amber-600'>
               {stats.maintenance}
             </h3>
           </div>
@@ -70,7 +70,7 @@ export function FurnaceStatsHeader({ stats }: { stats: FurnaceStats }) {
             <p className='text-[10px] font-black tracking-widest text-rose-600 uppercase opacity-60'>
               {t('toolingFurnaces.stats.faultAlert')}
             </p>
-            <h3 className='font-mono text-3xl font-black tracking-tighter text-rose-600'>
+            <h3 className='font-maple-ui text-3xl font-black tracking-tighter text-rose-600'>
               {stats.fault}
             </h3>
           </div>

@@ -59,7 +59,7 @@ export function AssignmentCategoryGrid({
                 <span className='block truncate text-[13px] font-black tracking-tight'>
                   {category.name}
                 </span>
-                <span className='block truncate font-mono text-[8px] font-black tracking-tight text-muted-foreground/50'>
+                <span className='block truncate font-maple-ui text-[8px] font-black tracking-tight text-muted-foreground/50'>
                   {category.categoryId}
                 </span>
               </span>

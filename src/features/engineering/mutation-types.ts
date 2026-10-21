@@ -1,8 +1,8 @@
 import {
   type BarcodeConfig,
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductTemplate,
   type ProductType,
 } from './data/schema'
@@ -31,16 +31,16 @@ export type SaveProductTemplateInput = Omit<
   version?: number
 }
 
-export type SaveProductAttributeCategoryInput = Omit<
-  ProductAttributeCategory,
+export type SaveProductTemplateAttributeLevelOneCategoryInput = Omit<
+  ProductTemplateAttributeLevelOneCategory,
   'id' | 'version'
 > & {
   id?: string
   version?: number
 }
 
-export type SaveProductAttributeOptionInput = Omit<
-  ProductAttributeOption,
+export type SaveProductTemplateAttributeLevelTwoOptionInput = Omit<
+  ProductTemplateAttributeLevelTwoOption,
   'id' | 'version'
 > & {
   id?: string

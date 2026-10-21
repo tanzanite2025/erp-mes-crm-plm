@@ -61,20 +61,23 @@ describe('ensureAuthenticatedRouteSession', () => {
     guardMocks.matchesPathPermissionProjection.mockReset()
   })
 
-  it('redirects anonymous visitors to sign-in', async () => {
-    await expect(
-      ensureAuthenticatedRouteSession('/dashboard/overview')
-    ).rejects.toMatchObject({
-      kind: 'redirect',
-      options: {
-        to: '/sign-in',
-        search: { redirect: '/dashboard/overview' },
-        replace: true,
-      },
-    })
+  it.each(['/home', '/dashboard/overview'])(
+    'redirects anonymous visitors to sign-in from %s',
+    async (pathname) => {
+      await expect(
+        ensureAuthenticatedRouteSession(pathname)
+      ).rejects.toMatchObject({
+        kind: 'redirect',
+        options: {
+          to: '/sign-in',
+          search: { redirect: pathname },
+          replace: true,
+        },
+      })
 
-    expect(guardMocks.syncIdentitySnapshotFromProfile).not.toHaveBeenCalled()
-  })
+      expect(guardMocks.syncIdentitySnapshotFromProfile).not.toHaveBeenCalled()
+    }
+  )
 
   it('clears a stale token-only session when snapshot sync cannot rehydrate identity', async () => {
     guardMocks.authState.accessToken = 'stale-token'

@@ -23,8 +23,8 @@ import { getDefaultPermissions } from '@/features/authz/data/default-permission-
 import { formatPermissionLabel } from '@/features/authz/utils/permission-tree-utils'
 import { type Product } from '@/features/engineering/data/schema'
 import {
-  PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
-  PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+  PRODUCT_ATTRIBUTE_CATEGORY_MANAGEMENT_QUERY_KEY,
+  PRODUCT_ATTRIBUTE_OPTION_MANAGEMENT_QUERY_KEY,
   PRODUCT_TEMPLATES_QUERY_KEY,
   PRODUCT_TYPES_QUERY_KEY,
   productOptionsQueryKey,
@@ -140,13 +140,13 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
     )
   }, [materialsQuery.data, module])
   const productAttributeCategoriesQuery = useQuery({
-    queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+    queryKey: PRODUCT_ATTRIBUTE_CATEGORY_MANAGEMENT_QUERY_KEY,
     queryFn: () =>
       ProductAttributeCategoryService.getProductAttributeCategories(),
     enabled: module === AUDIT_MODULES.product && open,
   })
   const productAttributeOptionsQuery = useQuery({
-    queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+    queryKey: PRODUCT_ATTRIBUTE_OPTION_MANAGEMENT_QUERY_KEY,
     queryFn: () => ProductAttributeOptionService.getProductAttributeOptions(),
     enabled: module === AUDIT_MODULES.product && open,
   })
@@ -302,20 +302,20 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                             </span>
                             <div className='flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5'>
                               <User className='h-2.5 w-2.5 opacity-50' />
-                              <span className='font-mono text-[8px] font-bold uppercase'>
+                              <span className='font-maple-ui text-[8px] font-bold uppercase'>
                                 {log.operator}
                               </span>
                             </div>
                           </div>
                           <div className='flex items-center gap-2 opacity-50'>
                             <Clock className='h-2.5 w-2.5' />
-                            <span className='font-mono text-[8px]'>
+                            <span className='font-maple-ui text-[8px]'>
                               {format(
                                 new Date(log.created_at),
                                 'yyyy-MM-dd HH:mm:ss'
                               )}
                             </span>
-                            <span className='font-mono text-[8px] opacity-50'>
+                            <span className='font-maple-ui text-[8px] opacity-50'>
                               {t('common.audit.ipLabel')}: {log.ip}
                             </span>
                           </div>
@@ -329,7 +329,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                               <span className='text-[9px] font-black tracking-widest uppercase opacity-70'>
                                 {item.a || item.f}
                               </span>
-                              <span className='font-mono text-[7px] uppercase opacity-30'>
+                              <span className='font-maple-ui text-[7px] uppercase opacity-30'>
                                 {item.f}
                               </span>
                             </div>
@@ -338,7 +338,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                                 <span className='text-[7px] font-black tracking-widest uppercase opacity-40'>
                                   {t('common.audit.before')}
                                 </span>
-                                <div className='rounded-xl border border-destructive/10 bg-destructive/5 p-2 font-mono text-[10px] break-all text-destructive'>
+                                <div className='rounded-xl border border-destructive/10 bg-destructive/5 p-2 font-maple-ui text-[10px] break-all text-destructive'>
                                   <Minus className='mr-1 inline h-2 w-2' />
                                   {normalizeAuditDisplayText(item.o)}
                                 </div>
@@ -348,7 +348,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                                 <span className='text-[7px] font-black tracking-widest uppercase opacity-40'>
                                   {t('common.audit.after')}
                                 </span>
-                                <div className='rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-2 font-mono text-[10px] break-all text-emerald-600'>
+                                <div className='rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-2 font-maple-ui text-[10px] break-all text-emerald-600'>
                                   <Plus className='mr-1 inline h-2 w-2' />
                                   {normalizeAuditDisplayText(item.n)}
                                 </div>
@@ -368,7 +368,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
         {/* Footer - UDS 1.0 */}
         <div className='border-t border-dashed bg-muted/5 p-6'>
           <div className='flex items-center justify-between'>
-            <span className='font-mono text-[8px] uppercase opacity-40'>
+            <span className='font-maple-ui text-[8px] uppercase opacity-40'>
               {t('common.audit.archivalPolicy')}
             </span>
             <div className='flex gap-2'>

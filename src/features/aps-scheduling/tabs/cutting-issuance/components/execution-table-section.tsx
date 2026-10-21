@@ -199,7 +199,9 @@ export function ExecutionTableSection(props: ExecutionTableSectionProps) {
             {filteredExecutions.length ? (
               filteredExecutions.map((record) => (
                 <tr key={record.id} className='border-t border-border/50'>
-                  <td className='px-4 py-2 font-mono text-xs'>{record.id}</td>
+                  <td className='px-4 py-2 font-maple-ui text-xs'>
+                    {record.id}
+                  </td>
                   <td className='px-4 py-2'>{record.orderNo}</td>
                   <td className='px-4 py-2'>
                     {t('apsScheduling.cuttingIssuance.execution.lineValue', {

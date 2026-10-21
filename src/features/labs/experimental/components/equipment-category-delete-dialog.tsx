@@ -76,7 +76,7 @@ export function EquipmentCategoryDeleteDialog({
                   confirmWord: CONFIRM_WORD,
                 }
               )}
-              className='h-10 text-center font-mono tracking-widest'
+              className='h-10 text-center font-maple-ui tracking-widest'
             />
           </Label>
 

@@ -169,19 +169,27 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
     const context = canvas.getContext('2d')
     if (!context) return
 
-    drawStripFirstLayout({
-      context,
-      cssWidth: size.width,
-      cssHeight: size.height,
-      dpr: ratio,
-      layout,
-      viewport,
-      hoveredZoneId,
-      selectedZoneId,
-      highlightedDemandLineId,
-      highlightedZoneIds,
-      filteredRollIds,
+    let cancelled = false
+    void document.fonts.ready.then(() => {
+      if (cancelled || !document.fonts.check('12px "Maple UI"')) return
+
+      drawStripFirstLayout({
+        context,
+        cssWidth: size.width,
+        cssHeight: size.height,
+        dpr: ratio,
+        layout,
+        viewport,
+        hoveredZoneId,
+        selectedZoneId,
+        highlightedDemandLineId,
+        highlightedZoneIds,
+        filteredRollIds,
+      })
     })
+    return () => {
+      cancelled = true
+    }
   }, [
     filteredRollIds,
     highlightedDemandLineId,

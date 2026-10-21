@@ -360,7 +360,7 @@ export function CuttingSizeInventoryTab() {
                             key={item.id}
                             className='border-t border-dashed border-muted/50 align-top transition-colors hover:bg-background/55'
                           >
-                            <td className='px-5 py-3.5 align-top font-mono text-[11px] font-black tracking-wide text-foreground'>
+                            <td className='px-5 py-3.5 align-top font-maple-ui text-[11px] font-black tracking-wide text-foreground'>
                               {item.code || '--'}
                             </td>
                             <td className='px-5 py-3.5 align-top text-[12px] font-bold text-foreground/85'>

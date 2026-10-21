@@ -1,13 +1,12 @@
-import type { Standard, StandardItem, LevelConfig } from '../data/schema'
+import type { Standard, StandardItem } from '../data/schema'
 import type {
   ControlledProtocolCriterion,
   ControlledProtocolDraft,
 } from '../types/controlled-protocol'
+import { buildCenterBasedControlledProtocolLevels } from './controlled-protocol-center-based-grading'
 
 const CONTROLLED_PROTOCOL_STANDARD_TYPE: Standard['type'] = 'FQC'
 const CONTROLLED_PROTOCOL_STANDARD_STATUS: Standard['status'] = 'DRAFT'
-const CONTROLLED_PROTOCOL_ERROR_CODE_LOWER = 'CONTROLLED_PROTOCOL_SCRAP_BELOW'
-const CONTROLLED_PROTOCOL_ERROR_CODE_UPPER = 'CONTROLLED_PROTOCOL_SCRAP_ABOVE'
 
 interface BuildControlledProtocolStandardOptions {
   now?: Date
@@ -29,83 +28,30 @@ function createRandomCodeSuffix() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
 
-function hasNumber(value?: number) {
-  return typeof value === 'number' && Number.isFinite(value)
-}
-
-function buildQualifiedLevel(
+function buildControlledProtocolDeviationGradingRemarks(
   criterion: ControlledProtocolCriterion
-): LevelConfig {
-  return {
-    level: 'A',
-    min: hasNumber(criterion.qualifiedMin) ? criterion.qualifiedMin : undefined,
-    max: hasNumber(criterion.qualifiedMax) ? criterion.qualifiedMax : undefined,
-  }
+) {
+  const { aLevelTolerance, bLevelTolerance, unit } = criterion
+  return `S：等于中心值；A：0 < 绝对偏差 ≤ ${aLevelTolerance}${unit}；B：${aLevelTolerance}${unit} < 绝对偏差 ≤ ${bLevelTolerance}${unit}；绝对偏差 > ${bLevelTolerance}${unit} 判定报废`
 }
 
-function buildScrapLevel(
-  criterion: ControlledProtocolCriterion
-): LevelConfig | null {
-  const hasScrapBelow = hasNumber(criterion.scrapBelow)
-  const hasScrapAbove = hasNumber(criterion.scrapAbove)
-
-  if (!hasScrapBelow && !hasScrapAbove) {
-    return null
-  }
-
-  return {
-    level: 'S',
-    min: hasScrapBelow ? criterion.scrapBelow : undefined,
-    max: hasScrapAbove ? criterion.scrapAbove : undefined,
-    errorCodeLower: hasScrapBelow
-      ? CONTROLLED_PROTOCOL_ERROR_CODE_LOWER
-      : undefined,
-    errorCodeUpper: hasScrapAbove
-      ? CONTROLLED_PROTOCOL_ERROR_CODE_UPPER
-      : undefined,
-  }
-}
-
-function buildCriterionRemarks(criterion: ControlledProtocolCriterion) {
-  const fragments: string[] = []
-
-  if (hasNumber(criterion.qualifiedMin) || hasNumber(criterion.qualifiedMax)) {
-    fragments.push(
-      `合格范围：${criterion.qualifiedMin ?? '-'} ~ ${
-        criterion.qualifiedMax ?? '-'
-      }${criterion.unit}`
-    )
-  }
-
-  if (hasNumber(criterion.scrapBelow)) {
-    fragments.push(`低于 ${criterion.scrapBelow}${criterion.unit} 判定报废`)
-  }
-
-  if (hasNumber(criterion.scrapAbove)) {
-    fragments.push(`高于 ${criterion.scrapAbove}${criterion.unit} 判定报废`)
-  }
-
-  return fragments.join('；')
-}
-
-function buildStandardItem(
+export function buildControlledProtocolInspectionStandardItem(
   criterion: ControlledProtocolCriterion,
   index: number
 ): StandardItem {
-  const scrapLevel = buildScrapLevel(criterion)
-
   return {
     id: criterion.id,
     name: criterion.itemName,
     order: index + 1,
     centerValue: criterion.targetWeight,
-    levels: [
-      buildQualifiedLevel(criterion),
-      ...(scrapLevel ? [scrapLevel] : []),
-    ],
+    levels: buildCenterBasedControlledProtocolLevels(
+      criterion.targetWeight,
+      criterion.aLevelTolerance,
+      criterion.bLevelTolerance
+    ),
     unit: criterion.unit,
     isRequired: true,
-    remarks: buildCriterionRemarks(criterion),
+    remarks: buildControlledProtocolDeviationGradingRemarks(criterion),
   }
 }
 
@@ -127,6 +73,6 @@ export function buildControlledProtocolStandard(
     productId,
     productName,
     remarks: `由受控协议创建；关联产品：${productName}（${productId}）。`,
-    items: draft.criteria.map(buildStandardItem),
+    items: draft.criteria.map(buildControlledProtocolInspectionStandardItem),
   }
 }

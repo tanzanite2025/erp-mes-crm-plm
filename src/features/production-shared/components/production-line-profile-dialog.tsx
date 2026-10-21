@@ -228,7 +228,7 @@ export function ProductionLineProfileDialog({
                   }))
                 }
                 placeholder={`自动生成或填写 ${entityLabel} 编码`}
-                className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-black tracking-tight shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
+                className='h-11 rounded-2xl border-none bg-muted/50 font-maple-ui font-black tracking-tight shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
               <p className='ml-1 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 新增时会根据名称生成编码，编辑时可手动修正。

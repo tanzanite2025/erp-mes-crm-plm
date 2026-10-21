@@ -138,7 +138,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.barcodeLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {productBarcode.trim() || '--'}
             </p>
           </div>
@@ -146,7 +146,7 @@ export function ProductBindingFeedbackCard(
             <p className='text-xs font-semibold opacity-60'>
               {t('cuttingOperations.productBinding.feedback.snapshot.qrLabel')}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {prepregQrCode.trim() || '--'}
             </p>
           </div>
@@ -156,7 +156,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.executionLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.prepregRollInstance?.specCode ||
                 bindingResult?.prepregBindingToken ||
                 '--'}
@@ -168,7 +168,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.executionDetailLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.prepregRollInstance?.specName || '--'} /{' '}
               {bindingResult?.prepregRollInstance?.supplierBatchNo || '--'} /{' '}
               {bindingResult?.prepregRollInstance?.boxNo || '--'}
@@ -180,7 +180,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.tokenLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.prepregBindingToken || '--'}
             </p>
           </div>
@@ -190,7 +190,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.protocolLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.barcodeProtocol || '--'}
             </p>
           </div>
@@ -200,7 +200,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.summaryLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.barcodeSummary || '--'}
             </p>
           </div>
@@ -210,7 +210,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.boundByLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.boundBy || '--'}
             </p>
           </div>
@@ -220,7 +220,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.bindingIdLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.id || '--'}
             </p>
           </div>
@@ -230,7 +230,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.boundAtLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.boundAt || '--'}
             </p>
           </div>
@@ -240,7 +240,7 @@ export function ProductBindingFeedbackCard(
                 'cuttingOperations.productBinding.feedback.snapshot.statusLabel'
               )}
             </p>
-            <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+            <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
               {bindingResult?.status || '--'}
             </p>
           </div>
@@ -252,7 +252,7 @@ export function ProductBindingFeedbackCard(
           <p className='text-xs font-semibold opacity-60'>
             {t('cuttingOperations.productBinding.feedback.snapshot.errorLabel')}
           </p>
-          <p className='mt-2 font-mono text-xs leading-5 [overflow-wrap:anywhere] break-words'>
+          <p className='mt-2 font-maple-ui text-xs leading-5 [overflow-wrap:anywhere] break-words'>
             {submitError || '--'}
           </p>
         </div>

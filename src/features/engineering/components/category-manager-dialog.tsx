@@ -143,7 +143,7 @@ export function CategoryManagerDialog({
       ),
       cell: ({ row }) => (
         <div className='hidden sm:block'>
-          <code className='rounded-lg bg-primary/5 px-2 py-0.5 font-mono text-[10px] font-black text-primary'>
+          <code className='rounded-lg bg-primary/5 px-2 py-0.5 font-maple-ui text-[10px] font-black text-primary'>
             {row.original.code}
           </code>
         </div>

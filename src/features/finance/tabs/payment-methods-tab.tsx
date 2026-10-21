@@ -124,7 +124,7 @@ export function PaymentMethodsTab() {
                     <CardTitle className='text-sm font-black tracking-tighter uppercase'>
                       {method.name}
                     </CardTitle>
-                    <CardDescription className='font-mono text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
+                    <CardDescription className='font-maple-ui text-[8px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
                       {method.code}
                     </CardDescription>
                   </div>

@@ -48,7 +48,7 @@ export function LinearBarcodePrintResultPanel({
             {t('codeCenter.linearBarcode.print.sections.result.description')}
           </div>
         </div>
-        <span className='font-mono text-[9px] text-muted-foreground/70'>
+        <span className='font-maple-ui text-[9px] text-muted-foreground/70'>
           {batchPrintResult.finishedAt}
         </span>
       </div>

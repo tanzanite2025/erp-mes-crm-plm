@@ -121,7 +121,7 @@ export function LinearBarcodeSimulationSection({
               </span>
               <Badge
                 variant='outline'
-                className='h-8 rounded-lg border-2 border-blue-500/20 bg-blue-500/5 px-4 font-mono text-sm font-black tracking-widest text-blue-600 dark:text-blue-400/80'
+                className='h-8 rounded-lg border-2 border-blue-500/20 bg-blue-500/5 px-4 font-maple-ui text-sm font-black tracking-widest text-blue-600 dark:text-blue-400/80'
               >
                 {assembledCode}
               </Badge>
@@ -337,14 +337,14 @@ export function LinearBarcodeSimulationSection({
                 <span>
                   {t('basicSettings.linearBarcode.simulation.form.serial')}
                 </span>
-                <span className='font-mono text-teal-600 dark:text-teal-500/60'>
+                <span className='font-maple-ui text-teal-600 dark:text-teal-500/60'>
                   {sequenceRuleKey}
                 </span>
               </label>
               <div className='flex gap-2'>
                 <div
                   className={cn(
-                    'flex h-11 flex-1 items-center rounded-xl border px-4 font-mono font-black tracking-widest shadow-inner transition-colors',
+                    'flex h-11 flex-1 items-center rounded-xl border px-4 font-maple-ui font-black tracking-widest shadow-inner transition-colors',
                     'border-slate-200 bg-white text-blue-600',
                     'dark:border-white/10 dark:bg-white/3 dark:text-blue-400'
                   )}

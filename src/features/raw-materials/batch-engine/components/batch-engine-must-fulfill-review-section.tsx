@@ -70,15 +70,15 @@ export function BatchEngineMustFulfillReviewSection(
                 <p className='text-[10px] font-black tracking-[0.16em] uppercase'>
                   {item.demandLineId}
                 </p>
-                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-mono text-[8px]'>
+                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-maple-ui text-[8px]'>
                   {getMustDiagnosticStatusLabel(item, t)}
                 </span>
               </div>
               <div className='mt-2 flex flex-wrap gap-2'>
-                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-mono text-[8px]'>
+                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-maple-ui text-[8px]'>
                   {getMustDiagnosticConstraintLabel(item, t)}
                 </span>
-                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-mono text-[8px]'>
+                <span className='rounded-full border border-current/20 bg-white/60 px-2 py-1 font-maple-ui text-[8px]'>
                   {item.reasonCode}
                 </span>
               </div>

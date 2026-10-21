@@ -80,7 +80,7 @@ export function ProductOverviewTab({
               <span className='opacity-40'>
                 {t('engineering.productMgmt.skuIdLabel')}:
               </span>
-              <span className='rounded bg-muted/50 px-2 py-0.5 font-mono font-bold text-slate-800'>
+              <span className='rounded bg-muted/50 px-2 py-0.5 font-maple-ui font-bold text-slate-800'>
                 #{product.sku}
               </span>
             </div>

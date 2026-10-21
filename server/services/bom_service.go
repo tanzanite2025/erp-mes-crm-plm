@@ -24,17 +24,16 @@ import (
 
 // 定义详细的审计操作类型
 const (
-	AuditOpBOMCreate       = "bom.create"
-	AuditOpBOMUpdate       = "bom.update"
-	AuditOpBOMDelete       = "bom.delete"
-	AuditOpBOMDerive       = "bom.derive"
-	AuditOpBOMPromote      = "bom.promote"
-	AuditOpRelationAdd     = "relation.add"
-	AuditOpRelationRemove  = "relation.remove"
-	AuditOpRelationMove    = "relation.move"
-	AuditOpRelationUpdate  = "relation.update"
+	AuditOpBOMCreate      = "bom.create"
+	AuditOpBOMUpdate      = "bom.update"
+	AuditOpBOMDelete      = "bom.delete"
+	AuditOpBOMDerive      = "bom.derive"
+	AuditOpBOMPromote     = "bom.promote"
+	AuditOpRelationAdd    = "relation.add"
+	AuditOpRelationRemove = "relation.remove"
+	AuditOpRelationMove   = "relation.move"
+	AuditOpRelationUpdate = "relation.update"
 )
-
 
 // processSidecarDelta 处理 Sidecar Delta 并记录审计日志
 // 这是 SDRTS 协议的核心处理函数
@@ -166,13 +165,13 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			if err := tx.Model(&existing).Omit("Items").Updates(modelInput).Error; err != nil {
 				return wrapBOMUniqueViolation(err, &modelInput)
 			}
-			
+
 			// ✅ 使用智能 Upsert 替代物理删除，保持 ID 稳定性
 			upsertResult, err := upsertBOMItems(tx, existing.ID, modelInput.Items)
 			if err != nil {
 				return err
 			}
-			
+
 			// 📊 记录 Upsert 统计信息到日志（便于监控和调试）
 			if upsertResult.Created > 0 || upsertResult.Updated > 0 || upsertResult.Deleted > 0 {
 				fmt.Printf("[BOM_UPSERT] BOM %s saved: created=%d, updated=%d, deleted=%d\n",
@@ -186,7 +185,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "SAVE"); err != nil {
 				return err
 			}
-			
+
 			// 🔥 处理 SDRTS Delta（在保存成功后）
 			if input.SidecarDelta != nil && len(input.SidecarDelta.Entries) > 0 {
 				fmt.Printf("[SDRTS] Processing %d delta entries for BOM %s\n", len(input.SidecarDelta.Entries), saved.ID)
@@ -202,7 +201,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 					fmt.Printf("[WARN] Failed to write fallback audit log: %v\n", err)
 				}
 			}
-			
+
 			return nil
 		}
 
@@ -233,7 +232,13 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		}
 		payload := bomAuditSnapshot(saved)
 		payload["operation"] = "create"
-		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", nil, payload)
+		if err := writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", nil, payload); err != nil {
+			return err
+		}
+		if saved.BOMType == models.BOMTypeEBOM {
+			return dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, saved, "", "CREATED", "", nil)
+		}
+		return nil
 	})
 	if err != nil {
 		return BOMDetailResponse{}, err
@@ -274,7 +279,14 @@ func DeleteBOM(ctx context.Context, id string) error {
 		}
 		payload := bomAuditSnapshot(bom)
 		payload["operation"] = "delete"
-		return writeBOMAuditEntryWithContext(ctx, tx, bomAuditTargetID(bom), "DELETE", before, payload)
+		if err := writeBOMAuditEntryWithContext(ctx, tx, bomAuditTargetID(bom), "DELETE", before, payload); err != nil {
+			return err
+		}
+		source := "BOM_ENGINEERING"
+		if bom.BOMType == models.BOMTypeMBOM {
+			source = "BOM_MANUFACTURING"
+		}
+		return ResolveSystemNotificationInboxEntriesWithinTransaction(tx, SystemNotificationInboxResolutionFilter{SourceCode: source, BusinessTargetID: bom.ID})
 	})
 }
 
@@ -320,7 +332,7 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 		before := bomAuditSnapshot(existing)
 
 		existing.Status = input.Status
-		
+
 		// ✅ 使用状态机统一管理锁定逻辑
 		existing.IsLocked = statemachine.ShouldLockBOMStatusString(input.Status)
 
@@ -343,7 +355,14 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 			"reason":          input.Reason,
 			"approverComment": input.ApproverComment,
 		}
-		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "PROMOTE", before, payload)
+		if err := writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "PROMOTE", before, payload); err != nil {
+			return err
+		}
+		action := "STATUS_CHANGED"
+		if saved.BOMType == models.BOMTypeMBOM && saved.Status == models.BOMStatusObsolete {
+			action = "OBSOLETED"
+		}
+		return dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, saved, fmt.Sprint(before["status"]), action, "", map[string]any{"reason": input.Reason, "approverComment": input.ApproverComment})
 	})
 
 	if err != nil {
@@ -351,7 +370,6 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 	}
 	return MapBOMToDetailResponse(saved)
 }
-
 
 func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInput) (BOMDetailResponse, error) {
 	if strings.TrimSpace(ebomID) == "" {
@@ -476,7 +494,13 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		payload["sourceEbomId"] = ebomID
 		payload["sourceEbomNo"] = ebom.BOMNo
 		payload["sourceEbomVersion"] = ebom.Version
-		return writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "DERIVE", nil, payload)
+		if err := writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "DERIVE", nil, payload); err != nil {
+			return err
+		}
+		if err := dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, ebom, "", "DERIVED", saved.ID, map[string]any{"derivedMbomId": saved.ID}); err != nil {
+			return err
+		}
+		return dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, saved, "", "CREATED_FROM_EBOM", "", map[string]any{"sourceEbomNo": ebom.BOMNo, "sourceEbomVersion": ebom.VersionText})
 	})
 
 	if err != nil {
@@ -598,14 +622,14 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 		}
 
 		newMBOM := models.BOM{
-			BOMType:      models.BOMTypeMBOM,
-			BOMNo:        generateBOMNo(tx),
-			ProductID:    current.ProductID,
-			SourceEBOMID: current.SourceEBOMID,
-			VersionText:  nextVersionText,
-			Status:       models.BOMStatusReleased, // ✅ 修订即生效，无中间态
-			IsLocked:     false,
-			Description:  fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
+			BOMType:            models.BOMTypeMBOM,
+			BOMNo:              generateBOMNo(tx),
+			ProductID:          current.ProductID,
+			SourceEBOMID:       current.SourceEBOMID,
+			VersionText:        nextVersionText,
+			Status:             models.BOMStatusReleased, // ✅ 修订即生效，无中间态
+			IsLocked:           false,
+			Description:        fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
 			OwnerType:          current.OwnerType,
 			OwnerCustomerID:    current.OwnerCustomerID,
 			VersionLevel:       current.VersionLevel,
@@ -623,6 +647,9 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			return fmt.Errorf("[VALIDATION] inherited ownership from current MBOM is invalid: %w", err)
 		}
 		newMBOM.MasterDataControl.Normalize(nextVersionText)
+		if err := validateAndLockBOMVersionLevelAttributeReference(tx, &newMBOM); err != nil {
+			return err
+		}
 		// Revise 创建即 RELEASED,DB 唯一索引会拦截同 (productId, MBOM, owner, versionLevel) 的重复
 		if err := tx.Create(&newMBOM).Error; err != nil {
 			return wrapBOMUniqueViolation(err, &newMBOM)
@@ -647,7 +674,13 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 		payload["reason"] = input.Reason
 		payload["previousMbomId"] = current.ID
 		payload["previousMbomVersion"] = current.VersionText
-		return writeBOMAuditEntryWithContext(ctx, tx, savedNew.ID, "REVISE", nil, payload)
+		if err := writeBOMAuditEntryWithContext(ctx, tx, savedNew.ID, "REVISE", nil, payload); err != nil {
+			return err
+		}
+		if err := dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, current, models.BOMStatusReleased, "OBSOLETED", savedNew.ID, map[string]any{"reason": input.Reason}); err != nil {
+			return err
+		}
+		return dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, savedNew, "", "REVISED", "", map[string]any{"reason": input.Reason, "previousVersion": current.VersionText})
 	})
 
 	if err != nil {

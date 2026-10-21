@@ -1,11 +1,21 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
+import { ApprovalService } from '@/features/approval/services/approval-service'
 import type { Standard } from '../data/schema'
-import { dispatchQualityStandardRoutingEvent } from '../services/quality-routing-service'
+import { QualityCoreService } from '../services/quality-core-service'
+import {
+  QualityStandardApprovalResponseNotConfirmedError,
+  submitQualityStandardWithConfirmedApprovalRequest,
+} from '../services/quality-standard-approval-submission-service'
 import {
   buildQualityStandardWorkflowMutation,
   type QualityStandardWorkflowActionInput,
+  type QualityStandardReviewDecisionInput,
 } from '../services/quality-standard-workflow-service'
 import { getQualityStandardAvailableActions } from '../utils/quality-utils'
 import { useQualityMutations } from './use-quality'
@@ -20,8 +30,20 @@ export function useQualityStandardPreviewActions({
   standardId,
 }: UseQualityStandardPreviewActionsOptions) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { t } = useLanguage()
+  const currentUserId = useAuthStore((state) => state.user?.id)
   const { saveStandardMutation } = useQualityMutations()
+  const {
+    mutateAsync: submitReviewDecision,
+    isPending: isReviewDecisionPending,
+  } = useMutation({
+    mutationFn: (decision: {
+      requestId: string
+      status: 'APPROVED' | 'REJECTED'
+      comment?: string
+    }) => ApprovalService.approveRequest(decision.requestId, decision),
+  })
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [approveComment, setApproveComment] = useState('')
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
@@ -29,10 +51,23 @@ export function useQualityStandardPreviewActions({
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [archiveReason, setArchiveReason] = useState('')
 
-  const availableActions = useMemo(
-    () => getQualityStandardAvailableActions(standard?.status),
-    [standard?.status]
-  )
+  const availableActions = useMemo(() => {
+    const actions = getQualityStandardAvailableActions(standard?.status)
+    const request = standard?.approvalRequestSummary
+    const isCurrentApprover = Boolean(
+      currentUserId &&
+      request &&
+      (request.status === 'PENDING' || request.status === 'APPROVED_L1') &&
+      (request.currentLevel === 2
+        ? request.approver2Id
+        : request.approver1Id) === currentUserId
+    )
+    return {
+      ...actions,
+      canApprove: actions.canApprove && isCurrentApprover,
+      canReject: actions.canReject && isCurrentApprover,
+    }
+  }, [standard?.status, standard?.approvalRequestSummary, currentUserId])
 
   const navigateToPreview = useCallback(
     (nextStandardId: string) => {
@@ -57,16 +92,59 @@ export function useQualityStandardPreviewActions({
 
   const runWorkflowAction = useCallback(
     async (
-      action: QualityStandardWorkflowActionInput,
+      action:
+        | QualityStandardWorkflowActionInput
+        | QualityStandardReviewDecisionInput,
       successMessage: string
     ): Promise<Standard | null> => {
       if (!standard) {
         return null
       }
 
-      const mutation = buildQualityStandardWorkflowMutation(standard, action)
-
       try {
+        if (action.type === 'approve' || action.type === 'reject') {
+          const request = standard.approvalRequestSummary
+          if (!request?.id) return null
+          await submitReviewDecision({
+            requestId: request.id,
+            status: action.type === 'approve' ? 'APPROVED' : 'REJECTED',
+            comment:
+              action.type === 'approve'
+                ? action.reviewComment
+                : action.rejectReason,
+          })
+          await queryClient.invalidateQueries({
+            queryKey: ['quality_standard'],
+          })
+          await queryClient.invalidateQueries({
+            queryKey: ['quality_standards'],
+          })
+          const saved = await QualityCoreService.getStandardById(standard.id)
+          toast.success(successMessage)
+          return saved
+        }
+        const mutation = buildQualityStandardWorkflowMutation(standard, action)
+        if (action.type === 'submitForApproval') {
+          const result =
+            await submitQualityStandardWithConfirmedApprovalRequest({
+              savePendingStandard: () =>
+                saveStandardMutation.mutateAsync({
+                  data: mutation.data,
+                  isPatch: true,
+                  delta: mutation.delta,
+                  suppressSuccessToast: true,
+                }),
+            })
+          await queryClient.invalidateQueries({
+            queryKey: ['quality_standard'],
+          })
+          await queryClient.invalidateQueries({
+            queryKey: ['quality_standards'],
+          })
+          toast.success(successMessage)
+          navigateToPreview(result.standard.id)
+          return result.standard
+        }
         const saved = await saveStandardMutation.mutateAsync({
           data: mutation.data,
           isPatch: true,
@@ -74,19 +152,25 @@ export function useQualityStandardPreviewActions({
           successMessage,
         })
 
-        await dispatchQualityStandardRoutingEvent({
-          standard: saved,
-          semanticAction: mutation.semanticAction,
-          previousStatus: standard.status,
-        })
-
         navigateToPreview(saved.id)
         return saved
-      } catch {
+      } catch (error) {
+        if (error instanceof QualityStandardApprovalResponseNotConfirmedError) {
+          toast.error(t('quality.hooks.approvalResponseNotConfirmed'))
+        } else if (action.type === 'approve' || action.type === 'reject') {
+          handleServerError(error)
+        }
         return null
       }
     },
-    [navigateToPreview, saveStandardMutation, standard]
+    [
+      navigateToPreview,
+      queryClient,
+      submitReviewDecision,
+      saveStandardMutation,
+      standard,
+      t,
+    ]
   )
 
   const handleOpenApproveDialog = useCallback(() => {
@@ -212,6 +296,8 @@ export function useQualityStandardPreviewActions({
 
   return {
     saveStandardMutation,
+    isWorkflowActionPending:
+      saveStandardMutation.isPending || isReviewDecisionPending,
     availableActions,
     isApproveDialogOpen,
     setIsApproveDialogOpen,

@@ -163,6 +163,9 @@ func enrichProductsForEditRead(tx *gorm.DB, products []models.Product) error {
 	if len(products) == 0 {
 		return nil
 	}
+	for index := range products {
+		products[index].AttributeValues = filterProductSpecificationOwnedAttributeValues(products[index].AttributeValues)
+	}
 
 	typeIDs := make([]string, 0, len(products))
 	seenTypeIDs := make(map[string]struct{}, len(products))

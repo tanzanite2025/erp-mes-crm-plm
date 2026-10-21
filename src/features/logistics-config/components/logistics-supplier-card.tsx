@@ -117,7 +117,7 @@ export function LogisticsSupplierCard({
               </div>
               {provider.website.trim() ? (
                 <a
-                  className='font-mono text-xs break-all text-blue-600 hover:underline'
+                  className='font-maple-ui text-xs break-all text-blue-600 hover:underline'
                   href={provider.website}
                   target='_blank'
                   rel='noreferrer'
@@ -171,7 +171,7 @@ export function LogisticsSupplierCard({
               <span className='font-black text-slate-500'>
                 {t('logisticsConfig.providerShared.labels.endpoint')}：
               </span>
-              <span className='font-mono'>
+              <span className='font-maple-ui'>
                 {provider.endpoint.trim() ||
                   t('logisticsConfig.suppliers.unset')}
               </span>

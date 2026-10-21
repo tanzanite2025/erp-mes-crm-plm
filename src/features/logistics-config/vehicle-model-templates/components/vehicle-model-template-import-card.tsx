@@ -356,7 +356,7 @@ export function VehicleModelTemplateImportCard({
                       'logisticsConfig.vehicleModelTemplates.normalizedFootprint'
                     )}
                   </div>
-                  <div className='mt-1 font-mono text-[11px] font-bold text-foreground'>
+                  <div className='mt-1 font-maple-ui text-[11px] font-bold text-foreground'>
                     {previewTemplate.normalizedFootprint.lengthMm} ×{' '}
                     {previewTemplate.normalizedFootprint.widthMm} ×{' '}
                     {previewTemplate.normalizedFootprint.heightMm} mm

@@ -55,7 +55,7 @@ export function PrepregBindingQrGrid({
         <p className='text-sm font-black tracking-tighter text-foreground'>
           {title}
         </p>
-        <span className='rounded-full bg-primary/10 px-3 py-1 font-mono text-[8px] text-primary'>
+        <span className='rounded-full bg-primary/10 px-3 py-1 font-maple-ui text-[8px] text-primary'>
           {items.length}
         </span>
       </div>
@@ -71,11 +71,11 @@ export function PrepregBindingQrGrid({
                 <p className='text-[10px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase'>
                   {title}
                 </p>
-                <p className='mt-1 font-mono text-xs text-foreground/80'>
+                <p className='mt-1 font-maple-ui text-xs text-foreground/80'>
                   #{index + 1}
                 </p>
               </div>
-              <span className='rounded-full bg-emerald-500/10 px-2.5 py-1 font-mono text-[8px] text-emerald-600'>
+              <span className='rounded-full bg-emerald-500/10 px-2.5 py-1 font-maple-ui text-[8px] text-emerald-600'>
                 UNBOUND
               </span>
             </div>
@@ -92,7 +92,7 @@ export function PrepregBindingQrGrid({
               <p className='text-[8px] font-black tracking-[0.16em] text-muted-foreground/60 uppercase'>
                 {tokenLabel}
               </p>
-              <p className='mt-2 font-mono text-[11px] leading-5 break-all text-foreground'>
+              <p className='mt-2 font-maple-ui text-[11px] leading-5 break-all text-foreground'>
                 {item.token}
               </p>
             </div>
@@ -101,7 +101,7 @@ export function PrepregBindingQrGrid({
               <p className='text-[8px] font-black tracking-[0.16em] text-muted-foreground/60 uppercase'>
                 {expiresAtLabel}
               </p>
-              <p className='mt-2 font-mono text-[10px] leading-5 text-foreground/80'>
+              <p className='mt-2 font-maple-ui text-[10px] leading-5 text-foreground/80'>
                 {formatExpiresAt(item.expiresAt)}
               </p>
             </div>

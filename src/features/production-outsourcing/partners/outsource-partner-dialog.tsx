@@ -160,7 +160,7 @@ export function OutsourcePartnerDialog({
                 value={values.code}
                 onChange={(event) => updateValue('code', event.target.value)}
                 placeholder='OS-001'
-                className='h-11 rounded-2xl font-mono uppercase'
+                className='h-11 rounded-2xl font-maple-ui uppercase'
               />
             </div>
             <div className='space-y-2 md:col-span-2'>

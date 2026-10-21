@@ -303,7 +303,7 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
               <TableHeader>
                 <TableRow className='h-10 bg-muted/50 hover:bg-transparent'>
                   {/* 生成虚拟列头 (A, B, C...) */}
-                  <TableHead className='sticky left-0 z-20 w-12 min-w-[48px] border-r border-b bg-muted/80 text-center font-mono text-[9px] text-muted-foreground'>
+                  <TableHead className='sticky left-0 z-20 w-12 min-w-[48px] border-r border-b bg-muted/80 text-center font-maple-ui text-[9px] text-muted-foreground'>
                     #
                   </TableHead>
                   {colIndices.map((idx) => {
@@ -311,7 +311,7 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
                     return (
                       <TableHead
                         key={idx}
-                        className='border-r border-b bg-muted/30 px-4 text-center font-mono text-[9px] whitespace-nowrap text-muted-foreground uppercase'
+                        className='border-r border-b bg-muted/30 px-4 text-center font-maple-ui text-[9px] whitespace-nowrap text-muted-foreground uppercase'
                         style={{ width: `${width}px`, minWidth: `${width}px` }}
                       >
                         {idx < 26
@@ -329,7 +329,7 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
                     className='border-b transition-colors hover:bg-muted/30'
                     style={{ height: row[0]?.style.height }}
                   >
-                    <TableCell className='sticky left-0 z-10 w-12 min-w-[48px] border-r bg-muted/10 text-center font-mono text-[9px] font-bold text-muted-foreground/60'>
+                    <TableCell className='sticky left-0 z-10 w-12 min-w-[48px] border-r bg-muted/10 text-center font-maple-ui text-[9px] font-bold text-muted-foreground/60'>
                       {rowIdx + 1}
                     </TableCell>
                     {colIndices.map((colIdx) => {

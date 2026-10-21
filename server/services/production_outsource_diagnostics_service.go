@@ -429,31 +429,7 @@ func loadOutsourceDiagnosticsUnresolvedNotificationFailures(database *gorm.DB) (
 		Find(&failed).Error; err != nil {
 		return nil, err
 	}
-	if len(failed) == 0 {
-		return []models.RuleExecutionLog{}, nil
-	}
-
-	var retries []models.RuleExecutionLog
-	if err := database.
-		Where("source_code = ? AND execution_type = ? AND execution_status = ?", businessEventSourceProductionOutsource, "notify", "success").
-		Find(&retries).Error; err != nil {
-		return nil, err
-	}
-	recovered := map[string]struct{}{}
-	for _, retry := range retries {
-		if retryOfLogID := decodeRuleExecutionRetryOfLogID(retry.Result); retryOfLogID != "" {
-			recovered[retryOfLogID] = struct{}{}
-		}
-	}
-
-	unresolved := make([]models.RuleExecutionLog, 0, len(failed))
-	for _, logEntry := range failed {
-		if _, ok := recovered[logEntry.ID]; ok {
-			continue
-		}
-		unresolved = append(unresolved, logEntry)
-	}
-	return unresolved, nil
+	return failed, nil
 }
 
 func checkOutsourceTransferFactCompleteness(

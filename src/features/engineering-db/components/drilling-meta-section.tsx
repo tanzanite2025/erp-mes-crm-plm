@@ -18,7 +18,7 @@ export function DrillingMetaSection({
         </Label>
         <Input
           readOnly
-          className='h-10 rounded-xl border-none bg-muted/20 px-5 font-mono text-xs'
+          className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui text-xs'
           value={id ?? '--'}
         />
       </div>
@@ -28,7 +28,7 @@ export function DrillingMetaSection({
         </Label>
         <Input
           readOnly
-          className='h-10 rounded-xl border-none bg-muted/20 px-5 font-mono text-xs'
+          className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui text-xs'
           value={createdAt ?? '--'}
         />
       </div>

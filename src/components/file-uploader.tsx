@@ -167,7 +167,7 @@ export function FileUploader({
             <p className='truncate text-sm font-black text-foreground'>
               {value.split('/').pop()}
             </p>
-            <p className='mt-0.5 font-mono text-[10px] font-bold text-emerald-600 uppercase'>
+            <p className='mt-0.5 font-maple-ui text-[10px] font-bold text-emerald-600 uppercase'>
               {t('fileUploader.ready')}
             </p>
           </div>

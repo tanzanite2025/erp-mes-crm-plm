@@ -293,7 +293,7 @@ export function MoldMgmt() {
                                   >
                                     {status.label}
                                   </Badge>
-                                  <span className='rounded-full bg-muted/50 px-2 py-0.5 font-mono text-[9px] font-black tracking-tighter whitespace-nowrap text-muted-foreground/40 uppercase'>
+                                  <span className='rounded-full bg-muted/50 px-2 py-0.5 font-maple-ui text-[9px] font-black tracking-tighter whitespace-nowrap text-muted-foreground/40 uppercase'>
                                     {t('equipmentTooling.molds.card.sn', {
                                       sn: mold.sn,
                                     })}

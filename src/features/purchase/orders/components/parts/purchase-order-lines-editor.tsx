@@ -164,7 +164,7 @@ export function PurchaseOrderLinesEditor({
                   <div className='flex min-h-10 rounded-xl bg-muted/20 px-3 py-2 md:min-h-9'>
                     {hasCodeOrSpec ? (
                       <div className='flex min-w-0 flex-col justify-center gap-0.5'>
-                        <p className='truncate font-mono text-[10px] font-black text-foreground/80'>
+                        <p className='truncate font-maple-ui text-[10px] font-black text-foreground/80'>
                           {line.materialCode}
                         </p>
                         {line.specification ? (

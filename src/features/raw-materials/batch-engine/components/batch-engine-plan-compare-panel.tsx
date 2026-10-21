@@ -63,7 +63,7 @@ export function BatchEnginePlanComparePanel(
                   #{plan.rank} / {plan.strategyKey}
                 </p>
                 <div className='flex flex-wrap items-center justify-end gap-1'>
-                  <span className='rounded-full border border-slate-200 bg-white px-2 py-1 font-mono text-[8px] text-slate-600'>
+                  <span className='rounded-full border border-slate-200 bg-white px-2 py-1 font-maple-ui text-[8px] text-slate-600'>
                     {t('rawMaterials.batchEngine.comparePanel.scoreChip', {
                       score: plan.score.toFixed(2),
                     })}
@@ -71,8 +71,8 @@ export function BatchEnginePlanComparePanel(
                   <span
                     className={
                       plan.comparisonSummary.mustFulfillSatisfied
-                        ? 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-mono text-[8px] text-emerald-700'
-                        : 'rounded-full border border-rose-200 bg-rose-500/10 px-2 py-1 font-mono text-[8px] text-rose-700'
+                        ? 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-700'
+                        : 'rounded-full border border-rose-200 bg-rose-500/10 px-2 py-1 font-maple-ui text-[8px] text-rose-700'
                     }
                   >
                     {plan.comparisonSummary.mustFulfillSatisfied
@@ -82,8 +82,8 @@ export function BatchEnginePlanComparePanel(
                   <span
                     className={
                       structuredRuleRiskCount > 0
-                        ? 'rounded-full border border-amber-200 bg-amber-500/10 px-2 py-1 font-mono text-[8px] text-amber-700'
-                        : 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-mono text-[8px] text-emerald-700'
+                        ? 'rounded-full border border-amber-200 bg-amber-500/10 px-2 py-1 font-maple-ui text-[8px] text-amber-700'
+                        : 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-700'
                     }
                   >
                     {structuredRuleRiskCount > 0

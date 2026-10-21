@@ -85,7 +85,7 @@ export function PrepregCatalogDialog({
                 <p className='text-[8px] font-black tracking-[0.16em] text-muted-foreground/60 uppercase'>
                   {t('rawMaterials.catalog.binding.tokenLabel')}
                 </p>
-                <p className='mt-2 font-mono text-[11px] leading-5 break-all text-foreground'>
+                <p className='mt-2 font-maple-ui text-[11px] leading-5 break-all text-foreground'>
                   {activeBindingToken}
                 </p>
               </div>

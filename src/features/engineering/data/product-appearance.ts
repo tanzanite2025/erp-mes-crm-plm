@@ -26,6 +26,40 @@ export interface ProductAppearanceDraft {
   version?: number
 }
 
+export function createProductAppearanceEditorDraft(
+  appearance?: ProductAppearance
+): ProductAppearanceDraft {
+  return appearance
+    ? { ...appearance }
+    : {
+        id: globalThis.crypto.randomUUID(),
+        name: '',
+        barcodeCode: '',
+        description: '',
+        imageUrl: '',
+        imageThumbnailUrl: '',
+        imageName: '',
+        active: true,
+        sortOrder: 0,
+        version: 0,
+      }
+}
+
+export function sortProductAppearanceCatalog(items: ProductAppearance[]) {
+  return [...items].sort(
+    (left, right) =>
+      left.sortOrder - right.sortOrder ||
+      left.barcodeCode.localeCompare(right.barcodeCode) ||
+      left.name.localeCompare(right.name)
+  )
+}
+
+export function resolveProductAppearanceImageSource(url: string) {
+  return url.startsWith('/uploads/')
+    ? `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')}${url}`
+    : url
+}
+
 export interface LegacyAppearanceMapping {
   [key: string]: {
     label: string

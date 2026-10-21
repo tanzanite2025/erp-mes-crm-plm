@@ -5,6 +5,7 @@ import {
 import { type Product, type ProductAttributeValue } from '../data/schema'
 import { type SaveProductInput } from '../mutation-types'
 import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
+import { filterProductSpecificationOwnedAttributeValues } from '../utils/product-attribute-utils'
 import {
   normalizeEngineeringChangeOrderNo,
   normalizeEngineeringRevisionNo,
@@ -65,9 +66,9 @@ export function buildProductWriteCandidate(
     description: normalizedProduct.description,
     engineeringSpecId: normalizedProduct.engineeringSpecId || '',
     bomId: normalizedProduct.bomId || '',
-    attributeValues: normalizedProduct.attributeValues.map(
-      toProductAttributeValueApiDTO
-    ),
+    attributeValues: filterProductSpecificationOwnedAttributeValues(
+      normalizedProduct.attributeValues
+    ).map(toProductAttributeValueApiDTO),
     techSpecs: normalizedProduct.techSpecs,
     barcodeConfig: normalizedProduct.barcodeConfig,
     attachments: normalizedProduct.attachments,

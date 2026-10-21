@@ -82,7 +82,7 @@ export function VehicleRecommendationPanel({
                   {rec.warning}
                 </div>
               ) : null}
-              <div className='mt-2 font-mono text-[10px] leading-relaxed wrap-break-word text-primary/70'>
+              <div className='mt-2 font-maple-ui text-[10px] leading-relaxed wrap-break-word text-primary/70'>
                 {rec.reason}
               </div>
               {onViewDiagram || onViewPhoto ? (

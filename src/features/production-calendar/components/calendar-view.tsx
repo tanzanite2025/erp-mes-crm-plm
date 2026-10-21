@@ -196,7 +196,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
                         {item.name}
                       </span>
                     </div>
-                    <div className='flex items-center gap-1.5 pl-2 font-mono text-[7px] opacity-40'>
+                    <div className='flex items-center gap-1.5 pl-2 font-maple-ui text-[7px] opacity-40'>
                       <span>#{item.orderNo}</span>
                     </div>
                   </div>

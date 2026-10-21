@@ -46,7 +46,7 @@ export function CADViewerDialog({
                 <DialogDescription className='flex items-center gap-2 truncate text-[10px] font-bold tracking-widest text-white/30 uppercase'>
                   <Target className='size-3 text-blue-600' />
                   工程档案预览模式 | 关联型号:{' '}
-                  <span className='font-mono text-blue-500'>
+                  <span className='font-maple-ui text-blue-500'>
                     {sku || 'N/A'}
                   </span>
                 </DialogDescription>

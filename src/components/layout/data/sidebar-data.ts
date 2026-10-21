@@ -25,6 +25,7 @@ import {
   Database,
   FileText,
   Gauge,
+  House,
   ListChecks,
   HandCoins,
   ScanLine,
@@ -86,13 +87,26 @@ const permissionIdsForPaths = (paths: readonly string[]): string[] =>
 
 const navGroupConfigs: SidebarGroupConfig[] = [
   {
+    id: 'home',
+    titleKey: 'home.title',
+    icon: House,
+    children: [
+      {
+        id: 'home-shortcuts',
+        titleKey: 'home.tab',
+        url: '/home',
+        icon: House,
+      },
+    ],
+  },
+  {
     id: 'resource-management',
-    titleKey: 'sidebar.groups.resourceManagement',
+    titleKey: 'dashboard.page.tabs.overview',
     icon: BarChart3,
     children: [
       {
         id: 'dashboard',
-        titleKey: 'sidebar.items.dashboard',
+        titleKey: 'dashboard.page.tabs.overview',
         url: '/dashboard',
         icon: BarChart3,
         permissionId: permissionIdForPath('/dashboard/overview'),

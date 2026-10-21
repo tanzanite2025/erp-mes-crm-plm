@@ -51,7 +51,7 @@ function DrawingAction({
       <Eye className='size-3' />
       <span>{labelText}</span>
       {holeCount !== undefined && (
-        <span className='font-mono opacity-50'>[{holeCount}H]</span>
+        <span className='font-maple-ui opacity-50'>[{holeCount}H]</span>
       )}
     </Button>
   )
@@ -124,7 +124,7 @@ export function SalesOrderDetailItemsCard({
                 key={row.key}
                 className='group transition-all hover:bg-primary/5'
               >
-                <td className='px-2 py-1 text-center font-mono text-[10px] text-muted-foreground/40'>
+                <td className='px-2 py-1 text-center font-maple-ui text-[10px] text-muted-foreground/40'>
                   {row.line.lineNo}
                 </td>
                 <td className='px-2 py-1'>
@@ -132,7 +132,7 @@ export function SalesOrderDetailItemsCard({
                     <span className='text-[12px] font-black tracking-tight'>
                       {row.displayTitle}
                     </span>
-                    <span className='font-mono text-[9px] text-muted-foreground/50'>
+                    <span className='font-maple-ui text-[9px] text-muted-foreground/50'>
                       ID: {row.line.productId || 'UN-REG'}
                     </span>
                   </div>

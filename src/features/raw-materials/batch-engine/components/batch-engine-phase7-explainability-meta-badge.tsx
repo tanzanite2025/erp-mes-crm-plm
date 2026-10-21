@@ -28,7 +28,7 @@ export function BatchEnginePhase7ExplainabilityMetaBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border border-dashed font-mono text-[8px] tracking-[0.12em] uppercase ${compact ? 'h-4 px-1.5' : 'h-5 px-2'} ${toneClassName} ${className ?? ''}`.trim()}
+      className={`inline-flex items-center rounded-full border border-dashed font-maple-ui text-[8px] tracking-[0.12em] uppercase ${compact ? 'h-4 px-1.5' : 'h-5 px-2'} ${toneClassName} ${className ?? ''}`.trim()}
     >
       {label}
     </span>

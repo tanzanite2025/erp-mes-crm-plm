@@ -128,7 +128,7 @@ export function PurchaseOrderActionDialog({
       headerAccessory={
         <>
           {formData.orderNo ? (
-            <span className='font-mono text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
+            <span className='font-maple-ui text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
               {formData.orderNo}
             </span>
           ) : null}

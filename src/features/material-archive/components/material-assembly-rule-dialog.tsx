@@ -207,7 +207,7 @@ export function MaterialAssemblyRuleDialog({
                     id='baseUnit'
                     readOnly
                     disabled
-                    className='h-12 rounded-2xl border-none bg-muted/20 font-mono font-black text-primary/30'
+                    className='h-12 rounded-2xl border-none bg-muted/20 font-maple-ui font-black text-primary/30'
                     value={editingRule?.baseUnit || ''}
                   />
                 </div>
@@ -240,7 +240,7 @@ export function MaterialAssemblyRuleDialog({
                       id='factor'
                       type='number'
                       step='any'
-                      className='h-16 rounded-[24px] border-none bg-muted/50 text-center font-mono text-2xl font-black shadow-inner focus-visible:ring-primary'
+                      className='h-16 rounded-[24px] border-none bg-muted/50 text-center font-maple-ui text-2xl font-black shadow-inner focus-visible:ring-primary'
                       value={editingRule?.conversionFactor ?? 1}
                       onChange={(event) => onFactorChange(event.target.value)}
                     />

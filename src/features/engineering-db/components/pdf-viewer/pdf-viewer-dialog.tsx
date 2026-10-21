@@ -46,7 +46,7 @@ export function PDFViewerDialog({
                 <DialogDescription className='flex items-center gap-2 truncate text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
                   <ShieldCheck className='size-3 text-indigo-600' />
                   技术文档预览 · 归档型号:{' '}
-                  <span className='font-mono text-indigo-600'>
+                  <span className='font-maple-ui text-indigo-600'>
                     {sku || 'N/A'}
                   </span>
                 </DialogDescription>

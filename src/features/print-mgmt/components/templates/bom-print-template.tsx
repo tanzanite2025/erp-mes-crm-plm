@@ -45,7 +45,7 @@ export const BOMPrintTemplate = forwardRef<
     return (
       <div
         ref={ref}
-        className='mx-auto box-border min-h-[297mm] w-[210mm] bg-white p-8 font-sans text-sm text-black'
+        className='mx-auto box-border min-h-[297mm] w-[210mm] bg-white p-8 font-maple-ui text-sm text-black'
       >
         <style type='text/css'>
           {`
@@ -101,7 +101,7 @@ export const BOMPrintTemplate = forwardRef<
                 style={{ width: '55%' }}
               >
                 {productName} - {t('printMgmt.bomTemplate.titleSuffix')}
-                <div className='mt-2 font-mono text-sm'>
+                <div className='mt-2 font-maple-ui text-sm'>
                   {bomNo}
                   {bomDisplayVersion ? ` / ${bomDisplayVersion}` : ''}
                 </div>

@@ -318,7 +318,7 @@ export function StocktakeMgmt() {
                           <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                             {t('warehouse.stocktake.areaCode')}
                           </span>
-                          <span className='font-mono text-[10px] font-black text-muted-foreground'>
+                          <span className='font-maple-ui text-[10px] font-black text-muted-foreground'>
                             {task.warehouseCategoryCode}
                           </span>
                         </div>
@@ -430,7 +430,7 @@ export function StocktakeMgmt() {
                                   <span className='truncate text-[11px] font-bold tracking-tight text-foreground/90 uppercase transition-colors group-hover:text-blue-600 md:text-[12px]'>
                                     {item.materialName}
                                   </span>
-                                  <span className='truncate font-mono text-[7px] tracking-widest text-muted-foreground/30 uppercase md:text-[8px]'>
+                                  <span className='truncate font-maple-ui text-[7px] tracking-widest text-muted-foreground/30 uppercase md:text-[8px]'>
                                     {item.materialCode}
                                   </span>
                                 </div>
@@ -441,13 +441,13 @@ export function StocktakeMgmt() {
                                     t('warehouse.stocktake.noBatch')}
                                 </span>
                               </TableCell>
-                              <TableCell className='py-2 text-right font-mono text-[10px] font-bold whitespace-nowrap text-muted-foreground/60 md:py-2.5 md:text-[11px]'>
+                              <TableCell className='py-2 text-right font-maple-ui text-[10px] font-bold whitespace-nowrap text-muted-foreground/60 md:py-2.5 md:text-[11px]'>
                                 {item.theoryQty}{' '}
                                 <span className='text-[7px] tracking-tighter uppercase'>
                                   {item.uom}
                                 </span>
                               </TableCell>
-                              <TableCell className='py-2 text-right font-mono text-xs font-black whitespace-nowrap text-blue-600 md:py-2.5 md:text-sm'>
+                              <TableCell className='py-2 text-right font-maple-ui text-xs font-black whitespace-nowrap text-blue-600 md:py-2.5 md:text-sm'>
                                 {item.actualQty}{' '}
                                 <span className='text-[7px] tracking-tighter text-blue-400 uppercase'>
                                   {item.uom}
@@ -456,7 +456,7 @@ export function StocktakeMgmt() {
                               <TableCell className='py-2 pr-5 text-right md:py-2.5 md:pr-8'>
                                 <div
                                   className={cn(
-                                    'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] font-black md:px-2 md:text-[10px]',
+                                    'inline-flex items-center rounded-md px-1.5 py-0.5 font-maple-ui text-[9px] font-black md:px-2 md:text-[10px]',
                                     item.difference > 0
                                       ? 'bg-emerald-500/10 text-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.1)]'
                                       : item.difference < 0

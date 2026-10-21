@@ -141,11 +141,11 @@ export function ItemTable({
                       </div>
 
                       <div className='flex items-center gap-1.5'>
-                        <div className='flex h-5 items-center rounded-full border border-dashed border-blue-300 bg-blue-500/10 px-2 font-mono text-[8px] tracking-widest text-blue-700 uppercase'>
+                        <div className='flex h-5 items-center rounded-full border border-dashed border-blue-300 bg-blue-500/10 px-2 font-maple-ui text-[8px] tracking-widest text-blue-700 uppercase'>
                           {node.childCount}{' '}
                           {t('engineering.bomArchive.summary.itemsUnit')}
                         </div>
-                        <div className='flex h-5 items-center rounded-full border border-dashed border-emerald-300 bg-emerald-500/10 px-2 font-mono text-[8px] tracking-widest text-emerald-700 uppercase'>
+                        <div className='flex h-5 items-center rounded-full border border-dashed border-emerald-300 bg-emerald-500/10 px-2 font-maple-ui text-[8px] tracking-widest text-emerald-700 uppercase'>
                           {node.sectionCost.toFixed(2)}
                         </div>
                       </div>

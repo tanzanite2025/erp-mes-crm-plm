@@ -2,8 +2,8 @@ import { type BOM } from '@/features/product-structure/data/schema'
 import { resolveBOMOwnerDisplay } from '@/features/product-structure/utils/bom-owner-display'
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductType,
 } from '../data/schema'
 import { type ProductDisplaySummaryItemV2 } from '../display/product-display-v2'
@@ -11,8 +11,8 @@ import { normalizeProductAttributeMachineValue } from './product-attribute-machi
 import {
   PRODUCT_ATTRIBUTE_CATEGORY_KEYS,
   getAttributeValue,
-  getCategoryName,
-  getOptionLabel,
+  getProductTemplateAttributeLevelOneCategoryName,
+  getProductTemplateAttributeLevelTwoOptionLabel,
 } from './product-attribute-utils'
 import { resolveEffectiveProductName } from './product-form-utils'
 
@@ -36,7 +36,7 @@ export function resolveAttributeDisplayValue(params: {
   locale: string
   categoryKey: string
   rawValue: string
-  options?: ProductAttributeOption[]
+  options?: ProductTemplateAttributeLevelTwoOption[]
 }): string {
   const rawValue = normalizeTrimmedValue(params.rawValue)
   if (!rawValue) {
@@ -62,7 +62,10 @@ export function resolveAttributeDisplayValue(params: {
     )
   })
 
-  return getOptionLabel(params.locale, option) || rawValue
+  return (
+    getProductTemplateAttributeLevelTwoOptionLabel(params.locale, option) ||
+    rawValue
+  )
 }
 
 export interface ProductAggregateDisplayResult {
@@ -78,7 +81,7 @@ function resolveLocalizedLabel(locale: string, zh: string, en: string): string {
 function resolveCategoryDisplayLabel(params: {
   locale: string
   categoryKey: string
-  categories?: ProductAttributeCategory[]
+  categories?: ProductTemplateAttributeLevelOneCategory[]
   fallbackZh: string
   fallbackEn: string
 }): string {
@@ -90,7 +93,7 @@ function resolveCategoryDisplayLabel(params: {
   )
 
   return (
-    getCategoryName(params.locale, category) ||
+    getProductTemplateAttributeLevelOneCategoryName(params.locale, category) ||
     resolveLocalizedLabel(params.locale, params.fallbackZh, params.fallbackEn)
   )
 }
@@ -124,8 +127,8 @@ export function resolveProductAggregateDisplay(params: {
     | 'measuredWeight'
     | 'measuredWeightUnit'
   > | null
-  categories?: ProductAttributeCategory[]
-  options?: ProductAttributeOption[]
+  categories?: ProductTemplateAttributeLevelOneCategory[]
+  options?: ProductTemplateAttributeLevelTwoOption[]
   customerNameMap?: Map<string, string>
   ownerTypeInternalLabel: string
   ownerTypeCustomerLabel?: string
@@ -285,8 +288,8 @@ export function resolveProductAggregateDisplayLabel(params: {
     | 'measuredWeight'
     | 'measuredWeightUnit'
   > | null
-  categories?: ProductAttributeCategory[]
-  options?: ProductAttributeOption[]
+  categories?: ProductTemplateAttributeLevelOneCategory[]
+  options?: ProductTemplateAttributeLevelTwoOption[]
   customerNameMap?: Map<string, string>
   ownerTypeInternalLabel: string
   ownerTypeCustomerLabel?: string

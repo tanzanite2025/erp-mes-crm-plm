@@ -163,7 +163,7 @@ export function NipplesTab() {
             <span className='text-sm font-bold text-foreground'>
               {row.original.item.name}
             </span>
-            <span className='font-mono text-[10px] tracking-tighter uppercase opacity-40'>
+            <span className='font-maple-ui text-[10px] tracking-tighter uppercase opacity-40'>
               {row.original.item.brand || 'GENERIC'}
             </span>
           </div>
@@ -253,7 +253,7 @@ export function NipplesTab() {
         statusBadge={
           <div className='relative flex items-center gap-4'>
             <div className='mr-4 hidden flex-col items-end md:flex'>
-              <span className='font-mono text-[8px] tracking-tighter uppercase opacity-40'>
+              <span className='font-maple-ui text-[8px] tracking-tighter uppercase opacity-40'>
                 SYSTEM_VAULT_STATUS
               </span>
               <span className='text-[10px] font-black text-orange-600'>

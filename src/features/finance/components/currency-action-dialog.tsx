@@ -288,7 +288,7 @@ export function CurrencyActionDialog({
               onChange={(e) => {
                 updateFormData({ precision: parseInt(e.target.value) })
               }}
-              className={`h-12 rounded-2xl font-mono font-bold ${formData.code && !isEdit ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
+              className={`h-12 rounded-2xl font-maple-ui font-bold ${formData.code && !isEdit ? 'border-none bg-muted/30' : 'bg-muted/50'}`}
             />
           </div>
         </div>

@@ -257,7 +257,7 @@ export function PieceworkTemplates() {
                         <div className='truncate text-sm font-black'>
                           {template.title}
                         </div>
-                        <div className='mt-1 font-mono text-[10px] font-black tracking-[0.16em] text-muted-foreground/70 uppercase'>
+                        <div className='mt-1 font-maple-ui text-[10px] font-black tracking-[0.16em] text-muted-foreground/70 uppercase'>
                           {template.code}
                         </div>
                       </div>
@@ -391,7 +391,7 @@ function MoldingOutputSummarySheet({
         `}
       </style>
 
-      <div className='font-["Microsoft_YaHei",Arial,sans-serif]'>
+      <div className='font-maple-ui'>
         <div className='mb-1 flex min-h-7 items-end justify-center'>
           <div className='text-[18px] leading-none font-black'>
             {copy.sheet.title}
@@ -441,7 +441,9 @@ function MoldingOutputSummarySheet({
           <tbody>
             {Array.from({ length: template.rows }, (_, index) => (
               <tr key={index} className='h-[7.7mm]'>
-                <SheetBodyCell className='font-mono'>{index + 1}</SheetBodyCell>
+                <SheetBodyCell className='font-maple-ui'>
+                  {index + 1}
+                </SheetBodyCell>
                 <SheetBodyCell>{copy.emptyCell}</SheetBodyCell>
                 <SheetBodyCell>{copy.emptyCell}</SheetBodyCell>
                 <SheetBodyCell>{copy.emptyCell}</SheetBodyCell>
@@ -453,7 +455,7 @@ function MoldingOutputSummarySheet({
               </tr>
             ))}
             <tr className='h-[7.7mm]'>
-              <SheetBodyCell className='font-mono'>
+              <SheetBodyCell className='font-maple-ui'>
                 {template.rows + 1}
               </SheetBodyCell>
               <SheetBodyCell className='font-black'>

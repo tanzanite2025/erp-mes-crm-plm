@@ -197,7 +197,7 @@ export function Combobox({
                           {option.tertiaryLabel && (
                             <span
                               data-slot='combobox-option-tertiary'
-                              className='shrink-0 font-mono text-[10px] opacity-30'
+                              className='shrink-0 font-maple-ui text-[10px] opacity-30'
                             >
                               #{option.tertiaryLabel}
                             </span>

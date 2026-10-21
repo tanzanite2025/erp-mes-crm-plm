@@ -323,7 +323,7 @@ function FinancePersonnelDepartmentSalaryCalculator() {
                       {t('piecework.calculator.amount')}
                     </span>
                     <div
-                      className='flex h-11 items-center font-mono text-sm font-semibold'
+                      className='flex h-11 items-center font-maple-ui text-sm font-semibold'
                       aria-label={t('piecework.calculator.rowAmount')}
                     >
                       {result
@@ -425,7 +425,7 @@ function FinancePersonnelDepartmentSalaryCalculator() {
                       <TableCell>{group.departmentName}</TableCell>
                     )}
                     <TableCell>{group.currency}</TableCell>
-                    <TableCell className='text-right font-mono'>
+                    <TableCell className='text-right font-maple-ui'>
                       {formatFinanceSalaryCurrencyCents(group.amountCents)}
                     </TableCell>
                   </TableRow>

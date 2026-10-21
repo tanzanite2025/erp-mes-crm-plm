@@ -46,7 +46,7 @@ export function AuditStamp({
     <div
       className={cn(
         'flex flex-col gap-1.5 border-l border-dashed border-muted-foreground/20 pl-4 transition-all duration-300',
-        'group/audit font-mono text-[9px] tracking-tighter uppercase opacity-50 hover:opacity-100',
+        'group/audit font-maple-ui text-[9px] tracking-tighter uppercase opacity-50 hover:opacity-100',
         isInteractive && 'hover:border-primary/50',
         className
       )}

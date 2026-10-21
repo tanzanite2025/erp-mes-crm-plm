@@ -59,7 +59,7 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
               <HardDrive className='size-4 text-emerald-600' />
               {t('systemManagement.infrastructure.runtimeMemory')}
             </div>
-            <span className='font-mono text-[10px] text-slate-400 dark:text-slate-500'>
+            <span className='font-maple-ui text-[10px] text-slate-400 dark:text-slate-500'>
               {memoryBadge}
             </span>
           </CardTitle>
@@ -102,7 +102,7 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
                 <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase dark:text-slate-500'>
                   {item.label}
                 </span>
-                <span className='font-mono text-xs font-bold text-slate-700 dark:text-slate-200'>
+                <span className='font-maple-ui text-xs font-bold text-slate-700 dark:text-slate-200'>
                   {item.value}
                 </span>
               </div>
@@ -118,7 +118,7 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
               <Database className='size-4 text-blue-600' />
               {t('systemManagement.infrastructure.databasePool')}
             </div>
-            <span className='font-mono text-[10px] text-slate-400 dark:text-slate-500'>
+            <span className='font-maple-ui text-[10px] text-slate-400 dark:text-slate-500'>
               {db.max_open_connections > 0
                 ? `${db.open_conns}/${db.max_open_connections} CONNS`
                 : `${db.open_conns} CONNS`}
@@ -168,7 +168,9 @@ export function InfrastructureGauges({ memory, db, cpu_cores }: Props) {
                 <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase dark:text-slate-500'>
                   {item.label}
                 </span>
-                <span className={cn('font-mono text-xs font-bold', item.color)}>
+                <span
+                  className={cn('font-maple-ui text-xs font-bold', item.color)}
+                >
                   {item.value}
                 </span>
               </div>

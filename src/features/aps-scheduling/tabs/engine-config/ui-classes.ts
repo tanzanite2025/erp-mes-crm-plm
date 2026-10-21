@@ -36,7 +36,7 @@ export const ENGINE_DESC_CLASS =
   'mt-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'
 
 export const ENGINE_BADGE_CLASS =
-  'inline-flex h-5 items-center justify-center rounded-full border border-dashed px-3 text-[8px] font-mono uppercase tracking-[0.2em] whitespace-nowrap'
+  'inline-flex h-5 items-center justify-center rounded-full border border-dashed px-3 text-[8px] font-maple-ui uppercase tracking-[0.2em] whitespace-nowrap'
 
 export const ENGINE_COMPACT_VALUE_CLASS =
   'text-[10px] font-black leading-5 tracking-tight text-foreground/90'

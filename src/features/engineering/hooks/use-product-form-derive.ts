@@ -7,8 +7,8 @@ import { type BOM } from '@/features/product-structure/data/schema'
 import { resolveBOMOwnerDisplay } from '@/features/product-structure/utils/bom-owner-display'
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductTemplate,
   type ProductType,
 } from '../data/schema'
@@ -21,7 +21,7 @@ import { ProductCoreService } from '../services/product-core-service'
 import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import {
   PRODUCT_ATTRIBUTE_CATEGORY_KEYS,
-  getOptionLabel,
+  getProductTemplateAttributeLevelTwoOptionLabel,
   upsertAttributeValue,
 } from '../utils/product-attribute-utils'
 import { normalizeProductModelCodeValue } from '../utils/product-code-normalization'
@@ -47,8 +47,8 @@ interface UseProductFormDeriveParams {
   open: boolean
   form: UseFormReturn<Product>
   previewTemplate?: ProductTemplate | null
-  attributeCategories?: ProductAttributeCategory[]
-  attributeOptions?: ProductAttributeOption[]
+  attributeCategories?: ProductTemplateAttributeLevelOneCategory[]
+  attributeOptions?: ProductTemplateAttributeLevelTwoOption[]
   boms?: BOM[]
   customerNameMap?: Map<string, string>
   productTypes: ProductType[]
@@ -301,7 +301,10 @@ export function useProductFormDerive({
           key: 'bom-version-level',
           label: isChineseLocale ? '产品档次' : 'Product Grade',
           value: versionValue
-            ? getOptionLabel(locale, versionOption) || versionValue
+            ? getProductTemplateAttributeLevelTwoOptionLabel(
+                locale,
+                versionOption
+              ) || versionValue
             : '-',
           empty: !versionValue,
         },

@@ -287,7 +287,7 @@ export function EquipmentActionDialog({
               <Input
                 id='sn'
                 placeholder='SN_XXXX_XXXX'
-                className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-mono text-sm focus-visible:ring-primary/30'
+                className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-maple-ui text-sm focus-visible:ring-primary/30'
                 value={formData.sn}
                 onChange={(e) => {
                   updateFormData({ sn: e.target.value })

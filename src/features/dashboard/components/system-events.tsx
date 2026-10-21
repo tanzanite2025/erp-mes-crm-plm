@@ -184,7 +184,7 @@ export function SystemEvents({ className }: { className?: string }) {
                     <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                       {t('dashboard.page.systemEvents.equipment.offline')}
                     </p>
-                    <p className='mt-1 font-mono text-[8px] text-muted-foreground/20 uppercase'>
+                    <p className='mt-1 font-maple-ui text-[8px] text-muted-foreground/20 uppercase'>
                       WAITING_FOR_STREAM
                     </p>
                   </div>

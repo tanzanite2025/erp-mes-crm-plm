@@ -54,7 +54,7 @@ export function BOMVersionTraceDialog({
             <div className='flex flex-wrap items-center gap-2'>
               <Badge
                 variant='outline'
-                className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
               >
                 {bomId ? '当前 BOM' : productId ? '当前产品' : '全量范围'}
               </Badge>

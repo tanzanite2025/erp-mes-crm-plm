@@ -66,7 +66,7 @@ export default function PersonnelStatistics() {
                   <h3 className='text-sm font-black tracking-tighter uppercase'>
                     {player.name}
                   </h3>
-                  <p className='font-mono text-[8px] text-muted-foreground'>
+                  <p className='font-maple-ui text-[8px] text-muted-foreground'>
                     {player.orgUnitName}
                   </p>
                 </div>
@@ -77,7 +77,7 @@ export default function PersonnelStatistics() {
                   <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('orgPersonnel.statsPage.metrics.attendanceRate')}
                   </p>
-                  <p className='font-mono text-xs font-bold'>
+                  <p className='font-maple-ui text-xs font-bold'>
                     {(player.attendanceRate * 100).toFixed(1)}%
                   </p>
                 </div>
@@ -85,7 +85,7 @@ export default function PersonnelStatistics() {
                   <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t('orgPersonnel.statsPage.metrics.tenure')}
                   </p>
-                  <p className='font-mono text-xs font-bold'>
+                  <p className='font-maple-ui text-xs font-bold'>
                     {player.tenureYears}{' '}
                     {t('orgPersonnel.statsPage.metrics.yearsUnit')}
                   </p>
@@ -150,7 +150,7 @@ export default function PersonnelStatistics() {
                   </td>
                   <td className='py-4'>
                     <div className='flex items-center gap-2'>
-                      <span className='font-mono text-[8px] text-muted-foreground'>
+                      <span className='font-maple-ui text-[8px] text-muted-foreground'>
                         {t('orgPersonnel.statsPage.table.leaveDays', {
                           count: row.leaveDays,
                         })}
@@ -163,7 +163,7 @@ export default function PersonnelStatistics() {
                       </div>
                     </div>
                   </td>
-                  <td className='py-4 font-mono text-[10px]'>
+                  <td className='py-4 font-maple-ui text-[10px]'>
                     {t('orgPersonnel.statsPage.table.tenureValue', {
                       count: row.tenureYears,
                     })}

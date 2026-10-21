@@ -362,7 +362,7 @@ export function MaterialThresholdDialog({
                   <div className='mt-2 text-sm font-black tracking-tighter'>
                     {currentTarget?.primary || '--'}
                   </div>
-                  <div className='mt-1 font-mono text-[8px] text-muted-foreground/60'>
+                  <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground/60'>
                     {currentTarget?.code || '--'}
                   </div>
                   {currentTarget?.secondary ? (
@@ -392,7 +392,7 @@ export function MaterialThresholdDialog({
                     })
                   }
                   placeholder={thresholdPlaceholder}
-                  className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-mono text-sm font-black shadow-inner focus-visible:ring-primary/20'
+                  className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-maple-ui text-sm font-black shadow-inner focus-visible:ring-primary/20'
                 />
                 <p className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {thresholdHint}

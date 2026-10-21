@@ -99,7 +99,7 @@ export function BOMTable({
             </div>
             <div className='flex flex-col'>
               <div className='flex items-center gap-2'>
-                <span className='font-mono leading-tight font-bold'>
+                <span className='font-maple-ui leading-tight font-bold'>
                   {row.original.bomNo}
                 </span>
                 <Badge
@@ -189,7 +189,7 @@ export function BOMTable({
                 {summary.weightLabel}
               </span>
             </div>
-            <span className='font-mono text-[10px] text-muted-foreground/60'>
+            <span className='font-maple-ui text-[10px] text-muted-foreground/60'>
               {product.sku}
             </span>
           </div>
@@ -252,7 +252,7 @@ export function BOMTable({
             <span className='text-slate-700'>
               {changeType || t('engineering.bomArchive.form.manual')}
             </span>
-            <span className='font-mono text-muted-foreground'>
+            <span className='font-maple-ui text-muted-foreground'>
               {row.original.changeOrderNo || '-'}
             </span>
             <span className='text-muted-foreground'>

@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'Maple UI';
+  src: url('/fonts/Maple%20UI.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+/* Keep native controls, code, SVG text and vendor components on the local font. */
+*,
+::before,
+::after,
+::placeholder {
+  font-family: 'Maple UI' !important;
+}

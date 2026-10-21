@@ -233,7 +233,7 @@ export function ProductInboundActionDialog({
                                 </Badge>
                               </div>
                               <div className='flex items-center gap-3 truncate md:gap-4'>
-                                <span className='shrink-0 font-mono text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase md:text-[10px]'>
+                                <span className='shrink-0 font-maple-ui text-[9px] font-black tracking-widest text-muted-foreground/30 uppercase md:text-[10px]'>
                                   SKU: {item.code}
                                 </span>
                                 {item.spec ? (

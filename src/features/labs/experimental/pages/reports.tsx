@@ -119,12 +119,12 @@ export function LabReportsPage() {
 
                   <div className='flex min-w-0 flex-col gap-1'>
                     <div className='flex items-center gap-3'>
-                      <span className='font-mono text-[8px] leading-none font-black text-muted-foreground/40 uppercase'>
+                      <span className='font-maple-ui text-[8px] leading-none font-black text-muted-foreground/40 uppercase'>
                         TASK_CODE
                       </span>
                       <Badge
                         variant='outline'
-                        className='h-4 border-none bg-primary/5 px-1.5 font-mono text-[9px] font-black text-primary'
+                        className='h-4 border-none bg-primary/5 px-1.5 font-maple-ui text-[9px] font-black text-primary'
                       >
                         {report.task?.code || 'N/A'}
                       </Badge>

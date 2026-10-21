@@ -34,7 +34,7 @@ function LinearBarcodeProductionLocationAnchorItem({
           <div className='text-sm font-black text-foreground'>
             {t(labelKey)}
           </div>
-          <div className='mt-2 font-mono text-[11px] font-bold text-primary'>
+          <div className='mt-2 font-maple-ui text-[11px] font-bold text-primary'>
             {anchor.field}
           </div>
         </div>
@@ -57,7 +57,7 @@ function LinearBarcodeProductionLocationAnchorItem({
         <div className='text-[10px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase'>
           {t('codeCenter.linearBarcode.status.fields.sourceTable')}
         </div>
-        <div className='mt-1 font-mono text-[11px] font-bold text-foreground'>
+        <div className='mt-1 font-maple-ui text-[11px] font-bold text-foreground'>
           {anchor.sourceTable}
         </div>
       </div>

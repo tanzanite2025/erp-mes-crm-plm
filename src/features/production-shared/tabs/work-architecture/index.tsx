@@ -115,7 +115,7 @@ export function WorkArchitecture() {
                   <h3 className='text-base font-black tracking-tighter text-slate-800'>
                     {line.name}
                   </h3>
-                  <p className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/50'>
+                  <p className='font-maple-ui text-[9px] font-black tracking-widest text-muted-foreground/50'>
                     {line.code}
                   </p>
                 </div>

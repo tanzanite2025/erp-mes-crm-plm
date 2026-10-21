@@ -173,7 +173,7 @@ export function FurnaceArchivePage() {
                       >
                         {status.label}
                       </Badge>
-                      <span className='rounded bg-white/50 px-1.5 py-0.5 font-mono text-[8px] font-black tracking-tighter text-muted-foreground/40 uppercase'>
+                      <span className='rounded bg-white/50 px-1.5 py-0.5 font-maple-ui text-[8px] font-black tracking-tighter text-muted-foreground/40 uppercase'>
                         {furnace.sn}
                       </span>
                     </div>
@@ -221,7 +221,7 @@ export function FurnaceArchivePage() {
                         <Thermometer className='size-3' />
                         {t('toolingFurnaces.card.tempLive')}
                       </span>
-                      <span className='font-mono text-[10px] font-black tracking-tighter text-slate-400'>
+                      <span className='font-maple-ui text-[10px] font-black tracking-tighter text-slate-400'>
                         {t('toolingFurnaces.card.maxTemp', {
                           value: furnace.maxTemp,
                         })}

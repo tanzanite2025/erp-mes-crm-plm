@@ -49,6 +49,15 @@ func openApprovalServiceTestDB(t *testing.T, withAuditTable bool) *gorm.DB {
 			t.Fatalf("create audit schema: %v", err)
 		}
 	}
+	if err := testDB.Exec("CREATE TABLE users (id text PRIMARY KEY, username text, status text, deleted_at datetime)").Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"requester-1", "requester-2", "approver-1", "approver-2", "approver-l1", "approver-l2"} {
+		if err := testDB.Exec("INSERT INTO users (id,username,status) VALUES (?,?,?)", id, id, "active").Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	createSystemNotificationInboxAndDeliverySQLiteTestSchema(t, testDB)
 	return testDB
 }
 

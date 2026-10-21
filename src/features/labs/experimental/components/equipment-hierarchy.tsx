@@ -237,7 +237,7 @@ export function EquipmentHierarchy({
                     {categories.filter((c) => c.parentId === cat.id).length}{' '}
                     UNITS
                   </span>
-                  <span className='font-mono text-[8px] text-muted-foreground uppercase'>
+                  <span className='font-maple-ui text-[8px] text-muted-foreground uppercase'>
                     子项资产统计
                   </span>
                 </div>
@@ -328,7 +328,7 @@ export function EquipmentHierarchy({
                   <h4 className='truncate text-[11px] font-black tracking-tight uppercase'>
                     {equip.name}
                   </h4>
-                  <p className='truncate font-mono text-[9px] text-muted-foreground opacity-70'>
+                  <p className='truncate font-maple-ui text-[9px] text-muted-foreground opacity-70'>
                     SN: {equip.sn}
                   </p>
                 </div>

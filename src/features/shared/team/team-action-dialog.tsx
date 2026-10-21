@@ -175,7 +175,7 @@ export function TeamActionDialog({
             </Label>
             <Input
               placeholder={texts.placeholders.code}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-mono text-sm font-black focus-visible:ring-primary/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-maple-ui text-sm font-black focus-visible:ring-primary/20'
               value={formData.code}
               onChange={(e) => {
                 setFormData({ code: e.target.value })
@@ -218,7 +218,7 @@ export function TeamActionDialog({
             </Label>
             <Input
               type='number'
-              className='h-11 rounded-2xl border-none bg-muted/20 px-5 font-mono text-xs font-black'
+              className='h-11 rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-black'
               value={formData.step}
               onChange={(e) => {
                 setFormData({ step: Number.parseInt(e.target.value, 10) || 0 })

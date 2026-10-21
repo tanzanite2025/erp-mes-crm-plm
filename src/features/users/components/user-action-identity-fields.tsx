@@ -46,7 +46,7 @@ export function UserActionIdentityFields({
                 <FormLabel className='text-[11px] leading-none font-black tracking-tight text-primary'>
                   {t('users.dialogs.labels.sync')}
                 </FormLabel>
-                <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-40'>
+                <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-40'>
                   IDENTITY_SYNC
                 </span>
               </div>
@@ -97,7 +97,7 @@ export function UserActionIdentityFields({
               <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                 {t('users.dialogs.labels.firstName')}
               </FormLabel>
-              <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                 FIRST_NAME
               </span>
             </div>
@@ -124,7 +124,7 @@ export function UserActionIdentityFields({
               <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                 {t('users.dialogs.labels.lastName')}
               </FormLabel>
-              <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                 LAST_NAME
               </span>
             </div>
@@ -151,7 +151,7 @@ export function UserActionIdentityFields({
               <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                 {t('users.dialogs.labels.username')}
               </FormLabel>
-              <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                 AUTH_IDENTIFIER
               </span>
             </div>
@@ -176,7 +176,7 @@ export function UserActionIdentityFields({
               <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                 {t('users.dialogs.labels.phone')}
               </FormLabel>
-              <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                 CONTACT_PROTO
               </span>
             </div>

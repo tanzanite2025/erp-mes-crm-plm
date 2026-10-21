@@ -6,7 +6,7 @@ import { type BOM } from '@/features/product-structure/data/schema'
 import { ProductCommand } from '../commands/product-command'
 import {
   type Product,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductType,
 } from '../data/schema'
 import { resolveProductAggregateDisplayLabel } from '../utils/product-display-aggregate'
@@ -18,7 +18,7 @@ interface UseProductFormSubmitParams {
   isEdit: boolean
   form: UseFormReturn<Product>
   productTypes: ProductType[]
-  attributeOptions?: ProductAttributeOption[]
+  attributeOptions?: ProductTemplateAttributeLevelTwoOption[]
   boms?: BOM[]
   customerNameMap?: Map<string, string>
   onOpenChange: (open: boolean) => void

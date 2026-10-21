@@ -238,6 +238,7 @@ func SetupRoutes(r *gin.Engine) {
 			logisticsGroup.GET("", handlers.GetLogisticsRecordsHandler)
 			logisticsGroup.GET("/:id", handlers.GetLogisticsRecordHandler)
 			logisticsGroup.POST("", tradingLogisticsManage, handlers.SaveLogisticsRecordHandler)
+			logisticsGroup.PATCH("/:id", tradingLogisticsManage, handlers.PatchLogisticsRecordDetailsHandler)
 			logisticsGroup.PATCH("/:id/status", tradingLogisticsStatus, handlers.UpdateLogisticsStatusHandler)
 			logisticsGroup.DELETE("/:id", tradingLogisticsDelete, handlers.DeleteLogisticsRecordHandler)
 		}
@@ -281,13 +282,13 @@ func SetupRoutes(r *gin.Engine) {
 			logisticsPush.POST("/providers", tradingProviderManage, handlers.SaveLogisticsProviderHandler)
 			logisticsPush.POST("/providers/:id/verify", tradingProviderManage, handlers.VerifyLogisticsProviderHandler)
 			logisticsPush.DELETE("/providers/:id", tradingProviderManage, handlers.DeleteLogisticsProviderHandler)
-			logisticsPush.GET("/orders", handlers.GetDeliveryOrdersHandler)
 			logisticsPush.POST("/callback", handlers.HandlePushCallbackHandler)
 		}
 
 		logisticsTracking := authorized.Group("/logistics-push")
 		logisticsTracking.Use(tradingOrPurchaseAccess)
 		{
+			logisticsTracking.GET("/orders", handlers.GetDeliveryOrdersHandler)
 			logisticsTracking.GET("/tracking/:trackingNo", handlers.GetDeliveryTrackingHandler)
 		}
 
@@ -331,6 +332,10 @@ func SetupRoutes(r *gin.Engine) {
 		// --- 消息中心路由 (Message Center Routing) ---
 		routingGroup := authorized.Group("/message-center")
 		{
+			routingGroup.GET("/inbox", handlers.ListCurrentAccountSystemNotificationInboxHandler)
+			routingGroup.GET("/delivery-queue", adminOnly, handlers.GetSystemNotificationDeliveryQueueDiagnosticsHandler)
+			routingGroup.POST("/delivery-queue/:id/retry", adminOnly, handlers.RetrySystemNotificationDeliveryQueueTaskHandler)
+			routingGroup.POST("/inbox/state", handlers.UpdateCurrentAccountSystemNotificationInboxStateHandler)
 			routingGroup.GET("/event-source-phase-catalog", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetBusinessEventPhaseCatalogHandler)
 			routingGroup.GET("/event-sources", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetBusinessEventSourcesHandler)
 			routingGroup.POST("/event-sources", adminOnly, handlers.SaveBusinessEventSourceHandler)
@@ -349,7 +354,6 @@ func SetupRoutes(r *gin.Engine) {
 			routingGroup.DELETE("/rules/:id", adminOnly, handlers.DeleteRuleHandler)
 
 			routingGroup.GET("/execution-logs", middleware.RequireAnyPermission(authz.MenuApproval), handlers.GetRuleExecutionLogsHandler)
-			routingGroup.POST("/execution-logs", handlers.SaveRuleExecutionLogHandler)
 			routingGroup.POST("/execution-logs/:id/retry-notification", adminOnly, handlers.RetryRuleExecutionNotificationLogHandler)
 		}
 

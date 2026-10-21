@@ -88,7 +88,7 @@ export interface QualityAbnormality {
 }
 
 /**
- * QualityCoreService - 专门负责质量模块的只读查询逻辑 (Logic-Hook-UI)情况情况总量。
+ * 查询品质标准、检验任务、品质异常及结算数据，并映射服务端响应。
  */
 export const QualityCoreService = {
   /**

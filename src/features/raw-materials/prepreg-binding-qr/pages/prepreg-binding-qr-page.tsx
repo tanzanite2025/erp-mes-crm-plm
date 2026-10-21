@@ -190,7 +190,7 @@ export function PrepregBindingQrPage() {
                   <p className='text-[8px] font-black tracking-[0.16em] text-emerald-700/60 uppercase'>
                     {t('rawMaterials.bindingQr.batchValidity.remainingLabel')}
                   </p>
-                  <p className='mt-2 font-mono text-[11px] leading-5 text-emerald-700'>
+                  <p className='mt-2 font-maple-ui text-[11px] leading-5 text-emerald-700'>
                     {t('rawMaterials.bindingQr.batchValidity.remainingValue', {
                       value: batchValidity.remaining,
                     })}
@@ -200,7 +200,7 @@ export function PrepregBindingQrPage() {
                   <p className='text-[8px] font-black tracking-[0.16em] text-emerald-700/60 uppercase'>
                     {t('rawMaterials.bindingQr.batchValidity.expiresAtLabel')}
                   </p>
-                  <p className='mt-2 font-mono text-[10px] leading-5 text-emerald-700/90'>
+                  <p className='mt-2 font-maple-ui text-[10px] leading-5 text-emerald-700/90'>
                     {batchValidity.formattedExpiresAt}
                   </p>
                 </div>

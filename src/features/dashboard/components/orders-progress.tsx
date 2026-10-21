@@ -138,7 +138,7 @@ export function OrdersProgress() {
         </p>
         {errorMessage && (
           <div className='mt-6 w-full max-w-xl rounded-xl border border-rose-100 bg-white/50 p-4'>
-            <p className='font-mono text-[9px] leading-relaxed break-all text-rose-900'>
+            <p className='font-maple-ui text-[9px] leading-relaxed break-all text-rose-900'>
               [STACK_TRACE]: {errorMessage}
             </p>
           </div>
@@ -227,7 +227,7 @@ export function OrdersProgress() {
                         <div className='flex items-center justify-between gap-4'>
                           <div className='flex min-w-0 flex-col gap-0.5'>
                             <div className='flex items-center gap-2'>
-                              <span className='shrink-0 font-mono text-[7px] leading-none font-black tracking-widest text-muted-foreground/30 uppercase md:text-[8px]'>
+                              <span className='shrink-0 font-maple-ui text-[7px] leading-none font-black tracking-widest text-muted-foreground/30 uppercase md:text-[8px]'>
                                 {t('dashboard.page.reports.labels.batch')}
                               </span>
                               <span className='shrink truncate text-[9px] font-black text-primary/40'>
@@ -347,14 +347,20 @@ export function OrdersProgress() {
                         type='number'
                         tickLine={false}
                         axisLine={false}
-                        style={{ fontSize: '8px', fontFamily: 'monospace' }}
+                        style={{
+                          fontSize: '8px',
+                          fontFamily: 'var(--font-maple-ui)',
+                        }}
                       />
                       <YAxis
                         dataKey='name'
                         type='category'
                         tickLine={false}
                         axisLine={false}
-                        style={{ fontSize: '8px', fontFamily: 'monospace' }}
+                        style={{
+                          fontSize: '8px',
+                          fontFamily: 'var(--font-maple-ui)',
+                        }}
                       />
                       <RechartsTooltip
                         contentStyle={{

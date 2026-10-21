@@ -203,7 +203,7 @@ export function EnterpriseMgmt() {
                 <p className='text-[11px] leading-5 font-bold text-muted-foreground'>
                   {t('basicSettings.enterprisePage.form.logoHint')}
                 </p>
-                <p className='truncate font-mono text-[10px] text-muted-foreground/70'>
+                <p className='truncate font-maple-ui text-[10px] text-muted-foreground/70'>
                   {logoUrl}
                 </p>
               </div>

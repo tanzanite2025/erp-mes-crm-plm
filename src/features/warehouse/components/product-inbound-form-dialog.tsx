@@ -130,7 +130,7 @@ export function ProductInboundFormDialog({
                   type='date'
                   value={formData.entryDate}
                   onChange={(e) => onEntryDateChange(e.target.value)}
-                  className='h-10 rounded-xl border-none bg-muted/50 px-4 font-mono text-xs font-bold shadow-inner focus-visible:ring-emerald-500 md:h-11 md:px-5'
+                  className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui text-xs font-bold shadow-inner focus-visible:ring-emerald-500 md:h-11 md:px-5'
                 />
               </div>
             </div>
@@ -143,7 +143,7 @@ export function ProductInboundFormDialog({
                 <div className='group relative'>
                   <Input
                     type='number'
-                    className='h-10 rounded-xl border-none bg-muted/50 pr-10 pl-4 font-mono text-lg font-black shadow-inner transition-all group-hover:bg-muted/70 focus-visible:ring-emerald-500 md:h-11 md:pr-12 md:pl-5 md:text-xl'
+                    className='h-10 rounded-xl border-none bg-muted/50 pr-10 pl-4 font-maple-ui text-lg font-black shadow-inner transition-all group-hover:bg-muted/70 focus-visible:ring-emerald-500 md:h-11 md:pr-12 md:pl-5 md:text-xl'
                     value={formData.quantity}
                     onChange={(e) => onQuantityChange(Number(e.target.value))}
                   />
@@ -160,7 +160,7 @@ export function ProductInboundFormDialog({
                   placeholder={t('warehouse.inbound.dialog.batchPlaceholder')}
                   value={formData.batchNo}
                   onChange={(e) => onBatchNoChange(e.target.value)}
-                  className='h-10 rounded-xl border-none bg-muted/50 px-4 font-mono text-xs font-black shadow-inner focus-visible:ring-emerald-500 md:h-11 md:px-5 md:text-sm'
+                  className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui text-xs font-black shadow-inner focus-visible:ring-emerald-500 md:h-11 md:px-5 md:text-sm'
                 />
               </div>
             </div>

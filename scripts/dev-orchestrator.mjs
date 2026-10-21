@@ -1,14 +1,23 @@
 #!/usr/bin/env node
 
 import { spawn, spawnSync } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import {
-  assertLocalDevelopmentPortCanListen,
   createLocalBackendEnvironmentWithConfiguredServicePorts,
   loadLocalDevelopmentEnvironmentAndServicePorts,
 } from './local-development-environment-and-service-port-configuration.mjs'
+import {
+  acquireLocalDevelopmentStartupLock,
+  getLocalDevelopmentBackendExecutablePath,
+  isLocalDevelopmentServiceRegisteredToRun,
+  registerLocalDevelopmentServiceProcess,
+  removeLocalDevelopmentServiceRegistration,
+  restartPreviouslyOwnedLocalDevelopmentServices,
+  stopLocalDevelopmentChildProcessTree,
+} from './local-development-owned-process-restart-and-startup-lock.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -20,7 +29,10 @@ const prepareOnly = process.argv.includes('--prepare-only')
 const backendOnly = process.argv.includes('--backend-only')
 const frontendOnly = process.argv.includes('--frontend-only')
 
-const children = new Set()
+const children = new Map()
+const selectedServiceRoles = new Set()
+let startupLock
+let developmentRunToken
 let shuttingDown = false
 
 function log(message) {
@@ -36,7 +48,10 @@ function runChecked(command, args, options = {}) {
   })
 
   if (result.status !== 0) {
-    process.exit(result.status ?? 1)
+    throw (
+      result.error ??
+      new Error(`${command} failed with exit code ${result.status ?? 1}`)
+    )
   }
 }
 
@@ -70,7 +85,7 @@ function generateRouteContracts() {
   runChecked('node', ['scripts/generate-permission-contract.mjs'])
 }
 
-function startChild(label, command, args, options = {}) {
+async function startChild(serviceRole, label, command, args, options = {}) {
   log(`starting ${label}`)
   const child = spawn(command, args, {
     cwd: repoRoot,
@@ -79,7 +94,7 @@ function startChild(label, command, args, options = {}) {
     ...options,
   })
 
-  children.add(child)
+  children.set(child, serviceRole)
   child.on('error', (error) => {
     children.delete(child)
     if (shuttingDown) return
@@ -89,13 +104,29 @@ function startChild(label, command, args, options = {}) {
   child.on('exit', (code, signal) => {
     children.delete(child)
     if (shuttingDown) return
-    if (code === 0 || signal) return
+    if (
+      !isLocalDevelopmentServiceRegisteredToRun(
+        repoRoot,
+        serviceRole,
+        developmentRunToken
+      )
+    ) {
+      log(`${serviceRole} handed over to a newer development launcher`)
+      if (children.size === 0) shutdown(0)
+      return
+    }
     console.error(
       `[dev] ${label} exited code=${code ?? 'null'} signal=${signal ?? 'null'}`
     )
-    shutdown(code ?? 1)
+    shutdown(code || 1)
   })
 
+  await registerLocalDevelopmentServiceProcess(
+    repoRoot,
+    serviceRole,
+    developmentRunToken,
+    child.pid
+  )
   return child
 }
 
@@ -104,16 +135,23 @@ function shutdown(exitCode = 0) {
   shuttingDown = true
   log('stopping dev processes')
 
-  for (const child of children) {
-    if (child.killed) continue
-    if (process.platform === 'win32') {
-      spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
-        stdio: 'ignore',
-      })
-    } else {
-      child.kill('SIGTERM')
-    }
+  for (const [child, serviceRole] of children) {
+    if (
+      isLocalDevelopmentServiceRegisteredToRun(
+        repoRoot,
+        serviceRole,
+        developmentRunToken
+      )
+    )
+      stopLocalDevelopmentChildProcessTree(child)
   }
+  for (const serviceRole of selectedServiceRoles)
+    removeLocalDevelopmentServiceRegistration(
+      repoRoot,
+      serviceRole,
+      developmentRunToken
+    )
+  startupLock?.release()
 
   process.exit(exitCode)
 }
@@ -135,17 +173,29 @@ try {
   const backendUrl = `http://127.0.0.1:${ports.DEV_BACKEND_PORT}`
   log(`local service ports: ${JSON.stringify(ports)}`)
 
-  if (!prepareOnly && !backendOnly) {
-    await assertLocalDevelopmentPortCanListen(
-      'DEV_FRONTEND_PORT',
-      ports.DEV_FRONTEND_PORT
-    )
-  }
-  if (!prepareOnly && !frontendOnly) {
-    await assertLocalDevelopmentPortCanListen(
-      'DEV_BACKEND_PORT',
-      ports.DEV_BACKEND_PORT
-    )
+  if (!prepareOnly) {
+    const services = []
+    if (!backendOnly)
+      services.push({
+        role: 'frontend',
+        variableName: 'DEV_FRONTEND_PORT',
+        port: ports.DEV_FRONTEND_PORT,
+      })
+    if (!frontendOnly)
+      services.push({
+        role: 'backend',
+        variableName: 'DEV_BACKEND_PORT',
+        port: ports.DEV_BACKEND_PORT,
+      })
+    services.forEach((service) => selectedServiceRoles.add(service.role))
+    startupLock = await acquireLocalDevelopmentStartupLock(repoRoot)
+    developmentRunToken = startupLock.runToken
+    await restartPreviouslyOwnedLocalDevelopmentServices({
+      repositoryRoot: repoRoot,
+      services,
+      runToken: developmentRunToken,
+      log,
+    })
   }
   if (!frontendOnly) {
     if (process.argv.includes('--clean-go-cache')) cleanGoBuildCache()
@@ -170,13 +220,28 @@ try {
   }
 
   if (!frontendOnly) {
-    startChild(`backend API ${backendUrl}`, 'go', ['run', 'main.go'], {
+    const backendExecutablePath =
+      getLocalDevelopmentBackendExecutablePath(repoRoot)
+    mkdirSync(dirname(backendExecutablePath), { recursive: true })
+    log('building current backend source')
+    runChecked('go', ['build', '-o', backendExecutablePath, 'main.go'], {
       cwd: serverDir,
       env: backendEnv,
     })
+    await startChild(
+      'backend',
+      `backend API ${backendUrl}`,
+      backendExecutablePath,
+      [],
+      {
+        cwd: serverDir,
+        env: backendEnv,
+      }
+    )
   }
   if (!backendOnly) {
-    startChild(
+    await startChild(
+      'frontend',
       `frontend Vite ${frontendUrl}`,
       process.execPath,
       [
@@ -204,4 +269,6 @@ try {
 } catch (error) {
   console.error('[dev] failed to start dev processes:', error)
   shutdown(1)
+} finally {
+  startupLock?.release()
 }

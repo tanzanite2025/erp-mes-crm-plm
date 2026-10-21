@@ -146,7 +146,7 @@ export function AuditEntryColumnCard({
         {typeof count === 'undefined' ? null : (
           <Badge
             variant='outline'
-            className='rounded-full border-dashed bg-white font-mono text-[8px]'
+            className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
           >
             {count}
           </Badge>

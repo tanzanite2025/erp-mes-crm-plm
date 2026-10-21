@@ -198,7 +198,7 @@ export function QuotePrintDocument({ detail }: { detail: QuoteDetail }) {
                 <td className='border border-black p-2 align-top font-semibold'>
                   {line.productModel || '--'}
                 </td>
-                <td className='border border-black p-2 align-top font-mono text-[11px]'>
+                <td className='border border-black p-2 align-top font-maple-ui text-[11px]'>
                   {line.productCode || '--'}
                 </td>
                 <td className='border border-black p-2 align-top'>

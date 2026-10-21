@@ -11,6 +11,7 @@ import {
   type ProductAttributeValue,
 } from '../data/schema'
 import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
+import { filterProductSpecificationOwnedAttributeValues } from '../utils/product-attribute-utils'
 import {
   normalizeEngineeringChangeOrderNo,
   normalizeEngineeringRevisionNo,
@@ -83,7 +84,9 @@ export function buildProductCandidate(
     description: dto.description,
     engineeringSpecId: dto.engineeringSpecId,
     bomId: dto.bomId,
-    attributeValues: attributeValues.map(toProductAttributeValueContract),
+    attributeValues: filterProductSpecificationOwnedAttributeValues(
+      attributeValues
+    ).map(toProductAttributeValueContract),
     techSpecs: dto.techSpecs,
     barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
     attachments: toAttachmentArray(dto.attachments),

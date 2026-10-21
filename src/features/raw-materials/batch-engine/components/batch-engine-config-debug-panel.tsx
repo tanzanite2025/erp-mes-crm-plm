@@ -108,7 +108,7 @@ function ConfigChip({ label, value }: { label: string; value: string }) {
       <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
         {label}
       </p>
-      <p className='mt-1 truncate font-mono text-[11px] font-black text-foreground'>
+      <p className='mt-1 truncate font-maple-ui text-[11px] font-black text-foreground'>
         {value}
       </p>
     </div>

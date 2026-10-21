@@ -9,6 +9,7 @@ import {
   parseRequiredIds,
 } from '@/features/authz/core/permission-kernel'
 import { getAuthSessionPermissionIds } from '@/features/authz/utils/auth-session'
+import { SystemNotificationDeliveryQueueDiagnostics } from '../notifications/components/system-notification-delivery-queue-diagnostics'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import {
   type RuleExecutionStatus,
@@ -132,8 +133,8 @@ export function RuleExecutionLogTab({
       RoutingService.retryExecutionLogNotification(id),
     onSuccess: (log) => {
       void refetch()
-      if (log.executionStatus === 'success') {
-        toast.success('通知已重新投递')
+      if (log.executionStatus === 'pending') {
+        toast.success('原投递任务已安排重试')
         return
       }
       if (log.executionStatus === 'skipped') {
@@ -207,7 +208,7 @@ export function RuleExecutionLogTab({
           acc[item.executionStatus] += 1
           return acc
         },
-        { matched: 0, success: 0, failed: 0, skipped: 0 }
+        { pending: 0, matched: 0, success: 0, failed: 0, skipped: 0 }
       ),
     [items]
   )
@@ -222,6 +223,7 @@ export function RuleExecutionLogTab({
 
   return (
     <div className='space-y-0'>
+      <SystemNotificationDeliveryQueueDiagnostics />
       <RuleExecutionLogSummary
         pageItemCount={items.length}
         successCount={totals.success}

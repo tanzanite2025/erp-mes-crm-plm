@@ -68,7 +68,7 @@ export function ShipmentSearch({
             <span className='truncate text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase md:max-w-none md:text-[9px]'>
               {t('warehouse.shipment.search.results')}
             </span>
-            <span className='shrink-0 font-mono text-[7px] font-black text-muted-foreground/60 md:text-[8px]'>
+            <span className='shrink-0 font-maple-ui text-[7px] font-black text-muted-foreground/60 md:text-[8px]'>
               {t('warehouse.shipment.search.resultCount', {
                 count: searchResults.length,
               })}
@@ -153,7 +153,7 @@ export function ShipmentSearch({
                         </Badge>
                       </div>
                       <div className='flex items-center gap-2 truncate md:gap-3'>
-                        <span className='shrink-0 font-mono text-[8px] font-black tracking-widest text-muted-foreground/30 uppercase md:text-[9px]'>
+                        <span className='shrink-0 font-maple-ui text-[8px] font-black tracking-widest text-muted-foreground/30 uppercase md:text-[9px]'>
                           {t('warehouse.shipment.search.sku', {
                             code: item.code,
                           })}
@@ -164,7 +164,7 @@ export function ShipmentSearch({
                           </span>
                           <span
                             className={cn(
-                              'font-mono text-[8px] font-black md:text-[9px]',
+                              'font-maple-ui text-[8px] font-black md:text-[9px]',
                               item.stock > 0 ? 'text-blue-600' : 'text-rose-500'
                             )}
                           >

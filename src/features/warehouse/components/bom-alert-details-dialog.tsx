@@ -159,7 +159,7 @@ export function BOMAlertDetailsDialog({
                               {detail.bomNo}
                             </Badge>
                           </div>
-                          <div className='font-mono text-[8px] text-muted-foreground/60'>
+                          <div className='font-maple-ui text-[8px] text-muted-foreground/60'>
                             {detail.productSku || detail.productId || '--'}
                           </div>
                         </div>
@@ -227,7 +227,7 @@ export function BOMAlertDetailsDialog({
                                     <div className='text-[11px] font-black tracking-tighter text-foreground'>
                                       {shortage.materialName}
                                     </div>
-                                    <div className='mt-1 font-mono text-[8px] text-muted-foreground/60'>
+                                    <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground/60'>
                                       {shortage.materialCode}
                                     </div>
                                     <div className='mt-1 text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
@@ -235,13 +235,13 @@ export function BOMAlertDetailsDialog({
                                     </div>
                                   </div>
                                 </TableCell>
-                                <TableCell className='text-right font-mono text-[11px] font-black'>
+                                <TableCell className='text-right font-maple-ui text-[11px] font-black'>
                                   {formatQuantity(shortage.requiredQty)}
                                 </TableCell>
-                                <TableCell className='text-right font-mono text-[11px] font-black'>
+                                <TableCell className='text-right font-maple-ui text-[11px] font-black'>
                                   {formatQuantity(shortage.currentStock)}
                                 </TableCell>
-                                <TableCell className='text-right font-mono text-[11px] font-black text-rose-600'>
+                                <TableCell className='text-right font-maple-ui text-[11px] font-black text-rose-600'>
                                   {formatQuantity(shortage.shortageQty)}
                                 </TableCell>
                               </TableRow>

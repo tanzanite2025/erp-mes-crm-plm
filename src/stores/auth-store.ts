@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
 
 export const XDFC_AUTH_USER_MUTATION_EVENT = 'xdfc_auth_user_mutation'
@@ -131,7 +130,6 @@ export const useAuthStore = create<AuthState>()(
           isIdentitySynced: false,
         })
         void StorageService.removeItem('system_effective_permissions')
-        useNotificationStore.getState().clearAll()
       },
     }),
     {

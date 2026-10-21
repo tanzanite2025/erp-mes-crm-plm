@@ -25,8 +25,8 @@ export function StandardPreviewInfoCard({
         className
       )}
     >
-      <div className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/50 lg:size-10 lg:rounded-xl'>
-        <Icon className='size-3 text-primary/40 lg:size-4' />
+      <div className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/50'>
+        <Icon className='size-3.5 text-primary/40' />
       </div>
       <div className='min-w-0'>
         <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase lg:text-[9px]'>
@@ -34,7 +34,7 @@ export function StandardPreviewInfoCard({
         </p>
         <p
           className={cn(
-            'truncate text-xs font-bold tracking-tight lg:text-sm',
+            'truncate text-[11px] leading-5 font-medium tracking-tight',
             valueClassName,
             highlight && 'tracking-wider text-primary uppercase'
           )}

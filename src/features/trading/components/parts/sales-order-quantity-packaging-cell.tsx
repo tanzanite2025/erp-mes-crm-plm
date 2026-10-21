@@ -27,7 +27,7 @@ export function SalesOrderQuantitySummaryCard({
           </p>
         </div>
 
-        <span className='inline-flex items-center rounded-full bg-primary/10 px-2 py-1 font-mono text-[8px] font-black text-primary uppercase'>
+        <span className='inline-flex items-center rounded-full bg-primary/10 px-2 py-1 font-maple-ui text-[8px] font-black text-primary uppercase'>
           总量
         </span>
       </div>

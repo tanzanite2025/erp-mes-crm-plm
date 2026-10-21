@@ -175,7 +175,7 @@ export function TaxActionDialog({
                 onChange={(e) => {
                   updateFormData({ rate: Number(e.target.value) })
                 }}
-                className='h-12 rounded-2xl bg-muted/5 pr-8 font-mono font-bold'
+                className='h-12 rounded-2xl bg-muted/5 pr-8 font-maple-ui font-bold'
               />
               <span className='absolute top-1/2 right-3 -translate-y-1/2 text-xs font-black opacity-30'>
                 %

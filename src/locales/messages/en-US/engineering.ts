@@ -2,7 +2,7 @@ export const engineering = {
   tabs: {
     products: 'Product Management',
     productAppearance: 'Product Appearance',
-    productAttributes: 'Product Attributes',
+    productAttributes: 'Product Template Attribute Categories',
     bom: 'BOM Recipes',
     bomRecords: 'BOM Trace',
     sectionConfig: 'Section Config',
@@ -41,6 +41,11 @@ export const engineering = {
       removeImage: 'Remove Image',
       save: 'Save',
       cancel: 'Cancel',
+      saving: 'Saving…',
+      uploading: 'Uploading image…',
+      retry: 'Retry',
+      done: 'Done',
+      select: 'Select',
       deleteConfirm: 'Delete appearance "{{name}}"?',
     },
     badges: {
@@ -57,18 +62,22 @@ export const engineering = {
       createTitle: 'Add Product Appearance',
       editTitle: 'Edit Product Appearance',
       description:
-        'This round only builds the appearance master itself and does not yet connect sales orders or barcode pages.',
-      imageHint:
-        'This phase uses local prototype images first and will migrate to unified file storage later.',
+        'Maintain the appearance name, barcode code, image and active status, then continue your current task.',
+      managementTitle: 'Product Appearance Management',
+      managementDescription:
+        'Manage product appearances, then continue working on the current page.',
+      imageHint: 'JPG, PNG and GIF images up to 50 MB are supported.',
       imageEmpty: 'No appearance image uploaded yet',
     },
     toasts: {
       required: 'Appearance name and barcode code are required',
+      loading: 'Loading product appearances…',
+      loadFailed: 'Unable to load product appearances. Please retry.',
+      invalidImage: 'Choose a JPG, PNG or GIF image no larger than 50 MB',
       invalidBarcodeCode: 'Barcode code must be a single digit from 1 to 9',
       duplicateBarcodeCode:
         'This barcode code is already used by another appearance',
-      imageReadFailed:
-        'Failed to read the image file, please choose another one',
+      imageUploadFailed: 'Image upload failed. Please retry.',
       saveSuccess: 'Product appearance saved',
       saveFailed: 'Failed to save product appearance',
       deleteSuccess: 'Product appearance deleted',
@@ -1059,9 +1068,9 @@ export const engineering = {
   },
   templateMgmt: {
     header: {
-      title: 'Product Spec Templates',
+      title: 'Product Templates',
       description:
-        'Maintain reusable physical specification templates for engineering product models.',
+        'Maintain reusable product templates and their attribute categories.',
     },
     status: {
       synced: 'Template Library Synced',
@@ -1085,17 +1094,19 @@ export const engineering = {
       inactive: 'Disabled',
     },
     dialog: {
-      createTitle: 'Create Spec Template',
-      editTitle: 'Edit Spec Template',
+      createTitle: 'Create Product Template',
+      editTitle: 'Edit Product Template',
       description:
-        'Define the physical parameter mapping used by engineering product records.',
+        'Enter template details, add level 1 attribute categories and view their level 2 options.',
     },
     fields: {
+      basicInformation: 'Template Details',
       name: 'Template Name',
       code: 'Unique Code',
       component: 'Physical Component',
-      description: 'Technical Description',
-      assemblyTitle: 'Attribute Assembly',
+      description: 'Description',
+      assemblyTitle: 'Attribute Configuration',
+      levelOneAttributeCategory: 'Level 1 Attribute Category',
       previewTitle: 'Template Preview',
     },
     placeholders: {
@@ -1103,18 +1114,20 @@ export const engineering = {
       code: 'e.g. RIM_BASIC',
       component: 'Select a component...',
       description: 'Optional description...',
-      attributeCategory: 'Select a global attribute category to assemble...',
+      attributeCategory:
+        'Select a level 1 attribute category for this template...',
     },
     hints: {
       component:
         'The selected component determines which physical parameter form is generated when creating a product.',
       assembly:
-        'Templates can assemble global product attribute categories from the shared library and preview the resulting structure in real time.',
+        'Adding a level 1 attribute category makes all its active level 2 options available in the product form.',
     },
     buttons: {
       cancel: 'Cancel',
       save: 'Save Template',
-      addAttribute: 'Add Attribute Category',
+      saving: 'Saving…',
+      addAttribute: 'Add Level 1 Attribute Category',
       removeAttribute: 'Remove',
     },
     confirms: {
@@ -1128,7 +1141,7 @@ export const engineering = {
       initLoading: 'Restoring built-in templates...',
       initSuccess: 'Built-in templates restored',
       initFailed: 'Failed to restore built-in templates: {{message}}',
-      required: 'Template name and code are required',
+      required: 'Please enter the template name',
       conflict: 'This template was updated elsewhere. Refresh and try again.',
       saveCreated: 'Template created',
       saveUpdated: 'Template updated',
@@ -1141,8 +1154,15 @@ export const engineering = {
       GENERAL: 'General Spec',
     },
     assembly: {
+      levelTwoOptions: 'Level 2 Attribute Categories (Options)',
+      levelTwoOptionCount: 'Level 2 Attribute Options · {{count}} Active',
+      noActiveLevelTwoOptions:
+        'No active level 2 options. Manage them in Product Template Attribute Categories.',
+      selectedCategoryPreview: 'Level 1 category and level 2 options to add',
+      levelOneCategoryCount: 'Added Level 1 Attribute Categories · {{count}}',
+      unavailableCategory: 'This level 1 attribute category is unavailable',
       empty:
-        'No global attribute categories are assembled into this template yet.',
+        'No level 1 attribute categories have been added to this template yet.',
       required: 'Required',
       optional: 'Optional',
       active: 'Active',

@@ -147,7 +147,7 @@ function StatusProgress({
         <span className='text-[9px] font-black tracking-widest uppercase opacity-60'>
           {label}
         </span>
-        <span className='font-mono text-[9px] font-bold tabular-nums opacity-40'>
+        <span className='font-maple-ui text-[9px] font-bold tabular-nums opacity-40'>
           {t('equipmentTooling.dashboard.detail.unitsValue', {
             value,
             percentage: percentage.toFixed(0),

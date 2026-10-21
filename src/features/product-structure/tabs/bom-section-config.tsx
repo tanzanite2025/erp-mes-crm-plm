@@ -392,27 +392,27 @@ export function BOMSectionConfigTab() {
                       </h2>
                       <Badge
                         variant='outline'
-                        className='h-5 rounded-full border-none bg-muted/40 font-mono text-[8px]'
+                        className='h-5 rounded-full border-none bg-muted/40 font-maple-ui text-[8px]'
                       >
                         {section.code}
                       </Badge>
                       {section.isDefault ? (
-                        <Badge className='h-5 rounded-full bg-emerald-500/10 font-mono text-[8px] text-emerald-600'>
+                        <Badge className='h-5 rounded-full bg-emerald-500/10 font-maple-ui text-[8px] text-emerald-600'>
                           DEFAULT
                         </Badge>
                       ) : null}
                       {section.isSystem ? (
-                        <Badge className='h-5 rounded-full bg-slate-500/10 font-mono text-[8px] text-slate-600'>
+                        <Badge className='h-5 rounded-full bg-slate-500/10 font-maple-ui text-[8px] text-slate-600'>
                           SYSTEM
                         </Badge>
                       ) : null}
                       {!section.active ? (
-                        <Badge className='h-5 rounded-full bg-amber-500/10 font-mono text-[8px] text-amber-600'>
+                        <Badge className='h-5 rounded-full bg-amber-500/10 font-maple-ui text-[8px] text-amber-600'>
                           INACTIVE
                         </Badge>
                       ) : null}
                     </div>
-                    <div className='font-mono text-[8px] text-muted-foreground'>
+                    <div className='font-maple-ui text-[8px] text-muted-foreground'>
                       SORT {section.sortOrder.toString().padStart(2, '0')} /
                       VERSION {section.version}
                     </div>
@@ -492,7 +492,7 @@ export function BOMSectionConfigTab() {
                 placeholder={t(
                   'engineering.bomSectionConfig.placeholders.code'
                 )}
-                className='h-12 rounded-2xl border-none bg-muted/50 font-mono placeholder:text-[10px] placeholder:font-black placeholder:tracking-wide placeholder:text-muted-foreground/40'
+                className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui placeholder:text-[10px] placeholder:font-black placeholder:tracking-wide placeholder:text-muted-foreground/40'
               />
             </div>
             <div className='grid gap-2'>

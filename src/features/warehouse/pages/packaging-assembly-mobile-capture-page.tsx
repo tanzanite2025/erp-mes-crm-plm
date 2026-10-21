@@ -173,7 +173,7 @@ export function PackagingAssemblyMobileCapturePage({
             <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {copy.packageCode}
             </div>
-            <div className='mt-1 font-mono text-lg font-black break-all'>
+            <div className='mt-1 font-maple-ui text-lg font-black break-all'>
               {packageCode || '--'}
             </div>
           </div>
@@ -203,7 +203,7 @@ export function PackagingAssemblyMobileCapturePage({
             <div className='text-xs font-black tracking-widest text-muted-foreground uppercase'>
               {copy.scanned}
             </div>
-            <div className='font-mono text-sm font-black'>
+            <div className='font-maple-ui text-sm font-black'>
               {productBarcodes.length}
             </div>
           </div>
@@ -211,7 +211,7 @@ export function PackagingAssemblyMobileCapturePage({
             {productBarcodes.map((item) => (
               <div
                 key={item}
-                className='flex items-center justify-between gap-2 rounded-2xl bg-background px-3 py-2 font-mono text-sm font-black'
+                className='flex items-center justify-between gap-2 rounded-2xl bg-background px-3 py-2 font-maple-ui text-sm font-black'
               >
                 <span className='min-w-0 truncate'>{item}</span>
                 <button

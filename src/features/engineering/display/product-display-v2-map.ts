@@ -1,7 +1,7 @@
 import type {
   Product,
-  ProductAttributeCategory,
-  ProductAttributeOption,
+  ProductTemplateAttributeLevelOneCategory,
+  ProductTemplateAttributeLevelTwoOption,
   ProductTemplate,
   ProductType,
 } from '../data/schema'
@@ -16,8 +16,8 @@ export interface BuildProductDisplayMapsV2Params {
   products: Product[]
   productTemplates: ProductTemplate[]
   productTypes: ProductType[]
-  productAttributeCategories: ProductAttributeCategory[]
-  productAttributeOptions: ProductAttributeOption[]
+  productAttributeCategories: ProductTemplateAttributeLevelOneCategory[]
+  productAttributeOptions: ProductTemplateAttributeLevelTwoOption[]
 }
 
 export function buildProductDisplayMapsV2(

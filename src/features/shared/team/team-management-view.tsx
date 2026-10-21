@@ -191,7 +191,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
                 key={team.id}
                 className='group border-white/5 transition-colors hover:bg-muted/20'
               >
-                <TableCell className='font-mono text-xs font-black text-primary'>
+                <TableCell className='font-maple-ui text-xs font-black text-primary'>
                   {team.code}
                 </TableCell>
                 <TableCell className='text-sm font-bold tracking-tight'>

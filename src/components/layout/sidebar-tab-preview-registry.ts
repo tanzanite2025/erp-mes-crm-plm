@@ -20,6 +20,7 @@ import { getMaintenanceCenterTabs } from '@/features/equipment-maintenance/tabs'
 import { getEquipmentToolingTabs } from '@/features/equipment-tooling/tabs'
 import { getFinanceSettlementsTabs } from '@/features/finance/settlements-tabs'
 import { getFinanceTabs } from '@/features/finance/tabs'
+import { getHomeShortcutTabs } from '@/features/home/home-shortcut-tabs'
 import { getLabExperimentalTabs } from '@/features/labs/experimental/tabs'
 import { getLogisticsConfigTabs } from '@/features/logistics-config/tabs'
 import { getLogisticsLoadingSpecsTabs } from '@/features/logistics-loading-specs/tabs'
@@ -103,6 +104,7 @@ function getSystemManagementTabs(t: TranslateFn): TabItem[] {
 }
 
 const sidebarTabPreviewResolvers: Record<string, SidebarTabPreviewResolver> = {
+  'home-shortcuts': getHomeShortcutTabs,
   dashboard: getDashboardTabs,
   'purchase-management': getPurchaseTabs,
   'sales-management': getTradingTabs,

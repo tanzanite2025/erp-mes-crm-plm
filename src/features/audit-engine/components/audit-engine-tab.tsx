@@ -70,7 +70,7 @@ function CoverageMetric({
         <span className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
           {label}
         </span>
-        <span className='font-mono text-xs font-black'>
+        <span className='font-maple-ui text-xs font-black'>
           {formatPercentage(value)}
         </span>
       </div>
@@ -90,7 +90,7 @@ function CoverageMetric({
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className='font-mono text-[9px] text-muted-foreground'>
+      <span className='font-maple-ui text-[9px] text-muted-foreground'>
         {count} / {target} {countLabel}
       </span>
     </div>
@@ -128,14 +128,14 @@ function ModuleCard({
           <h4 className='truncate text-sm font-black tracking-tight uppercase'>
             {getModuleLabel(module.id, t)}
           </h4>
-          <span className='font-mono text-[8px] tracking-widest text-muted-foreground uppercase'>
+          <span className='font-maple-ui text-[8px] tracking-widest text-muted-foreground uppercase'>
             MODULE_ID: {module.id}
           </span>
         </div>
         <Badge
           variant='outline'
           className={cn(
-            'h-5 shrink-0 border-none px-1.5 font-mono text-[8px] tracking-wider',
+            'h-5 shrink-0 border-none px-1.5 font-maple-ui text-[8px] tracking-wider',
             module.status === 'HEALTHY' && 'bg-emerald-500/10 text-emerald-600',
             module.status === 'ALERT' && 'bg-amber-500/10 text-amber-600',
             module.status === 'CRITICAL' && 'bg-rose-500/10 text-rose-600'
@@ -176,7 +176,7 @@ function ModuleCard({
               })}
             </span>
           </div>
-          <p className='mt-1 font-mono text-[9px] leading-relaxed break-words text-muted-foreground'>
+          <p className='mt-1 font-maple-ui text-[9px] leading-relaxed break-words text-muted-foreground'>
             {module.missingIntegrationEntities.join(', ')}
           </p>
         </div>
@@ -186,7 +186,7 @@ function ModuleCard({
         <div className='flex min-w-0 items-center gap-1.5 text-muted-foreground'>
           <Clock3 className='size-3 shrink-0' />
           <span
-            className='truncate font-mono text-[9px]'
+            className='truncate font-maple-ui text-[9px]'
             title={module.lastEvent}
           >
             {module.lastEvent ||
@@ -370,7 +370,7 @@ export function AuditEngineTab() {
                       count: data?.unmappedLogEntityCount ?? 0,
                     })}
                   </p>
-                  <p className='mt-1 font-mono text-[10px] leading-relaxed break-words text-muted-foreground'>
+                  <p className='mt-1 font-maple-ui text-[10px] leading-relaxed break-words text-muted-foreground'>
                     {data?.unmappedLogEntities.join(', ')}
                   </p>
                 </div>

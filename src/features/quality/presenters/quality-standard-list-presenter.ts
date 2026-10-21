@@ -24,9 +24,9 @@ export interface QualityStandardListItemPresenter {
   typeLabel: string
   statusMeta: ReturnType<typeof getStatusMeta>
   auditMeta: ReturnType<typeof getQualityAuditMeta>
-  enteredApprovalChain: boolean
-  approvalChainLabel: string
-  approvalChainClassName: string
+  hasApprovalRequest: boolean
+  approvalRequestLabel: string
+  approvalRequestClassName: string
   operatorName: string
   operateTimeText: string
   reviewerName?: string
@@ -99,19 +99,21 @@ function buildProcessSummaryHint(standard: Standard) {
   return summary.reason?.trim() || `${summary.module} / ${summary.action}`
 }
 
-function buildApprovalChainLabel(
+function buildQualityStandardApprovalRequestLabel(
   locale: string,
-  enteredApprovalChain: boolean
+  hasApprovalRequest: boolean
 ) {
-  if (enteredApprovalChain) {
-    return locale === 'zh-CN' ? '已进入审批链' : 'In Approval Chain'
+  if (hasApprovalRequest) {
+    return locale === 'zh-CN' ? '已生成审批申请' : 'Approval Request Created'
   }
 
-  return locale === 'zh-CN' ? '未进入审批链' : 'Not In Approval Chain'
+  return locale === 'zh-CN' ? '未生成审批申请' : 'No Approval Request'
 }
 
-function buildApprovalChainClassName(enteredApprovalChain: boolean) {
-  return enteredApprovalChain
+function buildQualityStandardApprovalRequestClassName(
+  hasApprovalRequest: boolean
+) {
+  return hasApprovalRequest
     ? 'bg-emerald-500/10 text-emerald-600'
     : 'bg-slate-500/10 text-slate-500'
 }
@@ -136,7 +138,7 @@ function buildDecisionSummary(locale: string, status: Standard['status']) {
   }
 
   if (normalizedStatus === 'PENDING_APPROVAL') {
-    return locale === 'zh-CN' ? '审批中' : 'Pending Approval'
+    return locale === 'zh-CN' ? '待审核' : 'Pending Review'
   }
 
   return undefined
@@ -169,27 +171,17 @@ function buildDecisionTimestamp(standard: Standard) {
   )
 }
 
-function hasEnteredApprovalChain(standard: Standard) {
-  const normalizedStatus = normalizeQualityStandardStatus(standard.status)
-
-  return (
-    Boolean(standard.approvalRequestSummary) ||
-    normalizedStatus !== 'DRAFT' ||
-    Boolean(
-      standard.auditor ||
-      standard.auditTime ||
-      standard.reviewComment ||
-      standard.rejectReason ||
-      standard.archiveReason
-    )
-  )
-}
-
 export function buildQualityStandardListItemPresenter(
   standard: Standard,
   { t, locale }: QualityStandardListPresenterContext
 ): QualityStandardListItemPresenter {
-  const enteredApprovalChain = hasEnteredApprovalChain(standard)
+  const hasApprovalRequest = Boolean(standard.approvalRequestSummary?.id)
+  const hasReviewDecision = [
+    'APPROVED',
+    'REJECTED',
+    'PUBLISHED',
+    'ARCHIVED',
+  ].includes(normalizeQualityStandardStatus(standard.status))
   const operatorName =
     formatQualityActorName(standard.operator) || t('quality.common.system')
 
@@ -202,16 +194,24 @@ export function buildQualityStandardListItemPresenter(
     typeLabel: getQualityStandardTypeLabel(t, standard.type),
     statusMeta: getStatusMeta(t, standard.status),
     auditMeta: getQualityAuditMeta(locale, standard.status, standard.auditor),
-    enteredApprovalChain,
-    approvalChainLabel: buildApprovalChainLabel(locale, enteredApprovalChain),
-    approvalChainClassName: buildApprovalChainClassName(enteredApprovalChain),
+    hasApprovalRequest,
+    approvalRequestLabel: buildQualityStandardApprovalRequestLabel(
+      locale,
+      hasApprovalRequest
+    ),
+    approvalRequestClassName:
+      buildQualityStandardApprovalRequestClassName(hasApprovalRequest),
     operatorName,
     operateTimeText: formatQualityDateTime(standard.operateTime) || '-',
-    reviewerName: formatQualityActorName(standard.auditor),
+    reviewerName: hasReviewDecision
+      ? formatQualityActorName(standard.auditor)
+      : undefined,
     decisionSummary: buildDecisionSummary(locale, standard.status),
     decisionReason: buildDecisionReason(standard),
-    decisionActor: buildDecisionActor(standard),
-    decisionTimestampText: buildDecisionTimestamp(standard),
+    decisionActor: hasReviewDecision ? buildDecisionActor(standard) : undefined,
+    decisionTimestampText: hasReviewDecision
+      ? buildDecisionTimestamp(standard)
+      : undefined,
     processSummaryLabel: buildProcessSummaryLabel(locale, standard),
     processSummaryClassName: buildProcessSummaryClassName(standard),
     processSummaryHint: buildProcessSummaryHint(standard),

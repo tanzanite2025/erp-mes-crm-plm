@@ -2,41 +2,73 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type ProductAttributeCategory } from '../data/schema'
-import { type SaveProductAttributeCategoryInput } from '../mutation-types'
+import { type ProductTemplateAttributeLevelOneCategory } from '../data/schema'
+import { type SaveProductTemplateAttributeLevelOneCategoryInput } from '../mutation-types'
 import { buildProductAttributeCategorySaveInput } from '../utils/product-attribute-machine-value'
+import { buildProductAttributeVersionedEditPayload } from '../utils/product-attribute-versioned-edit-payload'
+
+const PRODUCT_ATTRIBUTE_CATEGORY_EDITABLE_FIELDS = [
+  'key',
+  'nameZh',
+  'nameEn',
+  'description',
+  'sortOrder',
+  'active',
+  'revisionNo',
+  'effectiveFrom',
+  'effectiveTo',
+  'changeType',
+  'changeOrderNo',
+  'siteCode',
+  'isDefaultSite',
+] as const
 
 export const ProductAttributeCategoryService = {
   async getProductAttributeCategories(params?: {
     activeOnly?: boolean
-  }): Promise<ProductAttributeCategory[]> {
+  }): Promise<ProductTemplateAttributeLevelOneCategory[]> {
     const search = new URLSearchParams()
     if (params?.activeOnly) search.set('activeOnly', 'true')
     const qs = search.toString()
-    const res = await apiFetch<ProductAttributeCategory[]>(
+    const res = await apiFetch<ProductTemplateAttributeLevelOneCategory[]>(
       `/engineering/product-attribute-categories${qs ? `?${qs}` : ''}`
     )
-    return ensureArrayResponse<ProductAttributeCategory>(
+    return ensureArrayResponse<ProductTemplateAttributeLevelOneCategory>(
       res,
       'ProductAttributeCategoryService.getProductAttributeCategories'
     )
   },
 
   async saveProductAttributeCategory(
-    category: SaveProductAttributeCategoryInput
-  ): Promise<ProductAttributeCategory> {
+    category: SaveProductTemplateAttributeLevelOneCategoryInput,
+    current?: ProductTemplateAttributeLevelOneCategory
+  ): Promise<ProductTemplateAttributeLevelOneCategory> {
     const normalizedCategory = buildProductAttributeCategorySaveInput(category)
-    const res = await apiFetch<ProductAttributeCategory>(
+    const payload = normalizedCategory.id
+      ? buildProductAttributeVersionedEditPayload(
+          normalizedCategory,
+          current,
+          PRODUCT_ATTRIBUTE_CATEGORY_EDITABLE_FIELDS,
+          'PRODUCT_ATTRIBUTE_CATEGORY_UPSERT'
+        )
+      : {
+          ...normalizedCategory,
+          metadata: { intent: 'PRODUCT_ATTRIBUTE_CATEGORY_UPSERT' },
+        }
+    if (
+      current &&
+      'delta' in payload &&
+      Object.keys(payload.delta).length === 0
+    )
+      return current
+    const res = await apiFetch<ProductTemplateAttributeLevelOneCategory>(
       '/engineering/product-attribute-categories',
       {
         method: 'POST',
-        body: JSON.stringify({
-          ...normalizedCategory,
-          metadata: { intent: 'PRODUCT_ATTRIBUTE_CATEGORY_UPSERT' },
-        }),
+        body: JSON.stringify(payload),
       }
     )
-    return ensureObjectResponse<ProductAttributeCategory>(
+    return ensureObjectResponse<ProductTemplateAttributeLevelOneCategory>(
       res,
       'ProductAttributeCategoryService.saveProductAttributeCategory'
     )

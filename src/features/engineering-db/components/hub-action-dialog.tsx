@@ -194,7 +194,7 @@ export function HubActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-mono text-xs font-bold opacity-60'
+              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-bold opacity-60'
               value={formData.id}
             />
           </div>
@@ -233,7 +233,7 @@ export function HubActionDialog({
               <Cpu className='size-3' /> 几何计算参数 / GEOMETRY_PROPERTIES
             </p>
             <div className='mx-4 h-px flex-1 bg-muted-foreground/10' />
-            <span className='font-mono text-[8px] text-muted-foreground'>
+            <span className='font-maple-ui text-[8px] text-muted-foreground'>
               (UNIT: MM)
             </span>
           </div>
@@ -244,7 +244,7 @@ export function HubActionDialog({
                 孔数 / HOLES
               </Label>
               <Input
-                className='h-10 rounded-xl border-none bg-background font-mono shadow-sm'
+                className='h-10 rounded-xl border-none bg-background font-maple-ui shadow-sm'
                 value={formData.holeCount}
                 onChange={(e) => updateField('holeCount', e.target.value)}
               />
@@ -252,7 +252,7 @@ export function HubActionDialog({
             <div className='space-y-2 text-indigo-600'>
               <Label className='text-[9px] font-bold'>PCD_LEFT</Label>
               <Input
-                className='h-10 rounded-xl border-none bg-background font-mono shadow-sm'
+                className='h-10 rounded-xl border-none bg-background font-maple-ui shadow-sm'
                 value={formData.pcdLeft}
                 onChange={(e) => updateField('pcdLeft', e.target.value)}
               />
@@ -260,7 +260,7 @@ export function HubActionDialog({
             <div className='space-y-2 text-indigo-600'>
               <Label className='text-[9px] font-bold'>PCD_RIGHT</Label>
               <Input
-                className='h-10 rounded-xl border-none bg-background font-mono shadow-sm'
+                className='h-10 rounded-xl border-none bg-background font-maple-ui shadow-sm'
                 value={formData.pcdRight}
                 onChange={(e) => updateField('pcdRight', e.target.value)}
               />
@@ -268,7 +268,7 @@ export function HubActionDialog({
             <div className='space-y-2 text-amber-600'>
               <Label className='text-[9px] font-bold'>FL_LEFT</Label>
               <Input
-                className='h-10 rounded-xl border-none bg-background font-mono shadow-sm'
+                className='h-10 rounded-xl border-none bg-background font-maple-ui shadow-sm'
                 value={formData.flangeLeft}
                 onChange={(e) => updateField('flangeLeft', e.target.value)}
               />
@@ -276,7 +276,7 @@ export function HubActionDialog({
             <div className='space-y-2 text-amber-600'>
               <Label className='text-[9px] font-bold'>FL_RIGHT</Label>
               <Input
-                className='h-10 rounded-xl border-none bg-background font-mono shadow-sm'
+                className='h-10 rounded-xl border-none bg-background font-maple-ui shadow-sm'
                 value={formData.flangeRight}
                 onChange={(e) => updateField('flangeRight', e.target.value)}
               />

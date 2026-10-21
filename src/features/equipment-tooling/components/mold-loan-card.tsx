@@ -53,7 +53,7 @@ export function MoldLoanCard({ loan, onReturn }: MoldLoanCardProps) {
         <div className='flex flex-col gap-6 p-5 sm:gap-8 sm:p-8 lg:flex-row'>
           <div className='flex-1 space-y-6'>
             <div className='flex flex-wrap items-center gap-3 sm:gap-4'>
-              <div className='rounded border border-dashed border-muted-foreground/20 bg-muted/50 px-2 py-0.5 font-mono text-[9px] font-black uppercase'>
+              <div className='rounded border border-dashed border-muted-foreground/20 bg-muted/50 px-2 py-0.5 font-maple-ui text-[9px] font-black uppercase'>
                 {loan.moldSn}
               </div>
               <h3 className='truncate text-base font-black tracking-tighter sm:text-xl'>
@@ -129,13 +129,13 @@ export function MoldLoanCard({ loan, onReturn }: MoldLoanCardProps) {
                   {t('equipmentTooling.loans.card.cycle')}
                 </div>
                 <div className='flex items-center gap-2'>
-                  <span className='font-mono text-[10px] font-bold'>
+                  <span className='font-maple-ui text-[10px] font-bold'>
                     {new Date(loan.loanDate).toLocaleDateString()}
                   </span>
                   <span className='font-black text-muted-foreground/20'>-</span>
                   <span
                     className={cn(
-                      'font-mono text-[10px] font-bold',
+                      'font-maple-ui text-[10px] font-bold',
                       loan.status === 'OVERDUE' && 'text-rose-600 underline'
                     )}
                   >

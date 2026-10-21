@@ -83,7 +83,7 @@ export function WeavingModeListCard({
                     )}
                 </div>
               </div>
-              <div className='font-mono text-xs font-bold text-foreground'>
+              <div className='font-maple-ui text-xs font-bold text-foreground'>
                 {item.ratioNumerator} / {item.ratioDenominator}
               </div>
               <div>

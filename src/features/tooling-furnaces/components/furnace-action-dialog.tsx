@@ -155,7 +155,7 @@ export function FurnaceActionDialog({
                   <FormControl>
                     <Input
                       placeholder={t('toolingFurnaces.dialog.placeholders.sn')}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black shadow-inner'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui font-black shadow-inner'
                       {...field}
                     />
                   </FormControl>
@@ -242,7 +242,7 @@ export function FurnaceActionDialog({
                 <FormControl>
                   <Input
                     type='number'
-                    className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black shadow-inner'
+                    className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui font-black shadow-inner'
                     {...field}
                     onChange={(e) =>
                       field.onChange(Number.parseInt(e.target.value, 10))

@@ -63,11 +63,11 @@ export function QualityStandardsDesktopView({
                 className='group h-16 cursor-pointer border-b border-dashed border-muted/50 transition-all hover:bg-white/80'
                 onClick={() => onViewDetail(standard.source)}
               >
-                <TableCell className='pl-8 font-mono text-[11px] font-black text-secondary/60'>
+                <TableCell className='pl-8 font-maple-ui text-[11px] font-black text-secondary/60'>
                   {standard.code}
                 </TableCell>
                 <TableCell className='text-center'>
-                  <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-2 font-mono text-[9px] font-black tracking-tighter text-primary'>
+                  <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-2 font-maple-ui text-[9px] font-black tracking-tighter text-primary'>
                     {standard.versionText}
                   </div>
                 </TableCell>
@@ -105,9 +105,9 @@ export function QualityStandardsDesktopView({
                     </div>
                     <AuditStatusDisplay meta={standard.auditMeta} />
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalChainClassName}`}
+                      className={`rounded-full px-2.5 py-1 text-[8px] font-black tracking-widest uppercase ${standard.approvalRequestClassName}`}
                     >
-                      {standard.approvalChainLabel}
+                      {standard.approvalRequestLabel}
                     </span>
                     {standard.processSummaryLabel &&
                     standard.processSummaryClassName ? (
@@ -129,7 +129,7 @@ export function QualityStandardsDesktopView({
                     <span className='text-[10px] font-black whitespace-nowrap text-slate-600 uppercase'>
                       {standard.operatorName}
                     </span>
-                    <span className='font-mono text-[8px] text-muted-foreground/40 tabular-nums'>
+                    <span className='font-maple-ui text-[8px] text-muted-foreground/40 tabular-nums'>
                       {standard.operateTimeText}
                     </span>
                     {standard.decisionActor ? (
@@ -143,7 +143,7 @@ export function QualityStandardsDesktopView({
                       </span>
                     ) : null}
                     {standard.decisionTimestampText ? (
-                      <span className='font-mono text-[8px] text-muted-foreground/35 tabular-nums'>
+                      <span className='font-maple-ui text-[8px] text-muted-foreground/35 tabular-nums'>
                         {standard.decisionTimestampText}
                       </span>
                     ) : null}

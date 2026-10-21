@@ -32,7 +32,7 @@ export function SalesReceivableSalesReturnAdjustmentSection({
           </p>
         </div>
         <div className='text-right'>
-          <p className='font-mono text-[8px] text-muted-foreground'>
+          <p className='font-maple-ui text-[8px] text-muted-foreground'>
             {records.length}
           </p>
           <p className='mt-1 text-sm font-black text-primary'>
@@ -70,7 +70,7 @@ export function SalesReceivableSalesReturnAdjustmentSection({
                   <p className='text-sm font-black text-primary'>
                     {formatSettlementMoney(record.amount, detail.currency)}
                   </p>
-                  <p className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                  <p className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                     {record.recordedAt.replace('T', ' ').slice(0, 16)}
                   </p>
                 </div>

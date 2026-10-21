@@ -1,6 +1,6 @@
 import {
-  type SaveProductAttributeCategoryInput,
-  type SaveProductAttributeOptionInput,
+  type SaveProductTemplateAttributeLevelOneCategoryInput,
+  type SaveProductTemplateAttributeLevelTwoOptionInput,
 } from '../mutation-types'
 
 export function normalizeProductAttributeMachineValue(value: string): string {
@@ -17,6 +17,21 @@ export function isValidProductAttributeMachineValue(value: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
 }
 
+function generateProductAttributeRandomHexIdentifier(): string {
+  const randomBytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(randomBytes, (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('')
+}
+
+export function generateProductAttributeCategoryMachineKey(): string {
+  return `category-${generateProductAttributeRandomHexIdentifier()}`
+}
+
+export function generateProductAttributeOptionMachineValue(): string {
+  return `option-${generateProductAttributeRandomHexIdentifier()}`
+}
+
 export function areSameProductAttributeCategoryKey(
   left: string,
   right: string
@@ -29,61 +44,62 @@ export function areSameProductAttributeCategoryKey(
   return normalizedLeft === normalizedRight
 }
 
-function trimOptionalString(value: string | undefined): string | undefined {
-  const trimmedValue = value?.trim()
-  return trimmedValue ? trimmedValue : undefined
+function trimProductAttributeOptionalString(
+  value: string | undefined
+): string | undefined {
+  return value?.trim()
 }
 
 export function normalizeProductAttributeCategoryInputKey(
-  input: SaveProductAttributeCategoryInput
-): SaveProductAttributeCategoryInput {
+  input: SaveProductTemplateAttributeLevelOneCategoryInput
+): SaveProductTemplateAttributeLevelOneCategoryInput {
   return {
     ...input,
-    key: normalizeProductAttributeMachineValue(input.key || ''),
+    key: input.id
+      ? input.key
+      : normalizeProductAttributeMachineValue(input.key || ''),
   }
 }
 
 export function normalizeProductAttributeOptionInputValue(
-  input: SaveProductAttributeOptionInput
-): SaveProductAttributeOptionInput {
+  input: SaveProductTemplateAttributeLevelTwoOptionInput
+): SaveProductTemplateAttributeLevelTwoOptionInput {
   return {
     ...input,
-    value: normalizeProductAttributeMachineValue(input.value || ''),
+    value: input.id
+      ? input.value
+      : normalizeProductAttributeMachineValue(input.value || ''),
   }
 }
 
 export function buildProductAttributeCategorySaveInput(
-  input: SaveProductAttributeCategoryInput
-): SaveProductAttributeCategoryInput {
+  input: SaveProductTemplateAttributeLevelOneCategoryInput
+): SaveProductTemplateAttributeLevelOneCategoryInput {
   return {
     ...normalizeProductAttributeCategoryInputKey(input),
     nameZh: input.nameZh?.trim() || '',
-    nameEn: trimOptionalString(input.nameEn),
-    description: trimOptionalString(input.description),
-    revisionNo: trimOptionalString(input.revisionNo),
-    effectiveFrom: input.effectiveFrom ?? undefined,
-    effectiveTo: input.effectiveTo ?? undefined,
-    changeOrderNo: trimOptionalString(input.changeOrderNo),
-    siteCode: trimOptionalString(input.siteCode),
+    nameEn: trimProductAttributeOptionalString(input.nameEn),
+    description: trimProductAttributeOptionalString(input.description),
+    revisionNo: trimProductAttributeOptionalString(input.revisionNo),
+    changeOrderNo: trimProductAttributeOptionalString(input.changeOrderNo),
+    siteCode: trimProductAttributeOptionalString(input.siteCode),
     sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
     active: input.active ?? true,
   }
 }
 
 export function buildProductAttributeOptionSaveInput(
-  input: SaveProductAttributeOptionInput
-): SaveProductAttributeOptionInput {
+  input: SaveProductTemplateAttributeLevelTwoOptionInput
+): SaveProductTemplateAttributeLevelTwoOptionInput {
   return {
     ...normalizeProductAttributeOptionInputValue(input),
     categoryKey: input.categoryKey?.trim() || '',
     labelZh: input.labelZh?.trim() || '',
-    labelEn: trimOptionalString(input.labelEn),
-    description: trimOptionalString(input.description),
-    revisionNo: trimOptionalString(input.revisionNo),
-    effectiveFrom: input.effectiveFrom ?? undefined,
-    effectiveTo: input.effectiveTo ?? undefined,
-    changeOrderNo: trimOptionalString(input.changeOrderNo),
-    siteCode: trimOptionalString(input.siteCode),
+    labelEn: trimProductAttributeOptionalString(input.labelEn),
+    description: trimProductAttributeOptionalString(input.description),
+    revisionNo: trimProductAttributeOptionalString(input.revisionNo),
+    changeOrderNo: trimProductAttributeOptionalString(input.changeOrderNo),
+    siteCode: trimProductAttributeOptionalString(input.siteCode),
     sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
     active: input.active ?? true,
   }

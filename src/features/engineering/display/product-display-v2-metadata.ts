@@ -1,7 +1,7 @@
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductTemplate,
   type ProductType,
 } from '../data/schema'
@@ -35,8 +35,8 @@ export interface ResolveProductDisplayMetadataV2Params {
   >
   templates: ProductTemplate[]
   productTypes: ProductType[]
-  categories: ProductAttributeCategory[]
-  options: ProductAttributeOption[]
+  categories: ProductTemplateAttributeLevelOneCategory[]
+  options: ProductTemplateAttributeLevelTwoOption[]
   emptyValue?: string
 }
 

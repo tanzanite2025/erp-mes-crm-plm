@@ -126,6 +126,9 @@ func validateNotificationRuleReferencesWithDB(
 
 	commandIDs := make(map[string]struct{})
 	for segmentIndex, segment := range segments {
+		if sourceCode == qualityStandardEventSourceCode && segment.Approval != nil {
+			return domainValidationError("品质标准监听规则只配置通知；审批链请在审批中心的审批配置中维护")
+		}
 		for _, statusCode := range segment.TargetStatuses {
 			if _, ok := statusCodes[statusCode]; !ok {
 				return fmt.Errorf(

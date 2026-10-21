@@ -40,11 +40,11 @@ export function HistoryQrCodeCell(props: HistoryQrCodeCellProps) {
   if (!code) {
     return (
       <div className='flex flex-col items-center gap-2'>
-        <div className='flex size-[68px] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/20 font-mono text-[11px] text-muted-foreground'>
+        <div className='flex size-[68px] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/20 font-maple-ui text-[11px] text-muted-foreground'>
           --
         </div>
         {isLatest ? (
-          <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 font-mono text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
+          <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 font-maple-ui text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
             {latestLabel}
           </span>
         ) : null}
@@ -61,7 +61,7 @@ export function HistoryQrCodeCell(props: HistoryQrCodeCellProps) {
         <canvas ref={canvasRef} className='size-[68px]' />
       </div>
       {isLatest ? (
-        <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 font-mono text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
+        <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 font-maple-ui text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
           {latestLabel}
         </span>
       ) : null}
@@ -98,7 +98,7 @@ export function HistoryProductBarcodeCell(
 
   return (
     <div className='flex items-center gap-2'>
-      <span className='min-w-0 flex-1 truncate font-mono text-[11px] text-foreground'>
+      <span className='min-w-0 flex-1 truncate font-maple-ui text-[11px] text-foreground'>
         {productBarcode || '--'}
       </span>
       {productBarcode ? (

@@ -93,7 +93,7 @@ function FieldChangeCard({
           <div className='text-[8px] font-black tracking-widest text-rose-700/60 uppercase'>
             左侧版本
           </div>
-          <div className='mt-1 font-mono text-[11px] break-all text-rose-700'>
+          <div className='mt-1 font-maple-ui text-[11px] break-all text-rose-700'>
             {renderValue(beforeValue)}
           </div>
         </div>
@@ -101,7 +101,7 @@ function FieldChangeCard({
           <div className='text-[8px] font-black tracking-widest text-emerald-700/60 uppercase'>
             右侧版本
           </div>
-          <div className='mt-1 font-mono text-[11px] break-all text-emerald-700'>
+          <div className='mt-1 font-maple-ui text-[11px] break-all text-emerald-700'>
             {renderValue(afterValue)}
           </div>
         </div>
@@ -146,14 +146,14 @@ export function BOMVersionTraceContent({
       <div className='flex flex-wrap items-center gap-2 border-b border-dashed bg-background/80 px-5 py-3'>
         <Badge
           variant='outline'
-          className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+          className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
         >
           范围 · {scopeLabel}
         </Badge>
         {dateRangeLabel ? (
           <Badge
             variant='outline'
-            className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+            className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
           >
             时间 · {dateRangeLabel}
           </Badge>
@@ -161,21 +161,21 @@ export function BOMVersionTraceContent({
         {activeGroup ? (
           <Badge
             variant='outline'
-            className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+            className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
           >
             当前分组 · {activeGroup.bomNo}
           </Badge>
         ) : null}
         <Badge
           variant='outline'
-          className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+          className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
         >
           BOM 数量 · {trace.groups.length}
         </Badge>
         {trace.hasAnyRecord ? (
           <Badge
             variant='outline'
-            className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+            className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
           >
             当前记录 · {trace.activeRecords.length}
           </Badge>
@@ -245,19 +245,19 @@ export function BOMVersionTraceContent({
                           <div className='flex items-center gap-2'>
                             <Badge
                               variant='outline'
-                              className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                              className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
                             >
                               #{record.versionSequence}
                             </Badge>
                             <Badge
                               variant='outline'
-                              className='h-5 rounded-full border-dashed bg-blue-50 font-mono text-[8px] text-blue-700'
+                              className='h-5 rounded-full border-dashed bg-blue-50 font-maple-ui text-[8px] text-blue-700'
                             >
                               {record.displayVersionLabel}
                             </Badge>
                             <Badge
                               variant='outline'
-                              className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                              className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
                             >
                               {record.operation}
                             </Badge>
@@ -265,11 +265,11 @@ export function BOMVersionTraceContent({
                           <div className='text-sm font-black tracking-tight text-slate-800'>
                             {record.bomNo}
                           </div>
-                          <div className='flex items-center gap-1.5 font-mono text-[8px] text-muted-foreground'>
+                          <div className='flex items-center gap-1.5 font-maple-ui text-[8px] text-muted-foreground'>
                             <Clock className='size-3' />
                             <span>{record.createdAt || '—'}</span>
                           </div>
-                          <div className='font-mono text-[8px] text-muted-foreground'>
+                          <div className='font-maple-ui text-[8px] text-muted-foreground'>
                             操作人 · {record.createdBy || 'system'}
                           </div>
                         </div>
@@ -421,7 +421,7 @@ export function BOMVersionTraceContent({
                           #{trace.leftDetail.versionSequence} /{' '}
                           {trace.leftDetail.displayVersionLabel}
                         </div>
-                        <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                        <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                           {trace.leftDetail.createdAt || '—'}
                         </div>
                       </div>
@@ -433,7 +433,7 @@ export function BOMVersionTraceContent({
                           #{trace.rightDetail.versionSequence} /{' '}
                           {trace.rightDetail.displayVersionLabel}
                         </div>
-                        <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                        <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                           {trace.rightDetail.createdAt || '—'}
                         </div>
                       </div>
@@ -501,7 +501,7 @@ export function BOMVersionTraceContent({
                               <div className='text-[10px] font-black tracking-tight text-slate-800'>
                                 {item.materialId}
                               </div>
-                              <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                              <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                                 {item.section || '未分段'}
                               </div>
                             </div>
@@ -528,7 +528,7 @@ export function BOMVersionTraceContent({
                               <div className='text-[10px] font-black tracking-tight text-slate-800'>
                                 {item.materialId}
                               </div>
-                              <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                              <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                                 {item.section || '未分段'}
                               </div>
                             </div>
@@ -555,7 +555,7 @@ export function BOMVersionTraceContent({
                               <div className='text-[10px] font-black tracking-tight text-slate-800'>
                                 {item.materialId}
                               </div>
-                              <div className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                              <div className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                                 {item.section || '未分段'}
                               </div>
                               <div className='mt-2 flex flex-wrap gap-1.5'>
@@ -563,7 +563,7 @@ export function BOMVersionTraceContent({
                                   <Badge
                                     key={field}
                                     variant='outline'
-                                    className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                                    className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
                                   >
                                     {field}
                                   </Badge>

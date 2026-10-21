@@ -70,7 +70,7 @@ export function BOMVersionConflictDialog({
                 error.conflictingFields.length > 0 && (
                   <div className='space-y-2 text-sm'>
                     <p className='font-medium'>冲突字段：</p>
-                    <div className='rounded bg-muted p-2 font-mono text-xs'>
+                    <div className='rounded bg-muted p-2 font-maple-ui text-xs'>
                       {error.conflictingFields.join(', ')}
                     </div>
                   </div>

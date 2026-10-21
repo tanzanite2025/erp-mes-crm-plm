@@ -157,7 +157,7 @@ export function PurchaseReturnEvidenceManager({
             {title}
           </p>
         </div>
-        <span className='font-mono text-[9px] text-muted-foreground/50'>
+        <span className='font-maple-ui text-[9px] text-muted-foreground/50'>
           {evidences.length} / {maxCount}
         </span>
       </div>

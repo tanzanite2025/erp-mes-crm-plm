@@ -20,6 +20,7 @@ const standardStatusSchema = z.union([
 export const levelConfigSchema = z.object({
   level: z.enum(['A', 'B', 'C', 'S']),
   tolerance: z.number().optional(),
+  deviationMinExclusive: z.number().optional(),
   min: z.number().optional(),
   max: z.number().optional(),
   errorCodeLower: z.string().optional(),

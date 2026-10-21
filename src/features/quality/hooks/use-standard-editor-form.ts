@@ -3,8 +3,15 @@ import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { createDefaultStandard } from '../adapters/quality-standard-api-adapter'
 import type { Standard } from '../data/schema'
+import {
+  buildEditedControlledProtocolInspectionStandardItems,
+  createControlledProtocolInspectionCriteriaFormValues,
+  getControlledProtocolInspectionCriteriaValidationError,
+  type ControlledProtocolInspectionCriterionFormValue,
+} from '../services/controlled-protocol-inspection-criteria-editor'
 
 interface UseStandardEditorFormOptions {
   initialStandard?: Standard | null
@@ -52,6 +59,33 @@ export function useStandardEditorForm({
     commit,
     isDirty,
   } = useDeltaTracker(memoizedInitial, resetKey)
+  const isControlledProtocol = Boolean(
+    memoizedInitial.productId && memoizedInitial.code.startsWith('QCP-')
+  )
+  const {
+    units,
+    isLoading: areUnitsLoading,
+    error: unitsError,
+  } = useUnitsQuery({ enabled: isControlledProtocol })
+  const initialInspectionCriteria = useMemo(
+    () => ({
+      criteria: createControlledProtocolInspectionCriteriaFormValues(
+        memoizedInitial.items
+      ),
+    }),
+    [memoizedInitial]
+  )
+  const {
+    data: inspectionCriteriaForm,
+    replace: replaceInspectionCriteriaForm,
+    isDirty: areInspectionCriteriaDirty,
+  } = useDeltaTracker(initialInspectionCriteria, resetKey)
+  const updateInspectionCriteria = useCallback(
+    (criteria: ControlledProtocolInspectionCriterionFormValue[]) => {
+      replaceInspectionCriteriaForm({ criteria })
+    },
+    [replaceInspectionCriteriaForm]
+  )
 
   const setFormData = useCallback(
     (updater: StandardFormUpdater) => {
@@ -81,6 +115,39 @@ export function useStandardEditorForm({
       }
 
       const snapshot = buildSnapshot(formData, overrides)
+      if (isControlledProtocol) {
+        if (areUnitsLoading || unitsError) {
+          toast.error(
+            t(
+              areUnitsLoading
+                ? 'quality.standards.dialog.controlledProtocol.validation.unitsLoading'
+                : 'quality.standards.dialog.controlledProtocol.validation.unitsLoadFailed'
+            )
+          )
+          return null
+        }
+        const validationError =
+          getControlledProtocolInspectionCriteriaValidationError(
+            inspectionCriteriaForm.criteria,
+            units
+              .filter((unit) => unit.status === 'active')
+              .map((unit) => unit.code)
+          )
+        if (validationError) {
+          toast.error(
+            t(
+              `quality.standards.dialog.controlledProtocol.validation.${validationError}`
+            )
+          )
+          return null
+        }
+        if (areInspectionCriteriaDirty()) {
+          snapshot.items = buildEditedControlledProtocolInspectionStandardItems(
+            inspectionCriteriaForm.criteria,
+            memoizedInitial.items
+          )
+        }
+      }
 
       if (!isEdit) {
         return {
@@ -90,6 +157,9 @@ export function useStandardEditorForm({
       }
 
       const delta = commit()
+      if (isControlledProtocol && areInspectionCriteriaDirty()) {
+        delta.items = { o: memoizedInitial.items, n: snapshot.items }
+      }
 
       if (overrides) {
         Object.entries(overrides).forEach(([key, nextValue]) => {
@@ -117,7 +187,19 @@ export function useStandardEditorForm({
         delta,
       }
     },
-    [commit, formData, isEdit, memoizedInitial, t]
+    [
+      areInspectionCriteriaDirty,
+      areUnitsLoading,
+      commit,
+      formData,
+      inspectionCriteriaForm,
+      isControlledProtocol,
+      isEdit,
+      memoizedInitial,
+      t,
+      units,
+      unitsError,
+    ]
   )
 
   const buildSubmitPayload = useCallback(
@@ -131,6 +213,11 @@ export function useStandardEditorForm({
     updateField,
     buildSubmitPayload,
     buildSubmitPayloadWithOverrides,
-    isDirty: isDirty(),
+    inspectionCriteria: isControlledProtocol
+      ? inspectionCriteriaForm.criteria
+      : null,
+    updateInspectionCriteria,
+    isDirty:
+      isDirty() || (isControlledProtocol && areInspectionCriteriaDirty()),
   }
 }

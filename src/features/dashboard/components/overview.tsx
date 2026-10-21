@@ -34,7 +34,7 @@ export function Overview({ data, levelName }: OverviewProps) {
       <div className='grid h-full grid-cols-[auto_1fr] gap-4'>
         <div className='flex h-full flex-col justify-between py-2 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
           {[1, 0.75, 0.5, 0.25, 0].map((step) => (
-            <span key={step} className='font-mono'>
+            <span key={step} className='font-maple-ui'>
               {Math.round(maxValue * step)}
             </span>
           ))}
@@ -60,7 +60,7 @@ export function Overview({ data, levelName }: OverviewProps) {
                 className='relative z-10 flex min-w-[56px] flex-1 flex-col items-center justify-end gap-2'
                 title={`${item.name}: ${item.total}`}
               >
-                <span className='font-mono text-[9px] font-black tracking-tight text-blue-700/80'>
+                <span className='font-maple-ui text-[9px] font-black tracking-tight text-blue-700/80'>
                   {item.total}
                 </span>
                 <div className='flex h-[240px] w-full items-end rounded-full bg-blue-500/5 p-1'>

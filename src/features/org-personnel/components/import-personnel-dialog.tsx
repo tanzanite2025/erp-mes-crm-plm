@@ -240,7 +240,7 @@ export function ImportPersonnelDialog({
                       <p className='text-[11px] font-bold text-rose-900 uppercase'>
                         {t('orgPersonnel.importDialog.auditFailed')}
                       </p>
-                      <pre className='mt-1.5 font-mono text-[10px] leading-relaxed break-all whitespace-pre-wrap text-rose-600'>
+                      <pre className='mt-1.5 font-maple-ui text-[10px] leading-relaxed break-all whitespace-pre-wrap text-rose-600'>
                         {error}
                       </pre>
                     </div>
@@ -474,7 +474,7 @@ export function ImportPersonnelDialog({
                         {preview.previewRows.map((row, index) => (
                           <div
                             key={`${row.staffId}-${index}`}
-                            className='flex gap-4 border-b border-muted/20 pb-1 font-mono text-[10px] text-muted-foreground/80 last:border-0'
+                            className='flex gap-4 border-b border-muted/20 pb-1 font-maple-ui text-[10px] text-muted-foreground/80 last:border-0'
                           >
                             <span className='w-[100px] shrink-0 font-bold text-primary'>
                               {row.staffId || '-'}

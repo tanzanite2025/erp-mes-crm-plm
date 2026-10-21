@@ -24,7 +24,7 @@ export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
         </h4>
         <Badge
           variant='outline'
-          className='h-4 rounded-full border-purple-200 bg-white px-1.5 font-mono text-[8px] tracking-wide text-purple-700 uppercase'
+          className='h-4 rounded-full border-purple-200 bg-white px-1.5 font-maple-ui text-[8px] tracking-wide text-purple-700 uppercase'
         >
           {t('engineering.specForms.stem.subtitle')}
         </Badge>
@@ -130,7 +130,7 @@ export function StemSpecOverview({ product: _product }: { product: Product }) {
             {t('engineering.specForms.stem.overviewWeight')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-3xl font-black tracking-tighter text-emerald-600'>
+            <span className='font-maple-ui text-3xl font-black tracking-tighter text-emerald-600'>
               —
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>

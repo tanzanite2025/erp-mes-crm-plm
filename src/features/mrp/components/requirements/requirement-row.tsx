@@ -18,7 +18,7 @@ export function RequirementRow({ requirement }: RequirementRowProps) {
 
   return (
     <TableRow className='group animate-in border-b text-left transition-colors duration-500 fade-in last:border-0 hover:bg-muted/5'>
-      <TableCell className='w-[100px] min-w-[100px] truncate py-4 pl-6 font-mono text-[10px] font-bold text-muted-foreground/70'>
+      <TableCell className='w-[100px] min-w-[100px] truncate py-4 pl-6 font-maple-ui text-[10px] font-bold text-muted-foreground/70'>
         {requirement.materialCode}
       </TableCell>
       <TableCell className='w-auto py-4 text-left'>

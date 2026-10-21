@@ -85,6 +85,12 @@ function normalizeLogisticsEvents(raw: unknown): LogisticsEvent[] {
 }
 
 export const PurchaseLogisticsService = {
+  async getRecordById(id: string): Promise<PurchaseLogisticsRecord> {
+    const record = await apiFetch<PurchaseLogisticsApiRecord>(
+      `/logistics/${id}`
+    )
+    return PurchaseLogisticsService.normalizeRecord(record)
+  },
   /**
    * 获取所有物流记录，可选按采购订单过滤 (带数据规范化)
    */
@@ -180,7 +186,7 @@ export const PurchaseLogisticsService = {
     }
   ) {
     return apiFetch(`/logistics/${id}/status`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(data),
     })
   },

@@ -228,11 +228,11 @@ func TestProductionOutsourceAcceptanceRunsUnifiedBarcodeChain(t *testing.T) {
 		Count(&inventoryLedgerCount).Error)
 	require.Equal(t, int64(4), inventoryLedgerCount)
 
-	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusReleased, "notify", "success")
-	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusSent, "notify", "success")
-	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusReturned, "notify", "success")
-	requireOutsourceRuleExecutionLog(t, fixture.database, businessEventOutsourceStatusInspectionAccepted, "notify", "success")
-	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusClosed, "notify", "success")
+	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusReleased, "notify", "skipped")
+	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusSent, "notify", "skipped")
+	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusReturned, "notify", "skipped")
+	requireOutsourceRuleExecutionLog(t, fixture.database, businessEventOutsourceStatusInspectionAccepted, "notify", "skipped")
+	requireOutsourceRuleExecutionLog(t, fixture.database, OutsourceOrderStatusClosed, "notify", "pending")
 	requireOutsourceAuditLog(t, fixture.database, fixture.order.ID, audit.AuditActionStatus, map[string]string{
 		"action":         "OUTSOURCE_INSPECT",
 		"productBarcode": fixture.productBarcode,

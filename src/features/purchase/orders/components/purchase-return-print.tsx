@@ -76,7 +76,7 @@ export const PurchaseReturnPrint = React.forwardRef<
                   <td className='border border-black p-2 text-center'>
                     {line.lineNo}
                   </td>
-                  <td className='border border-black p-2 font-mono'>
+                  <td className='border border-black p-2 font-maple-ui'>
                     {line.materialCode}
                   </td>
                   <td className='border border-black p-2'>

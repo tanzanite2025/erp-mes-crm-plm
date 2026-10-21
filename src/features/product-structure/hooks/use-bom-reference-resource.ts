@@ -10,8 +10,8 @@ import {
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import {
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductTemplate,
   type ProductType,
 } from '@/features/engineering/data/schema'
@@ -66,8 +66,8 @@ export type BOMReferenceResourceFields = {
   sections: BOMSectionOption[]
   productTemplates: ProductTemplate[]
   productTypes: ProductType[]
-  productAttributeCategories: ProductAttributeCategory[]
-  productAttributeOptions: ProductAttributeOption[]
+  productAttributeCategories: ProductTemplateAttributeLevelOneCategory[]
+  productAttributeOptions: ProductTemplateAttributeLevelTwoOption[]
 }
 
 /**
@@ -325,9 +325,9 @@ export function useBOMReferenceResource<
       const productTemplates = productTemplatesQuery.data as ProductTemplate[]
       const productTypes = productTypesQuery.data as ProductType[]
       const productAttributeCategories =
-        productAttributeCategoriesQuery.data as ProductAttributeCategory[]
+        productAttributeCategoriesQuery.data as ProductTemplateAttributeLevelOneCategory[]
       const productAttributeOptions =
-        productAttributeOptionsQuery.data as ProductAttributeOption[]
+        productAttributeOptionsQuery.data as ProductTemplateAttributeLevelTwoOption[]
       const { productDisplayLabelMap } = buildProductDisplayMapsV2({
         locale,
         products,

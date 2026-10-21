@@ -205,7 +205,7 @@ export function ApsBoundaryTable() {
                       {row.inputs}
                     </td>
                     <td
-                      className={`${ENGINE_TABLE_CELL_CLASS} w-[15%] font-mono text-[9px] text-foreground/80`}
+                      className={`${ENGINE_TABLE_CELL_CLASS} w-[15%] font-maple-ui text-[9px] text-foreground/80`}
                     >
                       {row.outputs}
                     </td>

@@ -315,7 +315,7 @@ export function CutSizeLibraryPage() {
                   units.map((item) => (
                     <tr key={item.id} className='border-t border-border/40'>
                       <td className='px-4 py-3 align-top'>
-                        <div className='font-mono text-xs font-black tracking-wider text-foreground/90'>
+                        <div className='font-maple-ui text-xs font-black tracking-wider text-foreground/90'>
                           {item.code}
                         </div>
                       </td>

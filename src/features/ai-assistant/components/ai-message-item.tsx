@@ -70,7 +70,7 @@ export const AiMessageItem = memo(
           )}
         </div>
 
-        <span className='font-mono text-[8px] text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100'>
+        <span className='font-maple-ui text-[8px] text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100'>
           {msg.role === 'assistant' ? 'NODE_AURORA' : 'OPERATOR'}
         </span>
       </motion.div>

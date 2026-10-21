@@ -34,11 +34,9 @@ const BUSINESS_EVENT_SOURCE_STATUS_CATALOG: Record<
     { code: 'Canceled', label: '已作废', defaultResolve: true },
   ],
   LOGISTICS_RECORD: [
-    { code: 'Draft', label: '草稿' },
-    { code: 'Dispatched', label: '已派车' },
-    { code: 'Loaded', label: '已装车' },
+    { code: 'Pending', label: '待揽收' },
     { code: 'InTransit', label: '运输中' },
-    { code: 'Signed', label: '已签收', defaultResolve: true },
+    { code: 'Delivered', label: '已送达', defaultResolve: true },
     { code: 'Exception', label: '异常' },
     { code: 'Canceled', label: '已取消', defaultResolve: true },
   ],
@@ -97,6 +95,9 @@ const BUSINESS_EVENT_SOURCE_STATUS_CATALOG: Record<
     }))
   })(),
   BOM_MANUFACTURING: [
+    { code: 'DRAFT', label: '草稿' },
+    { code: 'REVIEWING', label: '审核中' },
+    { code: 'APPROVED', label: '审批通过' },
     { code: 'EFFECTIVE', label: '生效中' },
     { code: 'OBSOLETE', label: '已作废', defaultResolve: true },
   ],

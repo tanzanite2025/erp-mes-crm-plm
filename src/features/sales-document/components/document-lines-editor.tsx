@@ -62,13 +62,13 @@ function LineDetailPreview({
         <span className='min-w-0 truncate font-bold'>
           {line.appearanceNameSnapshot || appearanceEmptyLabel}
         </span>
-        <span className='shrink-0 font-mono font-bold text-muted-foreground/70'>
+        <span className='shrink-0 font-maple-ui font-bold text-muted-foreground/70'>
           {line.appearanceBarcodeCodeSnapshot || '--'}
         </span>
-        <span className='shrink-0 font-mono font-bold text-muted-foreground/70'>
+        <span className='shrink-0 font-maple-ui font-bold text-muted-foreground/70'>
           {holeCountLabel}: {line.holeCount?.toString() || '--'}
         </span>
-        <span className='shrink-0 font-mono font-bold text-muted-foreground/70'>
+        <span className='shrink-0 font-maple-ui font-bold text-muted-foreground/70'>
           {quantityLabel}: {line.qty.toLocaleString()}
         </span>
       </div>
@@ -93,7 +93,7 @@ function LineDetailPreview({
           <span className='font-black text-muted-foreground/60'>
             {appearanceCodeLabel}
           </span>
-          <span className='font-mono font-bold'>
+          <span className='font-maple-ui font-bold'>
             {line.appearanceBarcodeCodeSnapshot || '--'}
           </span>
         </div>
@@ -101,7 +101,7 @@ function LineDetailPreview({
           <span className='font-black text-muted-foreground/60'>
             {holeCountLabel}
           </span>
-          <span className='font-mono font-bold'>
+          <span className='font-maple-ui font-bold'>
             {line.holeCount?.toString() || '--'}
           </span>
         </div>
@@ -109,7 +109,7 @@ function LineDetailPreview({
           <span className='font-black text-muted-foreground/60'>
             {quantityLabel}
           </span>
-          <span className='font-mono font-bold'>
+          <span className='font-maple-ui font-bold'>
             {line.qty.toLocaleString()} {line.uom}
           </span>
         </div>
@@ -275,7 +275,7 @@ export function DocumentLinesEditor({
                 key={index}
                 className='group border-b transition-colors hover:bg-muted/5'
               >
-                <td className='text-center font-mono text-[10px] text-muted-foreground/40'>
+                <td className='text-center font-maple-ui text-[10px] text-muted-foreground/40'>
                   {line.lineNo}
                 </td>
                 <td className='py-2'>

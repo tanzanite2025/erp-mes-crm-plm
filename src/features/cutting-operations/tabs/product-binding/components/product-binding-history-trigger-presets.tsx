@@ -45,7 +45,7 @@ function HistoryTriggerCountBadge(props: HistoryTriggerCountBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center font-mono tracking-[0.16em] uppercase',
+        'inline-flex items-center justify-center font-maple-ui tracking-[0.16em] uppercase',
         className
       )}
     >
@@ -71,7 +71,7 @@ export function HistoryBadgeTrigger(props: HistoryBadgeTriggerProps) {
           asChild
           variant='outline'
           className={cn(
-            'h-5 rounded-full border-dashed bg-background/90 px-2.5 font-mono text-[8px] tracking-[0.16em] uppercase',
+            'h-5 rounded-full border-dashed bg-background/90 px-2.5 font-maple-ui text-[8px] tracking-[0.16em] uppercase',
             open
               ? 'border-primary/40 bg-primary/10 text-primary'
               : 'border-border/60 text-foreground/80',

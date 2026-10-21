@@ -7,9 +7,9 @@
 //   - Webhook 接收: HandlePushCallbackHandler(物流商主动推单)
 //
 // 安全关键点:
-//   - 物流商配置 verify 后才生效,VerifyLogisticsProviderHandler 是密钥的活性测试入口
-//   - Webhook 签名校验(HMAC-SHA256 / MD5 双协议),verifyLogisticsWebhookSignature 防重放
-//   - generateTrackingHash 给追踪事件生成幂等键,防 webhook 重复处理
+//   - Enabled 配置才可接收回调；验证结果不等于实际回调已开通
+//   - Webhook 校验签名；当前协议无 timestamp/nonce，不能宣称防重放
+//   - 共用事务服务以轨迹唯一键去重，并按事实时间保护主单投影
 //   - applyVerificationReset 改密钥后强制重新验证
 package handlers
 
@@ -20,7 +20,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -36,31 +35,10 @@ import (
 )
 
 // =========================================================================
-// 物流 API 推送制 · Gin 原生适配层 (Hot-Pluggable)
-// 该文件与旧 logistics.go 完全独立，可安全删除
+// 承运商配置、签名及 HTTP 适配；轨迹写入由服务层统一负责。
 // =========================================================================
 
-// --- 状态常量 ---
-
-const (
-	DOStatusPending    = "Pending"
-	DOStatusCollected  = "Collected"
-	DOStatusInTransit  = "InTransit"
-	DOStatusDelivering = "Delivering"
-	DOStatusSigned     = "Signed"
-	DOStatusException  = "Exception"
-	DOStatusReturned   = "Returned"
-)
-
 var refreshDeliveryTracking = services.RefreshDeliveryTracking
-
-// --- 幂等性哈希工具 ---
-
-func generateTrackingHash(trackingNo string, eventTime time.Time, context string) string {
-	raw := fmt.Sprintf("%s|%s|%s", trackingNo, eventTime.Format(time.RFC3339), context)
-	hash := md5.Sum([]byte(raw))
-	return fmt.Sprintf("%x", hash)
-}
 
 // =========================================================================
 // Handler 层：物流服务商管理
@@ -445,7 +423,18 @@ func DeleteLogisticsProviderHandler(c *gin.Context) {
 // GetDeliveryOrdersHandler 获取推送制物流订单列表
 func GetDeliveryOrdersHandler(c *gin.Context) {
 	var orders []models.DeliveryOrder
-	query := db.DB.Order("updated_at desc")
+	allowedTypes := make([]string, 0, 3)
+	if middleware.HasAnyPermission(c, authz.MenuTrading) {
+		allowedTypes = append(allowedTypes, "sales", "")
+	}
+	if middleware.HasAnyPermission(c, authz.MenuPurchase) {
+		allowedTypes = append(allowedTypes, "purchase")
+	}
+	if len(allowedTypes) == 0 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
+	query := db.DB.Where("LOWER(TRIM(biz_type)) IN ?", allowedTypes).Order("updated_at desc")
 
 	if bizNo := c.Query("bizOrderNo"); bizNo != "" {
 		query = query.Where("biz_order_no = ?", bizNo)
@@ -468,7 +457,11 @@ func GetDeliveryTrackingHandler(c *gin.Context) {
 
 	var order models.DeliveryOrder
 	if err := db.DB.Where("tracking_no = ?", trackingNo).First(&order).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 单号不存在"})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 单号不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 读取主单失败"})
 		return
 	}
 	if !canReadDeliveryOrderBusinessType(
@@ -499,7 +492,10 @@ func GetDeliveryTrackingHandler(c *gin.Context) {
 	}
 
 	var details []models.DeliveryTrackingDetail
-	db.DB.Where("delivery_order_id = ?", order.ID).Order("time desc").Find(&details)
+	if err := db.DB.Where("delivery_order_id = ?", order.ID).Order("time desc, id desc").Find(&details).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 读取轨迹失败"})
+		return
+	}
 
 	response := gin.H{
 		"order":  order,
@@ -521,7 +517,7 @@ func shouldRefreshDeliveryTracking(value string) bool {
 }
 
 // =========================================================================
-// Handler 层：Webhook 回调接收 (公网入口)
+// Handler 层：Webhook 回调适配（当前挂载于认证路由，并非公网入口）
 // =========================================================================
 
 type webhookPayload struct {
@@ -634,6 +630,10 @@ func HandlePushCallbackHandler(c *gin.Context) {
 
 	var provider models.LogisticsAPIProvider
 	if err := db.DB.Where("code = ? AND status = ?", payload.CarrierCode, "Enabled").First(&provider).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Callback provider could not be read"})
+			return
+		}
 		log.Printf("[LOGISTICS-PUSH][WARN] Callback for disabled or unknown provider: carrier=%s tracking=%s", payload.CarrierCode, payload.TrackingNo)
 		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid callback provider"})
 		return
@@ -645,74 +645,56 @@ func HandlePushCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	// 查找主单
-	var order models.DeliveryOrder
-	if err := db.DB.Where("tracking_no = ? AND carrier_code = ?", payload.TrackingNo, payload.CarrierCode).First(&order).Error; err != nil {
-		log.Printf("[LOGISTICS-PUSH][WARN] Callback for unknown tracking: %s", payload.TrackingNo)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+	status := normalizeDeliveryTrackingCallbackStatus(payload.Status)
+	if status == "" || len(payload.Traces) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "A recognized status and dated traces are required"})
 		return
 	}
-
-	// 幂等写入轨迹
-	inserted := 0
-	for _, t := range payload.Traces {
-		eventTime, parseErr := time.Parse("2006-01-02 15:04:05", t.Time)
-		if parseErr != nil {
-			continue
+	traces := make([]services.DeliveryTrackingTrace, 0, len(payload.Traces))
+	for _, trace := range payload.Traces {
+		eventTime, valid := services.ParseDeliveryTrackingEventTime(trace.Time)
+		if !valid || strings.TrimSpace(trace.Context) == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Every trace requires a valid time and context"})
+			return
 		}
-
-		hashKey := generateTrackingHash(payload.TrackingNo, eventTime, t.Context)
-		detail := models.DeliveryTrackingDetail{
-			DeliveryOrderID: order.ID,
-			Time:            eventTime,
-			Context:         t.Context,
-			Location:        t.Location,
-			HashKey:         hashKey,
+		traces = append(traces, services.DeliveryTrackingTrace{Time: eventTime, Context: trace.Context, Location: trace.Location})
+	}
+	inserted, err := services.PersistDeliveryOrderTrackingObservation(c.Request.Context(), services.DeliveryOrderTrackingObservation{
+		TrackingNo: payload.TrackingNo, CarrierCode: payload.CarrierCode, ReportedStatus: status,
+		Traces: traces, ObservedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		if errors.Is(err, services.ErrDeliveryTrackingOrderNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+			return
 		}
-
-		res := db.DB.Where("hash_key = ?", hashKey).FirstOrCreate(&detail)
-		if res.RowsAffected > 0 {
-			inserted++
+		if errors.Is(err, services.ErrInvalidDeliveryTrackingObservation) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tracking observation"})
+			return
 		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tracking could not be saved"})
+		return
 	}
-
-	// 更新主表状态
-	now := time.Now()
-	updates := map[string]interface{}{
-		"status":       mapPushStatus(payload.Status),
-		"last_push_at": now,
-	}
-	if len(payload.Traces) > 0 {
-		last := payload.Traces[len(payload.Traces)-1]
-		updates["last_event"] = last.Context
-		updates["last_location"] = last.Location
-	}
-	if mapPushStatus(payload.Status) == DOStatusSigned {
-		updates["signed_at"] = now
-	}
-
-	db.DB.Model(&order).Updates(updates)
-
 	c.JSON(http.StatusOK, gin.H{"result": "success", "insertedTraces": inserted})
 }
 
-func mapPushStatus(s string) string {
-	switch s {
+func normalizeDeliveryTrackingCallbackStatus(status string) string {
+	switch status {
 	case "0", "Pending":
-		return DOStatusPending
+		return "Pending"
 	case "1", "Collected":
-		return DOStatusCollected
+		return "Collected"
 	case "2", "InTransit":
-		return DOStatusInTransit
+		return "InTransit"
 	case "3", "Delivering":
-		return DOStatusDelivering
+		return "Delivering"
 	case "4", "Signed":
-		return DOStatusSigned
+		return "Signed"
 	case "5", "Exception":
-		return DOStatusException
+		return "Exception"
 	case "6", "Returned":
-		return DOStatusReturned
+		return "Returned"
 	default:
-		return DOStatusInTransit
+		return ""
 	}
 }

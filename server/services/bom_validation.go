@@ -27,6 +27,9 @@ const MaxBOMDepth = 50
 
 // validateBOMReferences 校验 BOM 引用的产品/物料是否存在,以及禁用物料/循环引用/同段重复物料。
 func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
+	if err := validateAndLockBOMVersionLevelAttributeReference(tx, input); err != nil {
+		return err
+	}
 	if input.ProductID != "" {
 		var p models.Product
 		if err := tx.Where("id = ?", input.ProductID).First(&p).Error; err != nil {

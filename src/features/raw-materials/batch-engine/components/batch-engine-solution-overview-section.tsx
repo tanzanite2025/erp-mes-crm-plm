@@ -112,8 +112,8 @@ export function BatchEngineSolutionOverviewSection(
                       <span
                         className={
                           structuredRuleRiskCount > 0
-                            ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 font-mono text-[8px] text-amber-500'
-                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-[8px] text-emerald-500'
+                            ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 font-maple-ui text-[8px] text-amber-500'
+                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-500'
                         }
                       >
                         {t(
@@ -124,8 +124,8 @@ export function BatchEngineSolutionOverviewSection(
                       <span
                         className={
                           mustRiskCount > 0
-                            ? 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-1 font-mono text-[8px] text-rose-500'
-                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-[8px] text-emerald-500'
+                            ? 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-1 font-maple-ui text-[8px] text-rose-500'
+                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-500'
                         }
                       >
                         {t(

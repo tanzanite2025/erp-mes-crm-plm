@@ -146,7 +146,8 @@ export function getBOMHeaderFields(
       label: ctx.t('engineering.bomArchive.form.version'),
       type: 'input',
       readOnly: true,
-      className: 'bg-blue-50/70 font-mono font-bold text-blue-600 text-[11px]!',
+      className:
+        'bg-blue-50/70 font-maple-ui font-bold text-blue-600 text-[11px]!',
       colSpan: 'minmax(0,1fr)',
     },
     {
@@ -197,7 +198,7 @@ export function getBOMHeaderFields(
         'engineering.bomArchive.form.measuredWeightPlaceholder'
       ),
       className:
-        'bg-emerald-50/60 font-mono font-bold text-emerald-700 text-[11px]!',
+        'bg-emerald-50/60 font-maple-ui font-bold text-emerald-700 text-[11px]!',
       colSpan: 'minmax(0,1.2fr)',
     },
     {

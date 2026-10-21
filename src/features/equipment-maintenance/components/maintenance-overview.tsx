@@ -264,7 +264,7 @@ export function MaintenanceOverview() {
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            <div className='absolute font-mono text-[8px] font-black text-emerald-500'>
+            <div className='absolute font-maple-ui text-[8px] font-black text-emerald-500'>
               {isLoadingStats ? '...' : `${completedPercent}%`}
             </div>
           </div>
@@ -325,7 +325,7 @@ export function MaintenanceOverview() {
                       <div className='min-w-0 flex-1'>
                         <div className='mb-0.5 flex items-center gap-1.5'>
                           {getPriorityBadge(record.priority)}
-                          <span className='font-mono text-[8px] font-black text-muted-foreground/50'>
+                          <span className='font-maple-ui text-[8px] font-black text-muted-foreground/50'>
                             {record.assetSn}
                           </span>
                         </div>
@@ -342,7 +342,7 @@ export function MaintenanceOverview() {
               )}
             </CardContent>
           </div>
-          <div className='relative z-10 mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-mono text-[8px] text-muted-foreground/30'>
+          <div className='relative z-10 mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-maple-ui text-[8px] text-muted-foreground/30'>
             ALERT INTENTS ACTIVE
           </div>
         </Card>
@@ -400,7 +400,7 @@ export function MaintenanceOverview() {
                         <div className='mb-0.5 flex items-center gap-1.5'>
                           {getStatusBadge(record.status)}
                           {getPriorityBadge(record.priority)}
-                          <span className='font-mono text-[8px] font-black text-muted-foreground/50'>
+                          <span className='font-maple-ui text-[8px] font-black text-muted-foreground/50'>
                             {record.assetSn}
                           </span>
                         </div>
@@ -417,7 +417,7 @@ export function MaintenanceOverview() {
               )}
             </CardContent>
           </div>
-          <div className='relative z-10 mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-mono text-[8px] text-muted-foreground/30'>
+          <div className='relative z-10 mt-3 border-t border-dashed border-muted/20 pt-2.5 text-center font-maple-ui text-[8px] text-muted-foreground/30'>
             TELEMETRY BUS LINKED
           </div>
         </Card>

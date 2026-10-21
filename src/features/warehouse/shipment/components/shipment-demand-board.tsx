@@ -86,7 +86,7 @@ export function ShipmentDemandBoard({
                   >
                     <td className='rounded-l-xl border-l-4 border-l-transparent px-4 py-4 transition-colors group-hover:border-l-blue-500/40'>
                       <div className='flex flex-col gap-1'>
-                        <span className='font-mono text-[10px] font-black tracking-widest text-slate-700 uppercase'>
+                        <span className='font-maple-ui text-[10px] font-black tracking-widest text-slate-700 uppercase'>
                           {demand.orderNo}
                         </span>
                         <span className='max-w-[180px] truncate text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
@@ -99,7 +99,7 @@ export function ShipmentDemandBoard({
                         <span className='max-w-[220px] truncate text-[12px] font-black tracking-tight text-slate-800 uppercase'>
                           {demand.materialName}
                         </span>
-                        <span className='max-w-[220px] truncate font-mono text-[9px] font-bold tracking-widest text-muted-foreground/35 uppercase'>
+                        <span className='max-w-[220px] truncate font-maple-ui text-[9px] font-bold tracking-widest text-muted-foreground/35 uppercase'>
                           {demand.materialCode || 'SKU'}{' '}
                           {demand.materialSpec
                             ? ` / ${demand.materialSpec}`
@@ -208,7 +208,7 @@ function Metric({
       </span>
       <span
         className={cn(
-          'font-mono text-[13px] font-black tabular-nums',
+          'font-maple-ui text-[13px] font-black tabular-nums',
           strong ? 'text-blue-600' : 'text-slate-700'
         )}
       >

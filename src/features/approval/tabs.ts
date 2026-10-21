@@ -18,5 +18,10 @@ export function getApprovalTabs(t: TabTranslator): TabItem[] {
       label: t('approval.tabs.history'),
       href: '/approval/history',
     },
+    {
+      key: 'business-approval-policies',
+      label: t('approval.tabs.policies'),
+      href: '/approval/business-approval-policies',
+    },
   ]
 }

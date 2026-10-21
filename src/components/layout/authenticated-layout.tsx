@@ -16,8 +16,8 @@ import { useNotifications } from '@/hooks/use-notifications'
 import { Button } from '@/components/ui/button'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
-import { DashboardDockButton } from '@/components/layout/dashboard-dock-button'
 import { GlobalBottomDock } from '@/components/layout/global-bottom-dock'
+import { HomeDockNavigationButton } from '@/components/layout/home-dock-navigation-button'
 import { Search } from '@/components/search'
 import { SkipToMain } from '@/components/skip-to-main'
 import { syncIdentitySnapshotFromProfile } from '@/features/authz/services/effective-permission-service'
@@ -291,7 +291,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           {children ?? <Outlet />}
           {showGlobalDock && (
             <GlobalBottomDock>
-              <DashboardDockButton />
+              <HomeDockNavigationButton />
               <QuickActionsFloating placement='dock' />
               <Search placement='dock' />
               <Suspense fallback={null}>

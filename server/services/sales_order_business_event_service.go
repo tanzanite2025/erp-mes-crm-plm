@@ -38,6 +38,16 @@ func DispatchSalesOrderStatusChangedTx(tx *gorm.DB, order models.SalesOrder, pre
 	if previous == "" || next == "" || previous == next {
 		return nil
 	}
+	sourceEnabled, err := LockBusinessEventNotificationSourceWithinTransaction(tx, businessEventSourceSalesOrder)
+	if err != nil {
+		return err
+	}
+	if err := ResolveBusinessRuleNotificationInboxEntriesForStatusWithinTransaction(tx, businessEventSourceSalesOrder, businessEventEntityOrder, order.ID, next); err != nil {
+		return err
+	}
+	if !sourceEnabled {
+		return nil
+	}
 	if !tx.Migrator().HasTable(&models.NotificationRule{}) || !tx.Migrator().HasTable(&models.RuleExecutionLog{}) {
 		return nil
 	}
@@ -93,7 +103,7 @@ func dispatchSalesOrderStatusChangedRuleTx(tx *gorm.DB, event salesOrderStatusCh
 	}
 
 	for _, segment := range segments {
-		if !stringListContains(segment.TargetStatuses, event.NextStatus) {
+		if len(segment.TargetStatuses) > 0 && !stringListContains(segment.TargetStatuses, event.NextStatus) {
 			continue
 		}
 		if err := writeSalesOrderRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
@@ -132,42 +142,14 @@ func dispatchSalesOrderStatusChangedCommandsTx(tx *gorm.DB, event salesOrderStat
 		title := renderSalesOrderEventTemplate(command.Title, event)
 		content := renderSalesOrderEventTemplate(command.Content, event)
 		actionURL := renderSalesOrderEventTemplate(command.TargetLink, event)
-		status := "success"
-		errorMessage := ""
-		for _, target := range targets {
-			if err := PublishNotification("Workflow", businessEventActionStatusChange, title, target, map[string]any{
-				"eventKey":   event.EventKey,
-				"orderId":    event.Order.ID,
-				"orderNo":    event.Order.OrderNo,
-				"status":     event.NextStatus,
-				"actionUrl":  actionURL,
-				"commandId":  command.ID,
-				"ruleId":     rule.ID,
-				"segmentId":  segment.ID,
-				"sourceCode": businessEventSourceSalesOrder,
-			}); err != nil {
-				status = "failed"
-				errorMessage = err.Error()
-			}
+		notificationEvent := BusinessStatusChangedEvent{EventKey: event.EventKey, ActionCode: businessEventActionStatusChange, Entity: businessEventEntityOrder, SourceCode: businessEventSourceSalesOrder, TargetID: event.Order.ID, NextStatus: event.NextStatus, TriggeredAt: event.TriggeredAt, Metadata: salesOrderStatusChangedMetadata(event)}
+		if actionURL == "" {
+			actionURL = "/trading/sales"
 		}
-		if len(targets) == 0 {
-			status = "skipped"
-			errorMessage = "notification target is empty"
-		}
-
-		if err := writeSalesOrderRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
-			ExecutionType:   "notify",
-			ExecutionStatus: status,
-			CommandID:       command.ID,
-			Title:           title,
-			Content:         content,
-			ActionURL:       actionURL,
-			Targets:         mustJSONRawMessage(targets),
-			Metadata:        mustJSONRawMessage(salesOrderStatusChangedMetadata(event)),
-			ErrorMessage:    errorMessage,
-		}); err != nil {
+		if err := createBusinessRuleNotificationInboxEntriesWithinTransaction(tx, notificationEvent, rule, segment, command, targets, title, content, actionURL); err != nil {
 			return err
 		}
+
 	}
 	return nil
 }
@@ -207,18 +189,9 @@ func dispatchSalesOrderStatusChangedApprovalTx(tx *gorm.DB, event salesOrderStat
 		Approver2ID: segment.Approval.Approver2ID,
 	})
 	if err != nil {
-		return writeSalesOrderRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
-			ExecutionType:   "approval",
-			ExecutionStatus: "failed",
-			Metadata:        mustJSONRawMessage(salesOrderStatusChangedMetadata(event)),
-			ErrorMessage:    err.Error(),
-		})
+		return err
 	}
 
-	if result.NotifyTargetUser != "" {
-		_ = PublishNotification("Approval", result.NotifyAction, result.NotifyTitle, result.NotifyTargetUser, result.Request)
-	}
-	syncApprovalRequestToSearch(result.Request)
 	return writeSalesOrderRuleExecutionLogTx(tx, event, rule, segment, models.RuleExecutionLog{
 		ExecutionType:   "approval",
 		ExecutionStatus: "success",

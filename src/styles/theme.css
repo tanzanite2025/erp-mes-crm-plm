@@ -1,10 +1,4 @@
-@font-face {
-  font-family: 'Maple UI';
-  src: url('/fonts/Maple%20UI.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: block;
-}
+@import './local-maple-ui-font.css';
 
 :root {
   --radius: 0.625rem;
@@ -71,9 +65,10 @@
 }
 
 @theme inline {
-  --font-maple-ui: 'Maple UI', sans-serif;
-  --font-inter: var(--font-maple-ui);
-  --font-manrope: var(--font-maple-ui);
+  --font-*: initial;
+  --font-maple-ui: 'Maple UI';
+  --default-font-family: var(--font-maple-ui);
+  --default-mono-font-family: var(--font-maple-ui);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

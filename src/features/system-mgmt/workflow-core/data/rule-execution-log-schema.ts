@@ -9,6 +9,7 @@ export const ruleExecutionTypeSchema = z.enum([
 export type RuleExecutionType = z.infer<typeof ruleExecutionTypeSchema>
 
 export const ruleExecutionStatusSchema = z.enum([
+  'pending',
   'matched',
   'success',
   'failed',
@@ -44,33 +45,6 @@ export const ruleExecutionLogSchema = z.object({
 
 export type RuleExecutionLog = z.infer<typeof ruleExecutionLogSchema>
 
-export const ruleExecutionLogWriteSchema = z.object({
-  eventKey: z.string().optional(),
-  entity: z.string().optional(),
-  sourceCode: z.string().min(1),
-  actionCode: z.string().min(1),
-  statusCode: z.string().optional(),
-  ruleId: z.string().optional(),
-  ruleName: z.string().optional(),
-  segmentId: z.string().optional(),
-  segmentTitle: z.string().optional(),
-  executionType: ruleExecutionTypeSchema,
-  executionStatus: ruleExecutionStatusSchema,
-  commandId: z.string().optional(),
-  title: z.string().optional(),
-  content: z.string().optional(),
-  actionUrl: z.string().optional(),
-  targets: z.array(z.string()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  result: z.unknown().optional(),
-  errorMessage: z.string().optional(),
-  triggeredAt: z.string().optional(),
-})
-
-export type RuleExecutionLogWritePayload = z.infer<
-  typeof ruleExecutionLogWriteSchema
->
-
 export const ruleExecutionLogPageSchema = z.object({
   items: z.array(ruleExecutionLogSchema),
   total: z.number(),
@@ -88,10 +62,4 @@ export function deserializeRuleExecutionLogPage(
   input: unknown
 ): RuleExecutionLogPage {
   return ruleExecutionLogPageSchema.parse(input)
-}
-
-export function serializeRuleExecutionLog(
-  payload: RuleExecutionLogWritePayload
-): RuleExecutionLogWritePayload {
-  return ruleExecutionLogWriteSchema.parse(payload)
 }

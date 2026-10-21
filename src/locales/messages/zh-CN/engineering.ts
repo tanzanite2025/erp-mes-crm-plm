@@ -2,7 +2,7 @@ export const engineering = {
   tabs: {
     products: '产品管理',
     productAppearance: '产品外观',
-    productAttributes: '产品属性配置',
+    productAttributes: '产品模板属性分类',
     bom: 'BOM 配方',
     bomRecords: 'BOM追溯',
     sectionConfig: '段位配置',
@@ -41,6 +41,11 @@ export const engineering = {
       removeImage: '移除图片',
       save: '保存',
       cancel: '取消',
+      saving: '保存中…',
+      uploading: '图片上传中…',
+      retry: '重新加载',
+      done: '完成',
+      select: '选用',
       deleteConfirm: '确认删除外观「{{name}}」吗？',
     },
     badges: {
@@ -55,15 +60,21 @@ export const engineering = {
     dialog: {
       createTitle: '新增产品外观',
       editTitle: '编辑产品外观',
-      description: '当前只建立外观主数据本体，不在本轮接入销售订单与一维码。',
-      imageHint: '当前阶段先使用本地原型图片，后续上线时再迁移到统一文件存储。',
+      description:
+        '维护外观名称、条码位值、图片和启用状态，保存后可继续当前操作。',
+      managementTitle: '产品外观管理',
+      managementDescription: '维护产品外观，完成后继续当前页面的操作。',
+      imageHint: '支持 JPG、PNG、GIF 图片，最大 50 MB。',
       imageEmpty: '尚未上传外观图片',
     },
     toasts: {
       required: '外观名称和条码位值为必填项',
+      loading: '正在加载产品外观…',
+      loadFailed: '产品外观加载失败，请重试。',
+      invalidImage: '请选择不超过 50 MB 的 JPG、PNG 或 GIF 图片',
       invalidBarcodeCode: '条码位值必须为 1-9 的单个数字',
       duplicateBarcodeCode: '该条码位值已被其他外观占用',
-      imageReadFailed: '读取图片失败，请重新选择文件',
+      imageUploadFailed: '图片上传失败，请重试',
       saveSuccess: '产品外观已保存',
       saveFailed: '保存产品外观失败',
       deleteSuccess: '产品外观已删除',
@@ -1019,8 +1030,8 @@ export const engineering = {
   },
   templateMgmt: {
     header: {
-      title: '产品规格模板',
-      description: '维护工程产品可复用的物理规格模板，统一参数定义与建模入口。',
+      title: '产品模板',
+      description: '维护可复用的产品模板及属性分类。',
     },
     status: {
       synced: '模板库已同步',
@@ -1043,16 +1054,18 @@ export const engineering = {
       inactive: '停用',
     },
     dialog: {
-      createTitle: '新建规格模板',
-      editTitle: '编辑规格模板',
-      description: '定义工程产品档案所使用的物理参数映射模板。',
+      createTitle: '新建产品模板',
+      editTitle: '编辑产品模板',
+      description: '填写模板信息，加入一级属性分类并查看其下的二级属性选项。',
     },
     fields: {
+      basicInformation: '模板信息',
       name: '模板名称',
       code: '唯一编码',
       component: '物理组件',
-      description: '技术说明',
-      assemblyTitle: '属性装配',
+      description: '说明',
+      assemblyTitle: '属性配置',
+      levelOneAttributeCategory: '一级属性分类',
       previewTitle: '模板预览',
     },
     placeholders: {
@@ -1060,17 +1073,18 @@ export const engineering = {
       code: '例如：RIM_BASIC',
       component: '请选择组件...',
       description: '可选说明...',
-      attributeCategory: '选择要接入模板的全局属性分类...',
+      attributeCategory: '选择要接入模板的一级属性分类...',
     },
     hints: {
       component: '所选组件将决定在创建产品时系统自动生成的物理参数表单。',
       assembly:
-        '模板页可以从全局产品属性素材库中选择分类接入，并在右侧实时预览模板结构。',
+        '加入一级属性分类后，产品表单将使用其下全部已启用的二级属性选项。',
     },
     buttons: {
       cancel: '取消',
       save: '保存模板',
-      addAttribute: '加入属性分类',
+      saving: '保存中…',
+      addAttribute: '加入一级属性分类',
       removeAttribute: '移除',
     },
     confirms: {
@@ -1083,7 +1097,7 @@ export const engineering = {
       initLoading: '正在恢复内置模板...',
       initSuccess: '内置模板已恢复',
       initFailed: '恢复内置模板失败：{{message}}',
-      required: '模板名称和编码不能为空',
+      required: '请填写模板名称',
       conflict: '该模板已在其他位置更新，请刷新后重试。',
       saveCreated: '模板已创建',
       saveUpdated: '模板已更新',
@@ -1096,7 +1110,14 @@ export const engineering = {
       GENERAL: '通用规格',
     },
     assembly: {
-      empty: '当前模板尚未接入全局属性分类。',
+      levelTwoOptions: '二级属性分类（属性选项）',
+      levelTwoOptionCount: '二级属性分类 · {{count}} 项已启用',
+      noActiveLevelTwoOptions:
+        '暂无已启用的二级属性选项，可在产品模板属性分类中维护。',
+      selectedCategoryPreview: '待加入的一级属性分类及二级选项',
+      levelOneCategoryCount: '已加入的一级属性分类 · {{count}} 个',
+      unavailableCategory: '该一级属性分类已不可用',
+      empty: '当前模板尚未接入一级属性分类。',
       required: '必填',
       optional: '可选',
       active: '启用',

@@ -108,8 +108,10 @@ function DialogBody({
             {/* UDS 1.0 描述规范 */}
             <DialogDescription className='mt-0.5 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
               {t(`${translationPrefix}.dialog.segmentLabel` as TranslationKey)}:{' '}
-              <span className='font-mono text-blue-500'>{segment.range}</span> |{' '}
-              {t(`${translationPrefix}.dialog.modeLabel` as TranslationKey)}:{' '}
+              <span className='font-maple-ui text-blue-500'>
+                {segment.range}
+              </span>{' '}
+              | {t(`${translationPrefix}.dialog.modeLabel` as TranslationKey)}:{' '}
               <span className='uppercase'>{segment.type}</span>
             </DialogDescription>
           </div>
@@ -196,7 +198,7 @@ function DialogBody({
                           placeholder={t(
                             `${translationPrefix}.dialog.placeholderValue` as TranslationKey
                           )}
-                          className='h-8 rounded-xl border-muted/30 bg-muted/30 font-mono text-[11px] font-black text-blue-600 uppercase focus-visible:ring-blue-500/30'
+                          className='h-8 rounded-xl border-muted/30 bg-muted/30 font-maple-ui text-[11px] font-black text-blue-600 uppercase focus-visible:ring-blue-500/30'
                         />
                       </TableCell>
                       <TableCell className='p-1.5 pr-4'>

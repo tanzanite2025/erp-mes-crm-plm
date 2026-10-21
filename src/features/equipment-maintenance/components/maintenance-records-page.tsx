@@ -323,7 +323,7 @@ export function MaintenanceRecordsPage({
                     <div className='col-span-2 truncate font-bold'>
                       {record.assetType === 'MOLD' ? '模具' : '炉台'}
                     </div>
-                    <div className='col-span-2 truncate font-mono font-black text-muted-foreground/60'>
+                    <div className='col-span-2 truncate font-maple-ui font-black text-muted-foreground/60'>
                       {record.assetSn}
                     </div>
                     <div className='col-span-3 truncate font-bold'>

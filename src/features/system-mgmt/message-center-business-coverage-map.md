@@ -1,142 +1,58 @@
 # 消息中心业务覆盖地图
 
-更新时间：2026-07-22
+更新时间：2026-10-20。本文描述当前代码入口，不表示所有模板动作均有运行时触发。本轮版本已部署到生产，验收范围见[品质契约的生产发布记录](../../../docs/quality-standard-approval-transaction-and-notification-delivery-contract.md#2026-10-20-生产发布记录)。
 
-这份文档回答三件事：
+## 1. 来源与真实入口
 
-1. 消息中心现在有哪些业务事件源。
-2. 哪些事件源已经接入真实执行链，哪些只是模板。
-3. 后续接入新业务时，必须先确认哪些边界。
+前端模板注册于 `workflow-core/data/business-event-source-templates.ts`，后端默认源在 `server/services/business_event_source_service.go`。模板、默认落库、真实触发是三个不同事实。
 
-## 1. 当前事件源模板
+| 来源                   | 默认落库                       | 实际执行入口与覆盖                                                                                         |
+| ---------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `SALES_ORDER`          | 是                             | 后端销售状态事务和履约联动，`sales_order_business_event_service.go`                                        |
+| `PURCHASE_ORDER`       | 是                             | 后端采购状态事务，`purchase_order_business_event_service.go`                                               |
+| `PRODUCTION_PLAN`      | 是                             | 已有计划创建/状态入口调用 `production_business_event_service.go`                                           |
+| `PRODUCTION_TASK`      | 是                             | 已有任务创建入口；不把模板中的全部任务状态当作已覆盖                                                       |
+| `PRODUCTION_OPERATION` | 是                             | 统一扫码工序执行事实                                                                                       |
+| `PRODUCTION_OUTSOURCE` | 是                             | 下达、作废、发出、退回、检验处置、关闭等实际事实                                                           |
+| `QUALITY_STANDARD`     | 是                             | 保存、提审、审批决定、发布和归档，品质专项服务                                                             |
+| `BOM_ENGINEERING`      | 否，需导入                     | 保存、状态提升、被派生、修订/作废；后端 BOM 事务适配器                                                     |
+| `BOM_MANUFACTURING`    | 否，需导入                     | 派生、状态提升、修订/旧版作废；研发优化及 stale 标志动作暂无真实入口                                       |
+| `LOGISTICS_RECORD`     | 否，需导入                     | logistics_command_service.go 新建、状态变化、进入异常；删除同事务解除；承运商 DeliveryOrder 回调未接此来源 |
+| 公共审批               | 系统必要提醒，不是可配置事件源 | `approval_service.go` 按真实申请节点与最终结果入箱                                                         |
+| 系统告警               | 系统必要提醒，不是可配置事件源 | webhook 按告警轮次冻结有效管理账号并持久化解除                                                             |
 
-模板唯一注册点：
+自定义配置通知须有已落库且启用的业务源、启用规则、匹配段、有效内容模板和实际账号；默认源不等于已配置审批规则。品质提审缺少真实唯一审批链时明确拒绝，不伪造待办。
 
-- `src/features/system-mgmt/workflow-core/data/business-event-source-templates.ts`
-- `src/features/system-mgmt/workflow-core/data/business-event-source-templates/*`
+## 2. 统一运行链
 
-| 事件源   | Source Code         | Entity    | 模块          | 运行状态           |
-| -------- | ------------------- | --------- | ------------- | ------------------ |
-| 销售订单 | `SALES_ORDER`       | `ORDER`   | `Trading`     | 已接入执行链       |
-| 采购订单 | `PURCHASE_ORDER`    | `ORDER`   | `Trading`     | 已接入执行链       |
-| 物流记录 | `LOGISTICS_RECORD`  | `ORDER`   | `Trading`     | 仅模板预置         |
-| 生产计划 | `PRODUCTION_PLAN`   | `SYSTEM`  | `Production`  | 预接入，待业务确认 |
-| 生产任务 | `PRODUCTION_TASK`   | `SYSTEM`  | `Production`  | 预接入，待业务确认 |
-| 品质标准 | `QUALITY_STANDARD`  | `QUALITY` | `Quality`     | 已接入前端执行链   |
-| 研发 BOM | `BOM_ENGINEERING`   | `BOM`     | `Engineering` | 已接入前端执行链   |
-| 生产 BOM | `BOM_MANUFACTURING` | `BOM`     | `Engineering` | 已接入前端执行链   |
+```text
+业务后端事务
+  -> 真实业务/ApprovalRequest
+  -> 规则匹配、模板快照、有效账号解析
+  -> system_notification_inbox_entries + rule_execution_logs
+  -> workflow_notification_outbox_entries（只存刷新提示）
+提交后 worker -> Redis / WebSocket -> 客户端使查询失效
+客户端 -> GET /message-center/inbox -> 当前账号快照和未读数
+```
 
-## 2. 后端默认落库
+浏览器规则执行、追溯扫描、日志写入和两套正式消息 Store 已移除。配置页面只做 CRUD 和诊断。状态操作通过服务端精确 ID 已读/归档，业务解除与业务同事务持久化；员工离线也不会错过解除事实。
 
-后端启动时会确保以下默认事件源存在：
+配置通知的解除条件在生成时存入收件内部，不再依赖后续源/规则是否仍启用或存在。品质、销售及通用业务路由共用相同解除服务；规则编辑只影响新通知，旧通知按原条件随真实业务解除。状态码受控重命名沿现有事务迁移未解除引用，公共审批与告警仍按各自真实节点/轮次解除，详见长期契约。
 
-| 事件源   | Source Code         | 默认落库         |
-| -------- | ------------------- | ---------------- |
-| 销售订单 | `SALES_ORDER`       | 是               |
-| 采购订单 | `PURCHASE_ORDER`    | 是               |
-| 生产任务 | `PRODUCTION_TASK`   | 是               |
-| 生产计划 | `PRODUCTION_PLAN`   | 是               |
-| 物流记录 | `LOGISTICS_RECORD`  | 否               |
-| 品质标准 | `QUALITY_STANDARD`  | 否，需从模板导入 |
-| 研发 BOM | `BOM_ENGINEERING`   | 否，需从模板导入 |
-| 生产 BOM | `BOM_MANUFACTURING` | 否，需从模板导入 |
+## 3. 来源特有边界
 
-说明：模板存在不等于默认落库。未默认落库的事件源需要在“业务事件源”TAB 中导入后，才能被规则引用。
+品质标准状态为 DRAFT、PENDING_APPROVAL、APPROVED、REJECTED、PUBLISHED、ARCHIVED；当前申请明确关联，不从历史推断。审批必要节点提醒由真实审批服务生成，不能通过前端第二次申请。
 
-## 3. 运行时执行链
+MBOM 当前从已发布 EBOM 派生时仍为 DRAFT，真实 RELEASED 才映射 EFFECTIVE。前端模板包含草稿及实际审核中间态，不得把派生当作自动发布。模板字段存在不保证该业务动作一定提供对应人员；动态账号缺失会记录跳过，不能猜测人员。
 
-| 执行链         | 业务范围                               | 运行位置                                  | 日志写入                                   | 通知投递                               |
-| -------------- | -------------------------------------- | ----------------------------------------- | ------------------------------------------ | -------------------------------------- |
-| 后端事务执行链 | 销售订单、采购订单、生产计划、生产任务 | Go service 事务内                         | 后端直接写 `rule_execution_logs`           | Redis `xdfc_notifications` → WebSocket |
-| 前端实时执行链 | 品质标准、研发 BOM、生产 BOM           | 浏览器内 `NotificationService.dispatch()` | 前端 POST `/message-center/execution-logs` | 前端 notification store                |
-| 前端追溯扫描链 | 采购订单、生产计划、生产任务           | 浏览器内 scheduler                        | 前端 POST `/message-center/execution-logs` | 前端 notification store                |
+委外事件键包含根订单版本或收发/检验事实 ID；收件 targetId 统一为根订单，metadata 保存 factId。关闭时按来源/根订单/规则/段解除相应旧提醒，不合并不同真实事实。失败诊断直接读取原日志的当前状态，人工恢复后等待同一个 worker 投递，不查询另一份重试日志。
 
-当前 `DispatchService.scanByRules()` 支持销售订单快照，但周期 scheduler 目前没有拉销售订单快照；不要把“函数支持”误判为“周期扫描已覆盖”。
+销售、采购、生产状态清单应以各域真实调用为准；本轮没有创建存量扫描补发。物流记录已接入真实事务，状态为 Pending、InTransit、Delivered、Exception、Canceled；没有派车、装车或司机字段。采购/销售收件权限和详情跳转分别绑定真实类型，具体见[物流契约](../../../docs/logistics-record-transaction-and-notification-delivery-contract.md)。BOM 标志动作仍需真实入口。
 
-## 4. 关键业务覆盖
+承运商 `DeliveryOrder` 的回调与实时查询已经统一轨迹事务、事实时间去重和购销权限；这不等于通知来源已接通。当前缺少可靠业务外键及主单创建/订阅入口，callback仍为认证接口，未作为公网厂商回调部署；后续沿既有共用收件服务接入，不建立另一套物流消息基础设施。
 
-### 销售订单 `SALES_ORDER`
+## 4. 文件及接入维护
 
-- Entity：`ORDER`
-- 默认落库：是
-- 实时执行：后端事务链
-- 追溯扫描：函数支持，当前周期 scheduler 未拉取销售订单
-- 状态：`Draft`、`Pending`、`InProgress`、`Done`、`Canceled`
+收件模型、接口、状态、账号权限、保留清理、诊断恢复和验收统一见[消息中心长期契约](../../../docs/architecture/workflow/system-notification-inbox-cross-device-synchronization-and-delivery-contract.md)。页面与服务分层见[文件职责图](message-center-file-responsibilities.md)。
 
-### 采购订单 `PURCHASE_ORDER`
-
-- Entity：`ORDER`
-- 默认落库：是
-- 实时执行：后端事务链
-- 追溯扫描：周期 scheduler 已拉取采购订单
-- 状态：`Draft`、`Sent`、`Awaiting`、`Received`、`Canceled`
-
-### 生产计划 `PRODUCTION_PLAN`
-
-- Entity：`SYSTEM`
-- 默认落库：是
-- 实时执行：后端通用业务状态事件链已准备
-- 追溯扫描：周期 scheduler 已拉取生产快照
-- 状态：`SCHEDULED`、`IN_PROGRESS`、`COMPLETED`、`CANCELED`
-- 业务说明：这是主计划生命周期，不要混入生产任务状态。
-
-### 生产任务 `PRODUCTION_TASK`
-
-- Entity：`SYSTEM`
-- 默认落库：是
-- 实时执行：后端通用业务状态事件链已准备
-- 追溯扫描：周期 scheduler 已拉取生产任务快照
-- 状态：`PENDING`、`RUNNING`、`HOLD`、`DONE`
-- 业务说明：这是计划下的任务/工序生命周期，不要混入生产计划状态。
-
-### 品质标准 `QUALITY_STANDARD`
-
-- Entity：`QUALITY`
-- 默认落库：否
-- 实时执行：前端品质标准服务调用 `NotificationService.dispatch()`
-- 追溯扫描：无
-- 状态：`DRAFT`、`PENDING_APPROVAL`、`APPROVED`、`REJECTED`、`PUBLISHED`、`ARCHIVED`
-- 契约要求：后端 `allowedBusinessEventEntities` 必须包含 `QUALITY`，否则模板导入和规则保存会失败。
-
-### 研发 BOM `BOM_ENGINEERING`
-
-- Entity：`BOM`
-- 默认落库：否
-- 实时执行：前端 BOM routing service 调用 `NotificationService.dispatch()`
-- 追溯扫描：无
-- 状态：与 `BOM_STATUS_ORDER` 对齐。
-
-### 生产 BOM `BOM_MANUFACTURING`
-
-- Entity：`BOM`
-- 默认落库：否
-- 实时执行：前端 BOM routing service 调用 `NotificationService.dispatch()`
-- 追溯扫描：无
-- 状态：`EFFECTIVE`、`OBSOLETE`
-
-### 物流记录 `LOGISTICS_RECORD`
-
-- Entity：`ORDER`
-- 默认落库：否
-- 实时执行：未接入
-- 追溯扫描：无
-- 状态：`Draft`、`Dispatched`、`Loaded`、`InTransit`、`Signed`、`Exception`、`Canceled`
-
-## 5. 当前已确认的长期方向
-
-- 消息中心入口固定为 `/message-center`。
-- 配置读写统一走后端 `/message-center/*` API，不再保留旧页面跳转或旧 API 域名。
-- 新版通知中心 store 是底部通知中心的消息沉淀入口。
-- 后端 Workflow/Approval 推送必须写入新版通知中心，不应只 toast。
-- 项目未正式生产，不保留旧订单链接兼容修正。
-
-## 6. 后续接入新事件源的检查清单
-
-1. 前端模板是否登记在 `business-event-source-templates.ts`。
-2. `entity` 是否被前后端 schema 同时允许。
-3. 状态字典是否登记在 `business-event-status-catalog.ts`。
-4. 后端是否需要默认 seed。
-5. 实时执行入口在哪里，是否在写入事务后触发。
-6. 是否需要追溯扫描；如果需要，scheduler 是否真的拉了数据。
-7. 执行日志由谁写，是否可信。
-8. 通知是否进入新版 notification store。
+新增来源先确认：真实事务入口、业务稳定事件键、账号解析与权限、模板/状态字典、展示快照、精确解除条件、默认落库策略。通知必须进入共用收件服务并提交后发布，失败恢复原任务；不能恢复浏览器扫描或从执行日志伪造历史消息。

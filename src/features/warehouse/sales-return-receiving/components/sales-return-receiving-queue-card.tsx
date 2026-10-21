@@ -102,7 +102,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2'>
-            <span className='truncate font-mono text-[11px] font-black tracking-widest text-emerald-700 uppercase'>
+            <span className='truncate font-maple-ui text-[11px] font-black tracking-widest text-emerald-700 uppercase'>
               {item.returnNo}
             </span>
             <Badge className='h-5 rounded-full border-none bg-emerald-500/10 px-2 text-[8px] font-black text-emerald-700'>
@@ -113,7 +113,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
             <div className='flex items-center gap-1.5'>
               <FileText className='size-3 text-emerald-700' />
               <span className='shrink-0'>销售订单</span>
-              <span className='truncate font-mono font-black text-slate-800'>
+              <span className='truncate font-maple-ui font-black text-slate-800'>
                 {item.salesOrderNo}
               </span>
             </div>
@@ -130,19 +130,19 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
       <div className='mt-4 grid grid-cols-3 gap-2 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>数量</div>
-          <div className='mt-1 font-mono text-sm text-slate-800'>
+          <div className='mt-1 font-maple-ui text-sm text-slate-800'>
             {item.totalQuantity}
           </div>
         </div>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>明细</div>
-          <div className='mt-1 font-mono text-sm text-slate-800'>
+          <div className='mt-1 font-maple-ui text-sm text-slate-800'>
             {item.lineCount}
           </div>
         </div>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>日期</div>
-          <div className='mt-1 font-mono text-sm text-slate-800'>
+          <div className='mt-1 font-maple-ui text-sm text-slate-800'>
             {formatReturnDate(item.returnDate)}
           </div>
         </div>
@@ -165,7 +165,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
             <div className='text-[8px] font-black tracking-widest text-emerald-700/70 uppercase'>
               快递单号
             </div>
-            <div className='mt-1 truncate font-mono text-[11px] font-black text-slate-900'>
+            <div className='mt-1 truncate font-maple-ui text-[11px] font-black text-slate-900'>
               {item.trackingNo?.trim() || '未填写'}
             </div>
           </div>
@@ -183,7 +183,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
             <ImageIcon className='size-3.5 text-emerald-700' />
             退货凭据
           </div>
-          <span className='font-mono text-[9px] font-black text-muted-foreground/40'>
+          <span className='font-maple-ui text-[9px] font-black text-muted-foreground/40'>
             {evidences.length}
           </span>
         </div>
@@ -228,11 +228,11 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
               <p className='truncate text-[11px] font-black text-slate-800'>
                 {line.productModel || line.productCode}
               </p>
-              <p className='truncate font-mono text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
+              <p className='truncate font-maple-ui text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
                 {line.productCode}
               </p>
             </div>
-            <span className='shrink-0 font-mono text-[11px] font-black text-emerald-700'>
+            <span className='shrink-0 font-maple-ui text-[11px] font-black text-emerald-700'>
               {line.quantity} {line.uom}
             </span>
           </div>
@@ -309,7 +309,7 @@ export function SalesReturnReceivingQueueCard() {
                 <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                   待处理
                 </span>
-                <span className='font-mono text-[11px] font-black text-slate-900'>
+                <span className='font-maple-ui text-[11px] font-black text-slate-900'>
                   {items.length}
                 </span>
               </div>
@@ -317,7 +317,7 @@ export function SalesReturnReceivingQueueCard() {
                 <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                   待收数量
                 </span>
-                <span className='font-mono text-[11px] font-black text-emerald-700'>
+                <span className='font-maple-ui text-[11px] font-black text-emerald-700'>
                   {totalPendingQuantity}
                 </span>
               </div>

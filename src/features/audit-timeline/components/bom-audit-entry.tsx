@@ -128,7 +128,7 @@ function ChangeCountBadge({
   return (
     <Badge
       variant='outline'
-      className={`rounded-full border-dashed font-mono text-[8px] ${toneClassName}`}
+      className={`rounded-full border-dashed font-maple-ui text-[8px] ${toneClassName}`}
     >
       {label} {count}
     </Badge>
@@ -163,7 +163,7 @@ function BomAuditLineListCard({
         </div>
         <Badge
           variant='outline'
-          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+          className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
         >
           {items.length}
         </Badge>
@@ -182,7 +182,7 @@ function BomAuditLineListCard({
                   <div className='flex items-center justify-between gap-3'>
                     <Badge
                       variant='outline'
-                      className={`rounded-full border-dashed font-mono text-[8px] ${toneClassName}`}
+                      className={`rounded-full border-dashed font-maple-ui text-[8px] ${toneClassName}`}
                     >
                       {display.materialCode}
                     </Badge>
@@ -196,13 +196,13 @@ function BomAuditLineListCard({
                   <div className='mt-2 flex flex-wrap gap-1.5'>
                     <Badge
                       variant='outline'
-                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-maple-ui text-[8px] text-slate-700'
                     >
                       {formatBomFieldLabel('section', t)} · {display.section}
                     </Badge>
                     <Badge
                       variant='outline'
-                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-maple-ui text-[8px] text-slate-700'
                     >
                       {t('common.audit.bom.materialCode')} ·{' '}
                       {display.materialCode}
@@ -243,7 +243,7 @@ function BomAuditModifiedListCard({
         </div>
         <Badge
           variant='outline'
-          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+          className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
         >
           {items.length}
         </Badge>
@@ -262,7 +262,7 @@ function BomAuditModifiedListCard({
                   <div className='flex items-center justify-between gap-2'>
                     <Badge
                       variant='outline'
-                      className='rounded-full border-dashed border-amber-500/20 bg-amber-500/5 font-mono text-[8px] text-amber-700'
+                      className='rounded-full border-dashed border-amber-500/20 bg-amber-500/5 font-maple-ui text-[8px] text-amber-700'
                     >
                       {display.materialCode}
                     </Badge>
@@ -273,13 +273,13 @@ function BomAuditModifiedListCard({
                   <div className='mt-2 flex flex-wrap gap-1.5'>
                     <Badge
                       variant='outline'
-                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-maple-ui text-[8px] text-slate-700'
                     >
                       {formatBomFieldLabel('section', t)} · {display.section}
                     </Badge>
                     <Badge
                       variant='outline'
-                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                      className='rounded-full border-dashed border-slate-200 bg-slate-50 font-maple-ui text-[8px] text-slate-700'
                     >
                       {t('common.audit.bom.materialCode')} ·{' '}
                       {display.materialCode}
@@ -290,7 +290,7 @@ function BomAuditModifiedListCard({
                       <Badge
                         key={field}
                         variant='outline'
-                        className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                        className='rounded-full border-dashed border-slate-200 bg-slate-50 font-maple-ui text-[8px] text-slate-700'
                       >
                         {formatBomFieldLabel(field, t)}
                       </Badge>
@@ -343,7 +343,7 @@ function BomAuditSummaryCard({
         </div>
         <Badge
           variant='outline'
-          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+          className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
         >
           {controlChanges.length}
         </Badge>
@@ -419,7 +419,7 @@ export function BomAuditEntry({
             </span>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <User className='size-3 opacity-50' />
-              <span className='font-mono text-[8px] font-bold uppercase'>
+              <span className='font-maple-ui text-[8px] font-bold uppercase'>
                 {log.operator}
               </span>
             </div>
@@ -449,7 +449,7 @@ export function BomAuditEntry({
             />
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <Clock className='size-3 opacity-50' />
-              <span className='font-mono text-[8px]'>
+              <span className='font-maple-ui text-[8px]'>
                 {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}
               </span>
             </div>

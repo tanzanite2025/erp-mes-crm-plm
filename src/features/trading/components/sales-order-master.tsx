@@ -194,7 +194,7 @@ export function SalesOrderMaster({
                           {t('tradingSalesOrder.master.columns.classification')}
                           : {classification}
                         </span>
-                        <span className='col-span-2 inline-flex min-w-0 items-center truncate rounded-full border border-dashed border-muted/40 bg-background/80 px-2 py-1 font-mono text-muted-foreground/60 sm:col-span-1'>
+                        <span className='col-span-2 inline-flex min-w-0 items-center truncate rounded-full border border-dashed border-muted/40 bg-background/80 px-2 py-1 font-maple-ui text-muted-foreground/60 sm:col-span-1'>
                           {t('tradingSalesOrder.master.columns.orderDate')}:{' '}
                           {order.orderDate}
                         </span>
@@ -220,7 +220,7 @@ export function SalesOrderMaster({
                               'tradingSalesOrder.master.columns.deliveryDeadline'
                             )}
                             value={order.deliveryDate}
-                            valueClassName='font-mono'
+                            valueClassName='font-maple-ui'
                             trailing={
                               isOverdue ? (
                                 <span className='inline-flex animate-pulse items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[7px] font-black tracking-widest text-rose-600 uppercase'>

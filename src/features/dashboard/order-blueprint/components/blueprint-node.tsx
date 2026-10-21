@@ -84,7 +84,7 @@ export const MRPNode = memo(({ data }: NodeProps<MRPNodeData>) => {
       <div className='mt-4 flex items-end justify-between'>
         <div>
           {data.date && (
-            <div className='mb-1 font-mono text-[8px] opacity-50'>
+            <div className='mb-1 font-maple-ui text-[8px] opacity-50'>
               {data.date}
             </div>
           )}

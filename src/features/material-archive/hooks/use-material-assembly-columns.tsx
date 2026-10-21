@@ -29,7 +29,7 @@ export function useMaterialAssemblyColumns({
           </div>
         ),
         cell: ({ row }) => (
-          <div className='pl-8 font-mono text-[10px] font-black text-muted-foreground'>
+          <div className='pl-8 font-maple-ui text-[10px] font-black text-muted-foreground'>
             {row.original.materialCode}
           </div>
         ),
@@ -84,7 +84,7 @@ export function useMaterialAssemblyColumns({
           </div>
         ),
         cell: ({ row }) => (
-          <div className='font-mono text-xs font-black tracking-tighter text-primary'>
+          <div className='font-maple-ui text-xs font-black tracking-tighter text-primary'>
             x {row.original.conversionFactor}
           </div>
         ),
@@ -97,7 +97,7 @@ export function useMaterialAssemblyColumns({
           </div>
         ),
         cell: ({ row }) => (
-          <div className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/40'>
+          <div className='font-maple-ui text-[9px] font-black tracking-widest text-muted-foreground/40'>
             {row.original.relation}
           </div>
         ),

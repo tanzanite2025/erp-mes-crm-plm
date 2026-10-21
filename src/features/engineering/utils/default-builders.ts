@@ -39,13 +39,21 @@ export function createProductDraft(
   }
 }
 
+function generateProductTemplateInternalCode(): string {
+  const randomBytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
+  const uniqueIdentifier = Array.from(randomBytes, (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('')
+  return `TEMPLATE_${uniqueIdentifier.toUpperCase()}`
+}
+
 export function createProductTemplateDraft(
   overrides: ProductTemplateDraftOverrides = {}
 ): ProductTemplate {
   return normalizeProductTemplateEntity({
     id: '',
     name: '',
-    code: '',
+    code: generateProductTemplateInternalCode(),
     componentKey: 'GENERAL',
     description: '',
     active: true,

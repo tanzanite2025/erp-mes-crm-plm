@@ -19,6 +19,9 @@ export type GeneratedRoutePermissions = {
 }
 
 const HIDDEN_PAGE_PATHS = new Set(['/', '/dashboard'])
+// The landing redirect and HOME launcher require a session, but no business grant.
+// Authentication is still enforced by the parent authenticated route guard.
+const AUTHENTICATION_ONLY_ROUTE_PATHS = new Set(['/', '/home'])
 const ROUTE_PERMISSION_FALLBACK_OVERRIDES: Record<string, string[]> = {
   '/personnel/accounts': ['user_view', 'perm_manage'],
   '/personnel/rights': ['perm_manage'],
@@ -123,6 +126,7 @@ export class RoutePermissionsGenerator {
     const normalized = routePaths
       .map((path) => normalizePath(path))
       .filter((path) => !isLazyPath(path))
+      .filter((path) => !AUTHENTICATION_ONLY_ROUTE_PATHS.has(path))
     this.routePaths = Array.from(new Set(normalized)).sort(
       comparePathsBySpecificity
     )

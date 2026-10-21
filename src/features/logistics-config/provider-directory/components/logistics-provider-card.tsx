@@ -221,7 +221,7 @@ export function LogisticsProviderCard({
               </span>
               {provider.appKey?.trim() ? (
                 <div className='flex items-center gap-2'>
-                  <span className='max-w-[140px] truncate font-mono text-[10px] font-bold text-slate-600'>
+                  <span className='max-w-[140px] truncate font-maple-ui text-[10px] font-bold text-slate-600'>
                     {showSecret ? provider.appKey : '****************'}
                   </span>
                   <button
@@ -247,7 +247,7 @@ export function LogisticsProviderCard({
               <span className='text-[8px] font-black tracking-widest text-slate-400 uppercase'>
                 {t('logisticsConfig.providerShared.labels.endpoint')}
               </span>
-              <span className='block truncate font-mono text-[9px] font-bold text-slate-500'>
+              <span className='block truncate font-maple-ui text-[9px] font-bold text-slate-500'>
                 {provider.endpoint ||
                   t('logisticsConfig.providerShared.states.notConfigured')}
               </span>

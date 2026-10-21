@@ -58,24 +58,24 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
                   key={item.id}
                   className='group border-b border-dashed border-muted/30 transition-all last:border-none hover:bg-blue-500/5'
                 >
-                  <td className='px-4 py-2 font-mono text-[9px] tracking-tighter whitespace-nowrap text-muted-foreground/40 md:px-6 md:py-2.5 md:text-[10px]'>
+                  <td className='px-4 py-2 font-maple-ui text-[9px] tracking-tighter whitespace-nowrap text-muted-foreground/40 md:px-6 md:py-2.5 md:text-[10px]'>
                     {item.entryDate}
                   </td>
                   <td className='px-4 py-2 md:px-6 md:py-2.5'>
                     <div className='max-w-[150px] truncate font-bold tracking-tight text-foreground/90 uppercase transition-colors group-hover:text-blue-600 md:max-w-none'>
                       {master?.name || 'UNKNOWN'}
                     </div>
-                    <div className='truncate font-mono text-[7px] tracking-widest text-muted-foreground/30 uppercase md:text-[9px]'>
+                    <div className='truncate font-maple-ui text-[7px] tracking-widest text-muted-foreground/30 uppercase md:text-[9px]'>
                       {master?.code || 'VOID'}
                     </div>
                   </td>
                   <td className='px-4 py-2 md:px-6 md:py-2.5'>
-                    <span className='font-mono text-[9px] whitespace-nowrap text-muted-foreground/60 uppercase md:text-[10px]'>
+                    <span className='font-maple-ui text-[9px] whitespace-nowrap text-muted-foreground/60 uppercase md:text-[10px]'>
                       {item.batchNo || '-'}
                     </span>
                   </td>
                   <td className='px-4 py-2 text-right whitespace-nowrap md:px-6 md:py-2.5'>
-                    <span className='font-mono text-xs font-black text-blue-600 md:text-sm'>
+                    <span className='font-maple-ui text-xs font-black text-blue-600 md:text-sm'>
                       +{item.quantity}
                     </span>
                     <span className='ml-1 text-[7px] font-black tracking-tighter text-muted-foreground/40 uppercase md:text-[8px]'>
@@ -182,11 +182,11 @@ export function ShipmentReportTable({
                   key={item.id}
                   className='group border-b border-dashed border-muted/30 transition-all last:border-none hover:bg-blue-500/5'
                 >
-                  <td className='px-4 py-2 font-mono text-[9px] tracking-tighter whitespace-nowrap text-muted-foreground/40 md:px-6 md:py-2.5 md:text-[10px]'>
+                  <td className='px-4 py-2 font-maple-ui text-[9px] tracking-tighter whitespace-nowrap text-muted-foreground/40 md:px-6 md:py-2.5 md:text-[10px]'>
                     {item.shipmentDate}
                   </td>
                   <td className='px-4 py-2 md:px-6 md:py-2.5'>
-                    <span className='font-mono text-[10px] font-bold tracking-tighter whitespace-nowrap text-foreground uppercase md:text-sm'>
+                    <span className='font-maple-ui text-[10px] font-bold tracking-tighter whitespace-nowrap text-foreground uppercase md:text-sm'>
                       {item.orderNo || '-'}
                     </span>
                   </td>
@@ -194,12 +194,12 @@ export function ShipmentReportTable({
                     <div className='max-w-[120px] overflow-hidden font-bold tracking-tight text-ellipsis whitespace-nowrap text-foreground/90 uppercase transition-colors group-hover:text-blue-600'>
                       {master?.name || 'UNKNOWN'}
                     </div>
-                    <div className='truncate font-mono text-[7px] tracking-widest text-muted-foreground/20 uppercase md:text-[8px]'>
+                    <div className='truncate font-maple-ui text-[7px] tracking-widest text-muted-foreground/20 uppercase md:text-[8px]'>
                       {master?.code || 'VOID'}
                     </div>
                   </td>
                   <td className='px-4 py-2 text-right whitespace-nowrap md:px-6 md:py-2.5'>
-                    <span className='font-mono text-xs font-black text-orange-600 md:text-sm'>
+                    <span className='font-maple-ui text-xs font-black text-orange-600 md:text-sm'>
                       -{item.quantity}
                     </span>
                     <span className='ml-1 text-[7px] font-black tracking-tighter text-muted-foreground/40 uppercase md:text-[8px]'>

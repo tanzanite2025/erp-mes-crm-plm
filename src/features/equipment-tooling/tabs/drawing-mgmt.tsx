@@ -333,7 +333,7 @@ export function DrawingMgmt({
                         `equipmentTooling.drawings.types.${drawing.type === '2D' ? 'twoD' : drawing.type === '3D' ? 'threeD' : drawing.type === 'TECH_SPEC' ? 'techSpec' : 'other'}`
                       )}
                     </Badge>
-                    <span className='font-mono text-[8px] font-black text-muted-foreground/40 uppercase'>
+                    <span className='font-maple-ui text-[8px] font-black text-muted-foreground/40 uppercase'>
                       {drawing.version}
                     </span>
                     {drawing.status === 'ACTIVE' && (
@@ -362,7 +362,7 @@ export function DrawingMgmt({
                     <Tag className='size-3' />{' '}
                     {t('equipmentTooling.drawings.card.asset')}
                   </span>
-                  <span className='font-mono text-[10px] font-black text-blue-600'>
+                  <span className='font-maple-ui text-[10px] font-black text-blue-600'>
                     {drawing.moldSn ||
                       t('equipmentTooling.drawings.card.unbound')}
                   </span>
@@ -372,7 +372,7 @@ export function DrawingMgmt({
                     <Clock className='size-2.5' />{' '}
                     {t('equipmentTooling.drawings.card.date')}
                   </span>
-                  <span className='font-mono'>
+                  <span className='font-maple-ui'>
                     {new Date(drawing.uploadedAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -458,7 +458,7 @@ export function DrawingMgmt({
                         <span className='text-[9px] font-black tracking-widest text-primary/40 uppercase'>
                           {log.action}
                         </span>
-                        <span className='font-mono text-[8px] font-bold text-muted-foreground/30'>
+                        <span className='font-maple-ui text-[8px] font-bold text-muted-foreground/30'>
                           {new Date(log.timestamp).toLocaleDateString()}
                         </span>
                       </div>
@@ -482,7 +482,7 @@ export function DrawingMgmt({
                                   <span className='rounded bg-slate-100 px-1.5 py-0.5 font-black whitespace-nowrap text-slate-500'>
                                     {field}
                                   </span>
-                                  <div className='flex min-w-0 flex-1 items-center gap-1.5 font-mono'>
+                                  <div className='flex min-w-0 flex-1 items-center gap-1.5 font-maple-ui'>
                                     <span className='max-w-[100px] truncate text-rose-400/60 line-through'>
                                       {String(values.o ?? 'NULL')}
                                     </span>

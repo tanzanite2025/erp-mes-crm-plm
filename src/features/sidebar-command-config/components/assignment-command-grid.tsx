@@ -60,7 +60,7 @@ export function AssignmentCommandGrid({
                     <h3 className='truncate text-[13px] font-black tracking-tight'>
                       {command.title}
                     </h3>
-                    <p className='mt-0.5 truncate font-mono text-[9px] font-black tracking-tight text-muted-foreground/50'>
+                    <p className='mt-0.5 truncate font-maple-ui text-[9px] font-black tracking-tight text-muted-foreground/50'>
                       {command.route}
                     </p>
                   </div>

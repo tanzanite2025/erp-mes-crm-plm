@@ -14,7 +14,7 @@ import {
   Truck,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { isForbiddenError } from '@/lib/error-status'
+import { isForbiddenError, isNotFoundError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -46,7 +46,7 @@ import { LogisticsTimeline } from './logistics-timeline'
 
 export function LogisticsMgmt() {
   const { locale, t } = useLanguage()
-  const { bindOrderNo, bindShipmentId } = Route.useSearch()
+  const { bindOrderNo, bindShipmentId, logisticsId } = Route.useSearch()
   const router = useRouter()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
@@ -66,15 +66,21 @@ export function LogisticsMgmt() {
     shipmentId?: string
   } | null>(null)
 
-  const { data: detailedRecord, isLoading: isDetailLoading } =
-    useGetLogisticsDetail(selectedRecord?.id || undefined)
-  const displayRecord = detailedRecord || selectedRecord
-  const selectedTrackingNo =
-    selectedRecord?.trackingNo || detailedRecord?.trackingNo
+  const {
+    data: detailedRecord,
+    isLoading: isDetailLoading,
+    error: detailError,
+    refetch: refetchDetail,
+  } = useGetLogisticsDetail(logisticsId || selectedRecord?.id || undefined)
+  const isDetailSheetOpen = Boolean(logisticsId) || isDetailOpen
+  const displayRecord = logisticsId
+    ? detailedRecord
+    : detailedRecord || selectedRecord
+  const selectedTrackingNo = displayRecord?.trackingNo
   const {
     data: controlledTrackingDetail,
     isLoading: isControlledTrackingLoading,
-  } = useGetControlledTrackingDetail(selectedTrackingNo, isDetailOpen)
+  } = useGetControlledTrackingDetail(selectedTrackingNo, isDetailSheetOpen)
   const displayEvents = controlledTrackingDetail?.events.length
     ? controlledTrackingDetail.events
     : displayRecord?.events || []
@@ -88,7 +94,9 @@ export function LogisticsMgmt() {
   const isShowingTrustedTracking = Boolean(controlledTrackingDetail)
   const isSheetLoading =
     isDetailLoading ||
-    (isDetailOpen && Boolean(selectedTrackingNo) && isControlledTrackingLoading)
+    (isDetailSheetOpen &&
+      Boolean(selectedTrackingNo) &&
+      isControlledTrackingLoading)
 
   const handleRefreshTracking = async () => {
     if (!selectedTrackingNo) {
@@ -321,7 +329,7 @@ export function LogisticsMgmt() {
                     <p className='truncate text-[10px] font-black text-secondary uppercase'>
                       {carrierLabelKey ? t(carrierLabelKey) : record.carrier}
                     </p>
-                    <p className='truncate font-mono text-[13px] font-bold tracking-tight text-muted-foreground'>
+                    <p className='truncate font-maple-ui text-[13px] font-bold tracking-tight text-muted-foreground'>
                       {record.trackingNo}
                     </p>
                   </div>
@@ -422,8 +430,21 @@ export function LogisticsMgmt() {
         defaultShipmentId={initialBindInfo?.shipmentId}
       />
 
-      <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+      <Sheet
+        open={isDetailSheetOpen}
+        onOpenChange={(open) => {
+          setIsDetailOpen(open)
+          if (!open && logisticsId) {
+            void router.navigate({
+              to: '/shipping-management/logistics',
+              search: (previous) => ({ ...previous, logisticsId: undefined }),
+              replace: true,
+            })
+          }
+        }}
+      >
         <SheetContent
+          aria-describedby={undefined}
           side='right'
           className='flex w-full flex-col overflow-hidden rounded-l-[40px] border-l-0 bg-background p-0 shadow-2xl sm:max-w-md'
         >
@@ -434,7 +455,31 @@ export function LogisticsMgmt() {
               <SheetTitle className='mb-4 text-[10px] font-black tracking-[0.4em] text-muted-foreground uppercase'>
                 {t('trading.logistics.detailTitle')}
               </SheetTitle>
-              {isSheetLoading ? (
+              {detailError ? (
+                <div
+                  role='alert'
+                  className='space-y-2 text-sm text-destructive'
+                >
+                  <p>
+                    {isForbiddenError(detailError)
+                      ? t('errors.forbidden.description')
+                      : t(
+                          isNotFoundError(detailError)
+                            ? 'trading.logistics.recordNotFound'
+                            : 'trading.logistics.recordLoadFailed'
+                        )}
+                  </p>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => {
+                      void refetchDetail()
+                    }}
+                  >
+                    {t('common.actions.retry')}
+                  </Button>
+                </div>
+              ) : isSheetLoading ? (
                 <div className='flex animate-pulse items-center gap-3'>
                   <Loader2 className='size-5 animate-spin text-primary' />
                   <span className='text-xs font-bold text-primary'>
@@ -470,14 +515,14 @@ export function LogisticsMgmt() {
                     <div className='flex flex-wrap items-center gap-2'>
                       <Badge
                         variant='outline'
-                        className='rounded-full border-dashed bg-white font-mono text-[8px]'
+                        className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
                       >
                         {isShowingTrustedTracking
                           ? t('trading.logistics.detailSourceTrusted')
                           : t('trading.logistics.detailSourceLocal')}
                       </Badge>
                       {latestRefresh?.checkedAt ? (
-                        <span className='font-mono text-[8px] text-muted-foreground/60'>
+                        <span className='font-maple-ui text-[8px] text-muted-foreground/60'>
                           {t('trading.logistics.detailRefreshCheckedAt')}:{' '}
                           {new Date(latestRefresh.checkedAt).toLocaleString(
                             locale
@@ -535,18 +580,18 @@ export function LogisticsMgmt() {
                       <div className='flex items-center gap-2'>
                         <Badge
                           variant='outline'
-                          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+                          className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
                         >
                           {latestRefresh.providerCode ||
                             t('trading.logistics.detailSourceTrusted')}
                         </Badge>
-                        <span className='font-mono text-[8px] text-muted-foreground/60 uppercase'>
+                        <span className='font-maple-ui text-[8px] text-muted-foreground/60 uppercase'>
                           {latestRefresh.status ||
                             t('trading.logistics.notAvailable')}
                         </span>
                       </div>
                       {latestRefresh.checkedAt ? (
-                        <span className='font-mono text-[8px] text-muted-foreground/60'>
+                        <span className='font-maple-ui text-[8px] text-muted-foreground/60'>
                           {new Date(latestRefresh.checkedAt).toLocaleString(
                             locale
                           )}

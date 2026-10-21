@@ -230,19 +230,19 @@ export function CommandMenuView({
         <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
           <div className='flex items-center gap-2.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             <span className='flex items-center gap-1.5'>
-              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
+              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-maple-ui text-[7px]'>
                 Enter
               </kbd>
               {t('commandMenu.footer.enter')}
             </span>
             <span className='flex items-center gap-1.5'>
-              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
+              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-maple-ui text-[7px]'>
                 ↑↓
               </kbd>
               {t('commandMenu.footer.arrows')}
             </span>
             <span className='flex items-center gap-1.5'>
-              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[7px]'>
+              <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-maple-ui text-[7px]'>
                 Tab
               </kbd>
               {t('commandMenu.footer.tab')}

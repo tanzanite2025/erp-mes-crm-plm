@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutTemplate,
@@ -14,29 +14,22 @@ import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { ProductTemplateAttributeCatalogRequestState } from '../components/product-attributes/product-template-attribute-catalog-request-state'
 import { TemplateEditorDialog } from '../components/template-mgmt/template-editor-dialog'
 import { type ProductTemplate } from '../data/schema'
 import {
   DEFAULT_PRODUCT_TEMPLATES,
   localizeTemplateDefinitions,
 } from '../data/template-defaults'
+import { useProductAttributeCatalogQueries } from '../hooks/use-product-attribute-catalog-queries'
 import { useProductTemplateWriteActions } from '../hooks/use-product-template-write-actions'
 import { PRODUCT_TEMPLATES_QUERY_KEY } from '../query-keys'
-import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { productTemplateService } from '../services/product-template-service'
 import { createProductTemplateDraft } from '../utils/default-builders'
-import {
-  normalizeEngineeringTemplateCode,
-  normalizeProductTemplateEntity,
-} from '../utils/product-code-normalization'
+import { areSameProductAttributeCategoryKey } from '../utils/product-attribute-machine-value'
+import { normalizeProductTemplateEntity } from '../utils/product-code-normalization'
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
@@ -49,36 +42,29 @@ export function TemplateMgmt() {
   const [editingTemplate, setEditingTemplate] =
     useState<ProductTemplate | null>(null)
   const [selectedCategoryKey, setSelectedCategoryKey] = useState('')
-  const { saveTemplate, deleteTemplate } = useProductTemplateWriteActions()
+  const editingTemplateBaselineRef = useRef<ProductTemplate | undefined>(
+    undefined
+  )
+  const templateSaveInProgressRef = useRef(false)
+  const { saveTemplate, deleteTemplate, isSavingTemplate } =
+    useProductTemplateWriteActions()
   const templatesQuery = useQuery({
     queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
     queryFn: () => productTemplateService.getTemplates(),
   })
-  const categoriesQuery = useQuery({
-    queryKey: ['engineering', 'product-attribute-categories', 'active-options'],
-    queryFn: () =>
-      ProductAttributeCategoryService.getProductAttributeCategories({
-        activeOnly: true,
-      }),
-  })
+  const {
+    categories,
+    options: attributeOptions,
+    hasLoadedCatalog,
+    isLoading: isAttributeCatalogLoading,
+    error: attributeCatalogError,
+    retry: retryAttributeCatalog,
+  } = useProductAttributeCatalogQueries()
   if (templatesQuery.isSuccess && !templatesQuery.data)
     throw new Error('[CRITICAL] Templates Data missing')
-  if (categoriesQuery.isSuccess && !categoriesQuery.data)
-    throw new Error('[CRITICAL] Categories Data missing')
 
   const templates = templatesQuery.data
-  const categories = categoriesQuery.data
   const error = templatesQuery.error
-
-  const componentLabels = useMemo(
-    () => ({
-      RIM: t('engineering.templateMgmt.components.RIM'),
-      STEM: t('engineering.templateMgmt.components.STEM'),
-      FORK: t('engineering.templateMgmt.components.FORK'),
-      GENERAL: t('engineering.templateMgmt.components.GENERAL'),
-    }),
-    [t]
-  )
 
   const displayTemplates = useMemo(() => {
     if (!templates) return []
@@ -90,21 +76,25 @@ export function TemplateMgmt() {
   )
 
   const assembledCategories = useMemo(() => {
-    if (!editingTemplate || !categories) return []
+    if (!editingTemplate) return []
     return (editingTemplate.attributeBindings ?? [])
       .map((binding) => ({
         binding,
-        category: categories.find((item) => item.key === binding.categoryKey),
+        category: categories.find((item) =>
+          areSameProductAttributeCategoryKey(item.key, binding.categoryKey)
+        ),
       }))
       .sort((a, b) => (a.binding.sortOrder ?? 0) - (b.binding.sortOrder ?? 0))
   }, [categories, editingTemplate])
 
   const availableCategories = useMemo(() => {
-    if (!categories) return []
-    const used = new Set(
-      (editingTemplate?.attributeBindings ?? []).map((item) => item.categoryKey)
+    return categories.filter(
+      (category) =>
+        category.active &&
+        !(editingTemplate?.attributeBindings ?? []).some((binding) =>
+          areSameProductAttributeCategoryKey(category.key, binding.categoryKey)
+        )
     )
-    return categories.filter((item) => item.active && !used.has(item.key))
   }, [categories, editingTemplate])
 
   useEffect(() => {
@@ -121,30 +111,41 @@ export function TemplateMgmt() {
   }
 
   const handleAdd = () => {
+    editingTemplateBaselineRef.current = undefined
     setEditingTemplate(createProductTemplateDraft())
     setSelectedCategoryKey('')
     setIsDialogOpen(true)
   }
 
   const handleEdit = (template: ProductTemplate) => {
+    editingTemplateBaselineRef.current =
+      templates?.find((item) => item.id === template.id) ?? template
     setEditingTemplate(normalizeProductTemplateEntity(template))
     setSelectedCategoryKey('')
     setIsDialogOpen(true)
   }
 
   const handleAddAttributeBinding = () => {
-    if (!selectedCategoryKey) return
+    const selectedCategory = availableCategories.find((category) =>
+      areSameProductAttributeCategoryKey(category.key, selectedCategoryKey)
+    )
+    if (!selectedCategory || attributeCatalogError || !hasLoadedCatalog) return
     setEditingTemplate((prev) => {
       if (!prev) return prev
       const nextBindings = [...(prev.attributeBindings ?? [])]
       if (
-        nextBindings.some((item) => item.categoryKey === selectedCategoryKey)
+        nextBindings.some((item) =>
+          areSameProductAttributeCategoryKey(
+            item.categoryKey,
+            selectedCategory.key
+          )
+        )
       ) {
         return prev
       }
       nextBindings.push({
         templateId: prev.id || undefined,
-        categoryKey: selectedCategoryKey,
+        categoryKey: selectedCategory.key,
         sortOrder: nextBindings.length + 1,
         required: false,
         active: true,
@@ -195,19 +196,22 @@ export function TemplateMgmt() {
   }
 
   const handleSubmit = async () => {
-    if (
-      !editingTemplate?.name ||
-      !normalizeEngineeringTemplateCode(editingTemplate?.code)
-    ) {
+    if (templateSaveInProgressRef.current) return
+    if (!editingTemplate?.name.trim()) {
       toast.error(t('engineering.templateMgmt.toasts.required'))
       return
     }
 
+    templateSaveInProgressRef.current = true
     try {
       const isEdit = Boolean(editingTemplate.id)
       await saveTemplate({
-        formData: normalizeProductTemplateEntity(editingTemplate),
-        currentRow: templates?.find((item) => item.id === editingTemplate.id),
+        formData: normalizeProductTemplateEntity({
+          ...editingTemplate,
+          name: editingTemplate.name.trim(),
+          description: editingTemplate.description?.trim(),
+        }),
+        currentRow: editingTemplateBaselineRef.current,
       })
       toast.success(
         isEdit
@@ -226,6 +230,8 @@ export function TemplateMgmt() {
           message: getErrorMessage(error),
         })
       )
+    } finally {
+      templateSaveInProgressRef.current = false
     }
   }
 
@@ -299,6 +305,7 @@ export function TemplateMgmt() {
                         variant='ghost'
                         size='icon'
                         className='size-7 rounded-full text-slate-400 hover:bg-blue-50 hover:text-blue-600'
+                        aria-label={`${t('engineering.templateMgmt.dialog.editTitle')} · ${template.name}`}
                         onClick={() => handleEdit(template)}
                       >
                         <Settings2 className='size-3.5' />
@@ -330,11 +337,6 @@ export function TemplateMgmt() {
                   <CardTitle className='mt-1 text-sm font-black tracking-tighter text-slate-800 uppercase'>
                     {template.name}
                   </CardTitle>
-                  <CardDescription className='font-mono text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-                    {t('engineering.templateMgmt.card.idLabel', {
-                      code: template.code,
-                    })}
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className='pt-0'>
                   <div className='space-y-2'>
@@ -343,16 +345,14 @@ export function TemplateMgmt() {
                         t('engineering.templateMgmt.card.descriptionFallback')}
                     </p>
                     <div className='flex items-end justify-between border-t border-dashed border-muted/50 pt-2'>
-                      <div className='flex flex-col gap-0.5'>
-                        <span className='text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-                          {t('engineering.templateMgmt.card.componentLabel')}
-                        </span>
-                        <span className='text-[10px] font-black text-blue-600'>
-                          {componentLabels[
-                            template.componentKey as keyof typeof componentLabels
-                          ] || t('engineering.templateMgmt.components.GENERAL')}
-                        </span>
-                      </div>
+                      <span className='text-xs text-muted-foreground'>
+                        {t(
+                          'engineering.templateMgmt.assembly.levelOneCategoryCount',
+                          {
+                            count: template.attributeBindings?.length ?? 0,
+                          }
+                        )}
+                      </span>
                       <div
                         className={`rounded-full px-2.5 py-1 text-[8px] font-black tracking-widest uppercase ${
                           template.active
@@ -375,7 +375,9 @@ export function TemplateMgmt() {
 
       <TemplateEditorDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!templateSaveInProgressRef.current) setIsDialogOpen(nextOpen)
+        }}
         editingTemplate={editingTemplate}
         selectedCategoryKey={selectedCategoryKey}
         onSelectedCategoryKeyChange={setSelectedCategoryKey}
@@ -384,11 +386,20 @@ export function TemplateMgmt() {
         onRemoveAttributeBinding={handleRemoveAttributeBinding}
         onToggleRequired={handleToggleRequired}
         onSubmit={handleSubmit}
+        isSaving={isSavingTemplate}
         locale={locale}
         t={t}
-        componentLabels={componentLabels}
         assembledCategories={assembledCategories}
         availableCategories={availableCategories}
+        attributeOptions={attributeOptions}
+        isAttributeCatalogReady={hasLoadedCatalog && !attributeCatalogError}
+        attributeCatalogRequestState={
+          <ProductTemplateAttributeCatalogRequestState
+            isLoading={isAttributeCatalogLoading}
+            error={attributeCatalogError}
+            onRetry={() => void retryAttributeCatalog()}
+          />
+        }
       />
     </div>
   )

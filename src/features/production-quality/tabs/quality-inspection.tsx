@@ -214,12 +214,12 @@ export function QualityInspection() {
                   <div className='flex items-center justify-between gap-4'>
                     <div className='flex min-w-0 flex-col gap-0.5'>
                       <div className='flex items-center gap-2'>
-                        <span className='font-mono text-[8px] leading-none font-black tracking-widest text-muted-foreground/40 uppercase'>
+                        <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest text-muted-foreground/40 uppercase'>
                           {t('quality.inspection.page.lotId')}
                         </span>
                         <Badge
                           variant='outline'
-                          className='h-4 border-dashed bg-muted/10 px-1.5 font-mono text-[9px] leading-none font-black'
+                          className='h-4 border-dashed bg-muted/10 px-1.5 font-maple-ui text-[9px] leading-none font-black'
                         >
                           {task.batchNo}
                         </Badge>

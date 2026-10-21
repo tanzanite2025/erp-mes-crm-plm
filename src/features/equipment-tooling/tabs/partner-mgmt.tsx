@@ -270,7 +270,7 @@ export function PartnerMgmt() {
                     <Phone className='size-3' />{' '}
                     {t('equipmentTooling.partners.card.phone')}
                   </div>
-                  <p className='truncate font-mono text-[11px] font-black text-slate-700'>
+                  <p className='truncate font-maple-ui text-[11px] font-black text-slate-700'>
                     {partner.phone || '-'}
                   </p>
                 </div>

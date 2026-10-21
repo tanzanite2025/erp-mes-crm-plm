@@ -245,7 +245,7 @@ export function DailyInsightModal({
                           <div className='mb-1 text-[11px] leading-none font-black text-foreground/90'>
                             {action.label}
                           </div>
-                          <div className='w-32 truncate font-mono text-[8px] tracking-tighter text-muted-foreground/40 uppercase'>
+                          <div className='w-32 truncate font-maple-ui text-[8px] tracking-tighter text-muted-foreground/40 uppercase'>
                             {action.value}
                           </div>
                         </div>

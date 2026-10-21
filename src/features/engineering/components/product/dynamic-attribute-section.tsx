@@ -5,15 +5,15 @@ import { FormItem, FormLabel } from '@/components/ui/form'
 import { SelectDropdown } from '@/components/select-dropdown'
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
 } from '../../data/schema'
 import { areSameProductAttributeCategoryKey } from '../../utils/product-attribute-machine-value'
 import {
   getAttributeValue,
-  getCategoryName,
+  getProductTemplateAttributeLevelOneCategoryName,
   upsertAttributeValue,
-  getOptionLabel,
+  getProductTemplateAttributeLevelTwoOptionLabel,
 } from '../../utils/product-attribute-utils'
 
 type DynamicAttributeBinding = {
@@ -27,8 +27,8 @@ type DynamicAttributeBinding = {
 interface DynamicAttributeSectionProps {
   form: UseFormReturn<Product>
   locale: string
-  categories: ProductAttributeCategory[]
-  options: ProductAttributeOption[]
+  categories: ProductTemplateAttributeLevelOneCategory[]
+  options: ProductTemplateAttributeLevelTwoOption[]
   bindings: DynamicAttributeBinding[]
   excludeCategoryKeys?: string[]
   onAttributeValueChange?: (categoryKey: string, nextValue: string) => void
@@ -77,7 +77,10 @@ export function DynamicAttributeSection({
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((item) => ({
               value: item.value,
-              label: getOptionLabel(locale, item),
+              label: getProductTemplateAttributeLevelTwoOptionLabel(
+                locale,
+                item
+              ),
             }))
 
           return (
@@ -86,7 +89,10 @@ export function DynamicAttributeSection({
               className='min-w-0 gap-0.5'
             >
               <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
-                {getCategoryName(locale, category)}
+                {getProductTemplateAttributeLevelOneCategoryName(
+                  locale,
+                  category
+                )}
               </FormLabel>
               <SelectDropdown
                 value={currentValue}
@@ -109,7 +115,10 @@ export function DynamicAttributeSection({
                 }}
                 isControlled
                 items={categoryOptions}
-                placeholder={getCategoryName(locale, category)}
+                placeholder={getProductTemplateAttributeLevelOneCategoryName(
+                  locale,
+                  category
+                )}
                 className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
               />
             </FormItem>

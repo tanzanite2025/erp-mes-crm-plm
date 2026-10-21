@@ -274,7 +274,7 @@ function Phase7HeroMetricCard({
         </p>
       ) : null}
       {active && sourceLabel ? (
-        <div className='mt-2 flex items-center gap-1.5 font-mono text-[8px] tracking-[0.14em] uppercase opacity-80'>
+        <div className='mt-2 flex items-center gap-1.5 font-maple-ui text-[8px] tracking-[0.14em] uppercase opacity-80'>
           <span className='opacity-60'>来源</span>
           <BatchEnginePhase7ExplainabilityMetaBadge
             label={sourceLabel}

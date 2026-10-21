@@ -348,7 +348,7 @@ export function CommandLibraryFormDialog({
               </Label>
               <Textarea
                 id='sidebar-command-params'
-                className='min-h-28 font-mono text-xs'
+                className='min-h-28 font-maple-ui text-xs'
                 value={form.searchParamsText}
                 onChange={(event) => {
                   updateField('searchParamsText', event.target.value)

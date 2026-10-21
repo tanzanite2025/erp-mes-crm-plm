@@ -266,7 +266,7 @@ export function CommandForm({
                           </span>
                           <span
                             className={cn(
-                              'font-mono text-[8px]',
+                              'font-maple-ui text-[8px]',
                               active
                                 ? 'text-primary-foreground/80'
                                 : 'text-muted-foreground/70'

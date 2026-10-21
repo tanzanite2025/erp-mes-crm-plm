@@ -24,8 +24,8 @@ import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import type { ProductAppearance } from '@/features/engineering/data/product-appearance'
 import type {
   Product,
-  ProductAttributeCategory,
-  ProductAttributeOption,
+  ProductTemplateAttributeLevelOneCategory,
+  ProductTemplateAttributeLevelTwoOption,
   ProductTemplate,
   ProductType,
 } from '@/features/engineering/data/schema'
@@ -375,9 +375,11 @@ export function useSalesDocumentReferenceResources(
       (productTemplatesQuery.data as ProductTemplate[]) ?? []
     const productTypes = (productTypesQuery.data as ProductType[]) ?? []
     const productAttributeCategories =
-      (productAttributeCategoriesQuery.data as ProductAttributeCategory[]) ?? []
+      (productAttributeCategoriesQuery.data as ProductTemplateAttributeLevelOneCategory[]) ??
+      []
     const productAttributeOptions =
-      (productAttributeOptionsQuery.data as ProductAttributeOption[]) ?? []
+      (productAttributeOptionsQuery.data as ProductTemplateAttributeLevelTwoOption[]) ??
+      []
     const { productDisplayLabelMap, productDisplayProjectionMap } =
       buildProductDisplayMapsV2({
         locale,

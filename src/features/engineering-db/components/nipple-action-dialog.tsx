@@ -195,7 +195,7 @@ export function NippleActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-mono text-xs font-bold opacity-60'
+              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-bold opacity-60'
               value={formData.id}
             />
           </div>
@@ -243,7 +243,7 @@ export function NippleActionDialog({
               </Label>
               <Input
                 placeholder='例如: 12 / 14 / 16'
-                className='h-12 rounded-2xl border-none bg-background px-5 font-mono text-sm font-black shadow-sm'
+                className='h-12 rounded-2xl border-none bg-background px-5 font-maple-ui text-sm font-black shadow-sm'
                 value={formData.length}
                 onChange={(e) => updateField('length', e.target.value)}
               />

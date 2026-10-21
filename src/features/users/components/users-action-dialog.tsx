@@ -174,7 +174,7 @@ export function UsersActionDialog({
                   ? t('users.dialogs.editTitle')
                   : t('users.dialogs.createTitle')}
               </span>
-              <span className='font-mono text-[9px] tracking-widest opacity-40'>
+              <span className='font-maple-ui text-[9px] tracking-widest opacity-40'>
                 {isEdit
                   ? 'ACCOUNT_PROFILE_RECOVERY'
                   : 'PROVISION_CONTROL_CLUSTER'}

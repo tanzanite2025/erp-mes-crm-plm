@@ -116,7 +116,7 @@ export function ShipmentDialog({
                   <Badge className='h-3.5 shrink-0 rounded-full border-none bg-white/20 px-1.5 text-[7px] leading-none font-black tracking-widest text-white uppercase md:text-[8px]'>
                     {t('warehouse.shipment.dialog.masterNode')}
                   </Badge>
-                  <span className='truncate font-mono text-[8px] font-black tracking-widest text-blue-100/60 uppercase md:text-[9px]'>
+                  <span className='truncate font-maple-ui text-[8px] font-black tracking-widest text-blue-100/60 uppercase md:text-[9px]'>
                     {selectedItem.name} ({selectedItem.code})
                   </span>
                 </div>
@@ -215,7 +215,7 @@ export function ShipmentDialog({
                               <span className='text-[11px] font-black tracking-widest uppercase'>
                                 {cat.label}
                               </span>
-                              <span className='font-mono text-[9px] opacity-40'>
+                              <span className='font-maple-ui text-[9px] opacity-40'>
                                 {t('warehouse.shipment.dialog.available', {
                                   count:
                                     readyInventoryContext?.inventoryBreakdown[
@@ -238,7 +238,7 @@ export function ShipmentDialog({
                     <div className='group relative'>
                       <Input
                         type='number'
-                        className='h-10 rounded-xl border-none bg-muted/30 pr-20 font-mono text-lg font-black text-blue-600 focus-visible:ring-blue-500'
+                        className='h-10 rounded-xl border-none bg-muted/30 pr-20 font-maple-ui text-lg font-black text-blue-600 focus-visible:ring-blue-500'
                         value={formData.quantity}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -511,7 +511,7 @@ export function ShipmentDialog({
                       <div className='flex items-baseline justify-between'>
                         <div
                           className={cn(
-                            'font-mono text-lg leading-none font-black tracking-tighter',
+                            'font-maple-ui text-lg leading-none font-black tracking-tighter',
                             isSelected ? 'text-blue-600' : 'text-foreground'
                           )}
                         >
@@ -545,7 +545,7 @@ export function ShipmentDialog({
                     {t('warehouse.shipment.dialog.totalReserve')}
                   </span>
                   <div className='flex items-center gap-2'>
-                    <span className='font-mono text-sm font-black text-foreground'>
+                    <span className='font-maple-ui text-sm font-black text-foreground'>
                       {selectedItem.stock}
                     </span>
                     <span className='text-[10px] font-black tracking-widest text-muted-foreground/20 uppercase'>

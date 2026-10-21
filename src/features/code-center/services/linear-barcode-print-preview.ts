@@ -1,3 +1,4 @@
+import localMapleUiFontStyles from '@/styles/local-maple-ui-font.css?raw'
 import { renderBwipBarcode } from '@/lib/bwip-renderer'
 
 export interface LinearBarcodePrintableLabel {
@@ -66,7 +67,8 @@ function buildLoadingDocument() {
         <meta charset="utf-8" />
         <title>Code128 Print Preview</title>
         <style>
-          body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #f8fafc; color: #334155; font-family: "Microsoft YaHei", Arial, sans-serif; }
+          ${localMapleUiFontStyles}
+          body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #f8fafc; color: #334155; }
           .status { font-size: 14px; font-weight: 700; }
         </style>
       </head>
@@ -83,7 +85,8 @@ function buildErrorDocument(message: string) {
         <meta charset="utf-8" />
         <title>Code128 Print Error</title>
         <style>
-          body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #fff; color: #991b1b; font-family: "Microsoft YaHei", Arial, sans-serif; }
+          ${localMapleUiFontStyles}
+          body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #fff; color: #991b1b; }
           .error { max-width: 560px; padding: 24px; border: 1px solid #fecaca; border-radius: 8px; background: #fff1f2; font-size: 14px; font-weight: 700; line-height: 1.7; }
         </style>
       </head>
@@ -123,9 +126,10 @@ export function buildLinearBarcodePrintDocument(
         <meta charset="utf-8" />
         <title>Code128 Print Preview</title>
         <style>
+          ${localMapleUiFontStyles}
           @page { size: 70mm 30mm; margin: 2mm; }
           * { box-sizing: border-box; }
-          body { margin: 0; background: #e2e8f0; color: #0f172a; font-family: "Microsoft YaHei", Arial, sans-serif; }
+          body { margin: 0; background: #e2e8f0; color: #0f172a; }
           .toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; gap: 8px; padding: 12px; border-bottom: 1px solid #cbd5e1; background: #fff; }
           .toolbar button { min-height: 36px; border: 1px solid #94a3b8; border-radius: 6px; background: #fff; padding: 0 14px; color: #0f172a; font-size: 12px; font-weight: 700; cursor: pointer; }
           .preview-stack { display: grid; justify-content: center; gap: 12px; padding: 16px; }
@@ -134,7 +138,7 @@ export function buildLinearBarcodePrintDocument(
           .label-meta { display: flex; justify-content: space-between; gap: 3mm; overflow: hidden; color: #475569; font-size: 2.2mm; font-weight: 700; white-space: nowrap; }
           .label-meta span { overflow: hidden; text-overflow: ellipsis; }
           .barcode { display: block; width: 100%; height: 13mm; object-fit: fill; image-rendering: pixelated; }
-          .readable-code { overflow: hidden; color: #020617; font-family: Consolas, "Courier New", monospace; font-size: 3.2mm; font-weight: 800; text-align: center; white-space: nowrap; }
+          .readable-code { overflow: hidden; color: #020617; font-size: 3.2mm; font-weight: 800; text-align: center; white-space: nowrap; }
           @media print {
             body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .toolbar { display: none; }
@@ -145,7 +149,7 @@ export function buildLinearBarcodePrintDocument(
       </head>
       <body>
         <div class="toolbar">
-          <button type="button" onclick="window.print()">打印 / Print</button>
+          <button type="button" onclick="document.fonts.ready.then(() => window.print())">打印 / Print</button>
           <button type="button" onclick="window.close()">关闭 / Close</button>
         </div>
         <main class="preview-stack">${buildLabelsHtml(labels)}</main>

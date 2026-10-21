@@ -9,6 +9,7 @@ import (
 	"xdfc-server/audit"
 	"xdfc-server/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -80,40 +81,66 @@ func RecordQualityAbnormalityDisposal(
 }
 
 func (s *QualityService) SaveInspectionStandard(ctx context.Context, standard *models.InspectionStandard) error {
-	actor, _ := audit.ActorFromContext(ctx)
-	standard.Operator = actor.Username
-	if standard.Operator == "" {
-		standard.Operator = actor.UserID
-	}
-	if standard.Operator == "" {
-		standard.Operator = "system"
-	}
-
-	// 无论是否显式设置，只要有修改，Auditor 必须更新为当前操作人
-	standard.Auditor = standard.Operator
-	now := time.Now()
-	standard.AuditTime = &now
-
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		var err error
-		if standard.ID == "" {
-			standard.Version = 1.0
-			err = tx.Create(standard).Error
-		} else {
-			var existing models.InspectionStandard
-			if err := tx.First(&existing, "id = ?", standard.ID).Error; err == nil {
-				// 只有在版本未显式递增时才执行自动递增（防止 Patch 重复递增）
-				if standard.Version <= existing.Version {
-					standard.Version = nextQualityStandardVersion(existing.Version)
-				}
-			}
-			err = tx.Model(standard).Omit("CreatedAt", "CreatedBy").Updates(standard).Error
+		return SaveInspectionStandardWithinTransaction(ctx, tx, standard)
+	})
+}
+
+// SaveInspectionStandardWithinTransaction keeps version updates and audit writes
+// on the transaction that already owns the standard's row lock.
+func SaveInspectionStandardWithinTransaction(ctx context.Context, tx *gorm.DB, standard *models.InspectionStandard) error {
+	var existing *models.InspectionStandard
+	if standard.ID != "" {
+		var stored models.InspectionStandard
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&stored, "id = ?", standard.ID).Error; err != nil {
+			return err
 		}
+		if math.Abs(standard.Version-stored.Version) > 0.000001 {
+			return ErrQualityStandardVersionConflict
+		}
+		existing = &stored
+	}
+	if err := prepareQualityStandardLifecycleSave(ctx, existing, standard); err != nil {
+		return err
+	}
+	if existing == nil || existing.Status == "DRAFT" || existing.Status == "REJECTED" {
+		if err := validateQualityStandardInspectionCriteriaWithinTransaction(tx, *standard); err != nil {
+			return err
+		}
+	}
+	var approvalPolicy models.BusinessApprovalPolicyConfiguration
+	submitting := standard.Status == "PENDING_APPROVAL"
+	if submitting {
+		var err error
+		approvalPolicy, err = resolveQualityStandardApprovalPolicyWithinTransaction(ctx, tx)
 		if err != nil {
 			return err
 		}
-		return recordLegacyAuditEntryWithContext(ctx, tx, "InspectionStandard", standard.ID, "save", nil)
-	})
+	}
+	previousStatus := ""
+	if existing == nil {
+		standard.ID = uuid.NewString()
+		standard.Version = 1
+		if err := tx.Create(standard).Error; err != nil {
+			return err
+		}
+	} else {
+		previousStatus = existing.Status
+		standard.CreatedAt = existing.CreatedAt
+		standard.Version = nextQualityStandardVersion(existing.Version)
+		if err := tx.Model(standard).Select("*").Omit("CreatedAt", "DeletedAt").Updates(standard).Error; err != nil {
+			return err
+		}
+	}
+	if submitting {
+		if err := createQualityStandardApprovalWithinTransaction(ctx, tx, standard, approvalPolicy); err != nil {
+			return err
+		}
+	}
+	if err := recordLegacyAuditEntryWithContext(ctx, tx, "InspectionStandard", standard.ID, "save", nil); err != nil {
+		return err
+	}
+	return DispatchQualityStandardLifecycleNotificationsWithinTransaction(ctx, tx, *standard, previousStatus)
 }
 
 func nextQualityStandardVersion(current float64) float64 {

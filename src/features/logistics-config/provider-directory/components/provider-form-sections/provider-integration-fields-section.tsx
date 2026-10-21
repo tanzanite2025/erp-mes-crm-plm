@@ -60,7 +60,7 @@ export function ProviderIntegrationFieldsSection({
                 endpoint: event.target.value,
               }))
             }
-            className='h-11 rounded-2xl border-slate-200 font-mono text-[11px]'
+            className='h-11 rounded-2xl border-slate-200 font-maple-ui text-[11px]'
             placeholder='https://...'
           />
         </div>

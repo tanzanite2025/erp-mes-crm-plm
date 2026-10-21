@@ -270,7 +270,7 @@ export function SpokeLengthActionDialog({
             </Label>
             <Input
               placeholder='例如：298'
-              className='h-12 rounded-2xl border-none bg-background px-5 font-mono text-sm font-black shadow-sm'
+              className='h-12 rounded-2xl border-none bg-background px-5 font-maple-ui text-sm font-black shadow-sm'
               value={formData.length}
               onChange={(e) => updateField('length', e.target.value)}
             />

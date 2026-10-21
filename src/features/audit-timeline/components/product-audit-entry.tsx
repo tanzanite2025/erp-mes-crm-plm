@@ -3,8 +3,8 @@ import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductTemplate,
   type ProductType,
 } from '@/features/engineering/data/schema'
@@ -92,7 +92,7 @@ function EmptyText({ text }: { text: string }) {
 
 function getLocalizedCategoryName(
   locale: string,
-  category?: ProductAttributeCategory
+  category?: ProductTemplateAttributeLevelOneCategory
 ): string {
   if (!category) {
     return '—'
@@ -107,7 +107,7 @@ function getLocalizedCategoryName(
 
 function getLocalizedOptionLabel(
   locale: string,
-  option?: ProductAttributeOption
+  option?: ProductTemplateAttributeLevelTwoOption
 ): string {
   if (!option) {
     return '—'
@@ -124,7 +124,7 @@ function resolveStructuredRowLabel(
   field: string,
   rowKey: string,
   locale: string,
-  categoriesByKey: ReadonlyMap<string, ProductAttributeCategory>
+  categoriesByKey: ReadonlyMap<string, ProductTemplateAttributeLevelOneCategory>
 ): string {
   if (field === 'attributeValues') {
     return getLocalizedCategoryName(locale, categoriesByKey.get(rowKey))
@@ -145,7 +145,10 @@ function resolveStructuredRowValue(
   field: string,
   rawValue: string,
   locale: string,
-  optionsByCategoryAndValue: ReadonlyMap<string, ProductAttributeOption>,
+  optionsByCategoryAndValue: ReadonlyMap<
+    string,
+    ProductTemplateAttributeLevelTwoOption
+  >,
   categoryKey?: string
 ): string {
   if (rawValue === '—') {
@@ -173,8 +176,8 @@ export function ProductAuditEntry({
 }: {
   log: AuditLog
   actionLabel: string
-  attributeCategories: ProductAttributeCategory[]
-  attributeOptions: ProductAttributeOption[]
+  attributeCategories: ProductTemplateAttributeLevelOneCategory[]
+  attributeOptions: ProductTemplateAttributeLevelTwoOption[]
   productTemplates: ProductTemplate[]
   productTypes: ProductType[]
   products: Product[]
@@ -329,7 +332,7 @@ export function ProductAuditEntry({
                   </div>
                   <Badge
                     variant='outline'
-                    className='rounded-full border-dashed bg-white font-mono text-[8px] text-slate-600'
+                    className='rounded-full border-dashed bg-white font-maple-ui text-[8px] text-slate-600'
                   >
                     {item.field}
                   </Badge>
@@ -339,7 +342,7 @@ export function ProductAuditEntry({
                     <div className='text-[7px] font-black tracking-widest text-destructive/60 uppercase'>
                       {t('common.audit.before')}
                     </div>
-                    <div className='mt-1 font-mono text-[10px] break-all text-destructive'>
+                    <div className='mt-1 font-maple-ui text-[10px] break-all text-destructive'>
                       {formatProductAuditDisplayText(item.before)}
                     </div>
                   </div>
@@ -347,7 +350,7 @@ export function ProductAuditEntry({
                     <div className='text-[7px] font-black tracking-widest text-emerald-700/60 uppercase'>
                       {t('common.audit.after')}
                     </div>
-                    <div className='mt-1 font-mono text-[10px] break-all text-emerald-700'>
+                    <div className='mt-1 font-maple-ui text-[10px] break-all text-emerald-700'>
                       {formatProductAuditDisplayText(item.after)}
                     </div>
                   </div>
@@ -382,7 +385,7 @@ export function ProductAuditEntry({
                   </div>
                   <Badge
                     variant='outline'
-                    className='rounded-full border-dashed bg-white font-mono text-[8px] text-slate-600'
+                    className='rounded-full border-dashed bg-white font-maple-ui text-[8px] text-slate-600'
                   >
                     {rows.length}
                   </Badge>
@@ -406,7 +409,7 @@ export function ProductAuditEntry({
                           <div className='text-[7px] font-black tracking-widest text-destructive/60 uppercase'>
                             {t('common.audit.before')}
                           </div>
-                          <div className='mt-1 font-mono text-[10px] break-all text-destructive'>
+                          <div className='mt-1 font-maple-ui text-[10px] break-all text-destructive'>
                             {resolveStructuredRowValue(
                               change.field,
                               row.before,
@@ -420,7 +423,7 @@ export function ProductAuditEntry({
                           <div className='text-[7px] font-black tracking-widest text-emerald-700/60 uppercase'>
                             {t('common.audit.after')}
                           </div>
-                          <div className='mt-1 font-mono text-[10px] break-all text-emerald-700'>
+                          <div className='mt-1 font-maple-ui text-[10px] break-all text-emerald-700'>
                             {resolveStructuredRowValue(
                               change.field,
                               row.after,
@@ -455,7 +458,7 @@ export function ProductAuditEntry({
                   <Badge
                     key={`product-display-v2-${item.key}`}
                     variant='outline'
-                    className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 font-mono text-[8px] text-indigo-700'
+                    className='rounded-full border-dashed border-indigo-500/20 bg-indigo-500/5 font-maple-ui text-[8px] text-indigo-700'
                   >
                     {item.label}: {item.value}
                   </Badge>
@@ -473,7 +476,7 @@ export function ProductAuditEntry({
                   <Badge
                     key={`${item.field}-${item.alias}-badge`}
                     variant='outline'
-                    className='rounded-full border-dashed border-slate-200 bg-slate-50 font-mono text-[8px] text-slate-700'
+                    className='rounded-full border-dashed border-slate-200 bg-slate-50 font-maple-ui text-[8px] text-slate-700'
                   >
                     {formatProductFieldLabel(item.field, item.alias, locale)}
                   </Badge>

@@ -89,7 +89,7 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
                 {t('materialArchive.form.codeLabel')}
               </FormLabel>
               <FormControl>
-                <div className='flex h-12 cursor-default items-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 font-mono text-xs font-black text-primary/80 select-none'>
+                <div className='flex h-12 cursor-default items-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 font-maple-ui text-xs font-black text-primary/80 select-none'>
                   <Sparkles className='size-3.5 animate-pulse text-primary' />
                   <span className='tracking-tight'>{field.value}</span>
                 </div>
@@ -132,7 +132,7 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
             <FormControl>
               <Input
                 placeholder={t('materialArchive.form.specPlaceholder')}
-                className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-sm shadow-sm'
+                className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-sm shadow-sm'
                 {...field}
                 value={field.value}
               />
@@ -219,7 +219,7 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
                   >
                     <div className='flex w-full items-center justify-between gap-8'>
                       <span className='font-bold'>{unit.name}</span>
-                      <span className='font-mono text-[10px] text-muted-foreground/40 uppercase'>
+                      <span className='font-maple-ui text-[10px] text-muted-foreground/40 uppercase'>
                         {unit.code}
                       </span>
                     </div>
@@ -281,7 +281,7 @@ function DimensionInputs({
             <FormControl>
               <Input
                 type='number'
-                className='h-10 rounded-xl border-none bg-muted/20 font-mono text-xs'
+                className='h-10 rounded-xl border-none bg-muted/20 font-maple-ui text-xs'
                 {...field}
                 value={field.value}
                 onChange={(event) => field.onChange(Number(event.target.value))}
@@ -301,7 +301,7 @@ function DimensionInputs({
             <FormControl>
               <Input
                 type='number'
-                className='h-10 rounded-xl border-none bg-muted/20 font-mono text-xs'
+                className='h-10 rounded-xl border-none bg-muted/20 font-maple-ui text-xs'
                 {...field}
                 value={field.value}
                 onChange={(event) => field.onChange(Number(event.target.value))}
@@ -321,7 +321,7 @@ function DimensionInputs({
             <FormControl>
               <Input
                 type='number'
-                className='h-10 rounded-xl border-none bg-muted/20 font-mono text-xs'
+                className='h-10 rounded-xl border-none bg-muted/20 font-maple-ui text-xs'
                 {...field}
                 value={field.value}
                 onChange={(event) => field.onChange(Number(event.target.value))}

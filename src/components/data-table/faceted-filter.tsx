@@ -63,14 +63,14 @@ export function DataTableFacetedFilter<TData, TValue>({
               {selectedValues?.size > 0 && (
                 <Badge
                   variant='secondary'
-                  className='ml-1 h-3.5 rounded-full border-none bg-blue-500/10 px-1 font-mono text-[8px] text-blue-600'
+                  className='ml-1 h-3.5 rounded-full border-none bg-blue-500/10 px-1 font-maple-ui text-[8px] text-blue-600'
                 >
                   {selectedValues.size}
                 </Badge>
               )}
             </div>
             {subtitle && (
-              <span className='font-mono text-[7px] leading-none tracking-widest uppercase opacity-40'>
+              <span className='font-maple-ui text-[7px] leading-none tracking-widest uppercase opacity-40'>
                 {subtitle}
               </span>
             )}
@@ -161,7 +161,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     )}
                     <span>{option.label}</span>
                     {facets?.get(option.value) && (
-                      <span className='ms-auto flex h-4 w-4 items-center justify-center font-mono text-xs'>
+                      <span className='ms-auto flex h-4 w-4 items-center justify-center font-maple-ui text-xs'>
                         {facets.get(option.value)}
                       </span>
                     )}

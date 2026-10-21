@@ -84,7 +84,7 @@ export function BusinessEventSourceDeleteDialog({
             <span className='text-sm font-bold'>{sourceName}</span>
             <Badge
               variant='outline'
-              className='rounded-full font-mono text-[10px] font-semibold text-muted-foreground'
+              className='rounded-full font-maple-ui text-[10px] font-semibold text-muted-foreground'
             >
               {sourceCode}
             </Badge>
@@ -102,7 +102,7 @@ export function BusinessEventSourceDeleteDialog({
               <>
                 删除后该事件源的配置将无法恢复，包括所有动作、状态字典、字段和动态解析器。
                 请输入{' '}
-                <span className='inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-2 py-0.5 font-mono text-[10px] font-black text-rose-600'>
+                <span className='inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-2 py-0.5 font-maple-ui text-[10px] font-black text-rose-600'>
                   DELETE
                 </span>{' '}
                 确认删除。
@@ -146,7 +146,7 @@ export function BusinessEventSourceDeleteDialog({
               value={confirmInput}
               onChange={(event) => setConfirmInput(event.target.value)}
               placeholder='DELETE'
-              className='h-11 rounded-2xl font-mono text-sm font-black tracking-widest'
+              className='h-11 rounded-2xl font-maple-ui text-sm font-black tracking-widest'
               autoComplete='off'
               autoFocus
             />

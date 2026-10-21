@@ -29,8 +29,7 @@ export const quality = {
       statusViewDescription: '按标准状态切换列表视图，统一走服务端查询语义。',
       statusViewAll: '全部标准',
       statusViewAllDescription: '查看当前条件下的全部品质标准。',
-      statusViewDraftDescription:
-        '仅查看仍处草稿阶段、尚未进入审批链路的标准。',
+      statusViewDraftDescription: '仅查看仍处草稿阶段的品质标准。',
       statusViewPendingApprovalDescription:
         '仅查看已提交审批、正在等待审核的品质标准。',
       statusViewApprovedDescription: '仅查看审批通过、待正式发布的品质标准。',
@@ -89,22 +88,17 @@ export const quality = {
       rejectReasonPlaceholder: '请填写本次驳回原因...',
       archiveReasonLabel: '归档原因',
       archiveReasonPlaceholder: '请填写本次归档原因...',
-      phaseTag: '阶段 A 页面骨架',
-      currentStandardId: '当前标准 ID',
       editorCreateTitle: '新建品质标准工作台',
       editorEditTitle: '编辑品质标准工作台',
-      editorCreateDescription:
-        '在独立编辑页完成标准基础信息录入，保存后进入受控预览主链。',
+      editorCreateDescription: '填写标准信息，保存后预览确认。',
       editorEditDescription:
-        '在独立编辑页维护标准基础信息，保存后回到对应预览页继续确认。',
-      editorHint:
-        '编辑主链已迁入独立页面，旧弹窗仅保留兼容壳层，不再继续承载主编辑职责。',
+        '维护标准信息与受控协议的检验规则，保存后预览确认。',
       editorFormTitle: '标准基础信息',
       editorFormDescription:
-        '本阶段先迁入标准编码、名称、类型、状态与备注说明；检查项矩阵深度编辑将在后续阶段继续页面化。',
+        '请核对标准信息；受控协议的中心值、单位及 A/B 级允许偏差可在下方修改。',
       editorDirty: '存在未保存变更',
       approvalControlledHint:
-        '状态由审批链路控制。请先保存当前编辑，再通过“提交审批”进入待审核链路。',
+        '保存用于记录标准变更；提交审批需先配置品质标准的审批规则与审批人。',
       readOnlyHint:
         '当前状态下标准已受控，编辑区仅允许查看，不再开放直接修改。',
       backToPreview: '返回预览页',
@@ -115,10 +109,7 @@ export const quality = {
       editorMissingDescription:
         '当前标准可能已被删除，或你当前不可访问该标准。',
       previewTitle: '品质标准预览页',
-      previewDescription:
-        '独立预览页骨架已建立，后续将在这里迁入标准摘要、矩阵预览、打印与发布前确认视图。',
-      previewHint:
-        '当前阶段未额外引入新的标准详情查询接口，因此此页先承接预览主链与页面骨架，下一阶段再迁入矩阵内容。',
+      previewDescription: '查看检验规则、审批进度及发布与归档记录。',
       previewLoadFailedTitle: '品质标准预览加载失败',
       previewLoadFailedDescription:
         '无法根据当前标准 ID 获取预览数据，请返回列表后重试。',
@@ -152,9 +143,9 @@ export const quality = {
         validationRequired: '请填写完整必填项（编号与名称）',
         toastUpdated: '品质标准更新请求已成功提交，版本将升级为 {{version}}',
         toastCreated: '新增品质标准请求已成功提交',
-        versionNoticeTitle: '后端版本管理系统已就绪',
+        versionNoticeTitle: '版本记录',
         versionNoticeEdit:
-          '当前的变更将由后端审计引擎自动计算并生成新版本（预计版本 {{version}}），请以保存后的实际数据为准。',
+          '保存变更后会生成新版本，具体版本号以保存后的记录为准。',
         versionNoticeCreate: '新创建的标准将由系统分配初始控制版本。',
         cancel: '放弃',
         save: '确认保存变更',
@@ -164,28 +155,26 @@ export const quality = {
         titleEdit: '编辑受控协议',
         titleView: '查看受控协议',
         description:
-          '为产品定义检验项目、目标重量、合格上下限与报废阈值，作为品质判定的唯一规则来源。',
+          '以中心值为 S 级，按绝对偏差划分 A、B 级，超过 B 级允许偏差判定报废。',
+        gradingHint:
+          '正负偏差使用同一规则：中心值为 S；0 < 偏差 ≤ A 级允许偏差为 A；A 级允许偏差 < 偏差 ≤ B 级允许偏差为 B；超过 B 级允许偏差报废。偏差单位与检验项目一致。',
         fields: {
           product: '关联产品',
           qualityCriteria: '检验规则',
           selectedWeights: '检验项目与判定规则',
           itemName: '检验项目',
-          targetWeight: '目标重量',
+          targetWeight: '中心值（S 级）',
           unit: '单位',
-          qualifiedMin: '合格下限',
-          qualifiedMax: '合格上限',
-          scrapBelow: '低于报废',
-          scrapAbove: '高于报废',
+          aLevelTolerance: 'A 级允许偏差（±）',
+          bLevelTolerance: 'B 级允许偏差（±）',
         },
         placeholders: {
           product: '请选择产品',
           itemName: '如：成品重量',
           targetWeight: '目标值',
-          unit: 'g',
-          qualifiedMin: '最小合格值',
-          qualifiedMax: '最大合格值',
-          scrapBelow: '低于该值报废',
-          scrapAbove: '高于该值报废',
+          unit: '选择单位',
+          aLevelTolerance: '如：5',
+          bLevelTolerance: '如：10',
         },
         actions: {
           addCriterion: '新增检验项',
@@ -196,15 +185,19 @@ export const quality = {
         },
         empty: {
           criteria: '尚未添加检验项目，请先新增一条重量或尺寸等判定规则。',
+          units: '暂无可用单位，请先在单位设置中新增或启用。',
         },
         validation: {
           productRequired: '请先选择产品。',
           criterionRequired: '请至少添加一个检验项目。',
           itemNameRequired: '请为每个检验项目填写名称。',
-          weightRequired: '请为每个检验项目填写目标重量。',
-          thresholdNumberInvalid: '上下限与报废阈值必须填写有效数字。',
-          qualifiedRangeInvalid: '合格下限不能大于合格上限。',
-          scrapRangeInvalid: '低于报废阈值不能大于高于报废阈值。',
+          unitRequired: '请为每个检验项目选择系统中已启用的单位。',
+          unitUnavailable: '请重新选择单位。',
+          unitsLoading: '单位正在加载，请稍后重试。',
+          unitsLoadFailed: '单位加载失败，请重试。',
+          weightRequired: '请为每个检验项目填写有效的中心值。',
+          deviationLimitsInvalid:
+            '请填写有效的允许偏差，必须满足：0 < A 级允许偏差 < B 级允许偏差。',
         },
         toastCreated: '受控品质协议已生成品质标准，共 {{count}} 项。',
       },
@@ -215,6 +208,8 @@ export const quality = {
         auditHint:
           '展示当前标准的责任人、最近更新时间与审核确认信息，便于品质追溯。',
         auditPending: '待审核',
+        deviationGradingHint:
+          '|Δ| 表示测量值与中心值的绝对偏差，正负方向使用同一规则；各级偏差上限均包含边界值。',
         fields: {
           code: '标准编码',
           name: '标准名称',
@@ -237,6 +232,7 @@ export const quality = {
           centerValue: '中心值',
           level: '标准级别',
           tolerance: '正负公差',
+          deviationRule: '偏差判定 / 公差',
           min: '最小值(下限)',
           max: '最大值(上限)',
           errorCodeLower: '异常代码(下限)',
@@ -250,7 +246,7 @@ export const quality = {
         emptyTitle: '标准详情未定义',
         emptyDescription: '品质标准（{{code}}）尚未配置检验项。',
         startEditing: '开始编辑',
-        footerHint: '全局品质标准校验节点',
+        footerHint: '请核对检验规则与当前审核状态',
         close: '关闭详情',
         confirm: '确认',
         noRemarks: '无特别备注',
@@ -334,7 +330,10 @@ export const quality = {
   hooks: {
     saveStandardSuccess: '品质标准同步成功',
     saveAbnormalityDisposalSuccess: '品质异常处置已保存',
-    submitForApprovalSuccess: '品质标准已提交审批，当前进入待审核状态。',
+    submitForApprovalSuccess:
+      '已生成品质标准审批申请，可在“待办与申请”中查看。',
+    approvalResponseNotConfirmed:
+      '未能确认本次提审结果，请刷新标准并在“待办与申请”中核对。',
     approveStandardSuccess: '品质标准已审批通过，当前进入待发布状态。',
     rejectStandardSuccess: '品质标准已驳回，当前返回待修订状态。',
     publishStandardSuccess: '品质标准已正式发布。',

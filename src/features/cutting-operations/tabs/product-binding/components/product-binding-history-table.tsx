@@ -136,21 +136,21 @@ export function ProductBindingHistoryTable(
                             productBarcode={item.productBarcode}
                           />
                         </td>
-                        <td className='px-4 py-3 font-mono text-[11px] text-foreground'>
+                        <td className='px-4 py-3 font-maple-ui text-[11px] text-foreground'>
                           {item.prepregRollInstance?.supplierBatchNo || '--'}
                         </td>
-                        <td className='px-4 py-3 font-mono text-[11px] text-foreground'>
+                        <td className='px-4 py-3 font-maple-ui text-[11px] text-foreground'>
                           {item.prepregRollInstance?.productionDate || '--'}
                         </td>
-                        <td className='px-4 py-3 font-mono text-[11px] text-foreground'>
+                        <td className='px-4 py-3 font-maple-ui text-[11px] text-foreground'>
                           {item.boundBy || '--'}
                         </td>
                         <td className='px-4 py-3'>
-                          <span className='inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 font-mono text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
+                          <span className='inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 font-maple-ui text-[8px] tracking-[0.16em] text-emerald-700 uppercase'>
                             {item.status || '--'}
                           </span>
                         </td>
-                        <td className='px-4 py-3 font-mono text-[11px] text-foreground'>
+                        <td className='px-4 py-3 font-maple-ui text-[11px] text-foreground'>
                           {formatProductBindingBoundAtLabel(
                             item.boundAt,
                             locale

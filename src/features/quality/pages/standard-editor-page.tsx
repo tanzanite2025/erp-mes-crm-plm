@@ -49,6 +49,8 @@ export function StandardEditorPage({
     buildSubmitPayload,
     buildSubmitPayloadWithOverrides,
     isDirty,
+    inspectionCriteria,
+    updateInspectionCriteria,
   } = useStandardEditorForm({
     initialStandard: isEdit ? standard : null,
     resetKey: isEdit
@@ -70,7 +72,6 @@ export function StandardEditorPage({
   } = useQualityStandardEditorActions({
     mode,
     standardId,
-    standard,
     formData,
     isDirty,
     isReadOnly,
@@ -117,10 +118,10 @@ export function StandardEditorPage({
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <Button
             variant='outline'
-            className='rounded-full'
+            className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
             onClick={handleBack}
           >
-            <ArrowLeft className='mr-2 size-4' />
+            <ArrowLeft className='size-3.5' />
             {t('quality.standards.workspace.backToList')}
           </Button>
         </div>
@@ -147,10 +148,10 @@ export function StandardEditorPage({
           <CardContent>
             <Button
               variant='outline'
-              className='rounded-full'
+              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
               onClick={handleBack}
             >
-              <ArrowLeft className='mr-2 size-4' />
+              <ArrowLeft className='size-3.5' />
               {t('quality.standards.workspace.backToList')}
             </Button>
           </CardContent>
@@ -162,8 +163,12 @@ export function StandardEditorPage({
   return (
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <Button variant='outline' className='rounded-full' onClick={handleBack}>
-          <ArrowLeft className='mr-2 size-4' />
+        <Button
+          variant='outline'
+          className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+          onClick={handleBack}
+        >
+          <ArrowLeft className='size-3.5' />
           {t('quality.standards.workspace.backToList')}
         </Button>
         <div className='flex flex-wrap items-center gap-3'>
@@ -173,12 +178,15 @@ export function StandardEditorPage({
               targetId={standard.id}
               targetName={standard.name}
               label={t('common.audit.trigger')}
-              className='h-10 rounded-full px-4'
+              className='h-9 rounded-full px-4'
             />
           ) : null}
           {isEdit ? (
-            <Button className='rounded-full' onClick={handleOpenPreview}>
-              <Eye className='mr-2 size-4' />
+            <Button
+              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+              onClick={handleOpenPreview}
+            >
+              <Eye className='size-3.5' />
               {t('quality.standards.workspace.backToPreview')}
             </Button>
           ) : null}
@@ -197,6 +205,8 @@ export function StandardEditorPage({
           formData={formData}
           isDirty={isDirty}
           readOnly={isReadOnly}
+          inspectionCriteria={inspectionCriteria}
+          onInspectionCriteriaChange={updateInspectionCriteria}
           onCodeChange={(value) => updateField('code', value)}
           onNameChange={(value) => updateField('name', value)}
           onTypeChange={(value) => updateField('type', value)}
@@ -206,10 +216,10 @@ export function StandardEditorPage({
         <div className='mt-8 flex flex-col-reverse gap-3 border-t border-dashed border-muted/50 pt-6 sm:flex-row sm:items-center sm:justify-end'>
           <Button
             variant='outline'
-            className='rounded-full'
+            className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
             onClick={isEdit ? handleOpenPreview : handleBack}
           >
-            <ArrowLeft className='mr-2 size-4' />
+            <ArrowLeft className='size-3.5' />
             {isEdit
               ? t('quality.standards.workspace.backToPreview')
               : t('quality.standards.workspace.backToList')}
@@ -217,28 +227,28 @@ export function StandardEditorPage({
           {availableActions.canSubmitForApproval ? (
             <Button
               variant='outline'
-              className='rounded-full border-dashed'
+              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
               disabled={saveStandardMutation.isPending}
               onClick={handleSubmitForApproval}
             >
               {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <GitPullRequestArrow className='mr-2 size-4' />
+                <GitPullRequestArrow className='size-3.5' />
               )}
               {t('quality.standards.workspace.submitForApproval')}
             </Button>
           ) : null}
           {!isReadOnly ? (
             <Button
-              className='rounded-full'
+              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
               disabled={saveStandardMutation.isPending}
               onClick={handleSave}
             >
               {saveStandardMutation.isPending ? (
-                <Loader2 className='mr-2 size-4 animate-spin' />
+                <Loader2 className='size-3.5 animate-spin' />
               ) : (
-                <Save className='mr-2 size-4' />
+                <Save className='size-3.5' />
               )}
               {t('quality.standards.dialog.action.save')}
             </Button>

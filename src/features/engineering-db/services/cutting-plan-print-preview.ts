@@ -1,3 +1,4 @@
+import localMapleUiFontStyles from '@/styles/local-maple-ui-font.css?raw'
 import { type CuttingPlanInput } from '../data/cutting-plan-schema'
 
 type PrintableRow =
@@ -108,9 +109,10 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
       <meta charset="utf-8" />
       <title>${title} - 打印预览</title>
       <style>
+          ${localMapleUiFontStyles}
         @page { size: A4 landscape; margin: 8mm; }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: "Microsoft YaHei", Arial, sans-serif; color: #0f172a; background: #f8fafc; }
+        body { margin: 0; color: #0f172a; background: #f8fafc; }
         .sheet { width: 100%; min-height: 100vh; padding: 12px; background: #fff; }
         .toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px; }
         .toolbar button { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700; cursor: pointer; }
@@ -138,7 +140,7 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
     <body>
       <div class="sheet">
         <div class="toolbar">
-          <button onclick="window.print()">打印 / 保存 PDF</button>
+          <button onclick="document.fonts.ready.then(() => window.print())">打印 / 保存 PDF</button>
           <button onclick="window.close()">关闭</button>
         </div>
 

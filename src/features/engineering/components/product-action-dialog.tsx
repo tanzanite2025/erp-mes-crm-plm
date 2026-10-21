@@ -463,7 +463,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     key={item.key}
                     variant='outline'
                     className={cn(
-                      'h-5 rounded-full border-dashed px-2 font-mono text-[8px] tracking-wide uppercase',
+                      'h-5 rounded-full border-dashed px-2 font-maple-ui text-[8px] tracking-wide uppercase',
                       item.empty
                         ? 'border-slate-200 bg-white text-slate-400'
                         : 'border-blue-300 bg-white text-blue-700'

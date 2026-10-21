@@ -139,7 +139,7 @@ export function HoleCodeSourceActionDialog({
                           <Hash className='size-4' />
                         </div>
                         <div>
-                          <div className='font-mono text-base font-black tracking-tight text-foreground'>
+                          <div className='font-maple-ui text-base font-black tracking-tight text-foreground'>
                             {item.code}
                           </div>
                           <div className='text-[10px] font-bold text-muted-foreground'>
@@ -209,7 +209,7 @@ export function HoleCodeSourceActionDialog({
                   >
                     <div className='flex items-center justify-between gap-3'>
                       <div className='flex items-center gap-3'>
-                        <div className='flex size-11 items-center justify-center rounded-2xl border border-emerald-500/15 bg-background font-mono text-base font-black text-emerald-700 shadow-sm'>
+                        <div className='flex size-11 items-center justify-center rounded-2xl border border-emerald-500/15 bg-background font-maple-ui text-base font-black text-emerald-700 shadow-sm'>
                           {item.value}
                         </div>
                         <div>

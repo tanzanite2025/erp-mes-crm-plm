@@ -20,17 +20,21 @@ export function StandardPreviewHero({ standard }: StandardPreviewHeroProps) {
   return (
     <div className='space-y-4'>
       <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-        <div className='flex items-center gap-3 lg:gap-4'>
-          <div className='scale-90 rounded-xl border border-primary/20 bg-primary/10 p-2.5 shadow-inner lg:scale-100 lg:rounded-2xl lg:p-3.5'>
-            <ClipboardCheck className='size-5 text-primary lg:size-8' />
+        <div className='flex min-w-0 items-center gap-3'>
+          <div className='flex size-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 shadow-inner'>
+            <ClipboardCheck className='size-4 text-primary' />
           </div>
           <div className='min-w-0'>
-            <h2 className='flex items-center gap-2 truncate text-lg font-black tracking-tighter uppercase lg:gap-3 lg:text-2xl'>
-              {t('quality.standards.dialog.detail.title')}
-              <span className='font-thin text-muted-foreground/30'>|</span>
-              <span className='truncate text-primary'>{standard.code}</span>
+            <h2 className='flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold tracking-tight'>
+              <span className='shrink-0'>
+                {t('quality.standards.dialog.detail.title')}
+              </span>
+              <span className='font-normal text-muted-foreground/30'>|</span>
+              <span className='min-w-0 truncate text-[11px] font-medium tracking-normal text-primary'>
+                {standard.code}
+              </span>
             </h2>
-            <p className='truncate text-[9px] font-bold tracking-[0.2em] text-muted-foreground uppercase opacity-40 lg:text-[10px]'>
+            <p className='mt-0.5 truncate text-[9px] font-medium tracking-[0.2em] text-muted-foreground uppercase opacity-40'>
               {t('quality.standards.dialog.detail.subtitle')}
             </p>
           </div>

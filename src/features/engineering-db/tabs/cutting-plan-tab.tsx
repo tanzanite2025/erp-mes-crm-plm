@@ -688,7 +688,7 @@ function InvalidCuttingPlanAlert({
               {t('engineering.cuttingPlan.alerts.invalidRecordsDescription')}
             </p>
           </div>
-          <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 font-mono text-[8px] text-amber-700'>
+          <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 font-maple-ui text-[8px] text-amber-700'>
             {t('engineering.cuttingPlan.alerts.invalidRecordsBadge', {
               count: invalidItems.length,
             })}
@@ -742,7 +742,7 @@ function InvalidCuttingPlanAlert({
                   <div className='text-sm font-black tracking-tighter text-amber-700'>
                     {getInvalidCuttingPlanFailureGroupLabel(t, failureType)}
                   </div>
-                  <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 font-mono text-[8px] text-amber-700'>
+                  <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 font-maple-ui text-[8px] text-amber-700'>
                     {t('engineering.cuttingPlan.alerts.failureGroupCount', {
                       count: items.length,
                     })}
@@ -762,7 +762,7 @@ function InvalidCuttingPlanAlert({
                         <div className='mt-1 flex flex-wrap gap-2'>
                           <Badge
                             variant='outline'
-                            className='rounded-full border-dashed font-mono text-[8px]'
+                            className='rounded-full border-dashed font-maple-ui text-[8px]'
                           >
                             {t(
                               'engineering.cuttingPlan.alerts.invalidRecordCode',
@@ -771,7 +771,7 @@ function InvalidCuttingPlanAlert({
                           </Badge>
                           <Badge
                             variant='outline'
-                            className='rounded-full border-dashed font-mono text-[8px]'
+                            className='rounded-full border-dashed font-maple-ui text-[8px]'
                           >
                             {t(
                               'engineering.cuttingPlan.alerts.invalidRecordId',

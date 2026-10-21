@@ -73,7 +73,7 @@ export function DrillingMobileList({
                   </div>
                   <Badge
                     variant='outline'
-                    className='h-5 rounded-full border-none bg-indigo-500/10 px-3 font-mono text-[10px] leading-none font-black text-indigo-600'
+                    className='h-5 rounded-full border-none bg-indigo-500/10 px-3 font-maple-ui text-[10px] leading-none font-black text-indigo-600'
                   >
                     {row.productSku || 'GENERIC'}
                   </Badge>
@@ -93,7 +93,7 @@ export function DrillingMobileList({
                       {item.standardHoles || '??'}H
                     </div>
                     <div className='size-1 rounded-full bg-muted-foreground/20' />
-                    <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60'>
+                    <div className='flex items-center gap-1 font-maple-ui text-[9px] text-muted-foreground/60'>
                       <Hash className='size-2.5 opacity-30' />
                       {item.id.split('-').pop()}
                     </div>

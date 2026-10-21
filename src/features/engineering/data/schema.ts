@@ -173,10 +173,11 @@ export const productAttributeValueSchema = z.object({
 
 export type ProductAttributeValue = z.infer<typeof productAttributeValueSchema>
 
-export const productAttributeCategorySchema = z.object({
+/** Product template attribute dimension (level 1), e.g. Material. Separate from the ProductType classification tree. */
+export const productTemplateAttributeLevelOneCategorySchema = z.object({
   id: z.string(),
-  key: z.string().min(1, 'Category key is required'),
-  nameZh: z.string().min(1, 'Chinese category name is required'),
+  key: z.string().min(1, 'Level 1 attribute category key is required'),
+  nameZh: z.string().min(1, 'Level 1 attribute Chinese name is required'),
   nameEn: z.string().optional(),
   description: z.string().optional(),
   sortOrder: z.number().default(0),
@@ -193,15 +194,18 @@ export const productAttributeCategorySchema = z.object({
   version: z.number().default(1),
 })
 
-export type ProductAttributeCategory = z.infer<
-  typeof productAttributeCategorySchema
+export type ProductTemplateAttributeLevelOneCategory = z.infer<
+  typeof productTemplateAttributeLevelOneCategorySchema
 >
 
-export const productAttributeOptionSchema = z.object({
+/** Selectable value (level 2), e.g. Carbon Fiber. categoryKey references its level 1 attribute category. */
+export const productTemplateAttributeLevelTwoOptionSchema = z.object({
   id: z.string(),
-  categoryKey: z.string().min(1, 'Category key is required'),
-  value: z.string().min(1, 'Value is required'),
-  labelZh: z.string().min(1, 'Chinese label is required'),
+  categoryKey: z
+    .string()
+    .min(1, 'Parent level 1 attribute category key is required'),
+  value: z.string().min(1, 'Level 2 attribute option value is required'),
+  labelZh: z.string().min(1, 'Level 2 attribute Chinese name is required'),
   labelEn: z.string().optional(),
   description: z.string().optional(),
   sortOrder: z.number().default(0),
@@ -218,6 +222,6 @@ export const productAttributeOptionSchema = z.object({
   version: z.number().default(1),
 })
 
-export type ProductAttributeOption = z.infer<
-  typeof productAttributeOptionSchema
+export type ProductTemplateAttributeLevelTwoOption = z.infer<
+  typeof productTemplateAttributeLevelTwoOptionSchema
 >

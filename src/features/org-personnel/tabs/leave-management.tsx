@@ -226,12 +226,12 @@ export default function LeaveManagement() {
                         </h4>
                         <Badge
                           variant='outline'
-                          className={`h-4 rounded-full border-dashed px-2 font-mono text-[8px] ${getLeaveStatusBadgeClassName(leave.status)}`}
+                          className={`h-4 rounded-full border-dashed px-2 font-maple-ui text-[8px] ${getLeaveStatusBadgeClassName(leave.status)}`}
                         >
                           {getLeaveStatusLabel(leave.status, locale)}
                         </Badge>
                       </div>
-                      <p className='font-mono text-[9px] text-muted-foreground'>
+                      <p className='font-maple-ui text-[9px] text-muted-foreground'>
                         {formatLeaveDateTime(leave.startTime, locale)} →{' '}
                         {formatLeaveDateTime(leave.endTime, locale)}
                       </p>

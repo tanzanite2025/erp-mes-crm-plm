@@ -40,12 +40,7 @@ export function useSidebarNavigationModel(): SidebarNavigationModel {
       }),
     [sidebarData.navGroups, user, isIdentitySynced]
   )
-  const navGroupsWithBadges = useSidebarNavGroupsWithBadges(visibleNavGroups)
-  const renderedNavGroups = useMemo(
-    () =>
-      navGroupsWithBadges.filter((group) => group.id !== 'resource-management'),
-    [navGroupsWithBadges]
-  )
+  const renderedNavGroups = useSidebarNavGroupsWithBadges(visibleNavGroups)
   const categoryDirectories = useMemo(
     () =>
       createSidebarCategoryPreviews(renderedNavGroups, (node) =>

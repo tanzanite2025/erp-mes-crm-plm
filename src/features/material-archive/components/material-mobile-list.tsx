@@ -84,7 +84,7 @@ export function MaterialMobileList({
                   {internalDimensionsText ? (
                     <Badge
                       variant='outline'
-                      className='h-4 rounded-full border-none bg-primary/10 px-2 py-0 font-mono text-[8px] font-black tracking-tighter text-primary uppercase'
+                      className='h-4 rounded-full border-none bg-primary/10 px-2 py-0 font-maple-ui text-[8px] font-black tracking-tighter text-primary uppercase'
                     >
                       {t('materialArchive.mobile.internalDimensions', {
                         value: internalDimensionsText,

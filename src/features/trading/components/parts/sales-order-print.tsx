@@ -343,7 +343,7 @@ export const SalesOrderPrint = forwardRef<HTMLDivElement, SalesOrderPrintProps>(
                           key={`${order.id}-${line.lineNo}`}
                           className='sales-order-print-avoid-break align-top'
                         >
-                          <td className='border-r border-b border-black/70 px-2 py-2 text-center font-mono'>
+                          <td className='border-r border-b border-black/70 px-2 py-2 text-center font-maple-ui'>
                             {line.lineNo}
                           </td>
                           <td className='border-r border-b border-black/70 px-3 py-2'>

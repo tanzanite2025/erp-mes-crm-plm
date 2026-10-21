@@ -61,7 +61,11 @@ export const ApprovalService = {
 
   approveRequest: (
     id: string,
-    data: { status: 'APPROVED' | 'REJECTED'; authCode?: string }
+    data: {
+      status: 'APPROVED' | 'REJECTED'
+      authCode?: string
+      comment?: string
+    }
   ) =>
     apiFetch(`/approvals/${id}/approve`, {
       method: 'PATCH',

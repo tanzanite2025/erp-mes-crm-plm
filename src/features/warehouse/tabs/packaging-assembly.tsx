@@ -427,7 +427,7 @@ export default function PackagingAssembly() {
                 <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
                   {copy.packageCode}
                 </div>
-                <div className='mt-2 font-mono text-lg font-black tracking-tight break-all'>
+                <div className='mt-2 font-maple-ui text-lg font-black tracking-tight break-all'>
                   {activePackageCode || '--'}
                 </div>
                 <div className='mt-2 flex flex-wrap gap-2'>
@@ -552,7 +552,7 @@ function AssemblyRecord({
       <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
         <div className='min-w-0 space-y-1'>
           <div className='flex flex-wrap items-center gap-2'>
-            <span className='font-mono text-sm font-black'>
+            <span className='font-maple-ui text-sm font-black'>
               {assembly.packageCode}
             </span>
             <Badge variant='secondary' className='rounded-full'>
@@ -608,7 +608,7 @@ function AssemblyRecord({
             <Badge
               key={item.id}
               variant='outline'
-              className='rounded-full font-mono text-[10px]'
+              className='rounded-full font-maple-ui text-[10px]'
             >
               {item.productBarcode}
             </Badge>

@@ -12,6 +12,7 @@ Boundaries:
 - Users with only `menu_purchase` cannot list or fetch `Shipment` records through the shared logistics API.
 - Users with only `menu_trading` cannot list or fetch `Receipt` records.
 - Controlled tracking is shared, but the backend authorizes the stored `DeliveryOrder.bizType` before returning or refreshing traces.
+- Carrier order lists apply the same sales/purchase scope. Callback and real-time refresh share one locked tracking transaction; carrier signing does not complete warehouse receiving or produce a `LOGISTICS_RECORD` event without an explicit business relationship.
 - The backend response owns the linked purchase-order summary used by the supplier column.
 - Purchase orders are consumed from `@/features/purchase/orders`; carrier inference and controlled tracking are consumed from `features/logistics`.
 - Offline drafts may replay the same purchase receipt command, but must not introduce a second API shape or bypass backend scope validation.

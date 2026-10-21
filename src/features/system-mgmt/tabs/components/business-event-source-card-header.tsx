@@ -81,7 +81,7 @@ export function BusinessEventSourceCardHeader({
             </div>
             <Badge
               variant='outline'
-              className='rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground'
+              className='rounded-full px-2 py-0.5 font-maple-ui text-[10px] font-semibold text-muted-foreground'
             >
               {code}
             </Badge>

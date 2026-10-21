@@ -15,6 +15,7 @@ import { equipmentTooling } from './equipmentTooling'
 import { errors } from './errors'
 import { fileUploader } from './fileUploader'
 import { finance } from './finance'
+import { home } from './home-business-shortcuts'
 import { labExperimental } from './labExperimental'
 import { logisticsConfig } from './logisticsConfig'
 import { logisticsContainerManagement } from './logisticsContainerManagement'
@@ -50,6 +51,7 @@ import { warehouseConfig } from './warehouseConfig'
 import { workflowCore } from './workflowCore'
 
 export const zhCNMessages = {
+  home,
   common,
   search,
   configDrawer,

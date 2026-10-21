@@ -144,6 +144,9 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'GET /ai/usage/summary',
       'GET /ai/usage/logs',
       'POST /system/configs',
+      'GET /message-center/delivery-queue',
+      'POST /message-center/delivery-queue/:id/retry',
+      'POST /message-center/execution-logs/:id/retry-notification',
       'POST /org',
       'POST /org/sync',
       'DELETE /org/:id',
@@ -463,7 +466,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑物流记录。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /logistics'],
+    routeBindings: ['POST /logistics', 'PATCH /logistics/:id'],
   },
   {
     id: 'action_trading_logistics_status_update',
@@ -735,6 +738,10 @@ const orgActions: LegacyActionPermissionEntry[] = [
       'POST /attendance-devices',
       'DELETE /attendance-devices/:id',
       'POST /attendance-devices/:id/test',
+      'POST /attendance-devices/:id/sync',
+      'POST /attendance-devices/:id/ingress-token',
+      'POST /attendance-devices/:id/mappings',
+      'DELETE /attendance-devices/mappings/:id',
     ],
   },
 ]
@@ -821,7 +828,10 @@ const productionActions: LegacyActionPermissionEntry[] = [
     desc: '允许提交委外回厂后的检验结果，并推进产品条码工序状态。',
     category: 'action',
     parentId: 'menu_prod_config',
-    routeBindings: ['POST /production/outsourcing/order-lines/:lineId/inspect'],
+    routeBindings: [
+      'POST /production/outsourcing/order-lines/:lineId/inspect',
+      'POST /production/outsourcing/order-lines/:lineId/inspection-task',
+    ],
   },
   {
     id: 'action_barcode_binding_manage',

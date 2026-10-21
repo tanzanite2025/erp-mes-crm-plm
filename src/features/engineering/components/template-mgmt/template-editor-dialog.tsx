@@ -1,9 +1,18 @@
 'use client'
 
+import { useId, type ReactNode } from 'react'
 import { type TranslationKey } from '@/locales'
-import { Eye } from 'lucide-react'
+import { LayoutTemplate, Plus, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -13,24 +22,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import {
-  type ProductAttributeCategory,
   type ProductTemplate,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
 } from '../../data/schema'
-import { getCategoryName } from '../../utils/product-attribute-utils'
+import { areSameProductAttributeCategoryKey } from '../../utils/product-attribute-machine-value'
 import {
-  normalizeEngineeringTemplateCode,
-  normalizeEngineeringTemplateComponentKey,
-} from '../../utils/product-code-normalization'
-import { SPEC_COMPONENTS } from '../specs'
-import { TemplateEditorDialogLayout } from './template-editor-dialog-layout'
+  getProductTemplateAttributeLevelOneCategoryName,
+  getProductTemplateAttributeLevelTwoOptionLabel,
+} from '../../utils/product-attribute-utils'
+
+const productTemplateEditorDialogClasses = buildActionDialogShellClasses({
+  content:
+    'flex max-h-[90dvh] flex-col gap-0 rounded-[24px] sm:rounded-[32px] [&_[data-slot=button]]:rounded-full',
+  header: 'border-muted/50 px-5 py-5 pr-16 text-start sm:px-8 sm:py-6 sm:pr-16',
+  title: 'flex items-center gap-3 text-base text-primary sm:text-lg',
+  description:
+    'text-[10px] leading-relaxed font-bold tracking-normal normal-case opacity-70 sm:text-[11px]',
+  body: 'min-h-0 flex-1 overflow-y-auto p-5 sm:p-8',
+  footer:
+    'shrink-0 flex-row justify-end gap-3 border-muted/50 px-5 py-4 sm:px-8 sm:py-5',
+})
 
 interface AssembledCategoryItem {
   binding: NonNullable<ProductTemplate['attributeBindings']>[number]
-  category?: ProductAttributeCategory
+  category?: ProductTemplateAttributeLevelOneCategory
 }
-
-type AvailableCategoryItem = ProductAttributeCategory
 
 interface TemplateEditorDialogProps {
   open: boolean
@@ -45,11 +65,14 @@ interface TemplateEditorDialogProps {
   onRemoveAttributeBinding: (categoryKey: string) => void
   onToggleRequired: (categoryKey: string, checked: boolean) => void
   onSubmit: () => void
+  isSaving: boolean
   locale: string
   t: (key: TranslationKey, params?: Record<string, string | number>) => string
-  componentLabels: Record<string, string>
   assembledCategories: AssembledCategoryItem[]
-  availableCategories: AvailableCategoryItem[]
+  availableCategories: ProductTemplateAttributeLevelOneCategory[]
+  attributeOptions: ProductTemplateAttributeLevelTwoOption[]
+  isAttributeCatalogReady: boolean
+  attributeCatalogRequestState: ReactNode
 }
 
 export function TemplateEditorDialog({
@@ -63,409 +86,350 @@ export function TemplateEditorDialog({
   onRemoveAttributeBinding,
   onToggleRequired,
   onSubmit,
+  isSaving,
   locale,
   t,
-  componentLabels,
   assembledCategories,
   availableCategories,
+  attributeOptions,
+  isAttributeCatalogReady,
+  attributeCatalogRequestState,
 }: TemplateEditorDialogProps) {
-  const templateName =
-    editingTemplate?.name?.trim() ||
-    t('engineering.templateMgmt.assembly.previewEmpty')
-  const templateCode = editingTemplate?.code?.trim() || '—'
-  const templateDescription =
-    editingTemplate?.description?.trim() ||
-    t('engineering.templateMgmt.card.descriptionFallback')
-  const componentLabel =
-    componentLabels[editingTemplate?.componentKey || 'GENERAL'] ||
-    t('engineering.templateMgmt.components.GENERAL')
-  const controlClassName =
-    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-black'
-  const controlMonoClassName =
-    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-mono font-black'
-  const selectControlClassName =
-    'h-12! min-h-12 rounded-2xl border-none bg-muted/40 px-4 py-0 text-[12px] leading-none font-black'
-
-  const leftColumn = (
-    <div className='space-y-5'>
-      <div className='rounded-[24px] border border-dashed border-blue-200/60 bg-background/80 p-4'>
-        <div className='text-[13px] font-black tracking-tight text-blue-700'>
-          {t('engineering.templateMgmt.fields.name')}
-        </div>
-        <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-blue-600/50 uppercase opacity-60'>
-          {t('engineering.templateMgmt.dialog.description')}
-        </div>
-        <div className='mt-3 flex flex-wrap gap-2'>
-          <div className='rounded-full bg-muted/40 px-3 py-1 font-mono text-[8px] font-black tracking-widest text-slate-700 uppercase'>
-            {templateCode}
-          </div>
-          <div className='rounded-full bg-blue-50 px-3 py-1 font-mono text-[8px] font-black tracking-widest text-blue-700 uppercase'>
-            {componentLabel}
-          </div>
-        </div>
-      </div>
-
-      <div className='space-y-4 rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-4'>
-        <div>
-          <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            {t('engineering.templateMgmt.fields.name')}
-          </div>
-          <div className='mt-1 text-[13px] font-black tracking-tight text-slate-700'>
-            {templateName}
-          </div>
-        </div>
-
-        <div className='grid gap-4'>
-          <div className='space-y-2'>
-            <Input
-              placeholder={t('engineering.templateMgmt.placeholders.name')}
-              className={controlClassName}
-              value={editingTemplate?.name || ''}
-              onChange={(event) =>
-                onTemplateChange((prev) =>
-                  prev ? { ...prev, name: event.target.value } : null
-                )
-              }
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-              {t('engineering.templateMgmt.fields.code')}
-            </Label>
-            <Input
-              placeholder={t('engineering.templateMgmt.placeholders.code')}
-              className={controlMonoClassName}
-              value={editingTemplate?.code || ''}
-              onChange={(event) =>
-                onTemplateChange((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        code: normalizeEngineeringTemplateCode(
-                          event.target.value
-                        ),
-                      }
-                    : null
-                )
-              }
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-              {t('engineering.templateMgmt.fields.component')}
-            </Label>
-            <Select
-              value={editingTemplate?.componentKey || 'GENERAL'}
-              onValueChange={(value) =>
-                onTemplateChange((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        componentKey:
-                          normalizeEngineeringTemplateComponentKey(value),
-                      }
-                    : null
-                )
-              }
-            >
-              <SelectTrigger className={selectControlClassName}>
-                <SelectValue
-                  placeholder={t(
-                    'engineering.templateMgmt.placeholders.component'
-                  )}
-                />
-              </SelectTrigger>
-              <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                {Object.keys(SPEC_COMPONENTS).map((key) => (
-                  <SelectItem
-                    key={key}
-                    value={key}
-                    className='text-xs font-black'
-                  >
-                    {componentLabels[key] ||
-                      t('engineering.templateMgmt.components.GENERAL')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className='text-[9px] font-black tracking-widest text-blue-600/40 uppercase opacity-60'>
-              {t('engineering.templateMgmt.hints.component')}
-            </p>
-          </div>
-
-          <Label className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            {t('engineering.templateMgmt.fields.description')}
-          </Label>
-          <Input
-            placeholder={t('engineering.templateMgmt.placeholders.description')}
-            className={controlClassName}
-            value={editingTemplate?.description || ''}
-            onChange={(event) =>
-              onTemplateChange((prev) =>
-                prev ? { ...prev, description: event.target.value } : null
-              )
-            }
-          />
-          <div className='rounded-2xl bg-muted/20 px-3 py-3 text-[11px] leading-relaxed font-bold wrap-break-word text-muted-foreground'>
-            {templateDescription}
-          </div>
-        </div>
-      </div>
-    </div>
+  const templateFormId = useId()
+  const templateNameFieldId = `${templateFormId}-name`
+  const templateDescriptionFieldId = `${templateFormId}-description`
+  const levelOneAttributeCategoryFieldId = `${templateFormId}-level-one-category`
+  const selectedCategory = availableCategories.find((category) =>
+    areSameProductAttributeCategoryKey(category.key, selectedCategoryKey)
   )
 
-  const middleColumn = (
-    <div className='space-y-4'>
-      <div className='rounded-[24px] border border-dashed border-blue-200/60 bg-background/80 p-4'>
-        <div className='text-[13px] font-black tracking-tight text-blue-700'>
-          {t('engineering.templateMgmt.fields.assemblyTitle')}
-        </div>
-        <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-blue-600/50 uppercase opacity-60'>
-          {t('engineering.templateMgmt.hints.assembly')}
-        </div>
-      </div>
+  function renderLevelTwoAttributeOptions(categoryKey: string) {
+    if (!isAttributeCatalogReady) return null
+    const activeOptions = attributeOptions
+      .filter(
+        (option) =>
+          option.active &&
+          areSameProductAttributeCategoryKey(option.categoryKey, categoryKey)
+      )
+      .sort((left, right) => left.sortOrder - right.sortOrder)
 
-      <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-4'>
-        <div className='flex items-center justify-between gap-3 border-b border-dashed border-muted/30 pb-3'>
-          <div>
-            <div className='text-[13px] font-black tracking-tight text-slate-700'>
-              {t('engineering.templateMgmt.buttons.addAttribute')}
-            </div>
-            <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase opacity-60'>
-              {t('engineering.templateMgmt.placeholders.attributeCategory')}
-            </div>
-          </div>
-          <div className='rounded-full bg-blue-600/10 px-2.5 py-1 font-mono text-[8px] font-black tracking-widest text-blue-700 uppercase'>
-            {assembledCategories.length}
-          </div>
-        </div>
-
-        <div className='mt-4 flex flex-col gap-2 lg:flex-row'>
-          <Select
-            value={selectedCategoryKey}
-            onValueChange={onSelectedCategoryKeyChange}
+    return (
+      <div className='space-y-2'>
+        <p className='text-[10px] font-bold text-muted-foreground'>
+          {t('engineering.templateMgmt.assembly.levelTwoOptionCount', {
+            count: activeOptions.length,
+          })}
+        </p>
+        {activeOptions.length > 0 ? (
+          <ul
+            className='flex max-h-36 flex-wrap gap-1.5 overflow-y-auto'
+            aria-label={t('engineering.templateMgmt.assembly.levelTwoOptions')}
           >
-            <SelectTrigger className={`${selectControlClassName} lg:flex-1`}>
-              <SelectValue
-                placeholder={t(
-                  'engineering.templateMgmt.placeholders.attributeCategory'
-                )}
-              />
-            </SelectTrigger>
-            <SelectContent className='rounded-2xl border-none shadow-2xl'>
-              {availableCategories.length === 0 ? (
-                <div className='px-3 py-2 text-xs font-bold text-muted-foreground'>
-                  {t('engineering.templateMgmt.assembly.noAvailableCategories')}
-                </div>
-              ) : (
-                availableCategories.map((category) => (
-                  <SelectItem
-                    key={category.id}
-                    value={category.key}
-                    className='text-xs font-black'
-                  >
-                    {getCategoryName(locale, category)}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-          <Button
-            type='button'
-            onClick={onAddAttributeBinding}
-            disabled={!selectedCategoryKey}
-            className='h-12! min-h-12 rounded-2xl border border-dashed border-input bg-muted/40 px-4 py-0 text-[11px] leading-none font-black tracking-[0.14em] text-slate-700 uppercase hover:bg-muted/60 hover:text-slate-900 lg:shrink-0'
-          >
-            {t('engineering.templateMgmt.buttons.addAttribute')}
-          </Button>
-        </div>
-      </div>
-
-      <div className='rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-4'>
-        <div className='flex items-center justify-between gap-3 border-b border-dashed border-muted/30 pb-3'>
-          <div>
-            <div className='text-[13px] font-black tracking-tight text-slate-700'>
-              {t('engineering.templateMgmt.assembly.previewAttributes')}
-            </div>
-            <div className='mt-1 text-[9px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase opacity-60'>
-              {t('engineering.templateMgmt.assembly.previewSpec')}
-            </div>
-          </div>
-          <div className='rounded-full bg-slate-900/5 px-2.5 py-1 font-mono text-[8px] font-black tracking-widest text-slate-600 uppercase'>
-            {componentLabel}
-          </div>
-        </div>
-
-        <div className='mt-4 grid gap-3 xl:grid-cols-2'>
-          {assembledCategories.length === 0 ? (
-            <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/20 px-4 py-5 text-[11px] leading-relaxed font-bold text-muted-foreground xl:col-span-2'>
-              {t('engineering.templateMgmt.assembly.empty')}
-            </div>
-          ) : (
-            assembledCategories.map(({ binding, category }) => (
-              <div
-                key={binding.categoryKey}
-                className='flex flex-col gap-3 rounded-2xl border border-dashed border-muted/40 bg-muted/20 px-4 py-3'
+            {activeOptions.map((option) => (
+              <li
+                key={option.id}
+                className='rounded-full border border-dashed border-primary/15 bg-background px-3 py-1 text-[11px] font-bold text-foreground/80'
               >
-                <div className='flex items-start justify-between gap-3'>
-                  <div className='min-w-0 space-y-1'>
-                    <div className='text-[11px] font-black text-slate-700'>
-                      {getCategoryName(locale, category)}
-                    </div>
-                    <div className='font-mono text-[8px] font-black tracking-widest break-all text-muted-foreground/40 uppercase'>
-                      {binding.categoryKey}
-                    </div>
-                  </div>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    onClick={() =>
-                      onRemoveAttributeBinding(binding.categoryKey)
-                    }
-                    className='h-8 shrink-0 rounded-full px-3 text-[9px] font-black tracking-widest text-red-500 uppercase hover:bg-red-50 hover:text-red-600'
-                  >
-                    {t('engineering.templateMgmt.buttons.removeAttribute')}
-                  </Button>
-                </div>
-                <div className='flex items-center justify-between gap-3'>
-                  <label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
-                    <Checkbox
-                      checked={binding.required}
-                      onCheckedChange={(checked) =>
-                        onToggleRequired(binding.categoryKey, checked === true)
-                      }
-                    />
-                    {binding.required
-                      ? t('engineering.templateMgmt.assembly.required')
-                      : t('engineering.templateMgmt.assembly.optional')}
-                  </label>
-                  <div className='shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-1 font-mono text-[8px] font-black tracking-widest text-emerald-600 uppercase'>
-                    {binding.active
-                      ? t('engineering.templateMgmt.assembly.active')
-                      : t('engineering.templateMgmt.assembly.inactive')}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                {getProductTemplateAttributeLevelTwoOptionLabel(locale, option)}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className='text-xs leading-relaxed text-muted-foreground'>
+            {t('engineering.templateMgmt.assembly.noActiveLevelTwoOptions')}
+          </p>
+        )}
       </div>
-    </div>
-  )
-
-  const rightColumn = (
-    <div className='space-y-4'>
-      <div className='rounded-[24px] border border-dashed border-blue-200/70 bg-background/80 p-4'>
-        <div className='flex items-center gap-2 text-blue-700'>
-          <Eye className='size-4' />
-          <div className='min-w-0'>
-            <div className='text-[13px] font-black tracking-tight'>
-              {t('engineering.templateMgmt.fields.previewTitle')}
-            </div>
-            <div className='mt-1 text-[9px] font-black tracking-[0.18em] wrap-break-word text-blue-700/70 uppercase opacity-60'>
-              {templateName}
-            </div>
-          </div>
-        </div>
-
-        <div className='mt-4 grid gap-3'>
-          <div className='rounded-2xl bg-blue-50 px-3 py-3'>
-            <div className='text-[10px] font-black tracking-widest text-blue-700/60 uppercase'>
-              {t('engineering.templateMgmt.assembly.previewSpec')}
-            </div>
-            <div className='mt-1 text-[12px] font-black wrap-break-word text-slate-800'>
-              {componentLabel}
-            </div>
-          </div>
-          <div className='rounded-2xl bg-blue-50 px-3 py-3'>
-            <div className='text-[10px] font-black tracking-widest text-blue-700/60 uppercase'>
-              {t('engineering.templateMgmt.fields.description')}
-            </div>
-            <div className='mt-1 text-[11px] leading-relaxed font-bold wrap-break-word text-muted-foreground'>
-              {templateDescription}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className='rounded-[24px] border border-dashed border-blue-200/70 bg-background/80 p-4'>
-        <div className='flex items-center justify-between gap-3 border-b border-dashed border-blue-200/60 pb-3'>
-          <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-            {t('engineering.templateMgmt.assembly.previewAttributes')}
-          </div>
-          <div className='rounded-full bg-blue-600/10 px-2.5 py-1 font-mono text-[8px] font-black tracking-widest text-blue-700 uppercase'>
-            {assembledCategories.length}
-          </div>
-        </div>
-        <div className='mt-4 text-[9px] font-black tracking-widest text-blue-700/60 uppercase opacity-60'>
-          {t('engineering.templateMgmt.assembly.previewAttributes')}
-        </div>
-        <div className='mt-3 space-y-2'>
-          {assembledCategories.length === 0 ? (
-            <div className='rounded-2xl bg-blue-50 px-3 py-4 text-[11px] leading-relaxed font-bold text-muted-foreground'>
-              {t('engineering.templateMgmt.assembly.previewEmpty')}
-            </div>
-          ) : (
-            assembledCategories.map(({ binding, category }) => (
-              <div
-                key={binding.categoryKey}
-                className='flex items-center justify-between gap-3 rounded-2xl bg-muted/40 px-3 py-2'
-              >
-                <div className='min-w-0'>
-                  <div className='text-[11px] font-black wrap-break-word text-slate-700'>
-                    {getCategoryName(locale, category)}
-                  </div>
-                  <div className='font-mono text-[8px] font-black tracking-widest break-all text-muted-foreground/40 uppercase'>
-                    {binding.categoryKey}
-                  </div>
-                </div>
-                <div className='shrink-0 rounded-full bg-slate-900/5 px-2.5 py-1 font-mono text-[8px] font-black tracking-widest text-slate-600 uppercase'>
-                  {binding.required
-                    ? t('engineering.templateMgmt.assembly.required')
-                    : t('engineering.templateMgmt.assembly.optional')}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  )
-
-  const footer = (
-    <>
-      <Button
-        variant='ghost'
-        onClick={() => onOpenChange(false)}
-        className='h-11 rounded-full text-[10px] font-black uppercase'
-      >
-        {t('engineering.templateMgmt.buttons.cancel')}
-      </Button>
-      <Button
-        onClick={onSubmit}
-        className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 hover:bg-blue-700'
-      >
-        {t('engineering.templateMgmt.buttons.save')}
-      </Button>
-    </>
-  )
+    )
+  }
 
   return (
-    <TemplateEditorDialogLayout
-      open={open}
-      onOpenChange={onOpenChange}
-      title={
-        editingTemplate?.id
-          ? t('engineering.templateMgmt.dialog.editTitle')
-          : t('engineering.templateMgmt.dialog.createTitle')
-      }
-      description={t('engineering.templateMgmt.dialog.description')}
-      leftColumn={leftColumn}
-      middleColumn={middleColumn}
-      rightColumn={rightColumn}
-      footer={footer}
-    />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        size='6xl'
+        className={productTemplateEditorDialogClasses.content}
+        closeButtonClassName='top-5 end-5 flex size-8 items-center justify-center rounded-full bg-muted/60 opacity-80 transition-colors hover:bg-muted hover:opacity-100 sm:top-6 sm:end-6'
+      >
+        <DialogHeader className={productTemplateEditorDialogClasses.header}>
+          <DialogTitle className={productTemplateEditorDialogClasses.title}>
+            <span className='flex size-9 shrink-0 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400'>
+              <LayoutTemplate className='size-4' />
+            </span>
+            {editingTemplate?.id
+              ? t('engineering.templateMgmt.dialog.editTitle')
+              : t('engineering.templateMgmt.dialog.createTitle')}
+          </DialogTitle>
+          <DialogDescription
+            className={productTemplateEditorDialogClasses.description}
+          >
+            {t('engineering.templateMgmt.dialog.description')}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          id={templateFormId}
+          className={productTemplateEditorDialogClasses.body}
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!isSaving) onSubmit()
+          }}
+        >
+          <fieldset
+            disabled={isSaving}
+            className='grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(15rem,0.7fr)_minmax(0,1.5fr)]'
+          >
+            <section
+              className='min-w-0 space-y-5 rounded-[24px] border border-dashed border-muted/60 bg-muted/5 p-4 sm:p-5'
+              aria-label={t('engineering.templateMgmt.fields.basicInformation')}
+            >
+              <h3 className='text-[11px] font-black tracking-wide text-primary uppercase'>
+                {t('engineering.templateMgmt.fields.basicInformation')}
+              </h3>
+              <div className='space-y-2'>
+                <Label
+                  htmlFor={templateNameFieldId}
+                  className='ml-1 text-[10px] font-black tracking-wide text-muted-foreground uppercase'
+                >
+                  {t('engineering.templateMgmt.fields.name')}
+                </Label>
+                <Input
+                  id={templateNameFieldId}
+                  className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-none md:text-xs'
+                  autoFocus
+                  required
+                  maxLength={255}
+                  value={editingTemplate?.name || ''}
+                  placeholder={t('engineering.templateMgmt.placeholders.name')}
+                  onChange={(event) =>
+                    onTemplateChange((previousTemplate) =>
+                      previousTemplate
+                        ? { ...previousTemplate, name: event.target.value }
+                        : null
+                    )
+                  }
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label
+                  htmlFor={templateDescriptionFieldId}
+                  className='ml-1 text-[10px] font-black tracking-wide text-muted-foreground uppercase'
+                >
+                  {t('engineering.templateMgmt.fields.description')}
+                </Label>
+                <Textarea
+                  id={templateDescriptionFieldId}
+                  className='min-h-32 rounded-2xl border-none bg-muted/50 px-4 py-3 text-xs leading-relaxed shadow-none md:text-xs'
+                  value={editingTemplate?.description || ''}
+                  placeholder={t(
+                    'engineering.templateMgmt.placeholders.description'
+                  )}
+                  onChange={(event) =>
+                    onTemplateChange((previousTemplate) =>
+                      previousTemplate
+                        ? {
+                            ...previousTemplate,
+                            description: event.target.value,
+                          }
+                        : null
+                    )
+                  }
+                />
+              </div>
+            </section>
+
+            <section
+              className='min-w-0 space-y-5 rounded-[24px] border border-dashed border-muted/60 bg-muted/5 p-4 sm:p-5'
+              aria-label={t('engineering.templateMgmt.fields.assemblyTitle')}
+            >
+              <div className='space-y-2'>
+                <h3 className='text-[11px] font-black tracking-wide text-primary uppercase'>
+                  {t('engineering.templateMgmt.fields.assemblyTitle')}
+                </h3>
+                <p className='text-[11px] leading-relaxed text-muted-foreground'>
+                  {t('engineering.templateMgmt.hints.assembly')}
+                </p>
+              </div>
+              {attributeCatalogRequestState}
+              <div className='space-y-3'>
+                <Label
+                  htmlFor={levelOneAttributeCategoryFieldId}
+                  className='ml-1 text-[10px] font-black tracking-wide text-muted-foreground uppercase'
+                >
+                  {t(
+                    'engineering.templateMgmt.fields.levelOneAttributeCategory'
+                  )}
+                </Label>
+                <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+                  <Select
+                    value={selectedCategory?.key || ''}
+                    onValueChange={onSelectedCategoryKeyChange}
+                    disabled={!isAttributeCatalogReady}
+                  >
+                    <SelectTrigger
+                      id={levelOneAttributeCategoryFieldId}
+                      className='h-11 w-full min-w-0 flex-1 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-bold shadow-none'
+                    >
+                      <SelectValue
+                        placeholder={t(
+                          'engineering.templateMgmt.placeholders.attributeCategory'
+                        )}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCategories.length === 0 ? (
+                        <p className='px-3 py-2 text-xs text-muted-foreground'>
+                          {t(
+                            'engineering.templateMgmt.assembly.noAvailableCategories'
+                          )}
+                        </p>
+                      ) : (
+                        availableCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.key}>
+                            {getProductTemplateAttributeLevelOneCategoryName(
+                              locale,
+                              category
+                            )}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    className='h-10 rounded-full border-dashed border-blue-200 bg-blue-600/5 px-5 text-[10px] font-black tracking-wide text-blue-600 shadow-none transition-all hover:bg-blue-600/10 hover:text-blue-700 active:scale-95 dark:border-blue-800 dark:text-blue-400'
+                    disabled={!selectedCategory || !isAttributeCatalogReady}
+                    onClick={onAddAttributeBinding}
+                  >
+                    <Plus className='size-3.5' />
+                    {t('engineering.templateMgmt.buttons.addAttribute')}
+                  </Button>
+                </div>
+                {selectedCategory && isAttributeCatalogReady && (
+                  <div
+                    className='space-y-3 rounded-[20px] border border-dashed border-blue-200 bg-blue-600/5 p-4 dark:border-blue-800'
+                    aria-label={t(
+                      'engineering.templateMgmt.assembly.selectedCategoryPreview'
+                    )}
+                  >
+                    <p className='text-xs font-black text-primary'>
+                      {getProductTemplateAttributeLevelOneCategoryName(
+                        locale,
+                        selectedCategory
+                      )}
+                    </p>
+                    {renderLevelTwoAttributeOptions(selectedCategory.key)}
+                  </div>
+                )}
+              </div>
+
+              <div className='space-y-3'>
+                <h4 className='text-[10px] font-black tracking-wide text-muted-foreground uppercase'>
+                  {t(
+                    'engineering.templateMgmt.assembly.levelOneCategoryCount',
+                    { count: assembledCategories.length }
+                  )}
+                </h4>
+                {assembledCategories.length === 0 ? (
+                  <p className='rounded-[20px] border border-dashed border-muted/60 bg-background/50 p-5 text-xs leading-relaxed text-muted-foreground'>
+                    {t('engineering.templateMgmt.assembly.empty')}
+                  </p>
+                ) : (
+                  assembledCategories.map(({ binding, category }) => (
+                    <article
+                      key={binding.categoryKey}
+                      className='space-y-3 rounded-[20px] border border-dashed border-muted/60 bg-background p-4 transition-colors hover:border-primary/20'
+                      aria-label={
+                        category
+                          ? getProductTemplateAttributeLevelOneCategoryName(
+                              locale,
+                              category
+                            )
+                          : t(
+                              'engineering.templateMgmt.assembly.unavailableCategory'
+                            )
+                      }
+                    >
+                      <div className='flex flex-wrap items-center justify-between gap-3'>
+                        <div className='flex min-w-0 flex-wrap items-center gap-2'>
+                          <h5 className='text-xs font-black text-primary'>
+                            {category
+                              ? getProductTemplateAttributeLevelOneCategoryName(
+                                  locale,
+                                  category
+                                )
+                              : t(
+                                  'engineering.templateMgmt.assembly.unavailableCategory'
+                                )}
+                          </h5>
+                          {(category?.active === false || !binding.active) && (
+                            <span className='rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold text-muted-foreground'>
+                              {t('engineering.templateMgmt.assembly.inactive')}
+                            </span>
+                          )}
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <label className='flex cursor-pointer items-center gap-2 rounded-full bg-muted/30 px-3 py-1.5 text-[10px] font-bold'>
+                            <Checkbox
+                              checked={binding.required}
+                              onCheckedChange={(checked) =>
+                                onToggleRequired(
+                                  binding.categoryKey,
+                                  checked === true
+                                )
+                              }
+                            />
+                            {t('engineering.templateMgmt.assembly.required')}
+                          </label>
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size='sm'
+                            className='h-7 rounded-full px-3 text-[10px] font-black text-destructive hover:bg-destructive/10 hover:text-destructive'
+                            aria-label={`${t('engineering.templateMgmt.buttons.removeAttribute')} ${getProductTemplateAttributeLevelOneCategoryName(locale, category)}`}
+                            onClick={() =>
+                              onRemoveAttributeBinding(binding.categoryKey)
+                            }
+                          >
+                            <Trash2 className='size-3' />
+                            {t(
+                              'engineering.templateMgmt.buttons.removeAttribute'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      {renderLevelTwoAttributeOptions(binding.categoryKey)}
+                    </article>
+                  ))
+                )}
+              </div>
+            </section>
+          </fieldset>
+        </form>
+
+        <DialogFooter className={productTemplateEditorDialogClasses.footer}>
+          <Button
+            type='button'
+            variant='outline'
+            className='h-11 rounded-full border-dashed bg-transparent px-6 text-[11px] font-black tracking-wide shadow-none transition-all active:scale-95'
+            disabled={isSaving}
+            onClick={() => onOpenChange(false)}
+          >
+            {t('engineering.templateMgmt.buttons.cancel')}
+          </Button>
+          <Button
+            type='submit'
+            form={templateFormId}
+            disabled={isSaving}
+            className='h-11 rounded-full bg-blue-600 px-8 text-[11px] font-black tracking-wide text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95'
+          >
+            <Save className='size-3.5' />
+            {isSaving
+              ? t('engineering.templateMgmt.buttons.saving')
+              : t('engineering.templateMgmt.buttons.save')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

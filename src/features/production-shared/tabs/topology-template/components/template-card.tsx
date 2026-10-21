@@ -223,7 +223,7 @@ export function TemplateCard({
                         className='flex w-full items-center gap-2 rounded-[20px] border border-muted/25 bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-600'
                       >
                         <Route className='size-3.5 shrink-0 text-orange-600' />
-                        <span className='shrink-0 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 font-mono text-[10px] text-orange-700'>
+                        <span className='shrink-0 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 font-maple-ui text-[10px] text-orange-700'>
                           {process.code || 'NO-CODE'}
                         </span>
                         <span className='truncate'>{process.name}</span>

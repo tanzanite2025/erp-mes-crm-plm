@@ -181,7 +181,7 @@ export function ProductBarcodeMobileCapturePanel({
                 'cuttingOperations.productBinding.mobileCapture.actions.copyLink'
               )}
             </Button>
-            <div className='flex min-w-0 items-center gap-2 rounded-xl bg-muted/40 px-2.5 py-2 font-mono text-[11px]'>
+            <div className='flex min-w-0 items-center gap-2 rounded-xl bg-muted/40 px-2.5 py-2 font-maple-ui text-[11px]'>
               <LinkIcon className='size-3.5 shrink-0 text-muted-foreground' />
               <span className='min-w-0 truncate'>{captureUrl}</span>
             </div>

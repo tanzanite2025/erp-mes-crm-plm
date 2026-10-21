@@ -31,7 +31,7 @@ export function SalesReturnActualAmountRecordHistorySection({
             {t('trading.salesReturns.actualAmountHistory.description')}
           </p>
         </div>
-        <span className='rounded-full border border-dashed border-primary/20 bg-primary/5 px-2.5 py-1 font-mono text-[8px] text-primary'>
+        <span className='rounded-full border border-dashed border-primary/20 bg-primary/5 px-2.5 py-1 font-maple-ui text-[8px] text-primary'>
           {records.length}
         </span>
       </div>
@@ -66,7 +66,7 @@ export function SalesReturnActualAmountRecordHistorySection({
                   <p className='text-sm font-black text-primary'>
                     {formatSettlementMoney(record.amount)}
                   </p>
-                  <p className='mt-1 font-mono text-[8px] text-muted-foreground'>
+                  <p className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
                     {record.recordedAt.replace('T', ' ').slice(0, 16)}
                   </p>
                 </div>

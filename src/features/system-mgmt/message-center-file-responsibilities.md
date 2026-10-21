@@ -1,148 +1,70 @@
 # 消息中心文件职责图
 
-更新时间：2026-07-22
+更新时间：2026-10-20。当前消息配置入口为 `/message-center`；个人消息从全局通知按钮查看。通用协议见[收件箱长期契约](../../../docs/architecture/workflow/system-notification-inbox-cross-device-synchronization-and-delivery-contract.md)，业务覆盖见[覆盖地图](message-center-business-coverage-map.md)。
 
-这份文档只说明“文件放哪里、谁负责什么”。消息中心当前唯一业务入口是 `/message-center`。
+## 1. 页面与配置
 
-## 1. 页面入口层
+| 位置                                                       | 职责                                                              |
+| ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| `src/routes/_authenticated/message-center/`                | 鉴权、路由搜索参数和页面挂载；不执行业务规则                      |
+| `src/features/message-center/`                             | 配置模块布局、监听规则/业务源/模板/日志 TAB                       |
+| `src/features/system-mgmt/tabs/notification-rule-list.tsx` | 规则列表和 CRUD 交互                                              |
+| 同目录 `business-event-source-list.tsx`                    | 业务源配置、导入模板、规则引用查询                                |
+| 同目录 `rule-execution-log-tab.tsx`                        | 可信执行日志及管理投递诊断                                        |
+| `workflow-core/components/command-mgmt/`                   | 通知内容模板管理；现有 StandardCommand 名称不代表另一套命令执行器 |
+| `workflow-core/data/`                                      | 配置 schema、模板注册、状态字典和真实覆盖标签                     |
+| `workflow-core/hooks/`                                     | 配置查询及 CRUD mutation，无扫描副作用                            |
+| `workflow-core/services/routing-service.ts`                | 配置及执行日志查询/恢复 API，不写前端执行日志                     |
 
-`src/routes/_authenticated/message-center/*`
+## 2. 个人收件与界面同步
 
-- `route.tsx`：鉴权与消息中心布局挂载。
-- `index.tsx`：只做 `/message-center` 到 `/message-center/rules` 的默认入口重定向。
-- `rules.tsx`：监听规则 TAB 的路由搜索参数与页头。
-- `sources.tsx`：业务事件源 TAB 的路由搜索参数与页头。
-- `templates.tsx`：通知内容模板 TAB 的路由搜索参数与页头。
-- `executions.tsx`：执行日志 TAB 的路由搜索参数与页头。
+以下通知文件相对于 `src/features/system-mgmt/notifications/`。
 
-这层不做数据读写，不写规则执行逻辑，也不直接拼业务模型。
+| 文件                                                            | 职责                                                                     |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `system-notification-inbox-service.ts`                          | 收件分页和状态 HTTP 契约                                                 |
+| `use-system-notification-inbox.ts`                              | 账号/权限/范围/游标查询键、周期对账、已读/归档、离线状态、身份变化清缓存 |
+| `components/notification-center.tsx`                            | 收件箱与历史弹窗、未读角标、本页精确操作、重试/离线反馈                  |
+| `components/system-notification-delivery-queue-diagnostics.tsx` | 管理员积压/暂停/错误诊断及原任务恢复                                     |
+| `types.ts`                                                      | 通知类型和优先级契约                                                     |
 
-## 2. TAB 壳层
+`src/hooks/use-notifications.ts` 只消费实时刷新提示，保留权限、缓存失效和扫码临时动态。正文和未读来自服务端；WS 不承载另一份正式消息。审批角标在 `src/components/layout/use-sidebar-nav-badges.ts` 查询真实当前审批节点。
 
-`src/features/message-center/*`
+## 3. 后端业务与通用收件
 
-- `message-center-layout.tsx`：只负责 `ModuleTabbedLayout` 与子路由出口。
-- `tabs.ts`：只维护 4 个 TAB 的 key、中文文案 key 和 href。
+| 位置                                                                                        | 职责                                                                                                |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `server/routes/routes.go`                                                                   | 个人收件认证接口及配置/诊断权限挂载                                                                 |
+| `server/handlers/system_notification_inbox.go`                                              | 当前账号 HTTP 解析、查询/操作/恢复错误映射                                                          |
+| 业务源、规则、执行日志 handler/service/DTO                                                  | 配置契约与可信诊断读取；不接受浏览器伪造执行结果                                                    |
+| `server/services/approval_service.go`                                                       | 真实申请与当前节点决定，不把阅读当作审批                                                            |
+| `server/services/approval_notification_inbox_service.go`                                    | 必要节点通知、结果和上一节点解除                                                                    |
+| 品质、销售、采购、生产、物流、BOM 业务事件适配器                                            | 真实事件、事实键、业务字段、规则匹配及精确解除条件                                                  |
+| `server/services/logistics_command_service.go`、`logistics_record_details_patch_service.go` | 物流真实写入、行锁、单调版本及审计；状态变化调用同一事务通知适配器                                  |
+| `server/services/logistics_record_lifecycle_notification_routing_service.go`                | 物流事件键、真实模板字段、按采购/销售类型选择权限与详情链接                                         |
+| `server/handlers/logistics_record_write_http_contract.go`                                   | JSON 数组和差量 HTTP 契约、购销范围校验、错误映射；不自行写通知                                     |
+| `server/services/delivery_order_tracking_observation_persistence_service.go`                | 承运商回调与查询共用的轨迹事实事务、主单锁、时间边界、去重和查询额度；没有可靠业务外键前不自行通知  |
+| `server/services/logistics_tracking_query_service.go`、`server/handlers/logistics_push.go`  | 受控厂商查询适配、HTTP签名及购销读取权限，调用同一轨迹事务服务；当前callback为认证路由              |
+| `server/services/quality_standard_lifecycle_notification_routing_service.go`                | 品质规则匹配、模板校验和 operator 人员适配，调用共享创建器，不重复实现账号解析和入箱                |
+| `server/services/rule_execution_log_service.go`                                             | 执行日志查询及原任务恢复适配；传递请求取消和数据库错误，不直接发布通知                              |
+| `server/services/production_outsource_diagnostics_service.go`                               | 委外事实诊断；通知失败只读原日志当前状态，不遍历成功日志推断恢复                                    |
+| `server/services/business_rule_notification_inbox_creation_service.go`                      | 品质、销售和通用业务共用账号解析/去重、逐账号日志及收件生成，将真实实体和生成时解除条件交给收件服务 |
+| `server/services/business_rule_notification_inbox_status_resolution_service.go`             | 按原收件的来源、实体、目标和状态条件解除；源/规则停用或删除后仍生效，统一来源锁顺序及状态引用迁移   |
+| `server/services/business_event_source_status_transaction_service.go`                       | 受控状态码重命名时，同事务迁移源配置、规则和未解除收件的语义引用，不改写展示正文或账号状态          |
+| `server/services/system_notification_inbox_creation_service.go`                             | 账号、唯一约束、站内动作、正文与内部解除条件快照和刷新任务                                          |
+| `server/services/system_notification_inbox_query_and_state_service.go`                      | 权限与账号过滤、分页/未读同快照、幂等操作及业务解除                                                 |
+| `server/services/system_alert_notification_inbox_service.go`                                | 告警轮次去重、生成时冻结接收人、解除和迟到保护                                                      |
+| `server/services/workflow_notification_outbox_delivery_service.go`                          | 提交后领取、重试、暂停、发布结果，以及失效收件对应暂停/延期任务的取消                               |
+| `server/services/system_notification_delivery_queue_operations_service.go`                  | 原任务恢复、审计、队列诊断；按收件到队列的锁顺序执行有界清理并跳过被占用记录                        |
+| `server/db/system_notification_inbox_cutover.go`                                            | 取消旧未发布完整载荷任务，不重建历史收件                                                            |
+| `server/services/notification_publisher.go`、`server/handlers/ws.go`                        | Redis 发布与按账号分发，不维护业务状态或阅读状态                                                    |
 
-后续新增 TAB，先在这里登记；不要把 TAB 壳逻辑塞回系统管理页。
+## 4. 数据唯一归属和已删除路径
 
-## 3. TAB 页面实现层
+单据/审批保存业务事实，收件表保存账号展示快照与阅读等状态，outbox 保存短期刷新任务，规则日志保存诊断证据，审计保存操作证据。告警轮次表保存迟到保护墓碑，不是另一套告警正文历史。
 
-`src/features/system-mgmt/tabs/*`
+配置通知使用生成时保存的解除条件；真实事件先解除原收件，再按当前启用配置生成新通知或申请。公共审批按真实申请/节点解除，告警按真实轮次解除。内部状态条件不进入员工收件接口，旧消息不从日志或现行规则补造条件。
 
-- `notification-rule-list.tsx`：监听规则列表、搜索、筛选、新建规则入口。
-- `business-event-source-list.tsx`：事件源列表、模板导入、复制、展开态和规则引用查询。
-- `rule-execution-log-tab.tsx`：执行日志查询、筛选、分页与可见数量控制。
-- `tabs/components/rule-card*.tsx|ts`：单条规则卡片、状态行、模板绑定、规则完整度等规则内部交互。
-- `tabs/components/business-event-source-*.tsx|ts`：事件源卡片、状态重命名事务、删除确认与差异计算。
+浏览器 `NotificationService`、`DispatchService`、规则执行器、审批执行器、扫描器、日志 writer、两个本地通知 Store 和 BOM 前端 routing 服务已删除。旧 POST 执行日志接口已关闭；日志恢复只能恢复原队列任务。未调用的独立日志写入入口和旧 CLI 实时通知验收已移除；通知验证集中在隔离 PostgreSQL 集成测试，CLI 继续负责业务事实、并发与权限验收。
 
-这一层可以组合 UI 和 hook，但不要直接绕过 `RoutingService` 调接口。
-
-## 4. 通知内容模板 UI 层
-
-`src/features/system-mgmt/workflow-core/components/command-mgmt/*`
-
-当前文件名仍保留 `Command` / `StandardCommand`，但业务语义已经是“通知内容模板”。
-
-- `index.tsx`：模板列表页容器、搜索、新建/编辑弹窗状态。
-- `command-list.tsx`：模板列表展示。
-- `command-form.tsx`：模板表单。
-
-后续重命名时应整体迁移，不要在别处再新增一套“模板”实现。
-
-## 5. 前端配置契约层
-
-`src/features/system-mgmt/workflow-core/data/*`
-
-- `business-event-source-types.ts`：业务事件源 schema、实体、动作、字段、状态、运行时 meta。
-- `business-event-source-schema.ts`：事件源创建/更新序列化与反序列化。
-- `notification-rule-schema.ts`：监听规则 schema、segment、审批配置。
-- `rule-execution-log-schema.ts`：执行日志 schema。
-- `business-event-source-templates.ts`：业务事件源模板唯一注册点。
-- `business-event-status-catalog.ts`：各事件源状态字典。
-- `business-event-source-runtime-coverage.ts`：事件源接入状态标签。
-
-所有事件源的 `entity/sourceCode/action/status` 必须先在这里表达清楚，再让页面和后端接入。
-
-## 6. 前端数据读写层
-
-`src/features/system-mgmt/workflow-core/hooks/*`
-
-- `use-business-event-sources.ts`：业务事件源读取、创建、更新、删除。
-- `use-notification-rules.ts`：监听规则读取、创建、更新、删除、启停。
-- `use-commands.ts`：通知内容模板读取、创建、更新、删除。
-
-`src/features/system-mgmt/workflow-core/services/routing-service.ts`
-
-- 前端消息中心配置类 API 的唯一出口。
-- 当前后端路径为 `/message-center/*`。
-
-页面组件应只通过 hook 或 `RoutingService` 写入，不要散落 `apiFetch('/message-center/...')`。
-
-## 7. 前端规则执行层
-
-`src/features/system-mgmt/workflow-core/services/*`
-
-- `rule-execution-core.ts`：规则执行总入口。
-- `rule-matcher.ts`：规则、事件源、状态命中判断。
-- `target-resolver.ts`：实体/sourceCode 推断、动态人员解析、模板变量替换。
-- `notification-executor.ts`：通知动作执行与执行日志写入。
-- `approval-executor.ts`：审批动作执行与执行日志写入。
-- `execution-log-writer.ts`：前端执行链写入后端执行日志。
-- `notification-rules-scan-scheduler.ts`：规则配置页挂载后的周期追溯扫描。
-- `dispatch-service.ts`：旧工作流节点和追溯扫描的执行入口。
-
-注意：这层运行在浏览器里。长期目标应是把核心执行和日志可信写入收敛到后端。
-
-## 8. 后端配置与执行层
-
-后端路由：
-
-- `server/routes/routes.go`：`/message-center/*`
-
-后端 handler：
-
-- `server/handlers/business_event_source.go`
-- `server/handlers/workflow_routing.go`
-- `server/handlers/rule_execution_log.go`
-
-后端 service：
-
-- `server/services/business_event_source_service.go`
-- `server/services/business_event_source_dto.go`
-- `server/services/workflow_routing_service.go`
-- `server/services/workflow_routing_dto.go`
-- `server/services/rule_execution_log_service.go`
-- `server/services/rule_execution_log_dto.go`
-- `server/services/sales_order_business_event_service.go`
-- `server/services/purchase_order_business_event_service.go`
-- `server/services/production_business_event_service.go`
-- `server/services/business_status_event_service.go`
-
-后端 model：
-
-- `business_event_sources`
-- `standard_commands`
-- `notification_rules`
-- `rule_execution_logs`
-
-后端真实业务状态变更优先在事务内调用业务事件 service，写执行日志并通过 Redis/WebSocket 推送通知。
-
-## 9. 实时通知展示层
-
-- `server/services/notification_publisher.go`：发布 Redis 通道 `xdfc_notifications`。
-- `server/handlers/ws.go`：订阅 Redis 并按用户/权限投递 WebSocket。
-- `src/hooks/use-notifications.ts`：前端 WS 入口，负责把 Workflow/Approval/System 消息沉淀到前端 store。
-- `src/features/system-mgmt/notifications/notification-store.ts`：新版通知中心消息状态。
-- `src/features/system-mgmt/notifications/components/notification-center.tsx`：底部通知中心弹窗。
-
-底部通知中心应是用户查看消息的稳定入口；不要只 toast 不入库。
-
-## 10. 维护红线
-
-- 不恢复旧消息中心跳转入口。
-- 不把消息中心配置塞回系统管理状态页。
-- 不新增第二套事件源/规则/模板 API service。
-- 不在页面组件里直接执行复杂规则。
-- 不保留旧订单链接兼容修正；项目未正式生产，旧链接应直接清理。
-- 新事件源必须同时说明：模板、实体、状态字典、默认落库策略、实时入口、追溯入口、执行日志策略。
+新文件与函数名称必须明确职责。新来源沿现有事务与共用收件服务接入，不建立第二个正式通知入口或重试调度器，不用本地未读累计替代数据库查询。缓存失效、权限快照和扫码动态是临时信号，应保留各自用途。

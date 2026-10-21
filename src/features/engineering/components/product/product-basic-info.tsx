@@ -197,7 +197,7 @@ export function ProductBasicInfo({
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className={`h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 font-mono text-[13px] font-black ${isEdit ? 'opacity-50' : 'transition-all focus:bg-background focus-visible:ring-blue-400'}`}
+                      className={`h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 font-maple-ui text-[13px] font-black ${isEdit ? 'opacity-50' : 'transition-all focus:bg-background focus-visible:ring-blue-400'}`}
                       {...field}
                       value={field.value || '01'}
                       placeholder={t(

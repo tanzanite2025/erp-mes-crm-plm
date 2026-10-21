@@ -228,7 +228,7 @@ export function DashboardOverviewTab() {
                     <span className='text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
                       合格品数 (WIP)
                     </span>
-                    <span className='font-mono text-sm font-black text-emerald-600'>
+                    <span className='font-maple-ui text-sm font-black text-emerald-600'>
                       {stats?.wip || 0} PCS
                     </span>
                   </div>
@@ -236,7 +236,7 @@ export function DashboardOverviewTab() {
                     <span className='text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
                       报废品数 (SCRAP)
                     </span>
-                    <span className='font-mono text-sm font-black text-rose-500'>
+                    <span className='font-maple-ui text-sm font-black text-rose-500'>
                       {stats?.scrap || 0} PCS
                     </span>
                   </div>
@@ -307,7 +307,7 @@ export function DashboardOverviewTab() {
                       <span className='truncate text-[11px] leading-none font-black tracking-tighter uppercase'>
                         {segment.name}
                       </span>
-                      <span className='mt-1 font-mono text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
+                      <span className='mt-1 font-maple-ui text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
                         {segment.lineName}
                       </span>
                     </div>

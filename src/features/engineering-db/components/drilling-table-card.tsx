@@ -66,7 +66,7 @@ export function DrillingTableCard({
                 <div className='mt-0.5 flex items-center gap-2'>
                   <Badge
                     variant='outline'
-                    className='h-4 border-none bg-muted/50 px-1.5 py-0 font-mono text-[10px] font-bold text-muted-foreground uppercase'
+                    className='h-4 border-none bg-muted/50 px-1.5 py-0 font-maple-ui text-[10px] font-bold text-muted-foreground uppercase'
                   >
                     {row.original.item.fileExtension || 'PDF'}
                   </Badge>
@@ -80,7 +80,7 @@ export function DrillingTableCard({
         header: t('engineering.drilling.table.product'),
         cell: ({ row }) => (
           <div className='flex flex-col'>
-            <span className='font-mono text-[12px] font-bold text-indigo-600'>
+            <span className='font-maple-ui text-[12px] font-bold text-indigo-600'>
               {row.original.productSku || 'UNKNOWN'}
             </span>
             <span className='mt-0.5 max-w-[150px] truncate text-[10px] text-muted-foreground'>
@@ -96,7 +96,7 @@ export function DrillingTableCard({
         cell: ({ row }) => (
           <Badge
             variant='outline'
-            className='h-5 border-indigo-200 bg-indigo-50 font-mono text-[10px] text-indigo-700'
+            className='h-5 border-indigo-200 bg-indigo-50 font-maple-ui text-[10px] text-indigo-700'
           >
             {row.original.item.weavingModeLabel || '--'}
           </Badge>
@@ -117,7 +117,7 @@ export function DrillingTableCard({
         accessorKey: 'item.createdAt',
         header: t('engineering.drilling.table.date'),
         cell: ({ row }) => (
-          <span className='font-mono text-[11px] font-medium text-muted-foreground'>
+          <span className='font-maple-ui text-[11px] font-medium text-muted-foreground'>
             {row.original.item.createdAt
               ? new Date(row.original.item.createdAt).toLocaleDateString()
               : 'N/A'}

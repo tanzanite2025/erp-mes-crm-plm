@@ -62,7 +62,7 @@ export function CuttingEnginePhysicalConstraintsPanel(
   const inputClassName =
     variant === 'grid'
       ? 'h-8 rounded-lg bg-background text-xs font-semibold'
-      : 'h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+      : 'h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
 
   return (
     <div className={containerClassName}>
@@ -82,7 +82,7 @@ export function CuttingEnginePhysicalConstraintsPanel(
               {t(item.label)}
             </span>
             {!isCompact ? (
-              <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+              <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/60'>
                 {t(item.hint)}
               </span>
             ) : null}

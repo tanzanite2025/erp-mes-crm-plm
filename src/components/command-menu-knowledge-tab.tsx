@@ -103,7 +103,7 @@ function KnowledgeSearchListItem({
             compact
           />
           {entry.routePath ? (
-            <span className='truncate font-mono text-[7px] font-semibold text-muted-foreground/55'>
+            <span className='truncate font-maple-ui text-[7px] font-semibold text-muted-foreground/55'>
               {entry.routePath}
             </span>
           ) : null}

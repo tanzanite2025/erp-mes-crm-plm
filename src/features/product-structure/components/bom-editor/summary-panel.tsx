@@ -71,7 +71,7 @@ export function SummaryPanel({ groups, onSectionClick }: SummaryPanelProps) {
                   <span className='font-bold opacity-60 group-hover/row:opacity-100'>
                     {itemCount} {t('engineering.bomArchive.summary.itemsUnit')}
                   </span>
-                  <span className='w-[70px] text-right font-mono font-black text-emerald-600 group-hover/row:text-white'>
+                  <span className='w-[70px] text-right font-maple-ui font-black text-emerald-600 group-hover/row:text-white'>
                     {sectionCost.toFixed(1)}
                   </span>
                 </div>

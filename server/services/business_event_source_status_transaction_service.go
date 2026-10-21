@@ -522,6 +522,9 @@ func CommitBusinessEventStatusRenameTransaction(
 		for _, draft := range renameDrafts {
 			renames[draft.OldCode] = draft.NextCode
 		}
+		if err := MigratePendingBusinessRuleNotificationInboxResolutionStatusCodesWithinTransaction(tx, existingSource.Code, renames); err != nil {
+			return err
+		}
 
 		for _, rule := range sourceRules {
 			expectedVersion, affected := expectedRuleVersions[rule.ID]

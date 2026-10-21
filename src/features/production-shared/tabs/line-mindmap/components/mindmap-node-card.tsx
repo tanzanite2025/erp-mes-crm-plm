@@ -31,7 +31,7 @@ export function MindmapNodeCard({
           <div className='flex flex-wrap items-center gap-1.5'>
             <Badge
               variant='outline'
-              className='h-4 rounded-full border-dashed px-1.5 font-mono text-[8px]'
+              className='h-4 rounded-full border-dashed px-1.5 font-maple-ui text-[8px]'
             >
               L{node.level}
             </Badge>
@@ -47,12 +47,12 @@ export function MindmapNodeCard({
         <div className='flex shrink-0 flex-col items-end gap-1.5'>
           <Badge
             variant='secondary'
-            className='h-4 rounded-full px-1.5 font-mono text-[8px]'
+            className='h-4 rounded-full px-1.5 font-maple-ui text-[8px]'
           >
             下级 {node.children.length}
           </Badge>
           {node.actionType === 'open_dialog' ? (
-            <Badge className='h-4 rounded-full bg-amber-500/10 px-1.5 font-mono text-[8px] text-amber-700 hover:bg-amber-500/10'>
+            <Badge className='h-4 rounded-full bg-amber-500/10 px-1.5 font-maple-ui text-[8px] text-amber-700 hover:bg-amber-500/10'>
               打开弹窗
             </Badge>
           ) : null}

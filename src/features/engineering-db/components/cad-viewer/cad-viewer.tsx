@@ -109,7 +109,7 @@ export function CADViewer({ fileUrl, className }: CADViewerProps) {
                 <div className='h-px w-full rotate-45 bg-blue-500/20' />
                 <div className='h-px w-full -rotate-45 bg-blue-500/20' />
               </div>
-              <span className='font-mono text-[8px] text-blue-500'>
+              <span className='font-maple-ui text-[8px] text-blue-500'>
                 REF: 700C-DA-RIM
               </span>
             </div>

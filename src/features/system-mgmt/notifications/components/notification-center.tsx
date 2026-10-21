@@ -1,461 +1,325 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
+  Archive,
   Bell,
-  X,
+  CheckCheck,
   ChevronRight,
-  AlertCircle,
-  Info,
-  AlertTriangle,
-  ShieldAlert,
+  RefreshCw,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
-import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { type NotificationRule } from '@/features/system-mgmt/workflow-core/data/notification-rule-schema'
-import { type StandardCommand } from '@/features/system-mgmt/workflow-core/data/schema'
-import { RoutingService } from '@/features/system-mgmt/workflow-core/services/routing-service'
-import { getSalesOrders } from '@/features/trading/sales'
-import { resolveTemplate } from '../notification-service'
-import { useNotificationStore } from '../notification-store'
-import { type NotificationPriority, type SystemMessage } from '../types'
+import type { SystemNotificationInboxScope } from '../system-notification-inbox-service'
+import {
+  useSystemNotificationInbox,
+  useSystemNotificationInboxStateMutation,
+  useSystemNotificationInboxConnectionStatus,
+} from '../use-system-notification-inbox'
 
-const logger = createLogger('NotificationCenter')
-
-type SalesOrderLike = { id: string }
-type NotificationDynamicContent = { title: string; content: string }
-type NotificationVisualConfig = {
-  icon: typeof Info
-  color: string
-  badge: string
-  gradient: string
-}
-type AudioContextRef = { current: AudioContext | null }
-type WindowWithWebkitAudioContext = Window & {
-  webkitAudioContext?: typeof AudioContext
-}
-
-interface NotificationCenterProps {
-  placement?: 'header' | 'dock'
-}
-
-function resolveAudioContextConstructor() {
-  if (typeof window === 'undefined') return null
-  const audioWindow = window as WindowWithWebkitAudioContext
-  return window.AudioContext ?? audioWindow.webkitAudioContext ?? null
-}
-
-function isTargetedToCurrentUser(
-  targetUsers: string[] | undefined,
-  user: { id?: string; username?: string; accountNo?: string } | null
-) {
-  if (!targetUsers?.length) return false
-  const userKeys = [user?.id, user?.username, user?.accountNo]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value))
-  return targetUsers.some((targetUser) => userKeys.includes(targetUser.trim()))
-}
-
-async function playNotificationTone(audioContextRef: AudioContextRef) {
-  try {
-    const AudioContextCtor = resolveAudioContextConstructor()
-    if (!AudioContextCtor) return
-
-    let audioContext = audioContextRef.current
-    if (!audioContext || audioContext.state === 'closed') {
-      audioContext = new AudioContextCtor()
-      audioContextRef.current = audioContext
-    }
-
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume()
-    }
-
-    const now = audioContext.currentTime
-    const oscillator = audioContext.createOscillator()
-    const gain = audioContext.createGain()
-
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(880, now)
-    gain.gain.setValueAtTime(0.0001, now)
-    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22)
-
-    oscillator.connect(gain)
-    gain.connect(audioContext.destination)
-    oscillator.start(now)
-    oscillator.stop(now + 0.24)
-  } catch {
-    // Browser autoplay policies can block notification sounds. The visual
-    // notification remains authoritative, so audio failure stays non-fatal.
-  }
-}
-
-/**
- * 全局系统消息中心 (Notification Center)
- * 已对齐“后端裁决”原则：移除组件挂载时的本地存储读取，改为实时同步后端指令与规则。
- */
 export function NotificationCenter({
   placement = 'header',
-}: NotificationCenterProps) {
+}: {
+  placement?: 'header' | 'dock'
+}) {
   const user = useAuthStore((state) => state.user)
-  const hasUser = !!user
+  return (
+    <CurrentAccountSystemNotificationCenter
+      key={user?.id + ':' + user?.permissions?.join(',')}
+      placement={placement}
+    />
+  )
+}
+
+function CurrentAccountSystemNotificationCenter({
+  placement,
+}: {
+  placement: 'header' | 'dock'
+}) {
+  const isOnline = useSystemNotificationInboxConnectionStatus()
+  const [open, setOpen] = useState(false)
+  const [scope, setScope] = useState<SystemNotificationInboxScope>('active')
+  const [cursors, setCursors] = useState([''])
+  const inbox = useSystemNotificationInbox(scope, cursors[cursors.length - 1])
+  const stateMutation = useSystemNotificationInboxStateMutation()
   const navigate = useNavigate()
-  const [isExpanded, setIsExpanded] = useState(false)
-  const { messages, markAsRead, dismissMessage, removeMessage, clearAll } =
-    useNotificationStore()
-  const [stdCommands, setStdCommands] = useState<StandardCommand[]>([])
-  const lastMessagesLength = useRef(messages.length)
-  const audioContextRef = useRef<AudioContext | null>(null)
+  const messages = inbox.data?.items ?? []
+  const unreadCount = inbox.data?.unreadCount ?? 0
 
-  useEffect(() => {
-    return () => {
-      const audioContext = audioContextRef.current
-      audioContextRef.current = null
-      if (audioContext && audioContext.state !== 'closed') {
-        void audioContext.close().catch(() => undefined)
-      }
-    }
-  }, [])
-
-  // 挂载时从后端获取指令全库，用于动态内容解析 (已移除 StorageService 依赖)
-  useEffect(() => {
-    if (!hasUser) return
-
-    let isActive = true
-
-    const loadCommands = async () => {
-      try {
-        const cmds = await RoutingService.getCommands()
-        if (isActive && cmds) {
-          setStdCommands(cmds)
-        }
-      } catch (err) {
-        logger.error('Failed to fetch sync commands', err)
-      }
-    }
-
-    void loadCommands()
-
-    return () => {
-      isActive = false
-    }
-  }, [hasUser])
-
-  // 初始化音效与数据完整性同步
-  useEffect(() => {
-    const checkIntegrity = async () => {
-      try {
-        // ─── 核心变更：对接后端事实源 ───
-        const [response, rules, commands] = await Promise.all([
-          hasUser ? getSalesOrders().catch(() => null) : Promise.resolve(null),
-          hasUser
-            ? RoutingService.getRules().catch(() => [] as NotificationRule[])
-            : Promise.resolve([] as NotificationRule[]),
-          hasUser
-            ? RoutingService.getCommands().catch(() => [] as StandardCommand[])
-            : Promise.resolve([] as StandardCommand[]),
-        ])
-
-        const store = useNotificationStore.getState()
-
-        // 1. 同步单据存亡 (云端化)
-        if (response && response.items) {
-          store.syncWithOrders(
-            response.items.map((order: SalesOrderLike) => order.id)
-          )
-        }
-        // 2. 同步指令与规则至 Store (确保消息渲染的准确性)
-        if (commands) {
-          store.syncWithCommands(commands.map((command) => command.id))
-          // 如果挂载时的异步还没回来，这里做个补偿
-          if (stdCommands.length === 0) setStdCommands(commands)
-        }
-        if (rules) {
-          const activeRuleIds = rules
-            .filter((rule) => rule.enabled)
-            .map((rule) => rule.id)
-          store.syncWithRules(activeRuleIds)
-        }
-
-        store.pruneOldMessages(30)
-      } catch (err) {
-        logger.warn('Failed to sync with backend', err)
-      }
-    }
-    checkIntegrity()
-  }, [hasUser, stdCommands.length])
-
-  useEffect(() => {
-    if (messages.length > lastMessagesLength.current) {
-      void playNotificationTone(audioContextRef)
-    }
-    lastMessagesLength.current = messages.length
-  }, [messages.length])
-
-  const visibleMessages = messages.filter((msg) => {
-    if (msg.isArchived) return false
-    if (!msg.targetGroups?.length && !msg.targetUsers?.length) return true
-
-    return isTargetedToCurrentUser(msg.targetUsers, user)
-  })
-
-  const visibleUnreadCount = visibleMessages.filter((m) => !m.isRead).length
-
-  const getDynamicContent = (
-    msg: SystemMessage
-  ): NotificationDynamicContent => {
-    if (!msg.commandId) return { title: msg.title, content: msg.content }
-    const cmd = stdCommands.find((c) => c.id === msg.commandId)
-    if (!cmd) return { title: msg.title, content: msg.content }
-    return {
-      title: resolveTemplate(msg.title, msg.metadata),
-      content: resolveTemplate(cmd.content || msg.content, msg.metadata),
+  async function updateDisplayedNotificationState(
+    ids: string[],
+    action: 'read' | 'archive'
+  ) {
+    try {
+      await stateMutation.mutateAsync({ ids, action })
+      return true
+    } catch {
+      toast.error('操作未保存，请联网后重试')
+      return false
     }
   }
-
-  const pConfig: Record<NotificationPriority, NotificationVisualConfig> = {
-    info: {
-      icon: Info,
-      color: 'text-blue-500',
-      badge: 'bg-blue-100/50 text-blue-600',
-      gradient: 'from-blue-50/50 to-white',
-    },
-    warning: {
-      icon: AlertTriangle,
-      color: 'text-amber-500',
-      badge: 'bg-amber-100/50 text-amber-600',
-      gradient: 'from-amber-50/50 to-white',
-    },
-    error: {
-      icon: AlertCircle,
-      color: 'text-red-500',
-      badge: 'bg-red-100/50 text-red-600',
-      gradient: 'from-red-50/50 to-white',
-    },
-    critical: {
-      icon: ShieldAlert,
-      color: 'text-rose-600',
-      badge: 'bg-rose-100/50 text-rose-600',
-      gradient: 'from-rose-50/50 to-white',
-    },
-  }
-  const isDock = placement === 'dock'
 
   return (
     <>
       <Button
-        size='icon'
         variant='ghost'
-        onClick={() => setIsExpanded(!isExpanded)}
+        size='icon'
+        aria-label={
+          unreadCount ? `消息中心，${unreadCount} 条未读` : '消息中心'
+        }
         className={cn(
-          'relative rounded-full border border-dashed border-cyan-500/20 bg-cyan-500 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.2),0_14px_32px_-16px_rgba(6,182,212,0.85)] transition-all hover:border-white/90 hover:bg-cyan-400 hover:text-white hover:shadow-[0_0_0_1px_rgba(103,232,249,0.3),0_16px_34px_-16px_rgba(34,211,238,0.9)] dark:border-cyan-400/20 dark:bg-cyan-500/90 dark:text-slate-950 dark:shadow-[0_0_0_1px_rgba(165,243,252,0.15),0_16px_34px_-16px_rgba(34,211,238,0.7)] dark:hover:border-cyan-300/40 dark:hover:bg-cyan-400 dark:hover:text-slate-950',
-          isDock ? 'size-11 active:scale-95 sm:active:scale-100' : 'h-10 w-10',
-          isExpanded &&
-            'border-white bg-cyan-300 text-slate-950 shadow-[0_0_0_1px_rgba(165,243,252,0.45),0_18px_36px_-16px_rgba(34,211,238,1)] dark:border-white dark:bg-cyan-200 dark:text-slate-950',
-          visibleUnreadCount > 0 &&
-            !isExpanded &&
-            'ring-2 ring-cyan-400/30 ring-offset-2 ring-offset-background dark:ring-cyan-300/20'
+          'relative rounded-full',
+          placement === 'dock'
+            ? 'size-11 bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20'
+            : 'h-10 w-10'
         )}
+        onClick={() => setOpen(true)}
       >
-        {isExpanded ? (
-          <X className='size-[1.1rem] drop-shadow-[0_1px_4px_rgba(8,47,73,0.35)]' />
-        ) : (
-          <Bell className='size-[1.1rem] drop-shadow-[0_1px_4px_rgba(8,47,73,0.35)]' />
-        )}
-        {visibleUnreadCount > 0 && !isExpanded ? (
-          <span className='absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-background/80 bg-black px-1 text-[9px] font-black text-white shadow-lg dark:border-background/60 dark:bg-black'>
-            {visibleUnreadCount > 99 ? '99+' : visibleUnreadCount}
+        <Bell className='size-5' />
+        {unreadCount > 0 && (
+          <span className='absolute -top-1 -right-1 min-w-4 rounded-full bg-destructive px-1 text-[10px] leading-4 text-white'>
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
-        ) : null}
+        )}
       </Button>
-
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent
-          size='full'
-          className='h-[70dvh] max-h-[calc(100dvh-2rem)] w-[min(60vw,1120px)] min-w-[min(860px,calc(100vw-2rem))] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'
-        >
-          <div className='relative h-full overflow-hidden rounded-[32px] bg-background'>
-            <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent' />
-            <div className='relative flex h-full min-h-0 flex-col gap-0'>
-              <DialogHeader className='border-b border-dashed border-border/60 px-6 py-5 text-left'>
-                <div className='flex items-center justify-between gap-4'>
-                  <div className='space-y-1'>
-                    <DialogTitle className='text-lg font-black tracking-tighter uppercase'>
-                      通知中心
-                    </DialogTitle>
-                    <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                      统一查看全部系统通知与待处理消息
-                    </p>
-                  </div>
-                  <div className='rounded-full border border-dashed border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black tracking-widest text-primary uppercase'>
-                    未读 {visibleUnreadCount}
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className='flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5'>
-                {visibleMessages.length > 0 ? (
-                  <div className='flex flex-col gap-3'>
-                    {visibleMessages.map((msg) => {
-                      const config = pConfig[msg.priority] || pConfig.info
-                      const Icon = config.icon
-                      const { title, content } = getDynamicContent(msg)
-
-                      return (
-                        <div
-                          key={msg.id}
-                          className={cn(
-                            'relative rounded-[24px] border border-dashed p-4 shadow-sm transition-colors',
-                            msg.isRead
-                              ? 'border-border/60 bg-background'
-                              : 'border-primary/20 bg-primary/5',
-                            'bg-linear-to-br',
-                            config.gradient
-                          )}
-                        >
-                          <div className='flex items-start justify-between gap-3'>
-                            <div className='min-w-0 flex-1 space-y-3'>
-                              <div className='flex flex-wrap items-center gap-2'>
-                                <div
-                                  className={cn(
-                                    'rounded-full px-2 py-0.5 text-[8px] font-black tracking-tighter uppercase shadow-sm',
-                                    config.badge
-                                  )}
-                                >
-                                  {msg.type.replace('_', ' ')}
-                                </div>
-                                {!msg.isRead ? (
-                                  <div className='size-1.5 animate-pulse rounded-full bg-primary' />
-                                ) : null}
-                                <span className='text-[9px] font-bold tracking-widest text-muted-foreground/60'>
-                                  {new Date(msg.timestamp).toLocaleString()}
-                                </span>
-                              </div>
-
-                              <div className='space-y-1'>
-                                <h4 className='flex items-center gap-2 text-sm font-black tracking-tight text-foreground'>
-                                  <Icon
-                                    className={cn(
-                                      'size-4 shrink-0',
-                                      config.color
-                                    )}
-                                  />
-                                  <span className='min-w-0 truncate'>
-                                    {title}
-                                  </span>
-                                </h4>
-                                <p className='text-[11px] leading-relaxed text-muted-foreground'>
-                                  {content}
-                                </p>
-                              </div>
-                            </div>
-
-                            <button
-                              onClick={() => removeMessage(msg.id)}
-                              className='flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground'
-                              title='删除这条消息'
-                            >
-                              <X className='size-3.5' />
-                            </button>
-                          </div>
-
-                          <div className='mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border/50 pt-3'>
-                            <div className='flex items-center gap-2'>
-                              <div className='flex size-5 items-center justify-center overflow-hidden rounded-full bg-muted'>
-                                <span className='text-[8px] font-bold text-muted-foreground capitalize'>
-                                  {msg.priority[0]}
-                                </span>
-                              </div>
-                              <span className='text-[9px] font-bold tracking-widest text-muted-foreground/60'>
-                                {msg.priority}
-                              </span>
-                            </div>
-
-                            <div className='flex flex-wrap items-center gap-2'>
-                              {msg.isDismissed ? null : (
-                                <Button
-                                  variant='ghost'
-                                  className='h-8 rounded-full border border-dashed border-border/60 px-3 text-[10px] font-black tracking-widest text-muted-foreground uppercase hover:text-foreground'
-                                  onClick={() => dismissMessage(msg.id)}
-                                >
-                                  暂时关闭
-                                </Button>
-                              )}
-                              {msg.actionUrl ? (
-                                <Button
-                                  variant='ghost'
-                                  className='h-8 rounded-full bg-primary px-3 text-[10px] font-black tracking-widest text-primary-foreground uppercase hover:bg-primary/90 hover:text-primary-foreground'
-                                  onClick={() => {
-                                    markAsRead(msg.id)
-                                    setIsExpanded(false)
-                                    navigate({ to: msg.actionUrl as never })
-                                  }}
-                                >
-                                  立即处理
-                                  <ChevronRight className='ml-1 size-3' />
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant='ghost'
-                                  className='h-8 rounded-full border border-dashed border-border/60 px-3 text-[10px] font-black tracking-widest text-muted-foreground uppercase hover:text-foreground'
-                                  onClick={() => markAsRead(msg.id)}
-                                  disabled={msg.isRead}
-                                >
-                                  {msg.isRead ? '已阅' : '标记已阅'}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className='flex flex-1 flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-border/60 bg-muted/10 px-6 py-14 text-center'>
-                    <div className='flex size-14 items-center justify-center rounded-[20px] bg-muted text-muted-foreground/50'>
-                      <Bell className='size-7' />
-                    </div>
-                    <div className='space-y-1'>
-                      <p className='text-sm font-black tracking-tighter text-foreground uppercase'>
-                        暂无待处理通知
-                      </p>
-                      <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                        您的工作台目前非常整洁
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter className='border-t border-dashed border-border/60 px-6 py-4'>
-                <div className='flex w-full items-center justify-between gap-3'>
-                  <Button
-                    variant='ghost'
-                    onClick={clearAll}
-                    disabled={visibleMessages.length === 0}
-                    className='h-9 rounded-full border border-dashed border-border/60 px-4 text-[10px] font-black tracking-widest text-muted-foreground uppercase hover:text-destructive'
-                  >
-                    清除全部通知
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={() => setIsExpanded(false)}
-                    className='h-9 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
-                  >
-                    关闭
-                  </Button>
-                </div>
-              </DialogFooter>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className='flex max-h-[85dvh] flex-col sm:max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle className='text-base'>
+              消息中心{' '}
+              {unreadCount > 0 && (
+                <span className='text-sm font-normal text-muted-foreground'>
+                  · {unreadCount} 条未读
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              阅读与归档会同步到当前账号的其他设备。业务办理结果以对应单据为准。
+            </DialogDescription>
+          </DialogHeader>
+          <div className='flex items-center gap-2 border-b pb-3'>
+            {(['active', 'history'] as const).map((value) => (
+              <Button
+                key={value}
+                size='sm'
+                variant={scope === value ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  setScope(value)
+                  setCursors([''])
+                }}
+              >
+                {value === 'active' ? '收件箱' : '历史消息'}
+              </Button>
+            ))}
+            <Button
+              size='icon'
+              variant='ghost'
+              className='ml-auto size-8'
+              aria-label='刷新消息'
+              onClick={() => void inbox.refetch()}
+            >
+              <RefreshCw
+                className={cn('size-4', inbox.isFetching && 'animate-spin')}
+              />
+            </Button>
+          </div>
+          {!isOnline && (
+            <p
+              role='status'
+              className='rounded-md border p-3 text-sm text-muted-foreground'
+            >
+              当前离线，显示的是上次同步的消息。联网后可保存已读与归档操作。
+            </p>
+          )}
+          {inbox.isError && (
+            <div
+              role='alert'
+              className='rounded-md border border-destructive/30 p-3 text-sm text-destructive'
+            >
+              消息暂时无法同步，
+              <button
+                className='underline'
+                onClick={() => void inbox.refetch()}
+              >
+                点击重试
+              </button>
             </div>
+          )}
+          <div className='min-h-24 flex-1 space-y-3 overflow-y-auto'>
+            {inbox.isPending ? (
+              <p className='py-8 text-center text-sm text-muted-foreground'>
+                正在加载消息…
+              </p>
+            ) : messages.length === 0 && !inbox.isError ? (
+              <p className='py-8 text-center text-sm text-muted-foreground'>
+                暂无消息
+              </p>
+            ) : null}
+            {messages.map((message) => (
+              <article
+                key={message.id}
+                className={cn(
+                  'rounded-lg border p-4',
+                  !message.isRead &&
+                    scope === 'active' &&
+                    'border-primary/30 bg-primary/5'
+                )}
+              >
+                <div className='flex items-start justify-between gap-3'>
+                  <h3 className='text-sm leading-5 font-semibold'>
+                    {message.title}
+                  </h3>
+                  <span className='shrink-0 text-xs text-muted-foreground'>
+                    {message.isResolved
+                      ? '已解除'
+                      : message.isArchived
+                        ? '已归档'
+                        : message.expiresAt &&
+                            new Date(message.expiresAt) <= new Date()
+                          ? '已过期'
+                          : message.isRead
+                            ? '已读'
+                            : '未读'}
+                  </span>
+                </div>
+                <p className='mt-2 text-sm leading-6 whitespace-pre-wrap text-muted-foreground'>
+                  {message.content}
+                </p>
+                <div className='mt-3 flex flex-wrap items-center gap-2'>
+                  <time className='mr-auto text-xs text-muted-foreground'>
+                    {new Date(message.timestamp).toLocaleString()}
+                  </time>
+                  {!message.isRead && (
+                    <Button
+                      size='sm'
+                      variant='ghost'
+                      disabled={!isOnline || stateMutation.isPending}
+                      onClick={() =>
+                        void updateDisplayedNotificationState(
+                          [message.id],
+                          'read'
+                        )
+                      }
+                    >
+                      标记已读
+                    </Button>
+                  )}
+                  {!message.isArchived && (
+                    <Button
+                      size='sm'
+                      variant='ghost'
+                      disabled={!isOnline || stateMutation.isPending}
+                      onClick={() =>
+                        void updateDisplayedNotificationState(
+                          [message.id],
+                          'archive'
+                        )
+                      }
+                    >
+                      <Archive className='mr-1 size-3.5' />
+                      归档
+                    </Button>
+                  )}
+                  {message.actionUrl &&
+                    !message.isResolved &&
+                    (!message.expiresAt ||
+                      new Date(message.expiresAt) > new Date()) && (
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        disabled={!isOnline || stateMutation.isPending}
+                        onClick={async () => {
+                          if (
+                            !message.isRead &&
+                            !(await updateDisplayedNotificationState(
+                              [message.id],
+                              'read'
+                            ))
+                          )
+                            return
+                          setOpen(false)
+                          void navigate({ to: message.actionUrl as never })
+                        }}
+                      >
+                        查看业务
+                        <ChevronRight className='ml-1 size-3.5' />
+                      </Button>
+                    )}
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className='flex flex-wrap items-center gap-2 border-t pt-3'>
+            <Button
+              size='sm'
+              variant='ghost'
+              disabled={
+                !isOnline ||
+                stateMutation.isPending ||
+                !messages.some((message) => !message.isRead)
+              }
+              onClick={() =>
+                void updateDisplayedNotificationState(
+                  messages
+                    .filter((message) => !message.isRead)
+                    .map((message) => message.id),
+                  'read'
+                )
+              }
+            >
+              <CheckCheck className='mr-1 size-4' />
+              本页已读
+            </Button>
+            {scope === 'active' && (
+              <Button
+                size='sm'
+                variant='ghost'
+                disabled={
+                  !isOnline || stateMutation.isPending || messages.length === 0
+                }
+                onClick={() =>
+                  void updateDisplayedNotificationState(
+                    messages.map((message) => message.id),
+                    'archive'
+                  )
+                }
+              >
+                归档本页
+              </Button>
+            )}
+            <span className='ml-auto text-xs text-muted-foreground'>
+              共 {inbox.data?.total ?? 0} 条
+            </span>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={cursors.length === 1 || inbox.isFetching}
+              onClick={() => setCursors((previous) => previous.slice(0, -1))}
+            >
+              上一页
+            </Button>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={!inbox.data?.nextCursor || inbox.isFetching}
+              onClick={() => {
+                if (inbox.data?.nextCursor)
+                  setCursors((previous) => [
+                    ...previous,
+                    inbox.data.nextCursor!,
+                  ])
+              }}
+            >
+              下一页
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

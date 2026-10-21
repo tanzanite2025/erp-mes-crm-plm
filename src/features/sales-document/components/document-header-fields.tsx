@@ -173,7 +173,7 @@ export function DocumentHeaderFields({
                 )}
                 value={formData.orderNo}
                 readOnly
-                className='h-11 cursor-not-allowed border-muted-foreground/10 bg-muted/20 pl-9 font-mono text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
+                className='h-11 cursor-not-allowed border-muted-foreground/10 bg-muted/20 pl-9 font-maple-ui text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
               />
             </div>
           </div>
@@ -341,7 +341,7 @@ export function DocumentHeaderFields({
                 )}
                 value={formData.barcode}
                 readOnly
-                className='h-11 cursor-not-allowed border-primary/20 bg-primary/5 pl-9 font-mono text-[13px] font-bold text-primary sm:h-10 sm:text-[12px]'
+                className='h-11 cursor-not-allowed border-primary/20 bg-primary/5 pl-9 font-maple-ui text-[13px] font-bold text-primary sm:h-10 sm:text-[12px]'
               />
             </div>
           </div>

@@ -165,7 +165,7 @@ export function getUsersColumns(
         return (
           <Badge
             variant='outline'
-            className='rounded-full border-dashed font-mono text-[8px] uppercase'
+            className='rounded-full border-dashed font-maple-ui text-[8px] uppercase'
           >
             {permissionPresetId || 'UNASSIGNED'}
           </Badge>

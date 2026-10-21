@@ -65,7 +65,7 @@ export function CommandMenuKnowledgeDetailDrawer({
                   </Badge>
                 ) : null}
                 {entry.routePath ? (
-                  <span className='truncate font-mono text-[10px] font-semibold text-muted-foreground/70'>
+                  <span className='truncate font-maple-ui text-[10px] font-semibold text-muted-foreground/70'>
                     {entry.routePath}
                   </span>
                 ) : null}

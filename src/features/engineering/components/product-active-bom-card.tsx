@@ -151,7 +151,7 @@ export function ProductActiveBOMCard({
             <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.bomNo')}
             </div>
-            <div className='mt-0.5 font-mono text-[12px] font-black break-all text-slate-800'>
+            <div className='mt-0.5 font-maple-ui text-[12px] font-black break-all text-slate-800'>
               {bom.bomNo}
             </div>
           </div>
@@ -159,7 +159,7 @@ export function ProductActiveBOMCard({
             <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.version')}
             </div>
-            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-blue-600'>
+            <div className='mt-0.5 font-maple-ui text-[14px] font-black tracking-tighter text-blue-600'>
               {bom.bomVersion}
             </div>
           </div>
@@ -167,7 +167,7 @@ export function ProductActiveBOMCard({
             <div className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
               {t('engineering.productMgmt.activeBom.weight')}
             </div>
-            <div className='mt-0.5 font-mono text-[14px] font-black tracking-tighter text-emerald-700'>
+            <div className='mt-0.5 font-maple-ui text-[14px] font-black tracking-tighter text-emerald-700'>
               {weightLabel}
             </div>
           </div>

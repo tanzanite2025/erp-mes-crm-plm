@@ -70,7 +70,7 @@ export function DataTableViewOptions<TData>({
                     {t('common.table.viewManagement')}
                   </span>
                 </div>
-                <span className='font-mono text-[7px] leading-none tracking-widest uppercase opacity-40'>
+                <span className='font-maple-ui text-[7px] leading-none tracking-widest uppercase opacity-40'>
                   {t('common.table.viewing')}
                 </span>
               </>

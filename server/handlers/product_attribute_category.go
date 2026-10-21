@@ -26,18 +26,18 @@ func SaveProductAttributeCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	if rawID, ok := payload["id"]; ok && string(rawID) != "null" && string(rawID) != `""` {
-		var id string
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 ID 格式"})
+	if _, isPatch := payload["op"]; isPatch {
+		var request services.SDRTSDeltaHandlerRequest
+		if err := json.Unmarshal(body, &request); err != nil || request.Op != "PATCH" || request.Metadata.ID == "" || request.Metadata.Version < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 编辑产品属性需要差量、记录 ID 和有效版本"})
 			return
 		}
-		updates, err := services.BuildProductAttributeCategoryUpdates(payload)
+		updates, err := services.BuildProductAttributeCategoryUpdates(request.Delta)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		saved, err := services.PatchProductAttributeCategory(id, updates)
+		saved, err := services.PatchProductAttributeCategory(request.Metadata.ID, int(request.Metadata.Version), updates)
 		if err != nil {
 			respondDomainError(c, err, "[SERVER] 差分保存产品属性分类失败: ")
 			return
@@ -46,9 +46,13 @@ func SaveProductAttributeCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	var input services.SaveProductAttributeCategoryInput
+	input := services.SaveProductAttributeCategoryInput{Active: true, IsDefaultSite: true}
 	if err := json.Unmarshal(body, &input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 产品属性分类格式错误"})
+		return
+	}
+	if input.ID != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 编辑产品属性必须使用带版本的差量格式"})
 		return
 	}
 

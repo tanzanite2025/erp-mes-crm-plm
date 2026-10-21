@@ -40,7 +40,7 @@ export interface ConfirmQualityBatchQuantitySettlementPayload {
 }
 
 /**
- * QualityMaintenanceService - 专门负责质量模块的维护与写入逻辑 (SDRTS 协议封装)情况情况总量。
+ * 提交品质模块写入请求；标准编辑通过版本受控的差量协议更新。
  */
 export const QualityMaintenanceService = {
   /**

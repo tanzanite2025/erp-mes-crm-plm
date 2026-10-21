@@ -230,7 +230,7 @@ export function WheelTraceShellPage({
               <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 Barcode
               </div>
-              <div className='mt-2 font-mono text-xs text-foreground'>
+              <div className='mt-2 font-maple-ui text-xs text-foreground'>
                 {result?.barcode.rawCode || rawCode || '-'}
               </div>
               <div className='mt-1 text-muted-foreground/70'>
@@ -281,7 +281,7 @@ export function WheelTraceShellPage({
               >
                 <div className='flex flex-col gap-1 md:flex-row md:items-center md:justify-between'>
                   <div className='font-black text-foreground'>{item.title}</div>
-                  <div className='font-mono text-[10px] text-muted-foreground/70'>
+                  <div className='font-maple-ui text-[10px] text-muted-foreground/70'>
                     {item.time}
                   </div>
                 </div>

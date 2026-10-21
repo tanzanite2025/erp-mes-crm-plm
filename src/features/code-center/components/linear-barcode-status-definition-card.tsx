@@ -53,7 +53,7 @@ export function LinearBarcodeStatusDefinitionCard({
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div className='min-w-0'>
           <Badge
-            className={`border-none font-mono ${resolveLinearBarcodeStatusDefinitionBadgeClassName(
+            className={`border-none font-maple-ui ${resolveLinearBarcodeStatusDefinitionBadgeClassName(
               definition.tone
             )}`}
           >
@@ -89,7 +89,7 @@ export function LinearBarcodeStatusDefinitionCard({
           <div className='font-black text-muted-foreground/60'>
             {t('codeCenter.linearBarcode.status.fields.sourceTable')}
           </div>
-          <div className='mt-1 font-mono font-bold text-foreground'>
+          <div className='mt-1 font-maple-ui font-bold text-foreground'>
             {definition.sourceTable}
           </div>
         </div>

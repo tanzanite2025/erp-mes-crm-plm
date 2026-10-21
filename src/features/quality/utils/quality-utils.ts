@@ -255,8 +255,8 @@ export function getQualityAuditMeta(
       label: locale === 'zh-CN' ? '草稿待提审' : 'Draft Pending Submission',
       note:
         locale === 'zh-CN'
-          ? '当前标准仍为草稿，尚未进入审批链路。'
-          : 'The standard is still a draft and has not entered the approval workflow yet.',
+          ? '当前标准仍为草稿，尚未提交审批。'
+          : 'The standard is still a draft and has not been submitted for approval.',
       className: 'bg-slate-500/5 border border-slate-500/10 text-slate-600',
       dotClassName: 'bg-slate-500',
     }
@@ -266,8 +266,8 @@ export function getQualityAuditMeta(
     label: locale === 'zh-CN' ? '待审核' : 'Pending Review',
     note:
       locale === 'zh-CN'
-        ? '当前标准仍处于待审核阶段，尚未形成完整审签链。'
-        : 'The standard is still pending review and does not have a complete review trail yet.',
+        ? '当前标准状态为待审核，审批申请请以实际记录为准。'
+        : 'The standard is pending review. Check the actual approval request record.',
     className: 'bg-amber-500/5 border border-amber-500/10 text-amber-600',
     dotClassName: 'bg-amber-500',
   }

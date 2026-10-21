@@ -65,7 +65,7 @@ export function BOMProtocolRecoveryDialog({
                     <p className='font-medium'>检测到树结构数据问题</p>
                     <p className='text-sm'>{error.message}</p>
                     {error.nodeId && (
-                      <p className='rounded bg-yellow-100 p-1 font-mono text-xs dark:bg-yellow-900/30'>
+                      <p className='rounded bg-yellow-100 p-1 font-maple-ui text-xs dark:bg-yellow-900/30'>
                         节点ID: {error.nodeId}
                       </p>
                     )}

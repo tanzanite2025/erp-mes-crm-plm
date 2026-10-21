@@ -226,7 +226,7 @@ export function DocumentEvidenceManager({
             {resolvedTitle}
           </h4>
         </div>
-        <span className='font-mono text-[8px] text-muted-foreground/40'>
+        <span className='font-maple-ui text-[8px] text-muted-foreground/40'>
           {evidences.length} / {maxCount}
         </span>
       </div>

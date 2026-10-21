@@ -25,8 +25,8 @@ const LEGACY_PERMISSION_ID_ALIASES: Record<string, string> = {
 export const MENU_PERMISSIONS = {
   dashboard: {
     id: 'menu_dashboard',
-    label: '访问：仪表盘',
-    desc: '允许进入系统主控台',
+    label: '访问：全厂概览',
+    desc: '允许进入全厂概览、生产日历、交付进度与系统全域动态',
     icon: 'BarChart3',
     rootPath: '/dashboard',
   },

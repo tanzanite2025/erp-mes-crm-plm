@@ -53,7 +53,7 @@ export function LeaveDetailDialog({
                   {leave.employeeName ||
                     t('orgPersonnel.leaveMgmt.list.unknownApplicant')}
                 </p>
-                <p className='font-mono text-[11px] text-muted-foreground'>
+                <p className='font-maple-ui text-[11px] text-muted-foreground'>
                   {t('orgPersonnel.leaveMgmt.detail.employeeId', {
                     id: leave.employeeId,
                   })}
@@ -89,7 +89,7 @@ export function LeaveDetailDialog({
                 <p className='text-[10px] font-black tracking-widest uppercase opacity-50'>
                   {t('orgPersonnel.leaveMgmt.detail.startTime')}
                 </p>
-                <p className='mt-2 font-mono text-sm'>
+                <p className='mt-2 font-maple-ui text-sm'>
                   {formatLeaveDateTime(leave.startTime, locale)}
                 </p>
               </div>
@@ -97,7 +97,7 @@ export function LeaveDetailDialog({
                 <p className='text-[10px] font-black tracking-widest uppercase opacity-50'>
                   {t('orgPersonnel.leaveMgmt.detail.endTime')}
                 </p>
-                <p className='mt-2 font-mono text-sm'>
+                <p className='mt-2 font-maple-ui text-sm'>
                   {formatLeaveDateTime(leave.endTime, locale)}
                 </p>
               </div>

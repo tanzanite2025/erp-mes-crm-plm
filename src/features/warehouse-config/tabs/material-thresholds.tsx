@@ -402,7 +402,7 @@ export default function MaterialThresholdsTab() {
                             : t('warehouseConfig.materialThresholds.card.bom')}
                         </Badge>
                       </div>
-                      <div className='mt-2 font-mono text-[8px] text-muted-foreground/60'>
+                      <div className='mt-2 font-maple-ui text-[8px] text-muted-foreground/60'>
                         {t('warehouseConfig.materialThresholds.card.code')}:{' '}
                         {rule.targetCodeSnapshot || '--'}
                       </div>
@@ -454,7 +454,7 @@ export default function MaterialThresholdsTab() {
                       <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                         {t('warehouseConfig.materialThresholds.card.updatedAt')}
                       </div>
-                      <div className='mt-2 font-mono text-[11px] text-muted-foreground/80'>
+                      <div className='mt-2 font-maple-ui text-[11px] text-muted-foreground/80'>
                         {new Date(rule.updatedAt).toLocaleString()}
                       </div>
                     </div>

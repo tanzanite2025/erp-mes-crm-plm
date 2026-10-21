@@ -202,7 +202,7 @@ export function LinearBarcodePrintMgmt() {
                             'codeCenter.linearBarcode.print.sections.templates.summary.orderNo'
                           )}
                         </span>
-                        <span className='font-mono font-bold text-foreground'>
+                        <span className='font-maple-ui font-bold text-foreground'>
                           {selectedOrder.orderNo}
                         </span>
                       </div>
@@ -282,7 +282,7 @@ export function LinearBarcodePrintMgmt() {
                           'codeCenter.linearBarcode.print.sections.parameters.summary.protocolVersion'
                         )}
                       </span>
-                      <span className='font-mono font-bold text-foreground'>
+                      <span className='font-maple-ui font-bold text-foreground'>
                         {protocolQuery.data?.version || '--'}
                       </span>
                     </div>
@@ -292,7 +292,7 @@ export function LinearBarcodePrintMgmt() {
                           'codeCenter.linearBarcode.print.sections.parameters.summary.sequenceRuleKey'
                         )}
                       </span>
-                      <span className='font-mono font-bold text-foreground'>
+                      <span className='font-maple-ui font-bold text-foreground'>
                         {protocolQuery.data?.sequenceRuleKey || '--'}
                       </span>
                     </div>

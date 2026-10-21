@@ -260,7 +260,7 @@ export function OutsourcePartnerManagement() {
                     <CardTitle className='truncate text-base font-semibold tracking-tight'>
                       {partner.name}
                     </CardTitle>
-                    <p className='mt-1 font-mono text-xs font-medium text-muted-foreground'>
+                    <p className='mt-1 font-maple-ui text-xs font-medium text-muted-foreground'>
                       {partner.code} · v{partner.version}
                     </p>
                   </div>

@@ -159,7 +159,7 @@ export function HIDScanInput({
             }
           }}
           className={cn(
-            'h-12 rounded-2xl border-dashed bg-background pr-4 pl-11 font-mono text-sm font-black tracking-widest',
+            'h-12 rounded-2xl border-dashed bg-background pr-4 pl-11 font-maple-ui text-sm font-black tracking-widest',
             inputClassName
           )}
         />

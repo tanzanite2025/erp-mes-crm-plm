@@ -819,7 +819,7 @@ export default function AttendanceDevices() {
                             {protocolLabel(device.protocol)}
                           </Badge>
                         </div>
-                        <CardDescription className='font-mono text-[11px]'>
+                        <CardDescription className='font-maple-ui text-[11px]'>
                           {device.deviceCode} / {device.vendor} /{' '}
                           {device.model || '-'}
                         </CardDescription>
@@ -1111,7 +1111,7 @@ export default function AttendanceDevices() {
                     className='flex items-center justify-between gap-3 rounded-2xl border border-dashed bg-background/70 p-3'
                   >
                     <div className='min-w-0'>
-                      <p className='truncate font-mono text-xs font-black'>
+                      <p className='truncate font-maple-ui text-xs font-black'>
                         {event.deviceEmployeeKey}
                       </p>
                       <p className='truncate text-[10px] text-muted-foreground'>
@@ -1559,7 +1559,7 @@ export default function AttendanceDevices() {
                   onChange={(event) =>
                     updateForm({ configText: event.target.value })
                   }
-                  className='min-h-40 rounded-xl font-mono text-xs'
+                  className='min-h-40 rounded-xl font-maple-ui text-xs'
                 />
                 {configError ? (
                   <p className='mt-2 text-xs font-bold text-rose-600'>

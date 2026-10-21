@@ -219,7 +219,7 @@ export function LabelingTab() {
               <div className='mt-0.5 flex items-center gap-2'>
                 <Badge
                   variant='outline'
-                  className='h-4 border-none bg-muted/50 px-1.5 py-0 font-mono text-[10px] font-bold text-muted-foreground uppercase'
+                  className='h-4 border-none bg-muted/50 px-1.5 py-0 font-maple-ui text-[10px] font-bold text-muted-foreground uppercase'
                 >
                   {row.original.item.fileExtension || 'PDF'}
                 </Badge>
@@ -244,7 +244,7 @@ export function LabelingTab() {
         }
         return (
           <div className='flex flex-col'>
-            <span className='font-mono text-[12px] font-bold text-teal-600'>
+            <span className='font-maple-ui text-[12px] font-bold text-teal-600'>
               {row.original.productSku || 'UNKNOWN'}
             </span>
             <span className='mt-0.5 max-w-[150px] truncate text-[10px] text-muted-foreground'>
@@ -259,7 +259,7 @@ export function LabelingTab() {
       accessorKey: 'item.createdAt',
       header: t('engineering.labeling.table.date'),
       cell: ({ row }) => (
-        <span className='font-mono text-[11px] font-medium text-muted-foreground'>
+        <span className='font-maple-ui text-[11px] font-medium text-muted-foreground'>
           {row.original.item.createdAt
             ? new Date(row.original.item.createdAt).toLocaleDateString()
             : 'N/A'}
@@ -485,7 +485,7 @@ export function LabelingTab() {
                     <Badge
                       variant='outline'
                       className={cn(
-                        'h-5 rounded-full border-none px-3 font-mono text-[10px] leading-none font-black',
+                        'h-5 rounded-full border-none px-3 font-maple-ui text-[10px] leading-none font-black',
                         row.productSku
                           ? 'bg-teal-500/10 text-teal-600'
                           : 'bg-muted/50 text-muted-foreground/60'
@@ -511,7 +511,7 @@ export function LabelingTab() {
                         {row.typeLabel}
                       </div>
                       <div className='size-1 rounded-full bg-muted-foreground/20' />
-                      <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60'>
+                      <div className='flex items-center gap-1 font-maple-ui text-[9px] text-muted-foreground/60'>
                         <Hash className='size-2.5 opacity-30' />
                         {item.id.substring(0, 6)}
                       </div>

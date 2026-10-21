@@ -1638,6 +1638,9 @@ func InitDB(dsn string) {
 
 		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍ㄧ矌閻棗顭块懜闈涘闁?闂傚倷娴囧畷鍨叏閻㈢绀夐柟杈剧畱缁€澶愭煙鏉堝墽鐣遍梻鍌ゅ灦閺屟嗙疀閹剧纭€婵炴垶鎸哥粔褰掑蓟閵娿儮妲堟俊顖欒娴犻箖姊?(Quality Management)
 		&models.InspectionStandard{},
+		&models.WorkflowNotificationOutboxEntry{},
+		&models.SystemNotificationInboxEntry{},
+		&models.SystemAlertNotificationOccurrence{},
 		&models.InspectionTask{},
 		&models.QualityBatchQuantitySettlement{},
 		&models.QualityAbnormality{},
@@ -1654,8 +1657,8 @@ func InitDB(dsn string) {
 		&models.SystemConfig{},
 		&models.KnowledgeBaseEntry{},
 
-		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍剱閺?闂傚倸鍊烽懗鍓佸垝椤栫偛桅婵炴垯鍨归悿鐐節婵犲倹鍣介柣顓炵墦閺屻劑寮撮悙娴嬪亾閸濄儳涓嶉柟鎯板Г閻撳繐鈹戦悙闈涗壕闁哄缍婇弻娑氣偓锝庡亝鐏忎即鏌熷畡鐗堝櫧缂侇喗鐟ч幑鍕Ω閵夈儳鐣?(Logistics Push - Hot-Pluggable)
-		// 闂傚倸鍊风粈渚€骞夐敓鐘偓鍐川閺夋垵鍋嶉梺鍝勭Р閸斿海绮绘ィ鍐╃厱闁靛绲芥俊鎸庛亜閳哄啫鍘撮柡灞炬礃瀵板嫰宕煎┑鍐ㄤ壕婵°倕鎳忛崑锟犳煙閸撗呭笡闁稿濮电换娑㈠箣閻愰潧鈪规繝娈垮枓閸嬫挾绱撻崒娆戠獢缂傚倹宀稿畷鎴﹀箛椤旂厧鐏婇梺鍝勫暙閸婂湱鈧碍宀搁幃姗€鎮欓幓鎺嗗亾閻戣棄绾фい鎾卞灪閻撶喖鏌ｅΟ鍝勬毐濠殿喖鍊块弻娑欐償閵堝懎鎯炲┑鈥冲级閸旀洟鍩為幋锕€鐐婇柍鍦亾閻忓啴鏌ｆ惔锛勭暛闁稿酣浜堕獮濠冩償閵婏絺鍋撻崘銊㈡闁靛骏绱曢崢鍗炩攽閻樼粯娑ф俊顐ｇ☉閻☆參姊绘担鍛婂暈闁荤啙鍥х；闁规崘顕х粻顖炴煕濞戝崬骞愰柡瀣叄閺岀喖鏌囬敃鈧晶濠氭煛閸☆厾绡€婵﹥妞藉畷顐﹀礋椤撶儐鏆俊鐐€х€靛矂宕归柆宥呯疄闁靛鍎Σ鍫ユ煏韫囧ň鍋撻搹顐ゆ殸?		&models.DeliveryOrder{},
+		// 承运商轨迹投影与服务商配置。
+		&models.DeliveryOrder{},
 		&models.DeliveryTrackingDetail{},
 		&models.LogisticsAPIProvider{},
 
@@ -1664,12 +1667,19 @@ func InitDB(dsn string) {
 		&models.BusinessEventSource{},
 		&models.StandardCommand{},
 		&models.NotificationRule{},
+		&models.BusinessApprovalPolicyConfiguration{},
 		&models.RuleExecutionLog{},
 		&models.AIUsageLog{},
 		&models.AuditLog{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
+	}
+	if err := cancelReplacedWorkflowNotificationPayloadTasks(DB); err != nil {
+		log.Fatal("Failed to cut over notification outbox:", err)
+	}
+	if err := SeparateQualityStandardApprovalConfigurationFromNotificationRules(DB); err != nil {
+		log.Fatal("Failed to separate quality standard approval configuration:", err)
 	}
 	if err := EnsureProductionExecutionRequestReplayIntegrity(DB); err != nil {
 		log.Fatal("Failed to enforce production execution replay integrity:", err)

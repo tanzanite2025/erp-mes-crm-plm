@@ -617,7 +617,7 @@ function ProductionExecutionResult({
           <>
             <div className='flex flex-wrap items-start justify-between gap-3'>
               <div className='min-w-0'>
-                <p className='truncate font-mono text-lg font-black tracking-wider'>
+                <p className='truncate font-maple-ui text-lg font-black tracking-wider'>
                   {response.state.productBarcode}
                 </p>
                 <p className='mt-1 text-xs text-muted-foreground'>

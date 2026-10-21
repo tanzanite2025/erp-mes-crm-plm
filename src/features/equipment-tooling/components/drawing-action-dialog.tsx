@@ -287,7 +287,7 @@ export function DrawingActionDialog({
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui font-bold'
                       placeholder={t(
                         'equipmentTooling.drawings.dialog.placeholders.version'
                       )}
@@ -364,7 +364,7 @@ export function DrawingActionDialog({
                     <span className='block text-[10px] font-black tracking-widest text-emerald-600 uppercase'>
                       {t('equipmentTooling.drawings.source.ready')}
                     </span>
-                    <span className='block max-w-[200px] truncate font-mono text-[9px] text-emerald-600/60'>
+                    <span className='block max-w-[200px] truncate font-maple-ui text-[9px] text-emerald-600/60'>
                       {pendingFile?.name ||
                         t('equipmentTooling.drawings.source.archived')}
                     </span>

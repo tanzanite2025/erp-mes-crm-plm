@@ -112,7 +112,7 @@ export function BusinessEventSourceActionSection({
                 readOnly={isActionIdentityLocked}
                 onChange={(event) => onCodeChange(index, event.target.value)}
                 className={cn(
-                  'h-9 rounded-2xl font-mono text-xs',
+                  'h-9 rounded-2xl font-maple-ui text-xs',
                   readonlyFieldClass(isActionIdentityLocked)
                 )}
               />

@@ -127,11 +127,11 @@ export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(
           <tbody>
             {data.items?.map((item, idx) => (
               <tr key={idx}>
-                <td className='border border-black p-2 font-mono'>
+                <td className='border border-black p-2 font-maple-ui'>
                   {item.materialCode}
                 </td>
                 <td className='border border-black p-2'>{item.materialName}</td>
-                <td className='border border-black p-2 font-mono'>
+                <td className='border border-black p-2 font-maple-ui'>
                   {item.batchNo ||
                     t('warehouse.adjustment.printDocument.batchFallback')}
                 </td>

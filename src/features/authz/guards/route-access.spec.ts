@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { TabItem } from '@/components/module-tabs'
 import { generatePermissionId } from '@/features/authz/data/permission-catalog'
-import { getProjectedTabsFromPermissionSnapshot } from './route-access'
+import {
+  getProjectedPermissionIdsForPath,
+  getProjectedTabsFromPermissionSnapshot,
+  matchesPathPermissionProjection,
+} from './route-access'
 
 const financeTabs: TabItem[] = [
   {
@@ -25,6 +29,23 @@ const financeTabs: TabItem[] = [
 ]
 
 describe('getProjectedTabsFromPermissionSnapshot', () => {
+  it('keeps the authenticated landing and HOME independent of dashboard permissions', () => {
+    const user = { permissions: [] }
+    expect(getProjectedPermissionIdsForPath('/')).toEqual([])
+    expect(getProjectedPermissionIdsForPath('/home')).toEqual([])
+    expect(matchesPathPermissionProjection(user, '/home')).toBe(true)
+    expect(matchesPathPermissionProjection(user, '/dashboard')).toBe(false)
+    expect(matchesPathPermissionProjection(user, '/dashboard/overview')).toBe(
+      false
+    )
+    expect(
+      matchesPathPermissionProjection(
+        { permissions: ['menu_dashboard'] },
+        '/dashboard/overview'
+      )
+    ).toBe(true)
+  })
+
   it('keeps sibling finance tabs visible when the parent menu grants route access', () => {
     const tabs = getProjectedTabsFromPermissionSnapshot(
       { permissions: ['menu_settings'] },

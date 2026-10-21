@@ -131,7 +131,7 @@ export function RemovedItemsPanel({
             >
               <div className='flex min-w-0 flex-wrap items-center gap-2 text-xs text-destructive'>
                 <span className='truncate font-black'>{item.label}</span>
-                <span className='font-mono text-muted-foreground'>
+                <span className='font-maple-ui text-muted-foreground'>
                   {item.code}
                 </span>
                 <span className='text-muted-foreground'>{item.meta}</span>
@@ -330,7 +330,7 @@ export function SummaryPanel({
               )}
             >
               <span className='truncate font-black'>{item.label}</span>
-              <span className='font-mono text-muted-foreground'>
+              <span className='font-maple-ui text-muted-foreground'>
                 {item.code}
               </span>
               <span className='text-muted-foreground'>{item.meta}</span>

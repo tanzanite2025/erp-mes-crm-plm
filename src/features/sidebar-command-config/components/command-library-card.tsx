@@ -46,7 +46,7 @@ export function CommandLibraryCard({
               <h3 className='truncate text-sm font-black tracking-tight'>
                 {command.title}
               </h3>
-              <p className='mt-1 font-mono text-[10px] font-black tracking-tight text-muted-foreground/50'>
+              <p className='mt-1 font-maple-ui text-[10px] font-black tracking-tight text-muted-foreground/50'>
                 {command.commandId}
               </p>
             </div>
@@ -76,10 +76,10 @@ export function CommandLibraryCard({
           </p>
 
           <div className='mt-3 grid gap-2 text-[10px] font-black text-muted-foreground/60 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'>
-            <p className='truncate rounded-xl bg-muted/25 px-3 py-2 font-mono'>
+            <p className='truncate rounded-xl bg-muted/25 px-3 py-2 font-maple-ui'>
               {t('sidebarCommandConfig.commandCard.route')} {command.route}
             </p>
-            <p className='truncate rounded-xl bg-muted/25 px-3 py-2 font-mono'>
+            <p className='truncate rounded-xl bg-muted/25 px-3 py-2 font-maple-ui'>
               {t('sidebarCommandConfig.commandCard.params')}{' '}
               {JSON.stringify(command.searchParams ?? {})}
             </p>

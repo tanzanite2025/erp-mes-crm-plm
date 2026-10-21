@@ -87,7 +87,7 @@ export function PurchaseLogisticsTimeline({
               )}
             >
               <div className='flex items-center justify-between'>
-                <span className='font-mono text-[10px] leading-none text-slate-400'>
+                <span className='font-maple-ui text-[10px] leading-none text-slate-400'>
                   {new Date(event.time).toLocaleString(
                     locale === 'zh-CN' ? 'zh-CN' : 'en-US',
                     {

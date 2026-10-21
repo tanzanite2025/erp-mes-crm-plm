@@ -91,7 +91,7 @@ export function SecurityAuthDialog({
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={handleKeyDown}
-            className='h-12 rounded-2xl border-none bg-slate-100 text-center font-mono text-lg tracking-[0.5em] transition-all focus:ring-2 focus:ring-orange-500 dark:bg-white/6 dark:text-slate-100'
+            className='h-12 rounded-2xl border-none bg-slate-100 text-center font-maple-ui text-lg tracking-[0.5em] transition-all focus:ring-2 focus:ring-orange-500 dark:bg-white/6 dark:text-slate-100'
             autoFocus
           />
         </div>

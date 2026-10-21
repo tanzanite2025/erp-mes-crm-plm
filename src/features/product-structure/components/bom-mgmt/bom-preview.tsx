@@ -126,7 +126,7 @@ export function BOMPreview({
                 {t('printMgmt.bomPreview.productLabel')}:
               </span>
               <span className='font-bold text-slate-900'>{productName}</span>
-              <span className='font-mono text-xs text-slate-500'>
+              <span className='font-maple-ui text-xs text-slate-500'>
                 {bom.changeOrderNo || t('printMgmt.bomPreview.noEcoEcn')}
               </span>
               <span className='text-xs text-slate-500'>
@@ -157,7 +157,7 @@ export function BOMPreview({
                     >
                       {productSummary.brake}
                     </Badge>
-                    <span className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500'>
+                    <span className='rounded bg-slate-100 px-1.5 py-0.5 font-maple-ui text-xs text-slate-500'>
                       {product.sku}
                     </span>
                     <span className='text-xs font-medium text-slate-400'>

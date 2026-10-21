@@ -163,10 +163,10 @@ export function PrepregCatalogList({
             >
               <div className='space-y-1'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <span className='font-mono text-[10px] font-black tracking-[0.2em] text-foreground/80'>
+                  <span className='font-maple-ui text-[10px] font-black tracking-[0.2em] text-foreground/80'>
                     {spec.code}
                   </span>
-                  <Badge className='rounded-full border-none bg-primary/10 font-mono text-[10px] tracking-widest text-primary uppercase'>
+                  <Badge className='rounded-full border-none bg-primary/10 font-maple-ui text-[10px] tracking-widest text-primary uppercase'>
                     {statusLabel(spec.status)}
                   </Badge>
                 </div>
@@ -294,7 +294,7 @@ function InfoCell({
         <div className='truncate text-[10px] font-black tracking-[0.16em] text-foreground/80 uppercase'>
           {main}
         </div>
-        <div className='truncate font-mono text-[10px] tracking-widest text-muted-foreground/55 uppercase'>
+        <div className='truncate font-maple-ui text-[10px] tracking-widest text-muted-foreground/55 uppercase'>
           {sub}
         </div>
       </div>

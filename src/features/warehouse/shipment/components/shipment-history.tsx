@@ -156,7 +156,7 @@ export function ShipmentHistory({
                     <td className='rounded-l-xl border-l-[3px] border-l-transparent px-4 py-3 transition-colors group-hover:border-l-primary/30 md:rounded-l-2xl md:border-l-4 md:px-6 md:py-4'>
                       <div className='flex flex-col gap-1 md:gap-1.5'>
                         <div className='flex items-center gap-2'>
-                          <span className='font-mono text-[8px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[9px]'>
+                          <span className='font-maple-ui text-[8px] font-black tracking-widest text-muted-foreground/60 uppercase md:text-[9px]'>
                             #{record.id.slice(-6)}
                           </span>
                           {isHighlighted && (
@@ -188,7 +188,7 @@ export function ShipmentHistory({
                           {item?.name ||
                             t('warehouse.shipment.history.masterRecord')}
                         </span>
-                        <span className='truncate font-mono text-[8px] tracking-widest text-muted-foreground/30 uppercase md:text-[9px]'>
+                        <span className='truncate font-maple-ui text-[8px] tracking-widest text-muted-foreground/30 uppercase md:text-[9px]'>
                           {item?.code || 'SKU'}
                         </span>
                       </div>
@@ -205,7 +205,7 @@ export function ShipmentHistory({
                         />
                         <span
                           className={cn(
-                            'shrink-0 font-mono text-sm font-black tracking-tighter tabular-nums md:text-[16px]',
+                            'shrink-0 font-maple-ui text-sm font-black tracking-tighter tabular-nums md:text-[16px]',
                             record.status === 'VOID'
                               ? 'text-muted-foreground/40'
                               : 'text-primary'
@@ -228,7 +228,7 @@ export function ShipmentHistory({
                         )?.label || record.sourceCategory}
                       </Badge>
                     </td>
-                    <td className='px-4 py-3 font-mono text-[8px] font-bold whitespace-nowrap text-muted-foreground/40 md:px-6 md:py-4 md:text-[9px]'>
+                    <td className='px-4 py-3 font-maple-ui text-[8px] font-bold whitespace-nowrap text-muted-foreground/40 md:px-6 md:py-4 md:text-[9px]'>
                       {record.shipmentDate}
                     </td>
                     <td className='rounded-r-xl px-4 py-3 text-right md:rounded-r-2xl md:px-6 md:py-4'>

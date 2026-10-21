@@ -6,7 +6,7 @@ export const Route = createFileRoute('/_authenticated/')({
     await waitForAuthHydration()
 
     throw redirect({
-      href: '/dashboard/overview',
+      href: '/home',
       replace: true,
     })
   },

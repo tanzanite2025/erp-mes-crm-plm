@@ -107,7 +107,7 @@ function SalesExchangeReceivingQueueItemCard({
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2'>
-            <span className='truncate font-mono text-[11px] font-black tracking-widest text-sky-700 uppercase'>
+            <span className='truncate font-maple-ui text-[11px] font-black tracking-widest text-sky-700 uppercase'>
               {salesExchangeDraftRecord.exchangeNo}
             </span>
             <Badge className='h-5 rounded-full border-none bg-sky-500/10 px-2 text-[8px] font-black text-sky-700'>
@@ -120,7 +120,7 @@ function SalesExchangeReceivingQueueItemCard({
             <div className='flex items-center gap-1.5'>
               <ArrowLeftRight className='size-3 text-sky-700' />
               <span className='shrink-0'>来源订单</span>
-              <span className='truncate font-mono font-black text-slate-800'>
+              <span className='truncate font-maple-ui font-black text-slate-800'>
                 {salesExchangeDraftRecord.sourceSalesOrderNo}
               </span>
             </div>
@@ -137,19 +137,19 @@ function SalesExchangeReceivingQueueItemCard({
       <div className='mt-4 grid grid-cols-3 gap-2 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>数量</div>
-          <div className='mt-1 font-mono text-sm text-slate-800'>
+          <div className='mt-1 font-maple-ui text-sm text-slate-800'>
             {salesExchangeDraftRecord.totalExchangeQuantity}
           </div>
         </div>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>标签码</div>
-          <div className='mt-1 font-mono text-sm text-slate-800'>
+          <div className='mt-1 font-maple-ui text-sm text-slate-800'>
             {recognizedLabelCodeCount}
           </div>
         </div>
         <div className='rounded-xl bg-muted/40 px-2 py-2'>
           <div className='text-[8px]'>日期</div>
-          <div className='mt-1 font-mono text-sm text-slate-800'>
+          <div className='mt-1 font-maple-ui text-sm text-slate-800'>
             {formatSalesExchangeReceivingDate(
               salesExchangeDraftRecord.exchangeDate
             )}
@@ -175,7 +175,7 @@ function SalesExchangeReceivingQueueItemCard({
             <div className='text-[8px] font-black tracking-widest text-sky-700/70 uppercase'>
               预计补发
             </div>
-            <div className='mt-1 truncate font-mono text-[11px] font-black text-slate-900'>
+            <div className='mt-1 truncate font-maple-ui text-[11px] font-black text-slate-900'>
               {salesExchangeDraftRecord.expectedReplacementDate || '待确认'}
             </div>
           </div>
@@ -192,11 +192,11 @@ function SalesExchangeReceivingQueueItemCard({
               <p className='truncate text-[11px] font-black text-slate-800'>
                 {lineDraft.productModel || lineDraft.productCode}
               </p>
-              <p className='truncate font-mono text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
+              <p className='truncate font-maple-ui text-[9px] font-bold tracking-widest text-muted-foreground/40 uppercase'>
                 {lineDraft.productCode}
               </p>
             </div>
-            <span className='shrink-0 font-mono text-[11px] font-black text-sky-700'>
+            <span className='shrink-0 font-maple-ui text-[11px] font-black text-sky-700'>
               {lineDraft.exchangeQuantity} {lineDraft.uom}
             </span>
             {typeof lineDraft.id === 'number' &&
@@ -330,7 +330,7 @@ export function SalesExchangeReceivingQueueCard() {
                   <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                     待处理
                   </span>
-                  <span className='font-mono text-[11px] font-black text-slate-900'>
+                  <span className='font-maple-ui text-[11px] font-black text-slate-900'>
                     {items.length}
                   </span>
                 </div>
@@ -338,7 +338,7 @@ export function SalesExchangeReceivingQueueCard() {
                   <span className='text-[7px] font-black tracking-widest text-muted-foreground/45 uppercase'>
                     待收数量
                   </span>
-                  <span className='font-mono text-[11px] font-black text-sky-700'>
+                  <span className='font-maple-ui text-[11px] font-black text-sky-700'>
                     {totalPendingQuantity}
                   </span>
                 </div>

@@ -173,7 +173,7 @@ export function CustomerActionDialog({
               <Input
                 id='code'
                 placeholder={t('trading.customers.dialog.placeholders.code')}
-                className='h-10 rounded-2xl border-none bg-muted/50 font-mono text-[12px] font-bold sm:h-11'
+                className='h-10 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px] font-bold sm:h-11'
                 value={formData.code}
                 onChange={(event) => updateField('code', event.target.value)}
               />

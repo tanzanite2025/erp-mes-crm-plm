@@ -242,7 +242,7 @@ export function SupplierActionDialog({
                 ? t('purchase.suppliers.fields.codePlaceholder')
                 : t('purchase.suppliers.fields.codeAutoPlaceholder')
             }
-            className={`${inputClass} font-mono tabular-nums`}
+            className={`${inputClass} font-maple-ui tabular-nums`}
             value={formData.code}
             onChange={(e) => updateField('code', e.target.value)}
             disabled={!supplier}
@@ -385,7 +385,7 @@ export function SupplierActionDialog({
               placeholder={t(
                 'purchase.suppliers.fields.contactPhonePlaceholder'
               )}
-              className={`${iconInputClass} font-mono tabular-nums`}
+              className={`${iconInputClass} font-maple-ui tabular-nums`}
               value={formData.contactPhone}
               onChange={(e) => updateField('contactPhone', e.target.value)}
             />

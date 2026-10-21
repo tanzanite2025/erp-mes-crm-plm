@@ -165,7 +165,7 @@ export function UnitActionDialog({
               updateFormData({ code: e.target.value.toUpperCase() })
             }}
             disabled={unit?.isSystem}
-            className='h-10 rounded-xl font-mono text-xs font-black uppercase'
+            className='h-10 rounded-xl font-maple-ui text-xs font-black uppercase'
           />
         </div>
         <div className='space-y-2'>
@@ -219,7 +219,7 @@ export function UnitActionDialog({
                 ),
               })
             }}
-            className='h-10 rounded-xl font-mono text-xs font-black'
+            className='h-10 rounded-xl font-maple-ui text-xs font-black'
           />
         </div>
       </div>

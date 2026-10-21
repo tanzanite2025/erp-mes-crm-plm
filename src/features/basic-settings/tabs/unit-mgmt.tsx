@@ -266,7 +266,7 @@ export function UnitMgmt() {
                         >
                           <TableCell className='pl-8'>
                             <div className='flex items-center gap-2'>
-                              <span className='font-mono text-[10px] font-black tracking-widest text-primary'>
+                              <span className='font-maple-ui text-[10px] font-black tracking-widest text-primary'>
                                 {unit.code}
                               </span>
                               {unit.isSystem && (
@@ -285,7 +285,7 @@ export function UnitMgmt() {
                               {t(categoryLabel)}
                             </Badge>
                           </TableCell>
-                          <TableCell className='text-center font-mono text-[10px] font-black text-muted-foreground/40'>
+                          <TableCell className='text-center font-maple-ui text-[10px] font-black text-muted-foreground/40'>
                             {unit.precision}
                           </TableCell>
                           <TableCell>

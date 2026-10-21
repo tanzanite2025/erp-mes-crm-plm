@@ -18,7 +18,7 @@ export function MindmapDetailSummary({
         <div className='text-sm font-black tracking-tight text-foreground'>
           {selectedNode.nameSnapshot}
         </div>
-        <div className='grid gap-2 font-mono text-[10px] text-muted-foreground/70'>
+        <div className='grid gap-2 font-maple-ui text-[10px] text-muted-foreground/70'>
           <span>
             LEVEL {selectedNode.level} / {levelNames[selectedNode.level]}
           </span>

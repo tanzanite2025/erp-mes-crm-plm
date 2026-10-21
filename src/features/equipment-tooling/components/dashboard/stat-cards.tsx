@@ -56,7 +56,7 @@ export const StatCard = ({
               {title}
             </span>
             {subtext && (
-              <span className='mt-1 font-mono text-[8px] font-bold opacity-30'>
+              <span className='mt-1 font-maple-ui text-[8px] font-bold opacity-30'>
                 {subtext}
               </span>
             )}
@@ -98,7 +98,7 @@ export const StatCard = ({
               </span>
               <span
                 className={cn(
-                  'font-mono text-[9px] font-bold',
+                  'font-maple-ui text-[9px] font-bold',
                   activeColor.split(' ')[0]
                 )}
               >

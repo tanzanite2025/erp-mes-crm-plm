@@ -1,8 +1,9 @@
 import { DEFAULT_LOCALE, translate, type TranslationKey } from '@/locales'
 
 const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
-  '/dashboard': 'sidebar.items.dashboard',
-  '/dashboard/overview': 'sidebar.items.dashboard',
+  '/home': 'home.title',
+  '/dashboard': 'dashboard.page.tabs.overview',
+  '/dashboard/overview': 'dashboard.page.tabs.overview',
   '/warehouse': 'warehouse.tabs.stock',
   '/warehouse/reports': 'warehouse.tabs.reports',
   '/warehouse/inbound': 'warehouse.tabs.inbound',
@@ -191,6 +192,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/approval': 'sidebar.items.approvalCenter',
   '/approval/requests': 'approval.tabs.requests',
   '/approval/history': 'approval.tabs.history',
+  '/approval/business-approval-policies': 'approval.tabs.policies',
   '/message-center': 'sidebar.items.messageCenter',
   '/message-center/rules': 'messageCenter.tabs.rules',
   '/message-center/sources': 'messageCenter.tabs.sources',

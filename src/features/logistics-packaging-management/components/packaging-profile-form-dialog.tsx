@@ -354,7 +354,7 @@ export function PackagingProfileFormDialog({
                     )}
                   </Label>
                   <Input
-                    className={cn(packagingFieldClass, 'font-mono')}
+                    className={cn(packagingFieldClass, 'font-maple-ui')}
                     value={productWeight}
                     disabled
                   />
@@ -389,7 +389,7 @@ export function PackagingProfileFormDialog({
                   </Label>
                   <Input
                     type='number'
-                    className={cn(packagingFieldClass, 'font-mono')}
+                    className={cn(packagingFieldClass, 'font-maple-ui')}
                     value={draft.length}
                     onChange={(event) =>
                       onDraftChange((current) => ({
@@ -407,7 +407,7 @@ export function PackagingProfileFormDialog({
                   </Label>
                   <Input
                     type='number'
-                    className={cn(packagingFieldClass, 'font-mono')}
+                    className={cn(packagingFieldClass, 'font-maple-ui')}
                     value={draft.width}
                     onChange={(event) =>
                       onDraftChange((current) => ({
@@ -425,7 +425,7 @@ export function PackagingProfileFormDialog({
                   </Label>
                   <Input
                     type='number'
-                    className={cn(packagingFieldClass, 'font-mono')}
+                    className={cn(packagingFieldClass, 'font-maple-ui')}
                     value={draft.height}
                     onChange={(event) =>
                       onDraftChange((current) => ({
@@ -443,7 +443,7 @@ export function PackagingProfileFormDialog({
                   </Label>
                   <Input
                     type='number'
-                    className={cn(packagingFieldClass, 'font-mono')}
+                    className={cn(packagingFieldClass, 'font-maple-ui')}
                     value={draft.capacity}
                     onChange={(event) =>
                       onDraftChange((current) => ({

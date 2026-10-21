@@ -1,7 +1,7 @@
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
 } from '../data/schema'
 import { areSameProductAttributeCategoryKey } from './product-attribute-machine-value'
 
@@ -11,6 +11,19 @@ export const PRODUCT_ATTRIBUTE_CATEGORY_KEYS = {
   brake: 'brakeType',
   version: 'versionLevel',
 } as const
+
+// Product grade is owned by BOM; retain it only in BOM-derived display previews.
+export function filterProductSpecificationOwnedAttributeValues<
+  T extends { categoryKey: string },
+>(items: readonly T[]): T[] {
+  return items.filter(
+    (item) =>
+      !areSameProductAttributeCategoryKey(
+        item.categoryKey,
+        PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
+      )
+  )
+}
 
 export function getAttributeValue(
   product: Pick<Product, 'attributeValues'> | undefined,
@@ -58,10 +71,13 @@ export function upsertAttributeValue(
   return { ...product, attributeValues: nextValues }
 }
 
-export function getCategoryName(
+export function getProductTemplateAttributeLevelOneCategoryName(
   locale: string,
   category:
-    | Pick<ProductAttributeCategory, 'nameZh' | 'nameEn' | 'key'>
+    | Pick<
+        ProductTemplateAttributeLevelOneCategory,
+        'nameZh' | 'nameEn' | 'key'
+      >
     | undefined
 ): string {
   if (!category) return ''
@@ -70,10 +86,13 @@ export function getCategoryName(
   return category.nameZh || category.nameEn || category.key
 }
 
-export function getOptionLabel(
+export function getProductTemplateAttributeLevelTwoOptionLabel(
   locale: string,
   option:
-    | Pick<ProductAttributeOption, 'labelZh' | 'labelEn' | 'value'>
+    | Pick<
+        ProductTemplateAttributeLevelTwoOption,
+        'labelZh' | 'labelEn' | 'value'
+      >
     | undefined
 ): string {
   if (!option) return ''

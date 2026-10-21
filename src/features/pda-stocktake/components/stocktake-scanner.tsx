@@ -339,7 +339,7 @@ function ScannerItemDetail({
               <h2 className='text-xl leading-none font-black tracking-tighter'>
                 {item.materialName}
               </h2>
-              <span className='mt-1 font-mono text-[10px] font-black tracking-widest text-muted-foreground opacity-60'>
+              <span className='mt-1 font-maple-ui text-[10px] font-black tracking-widest text-muted-foreground opacity-60'>
                 {item.materialCode} / {item.batchNo}
               </span>
             </div>
@@ -352,7 +352,7 @@ function ScannerItemDetail({
               </Label>
               <div className='flex items-center gap-2'>
                 <Box className='size-3 text-muted-foreground/40' />
-                <span className='font-mono text-lg font-black'>
+                <span className='font-maple-ui text-lg font-black'>
                   {item.theoryQty}{' '}
                   <small className='text-[10px]'>{item.uom}</small>
                 </span>
@@ -403,7 +403,7 @@ function ScannerItemDetail({
             </Button>
             <Input
               type='number'
-              className='h-14 rounded-2xl border-none bg-background text-center font-mono text-2xl font-black shadow-inner focus-visible:ring-blue-500/20'
+              className='h-14 rounded-2xl border-none bg-background text-center font-maple-ui text-2xl font-black shadow-inner focus-visible:ring-blue-500/20'
               value={actualQty}
               onChange={(e) => {
                 setActualQty(parseFloat(e.target.value) || 0)

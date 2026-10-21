@@ -122,19 +122,19 @@ export function BOMRecordsTab() {
           <div className='flex flex-wrap items-center gap-2'>
             <Badge
               variant='outline'
-              className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+              className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
             >
               正式入口
             </Badge>
             <Badge
               variant='outline'
-              className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+              className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
             >
               页面聚合
             </Badge>
             <Badge
               variant='outline'
-              className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+              className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
             >
               {readResource.status === 'ready'
                 ? '筛选就绪'
@@ -161,7 +161,7 @@ export function BOMRecordsTab() {
               {selectedProductLabel ? (
                 <Badge
                   variant='outline'
-                  className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                  className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
                 >
                   产品 · {selectedProductLabel}
                 </Badge>
@@ -169,7 +169,7 @@ export function BOMRecordsTab() {
               {selectedBomLabel ? (
                 <Badge
                   variant='outline'
-                  className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                  className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
                 >
                   BOM · {selectedBomLabel}
                 </Badge>
@@ -177,7 +177,7 @@ export function BOMRecordsTab() {
               {createdFrom || createdTo ? (
                 <Badge
                   variant='outline'
-                  className='h-5 rounded-full border-dashed bg-background font-mono text-[8px]'
+                  className='h-5 rounded-full border-dashed bg-background font-maple-ui text-[8px]'
                 >
                   时间 · {createdFrom || '—'} ~ {createdTo || '—'}
                 </Badge>

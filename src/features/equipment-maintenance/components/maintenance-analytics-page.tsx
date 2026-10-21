@@ -271,7 +271,7 @@ export function MaintenanceAnalyticsPage() {
                       style={{ backgroundColor: item.color }}
                     />
                     <span className='truncate'>{item.name}:</span>
-                    <span className='font-mono font-black text-foreground'>
+                    <span className='font-maple-ui font-black text-foreground'>
                       {item.value}%
                     </span>
                   </div>
@@ -340,7 +340,7 @@ export function MaintenanceAnalyticsPage() {
                 <TrendingUp className='size-4 text-cyan-500' />
                 维保负荷与响应时效趋势
               </CardTitle>
-              <span className='rounded-sm bg-muted/30 px-1 font-mono text-[8px] font-black text-muted-foreground/60'>
+              <span className='rounded-sm bg-muted/30 px-1 font-maple-ui text-[8px] font-black text-muted-foreground/60'>
                 月度周期
               </span>
             </CardHeader>
@@ -446,11 +446,11 @@ export function MaintenanceAnalyticsPage() {
                     className='flex items-center justify-between rounded-xl border border-dashed border-muted/30 bg-background/50 p-2 text-[11px]'
                   >
                     <div className='flex min-w-0 items-center gap-2'>
-                      <span className='flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 font-mono text-[10px] font-black text-primary'>
+                      <span className='flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 font-maple-ui text-[10px] font-black text-primary'>
                         {asset.rank}
                       </span>
                       <div className='min-w-0'>
-                        <p className='mb-1 font-mono text-[9px] leading-none font-black tracking-tight text-muted-foreground/60'>
+                        <p className='mb-1 font-maple-ui text-[9px] leading-none font-black tracking-tight text-muted-foreground/60'>
                           {asset.sn}
                         </p>
                         <p className='truncate leading-none font-bold text-foreground/80'>
@@ -459,7 +459,7 @@ export function MaintenanceAnalyticsPage() {
                       </div>
                     </div>
                     <div className='flex shrink-0 items-center gap-1.5'>
-                      <span className='font-mono text-xs font-black text-foreground'>
+                      <span className='font-maple-ui text-xs font-black text-foreground'>
                         {asset.score}分
                       </span>
                       <span
@@ -477,7 +477,7 @@ export function MaintenanceAnalyticsPage() {
               )}
             </CardContent>
           </div>
-          <div className='mt-3 border-t border-dashed border-muted/20 pt-3 text-center font-mono text-[8px] text-muted-foreground/30'>
+          <div className='mt-3 border-t border-dashed border-muted/20 pt-3 text-center font-maple-ui text-[8px] text-muted-foreground/30'>
             ANALYTICS SYSTEM SYNCED
           </div>
         </Card>

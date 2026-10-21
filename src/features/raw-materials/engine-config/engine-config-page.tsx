@@ -303,7 +303,9 @@ function CuttingEngineConfigForm({
                   <span>
                     {t('rawMaterials.engineConfig.weights.splitPenalty')}
                   </span>
-                  <span className='font-mono text-primary'>{splitPenalty}</span>
+                  <span className='font-maple-ui text-primary'>
+                    {splitPenalty}
+                  </span>
                 </label>
                 <div className='flex items-center gap-3'>
                   <input
@@ -318,7 +320,7 @@ function CuttingEngineConfigForm({
                     type='number'
                     value={splitPenalty}
                     onChange={(e) => setSplitPenalty(e.target.value)}
-                    className='h-9 w-14 rounded-lg border-none bg-background text-center font-mono text-xs'
+                    className='h-9 w-14 rounded-lg border-none bg-background text-center font-maple-ui text-xs'
                   />
                 </div>
               </div>
@@ -328,7 +330,7 @@ function CuttingEngineConfigForm({
                   <span>
                     {t('rawMaterials.engineConfig.weights.mustFulfillPenalty')}
                   </span>
-                  <span className='font-mono text-primary'>
+                  <span className='font-maple-ui text-primary'>
                     {mustFulfillPenalty}
                   </span>
                 </label>
@@ -346,7 +348,7 @@ function CuttingEngineConfigForm({
                     type='number'
                     value={mustFulfillPenalty}
                     onChange={(e) => setMustFulfillPenalty(e.target.value)}
-                    className='h-9 w-20 rounded-lg border-none bg-background text-center font-mono text-xs'
+                    className='h-9 w-20 rounded-lg border-none bg-background text-center font-maple-ui text-xs'
                   />
                 </div>
               </div>
@@ -572,7 +574,7 @@ function CuttingEngineConfigForm({
                           'rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.label'
                         )}
                       </span>
-                      <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+                      <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/60'>
                         {t(
                           'rawMaterials.engineConfig.constraints.directionRules.sameDirectionPreferred.hint'
                         )}
@@ -598,7 +600,7 @@ function CuttingEngineConfigForm({
                           'rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.label'
                         )}
                       </span>
-                      <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+                      <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/60'>
                         {t(
                           'rawMaterials.engineConfig.constraints.directionRules.directionSwitchPenalty.hint'
                         )}
@@ -610,7 +612,7 @@ function CuttingEngineConfigForm({
                       onChange={(e) =>
                         setDirectionSwitchPenalty(e.target.value)
                       }
-                      className='h-10 w-16 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+                      className='h-10 w-16 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
                     />
                   </div>
                 </div>
@@ -653,7 +655,7 @@ function CuttingEngineConfigForm({
                         'rawMaterials.engineConfig.constraints.lengthRules.minSupportedLength.label'
                       )}
                     </span>
-                    <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+                    <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/60'>
                       {t(
                         'rawMaterials.engineConfig.constraints.lengthRules.minSupportedLength.hint'
                       )}
@@ -664,7 +666,7 @@ function CuttingEngineConfigForm({
                       type='text'
                       value={minSupportedLength}
                       onChange={(e) => setMinSupportedLength(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
                     />
                     <span className='text-[10px] font-black text-muted-foreground/50'>
                       {t('rawMaterials.engineConfig.constraints.units.mm')}
@@ -679,7 +681,7 @@ function CuttingEngineConfigForm({
                         'rawMaterials.engineConfig.constraints.lengthRules.maxSupportedLength.label'
                       )}
                     </span>
-                    <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+                    <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/60'>
                       {t(
                         'rawMaterials.engineConfig.constraints.lengthRules.maxSupportedLength.hint'
                       )}
@@ -690,7 +692,7 @@ function CuttingEngineConfigForm({
                       type='text'
                       value={maxSupportedLength}
                       onChange={(e) => setMaxSupportedLength(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
                     />
                     <span className='text-[10px] font-black text-muted-foreground/50'>
                       {t('rawMaterials.engineConfig.constraints.units.mm')}
@@ -705,7 +707,7 @@ function CuttingEngineConfigForm({
                         'rawMaterials.engineConfig.constraints.lengthRules.fixedDecisionLength.label'
                       )}
                     </span>
-                    <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/60'>
+                    <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/60'>
                       {t(
                         'rawMaterials.engineConfig.constraints.lengthRules.fixedDecisionLength.hint'
                       )}
@@ -716,7 +718,7 @@ function CuttingEngineConfigForm({
                       type='text'
                       value={fixedDecisionLength}
                       onChange={(e) => setFixedDecisionLength(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-mono text-xs'
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
                     />
                     <span className='text-[10px] font-black text-muted-foreground/50'>
                       {t('rawMaterials.engineConfig.constraints.units.mm')}
@@ -743,7 +745,7 @@ function CuttingEngineConfigForm({
                   {SUPPORTED_CUT_ANGLE_OPTIONS.map((option) => (
                     <span
                       key={option.value}
-                      className='inline-flex h-8 items-center rounded-full bg-primary/10 px-3 font-mono text-[10px] font-black text-primary'
+                      className='inline-flex h-8 items-center rounded-full bg-primary/10 px-3 font-maple-ui text-[10px] font-black text-primary'
                     >
                       {option.label}
                     </span>

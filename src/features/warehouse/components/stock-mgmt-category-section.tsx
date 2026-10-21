@@ -126,7 +126,7 @@ export function StockMgmtCategorySection({
                         isAlert && 'bg-rose-500/3'
                       )}
                     >
-                      <TableCell className='max-w-[100px] truncate py-2.5 pl-4 font-mono text-[9px] font-black text-muted-foreground/40 md:py-3 md:pl-8 md:text-[10px]'>
+                      <TableCell className='max-w-[100px] truncate py-2.5 pl-4 font-maple-ui text-[9px] font-black text-muted-foreground/40 md:py-3 md:pl-8 md:text-[10px]'>
                         {item.materialCode}
                       </TableCell>
                       <TableCell className='py-2.5 md:py-3'>
@@ -142,7 +142,7 @@ export function StockMgmtCategorySection({
                         <div className='flex flex-col items-end gap-0.5 md:gap-1'>
                           <div
                             className={cn(
-                              'font-mono text-sm font-black tracking-tighter md:text-base',
+                              'font-maple-ui text-sm font-black tracking-tighter md:text-base',
                               total === 0
                                 ? 'text-muted-foreground/20'
                                 : isAlert
@@ -155,7 +155,7 @@ export function StockMgmtCategorySection({
                               {item.uom}
                             </span>
                           </div>
-                          <div className='animate-in font-mono text-[8px] font-black tracking-tighter text-primary/40 uppercase duration-500 fade-in slide-in-from-right-1'>
+                          <div className='animate-in font-maple-ui text-[8px] font-black tracking-tighter text-primary/40 uppercase duration-500 fade-in slide-in-from-right-1'>
                             @
                             {item.averageUnitCost?.toLocaleString(undefined, {
                               minimumFractionDigits: 2,

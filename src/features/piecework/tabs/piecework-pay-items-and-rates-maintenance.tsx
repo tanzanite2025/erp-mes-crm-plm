@@ -174,7 +174,7 @@ export function PieceworkRules() {
             {rates.map((rate) => (
               <TableRow key={rate.id}>
                 <TableCell>{rate.payItemName}</TableCell>
-                <TableCell className='font-mono whitespace-nowrap'>
+                <TableCell className='font-maple-ui whitespace-nowrap'>
                   {rate.unitPrice.toFixed(4)} {rate.currency} / {rate.unit}
                 </TableCell>
                 <TableCell className='whitespace-nowrap'>

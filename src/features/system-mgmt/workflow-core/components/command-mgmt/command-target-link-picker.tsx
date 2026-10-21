@@ -28,7 +28,13 @@ export function CommandTargetLinkPicker({
   const [searchTerm, setSearchTerm] = useState('')
   const normalizedValue = normalizeSearchHref(value)
 
-  const routeOptions = useMemo(() => getKnowledgeRouteOptions(t), [t])
+  const routeOptions = useMemo(
+    () => [
+      { value: '[ActionURL]', label: '当前业务记录', parentLabel: '事件关联' },
+      ...getKnowledgeRouteOptions(t),
+    ],
+    [t]
+  )
   const routeOptionsForSelect = useMemo(() => {
     const currentRouteOption = routeOptions.find(
       (option) => option.value === normalizedValue
@@ -199,7 +205,7 @@ export function CommandTargetLinkPicker({
                         )}
                       />
                     </div>
-                    <div className='mt-1 truncate font-mono text-[8px] leading-none text-muted-foreground/70'>
+                    <div className='mt-1 truncate font-maple-ui text-[8px] leading-none text-muted-foreground/70'>
                       {option.value}
                     </div>
                   </button>
@@ -222,7 +228,7 @@ export function CommandTargetLinkPicker({
             <div className='text-[9px] font-black tracking-widest text-muted-foreground/70 uppercase'>
               {selectedRouteOption.parentLabel}
             </div>
-            <div className='font-mono text-[8px] text-muted-foreground'>
+            <div className='font-maple-ui text-[8px] text-muted-foreground'>
               {selectedRouteOption.value}
             </div>
           </div>

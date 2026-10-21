@@ -125,7 +125,7 @@ export function SalesOrderAfterSalesCard({
           </div>
           <div
             className={cn(
-              'rounded-full px-2 py-1 font-mono text-[8px] font-black uppercase',
+              'rounded-full px-2 py-1 font-maple-ui text-[8px] font-black uppercase',
               meta.badgeClassName
             )}
           >

@@ -51,7 +51,7 @@ export function AuthDebugIndicator() {
     <Badge
       variant='outline'
       title={`permissions: ${permissionCount}`}
-      className='hidden h-8 items-center gap-1 rounded-full border-dashed border-emerald-500/40 bg-emerald-500/5 px-2.5 font-mono text-[10px] text-emerald-700 lg:inline-flex dark:text-emerald-300'
+      className='hidden h-8 items-center gap-1 rounded-full border-dashed border-emerald-500/40 bg-emerald-500/5 px-2.5 font-maple-ui text-[10px] text-emerald-700 lg:inline-flex dark:text-emerald-300'
     >
       <ShieldCheck className='size-3' />
       <span>P{permissionIds.length}</span>

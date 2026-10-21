@@ -167,7 +167,7 @@ export function AdjustmentHistory() {
                         key={adj.id}
                         className='group border-muted/50 transition-colors hover:bg-muted/30'
                       >
-                        <TableCell className='max-w-[120px] truncate py-2 pl-5 font-mono text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase transition-colors group-hover:text-amber-600 md:py-2.5 md:pl-8 md:text-[10px]'>
+                        <TableCell className='max-w-[120px] truncate py-2 pl-5 font-maple-ui text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase transition-colors group-hover:text-amber-600 md:py-2.5 md:pl-8 md:text-[10px]'>
                           {adj.adjustmentNo}
                         </TableCell>
                         <TableCell>
@@ -206,7 +206,7 @@ export function AdjustmentHistory() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className='py-2 font-mono text-[8px] whitespace-nowrap text-muted-foreground/40 md:py-2.5 md:text-[9px]'>
+                        <TableCell className='py-2 font-maple-ui text-[8px] whitespace-nowrap text-muted-foreground/40 md:py-2.5 md:text-[9px]'>
                           <div className='flex flex-col gap-1'>
                             <span>
                               {formatWarehouseDisplayDateTime(

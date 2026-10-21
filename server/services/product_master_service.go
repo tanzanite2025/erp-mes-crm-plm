@@ -125,7 +125,7 @@ func validateProductWriteInput(input ProductWriteInput) error {
 
 func normalizeProductAttributeValues(items []models.ProductAttributeValue) []models.ProductAttributeValue {
 	result := make([]models.ProductAttributeValue, 0, len(items))
-	for idx, item := range items {
+	for idx, item := range filterProductSpecificationOwnedAttributeValues(items) {
 		item.ProductID = strings.TrimSpace(item.ProductID)
 		item.CategoryKey = strings.TrimSpace(item.CategoryKey)
 		item.OptionValue = strings.TrimSpace(item.OptionValue)
@@ -144,6 +144,9 @@ func normalizeProductAttributeValues(items []models.ProductAttributeValue) []mod
 }
 
 func replaceProductAttributeValues(tx *gorm.DB, productID string, items []models.ProductAttributeValue) error {
+	if err := validateAndLockProductAttributeValueReferences(tx, items); err != nil {
+		return err
+	}
 	if err := tx.Where("product_id = ?", productID).Delete(&models.ProductAttributeValue{}).Error; err != nil {
 		return err
 	}
@@ -235,6 +238,9 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 		modelInput := toProductModel(issuedInput)
 		modelInput.EngineeringSpecID = normalizeEngineeringSpecID(modelInput.EngineeringSpecID)
 		modelInput.AttributeValues = normalizeProductAttributeValues(modelInput.AttributeValues)
+		if err := validateAndLockProductLegacyAttributeFieldReferences(tx, &modelInput); err != nil {
+			return err
+		}
 		if modelInput.EngineeringSpecID != "" {
 			var spec models.EngineeringSpec
 			if err := tx.Where("id = ?", modelInput.EngineeringSpecID).First(&spec).Error; err != nil {
@@ -258,7 +264,7 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 
 			modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
 			modelInput.Version = existing.Version + 1
-			if err := tx.Model(&existing).Updates(modelInput).Error; err != nil {
+			if err := tx.Model(&existing).Omit("AttributeValues").Updates(modelInput).Error; err != nil {
 				return err
 			}
 			if err := replaceProductAttributeValues(tx, existing.ID, modelInput.AttributeValues); err != nil {
@@ -289,9 +295,9 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 
 		modelInput.MasterDataControl.Normalize("R1")
 		modelInput.Version = 1
-		createTx := tx
+		createTx := tx.Omit("AttributeValues")
 		if modelInput.EngineeringSpecID == "" {
-			createTx = createTx.Omit("EngineeringSpecID")
+			createTx = createTx.Omit("AttributeValues", "EngineeringSpecID")
 		}
 		if err := createTx.Create(&modelInput).Error; err != nil {
 			return err

@@ -214,7 +214,7 @@ export function ProcessLibraryPanel() {
             </div>
             <Badge
               variant='outline'
-              className='h-8 rounded-full px-3 font-mono text-[10px]'
+              className='h-8 rounded-full px-3 font-maple-ui text-[10px]'
             >
               {filteredProcesses.length} / {availableProcesses.length}
             </Badge>
@@ -261,7 +261,7 @@ export function ProcessLibraryPanel() {
                     </h4>
                     <Badge
                       variant='outline'
-                      className='rounded-full font-mono text-[10px]'
+                      className='rounded-full font-maple-ui text-[10px]'
                     >
                       {process.code}
                     </Badge>

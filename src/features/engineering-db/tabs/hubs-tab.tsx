@@ -148,7 +148,7 @@ export function HubsTab() {
             <span className='text-sm font-bold text-foreground'>
               {row.original.item.name}
             </span>
-            <span className='font-mono text-[10px] tracking-widest text-muted-foreground uppercase'>
+            <span className='font-maple-ui text-[10px] tracking-widest text-muted-foreground uppercase'>
               {row.original.item.brand ||
                 t('engineering.labeling.table.generic')}
             </span>
@@ -160,7 +160,10 @@ export function HubsTab() {
       accessorKey: 'item.holeCount',
       header: t('engineering.hubs.table.holes'),
       cell: ({ row }) => (
-        <Badge variant='outline' className='border-none bg-muted/50 font-mono'>
+        <Badge
+          variant='outline'
+          className='border-none bg-muted/50 font-maple-ui'
+        >
           {row.original.item.holeCount || '--'}H
         </Badge>
       ),
@@ -168,7 +171,7 @@ export function HubsTab() {
     {
       header: t('engineering.hubs.table.geometry'),
       cell: ({ row }) => (
-        <div className='flex items-center gap-2 font-mono text-[11px]'>
+        <div className='flex items-center gap-2 font-maple-ui text-[11px]'>
           <span className='text-muted-foreground'>
             {row.original.item.pcdLeft || '--'}
           </span>
@@ -182,7 +185,7 @@ export function HubsTab() {
     {
       header: t('engineering.hubs.table.flange'),
       cell: ({ row }) => (
-        <div className='flex items-center gap-2 font-mono text-[11px]'>
+        <div className='flex items-center gap-2 font-maple-ui text-[11px]'>
           <span className='font-bold text-indigo-600'>
             {row.original.item.flangeLeft || '--'}
           </span>

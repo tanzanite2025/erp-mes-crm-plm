@@ -45,33 +45,23 @@ export function localizeTemplateDefinition<T extends string>(
   template: ProductTemplate,
   t: TranslationFn<T>
 ): ProductTemplate {
-  switch (template.code) {
-    case 'RIM_STD':
-      return {
-        ...template,
-        name: t('engineering.templateMgmt.presets.RIM_STD.name' as T),
-        description: t(
-          'engineering.templateMgmt.presets.RIM_STD.description' as T
-        ),
-      }
-    case 'STEM_STD':
-      return {
-        ...template,
-        name: t('engineering.templateMgmt.presets.STEM_STD.name' as T),
-        description: t(
-          'engineering.templateMgmt.presets.STEM_STD.description' as T
-        ),
-      }
-    case 'FORK_STD':
-      return {
-        ...template,
-        name: t('engineering.templateMgmt.presets.FORK_STD.name' as T),
-        description: t(
-          'engineering.templateMgmt.presets.FORK_STD.description' as T
-        ),
-      }
-    default:
-      return template
+  const presetTemplate = DEFAULT_PRODUCT_TEMPLATES.find(
+    (preset) => preset.code === template.code
+  )
+  if (!presetTemplate) return template
+
+  return {
+    ...template,
+    name:
+      template.name === presetTemplate.name
+        ? t(`engineering.templateMgmt.presets.${template.code}.name` as T)
+        : template.name,
+    description:
+      template.description === presetTemplate.description
+        ? t(
+            `engineering.templateMgmt.presets.${template.code}.description` as T
+          )
+        : template.description,
   }
 }
 

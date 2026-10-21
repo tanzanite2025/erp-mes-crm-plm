@@ -70,7 +70,7 @@ export function BarcodeRulesTable({
             >
               {/* 1. 字段标识 */}
               <div className='flex flex-col gap-0.5 pl-4'>
-                <span className='font-mono text-[10px] font-black tracking-tighter text-rose-600/70'>
+                <span className='font-maple-ui text-[10px] font-black tracking-tighter text-rose-600/70'>
                   {segment.length} {lengthLabel} / {segment.id.toUpperCase()}
                 </span>
                 <span className='text-[10px] font-black tracking-tight text-slate-800 uppercase'>
@@ -97,7 +97,7 @@ export function BarcodeRulesTable({
                       .map(([key, item]) => (
                         <span
                           key={key}
-                          className='rounded-md border border-muted-foreground/5 bg-muted/50 px-2 py-0.5 font-mono text-[9px] font-black text-muted-foreground/60'
+                          className='rounded-md border border-muted-foreground/5 bg-muted/50 px-2 py-0.5 font-maple-ui text-[9px] font-black text-muted-foreground/60'
                         >
                           {key}={item.label}
                         </span>
@@ -105,7 +105,7 @@ export function BarcodeRulesTable({
                   : examples?.slice(0, 3).map((example, index) => (
                       <span
                         key={`${segment.id}-${index}`}
-                        className='rounded-md border border-muted-foreground/5 bg-muted/50 px-2 py-0.5 font-mono text-[9px] font-black text-muted-foreground/60'
+                        className='rounded-md border border-muted-foreground/5 bg-muted/50 px-2 py-0.5 font-maple-ui text-[9px] font-black text-muted-foreground/60'
                       >
                         {example}
                       </span>

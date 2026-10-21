@@ -8,7 +8,7 @@ import { type BusinessEventSourceTemplate } from '../business-event-source-types
  * 接收人通常是设计师 / 设计审核委员会 / 工程经理。
  *
  * 数据模型字段：bomType === 'EBOM'。
- * 实时入口在 use-bom-write-actions.ts 中按 bomType 派发到本事件源。
+ * 事件由 bom_service.go 在业务事务中调用服务端适配器生成。
  */
 export const DEFAULT_BOM_ENGINEERING_EVENT_SOURCE: BusinessEventSourceTemplate =
   {

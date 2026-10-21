@@ -1,3 +1,4 @@
+import localMapleUiFontStyles from '@/styles/local-maple-ui-font.css?raw'
 import type { PrepregBindingQrItem } from '../data/prepreg-binding-qr'
 
 type PrintablePrepregBindingQrItem = PrepregBindingQrItem & {
@@ -49,9 +50,10 @@ export function openPrepregBindingQrPrintPreview(
       <meta charset="utf-8" />
       <title>Prepreg Binding QR Print Preview</title>
       <style>
+          ${localMapleUiFontStyles}
         @page { size: A4; margin: 8mm; }
         * { box-sizing: border-box; }
-        body { margin: 0; background: #f8fafc; color: #0f172a; font-family: "Microsoft YaHei", Arial, sans-serif; }
+        body { margin: 0; background: #f8fafc; color: #0f172a; }
         .sheet { min-height: 100vh; padding: 12px; }
         .toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
         .toolbar button { border: 1px dashed #94a3b8; background: #fff; border-radius: 999px; padding: 8px 16px; font-size: 12px; font-weight: 800; cursor: pointer; }
@@ -72,7 +74,7 @@ export function openPrepregBindingQrPrintPreview(
     <body>
       <div class="sheet">
         <div class="toolbar">
-          <button onclick="window.print()">打印 / 保存 PDF</button>
+          <button onclick="document.fonts.ready.then(() => window.print())">打印 / 保存 PDF</button>
           <button onclick="window.close()">关闭</button>
         </div>
         <div class="grid">${buildCardsHtml(items)}</div>

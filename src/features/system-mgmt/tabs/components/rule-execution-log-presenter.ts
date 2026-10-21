@@ -99,8 +99,10 @@ export function getExecutionStatusLabel(
   >
 ) {
   switch (status) {
+    case 'pending':
+      return '待投递'
     case 'success':
-      return '成功'
+      return log?.executionType === 'notify' ? '提醒已发布' : '成功'
     case 'failed':
       return '失败'
     case 'skipped':
@@ -136,6 +138,8 @@ export function shouldHideExecutionLogByDefault(log: RuleExecutionLog) {
 
 export function getStatusIcon(status: RuleExecutionStatus) {
   switch (status) {
+    case 'pending':
+      return Clock3
     case 'success':
       return CheckCircle2
     case 'failed':

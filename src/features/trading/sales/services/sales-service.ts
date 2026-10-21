@@ -2,7 +2,6 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildVersionedPatchMetadata } from '@/lib/version-guard'
-import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import { type SalesOrder, type SalesOrderFormValues } from '../../data/schema'
 import { sanitizeSalesOrderSubmitValues } from '../../utils/sales-order-submit'
 import {
@@ -70,5 +69,4 @@ export const patchSalesOrder = async (
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {
   await apiFetch<void>(`/sales-orders/${id}`, { method: 'DELETE' })
-  NotificationGateway.archiveByOrderId(id)
 }

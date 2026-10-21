@@ -472,7 +472,7 @@ export function ProductTypeActionDialog({
                         placeholder={t(
                           'engineering.categoryArchive.dialog.codePlaceholder'
                         )}
-                        className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold'
+                        className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui font-bold'
                         {...field}
                         value={field.value || ''}
                         onChange={(event) =>

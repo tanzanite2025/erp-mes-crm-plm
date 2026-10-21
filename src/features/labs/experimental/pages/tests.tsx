@@ -144,7 +144,7 @@ export function LabTestsPage() {
                   <div className='flex items-center gap-3'>
                     <Badge
                       variant='outline'
-                      className='h-5 rounded-md border-dashed bg-muted/20 px-2 py-0 font-mono text-[9px] font-black tracking-tighter'
+                      className='h-5 rounded-md border-dashed bg-muted/20 px-2 py-0 font-maple-ui text-[9px] font-black tracking-tighter'
                     >
                       {task.code}
                     </Badge>

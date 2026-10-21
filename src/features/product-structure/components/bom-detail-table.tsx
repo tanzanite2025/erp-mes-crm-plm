@@ -134,7 +134,7 @@ export function BOMDetailTable({
                         <span className='truncate text-xs font-black tracking-tight text-slate-800 uppercase'>
                           {item.materialName}
                         </span>
-                        <span className='truncate font-mono text-[8px] tracking-widest text-muted-foreground/40 uppercase'>
+                        <span className='truncate font-maple-ui text-[8px] tracking-widest text-muted-foreground/40 uppercase'>
                           {materialId}
                         </span>
                       </div>
@@ -318,7 +318,7 @@ export function BOMDetailTable({
                         </div>
                       </td>
                     )}
-                    <td className='px-4 py-3 font-mono text-[9px] tracking-widest text-muted-foreground/40 uppercase'>
+                    <td className='px-4 py-3 font-maple-ui text-[9px] tracking-widest text-muted-foreground/40 uppercase'>
                       {materialId}
                     </td>
                     <td className='px-4 py-3'>
@@ -332,7 +332,7 @@ export function BOMDetailTable({
                     <td className='px-4 py-3 text-center text-[10px] font-black tracking-widest text-slate-400 uppercase'>
                       {requireString(item.unit, 'unit')}
                     </td>
-                    <td className='px-4 py-3 text-right font-mono text-[10px] font-bold text-slate-500'>
+                    <td className='px-4 py-3 text-right font-maple-ui text-[10px] font-bold text-slate-500'>
                       楼{requireNumber(item.unitPrice, 'unitPrice').toFixed(2)}
                     </td>
                     <td className='bg-amber-500/5 px-4 py-3 text-right text-[12px] font-black text-amber-600 tabular-nums'>

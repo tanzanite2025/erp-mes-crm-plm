@@ -14,7 +14,7 @@ const outputFile = resolve(
   'authz',
   'route_permission_contract.gen.go'
 )
-const hiddenPagePaths = new Set(['/', '/dashboard'])
+const hiddenPagePaths = new Set(['/', '/home', '/dashboard'])
 
 function buildPermissionId(kind, routePath) {
   const normalizedPath = normalizePath(routePath)

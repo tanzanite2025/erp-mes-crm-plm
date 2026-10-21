@@ -195,14 +195,14 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                   key={rule.ruleKey}
                   className='h-16 border-b transition-colors last:border-0 hover:bg-muted/5'
                 >
-                  <TableCell className='pl-8 font-mono text-xs font-black text-primary/80'>
+                  <TableCell className='pl-8 font-maple-ui text-xs font-black text-primary/80'>
                     {rule.ruleKey}
                   </TableCell>
                   <TableCell className='text-xs font-black'>
                     {rule.prefix || '-'}
                   </TableCell>
                   <TableCell>
-                    <code className='rounded border border-dashed bg-background px-2 py-0.5 font-mono text-[10px] font-black text-muted-foreground uppercase'>
+                    <code className='rounded border border-dashed bg-background px-2 py-0.5 font-maple-ui text-[10px] font-black text-muted-foreground uppercase'>
                       {rule.pattern}
                     </code>
                   </TableCell>
@@ -318,7 +318,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                 {t('basicSettings.sequences.dialog.labels.pattern')}
               </Label>
               <Input
-                className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-xs tabular-nums focus:ring-1 focus:ring-primary/20'
+                className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-xs tabular-nums focus:ring-1 focus:ring-primary/20'
                 value={editingRule?.pattern}
                 onChange={(e) =>
                   setEditingRule({ ...editingRule, pattern: e.target.value })

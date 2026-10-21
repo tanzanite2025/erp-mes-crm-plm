@@ -42,7 +42,7 @@ export function useSpokeLengthColumns({
               {row.original.item.name}
             </span>
             <div className='mt-0.5 flex items-center gap-2'>
-              <span className='font-mono text-[10px] tracking-widest text-muted-foreground uppercase'>
+              <span className='font-maple-ui text-[10px] tracking-widest text-muted-foreground uppercase'>
                 {row.original.item.id}
               </span>
             </div>
@@ -54,7 +54,7 @@ export function useSpokeLengthColumns({
       header: t('engineering.spokeLength.table.product'),
       cell: ({ row }) => (
         <div className='flex flex-col'>
-          <span className='font-mono text-[12px] font-bold text-indigo-600'>
+          <span className='font-maple-ui text-[12px] font-bold text-indigo-600'>
             {row.original.productSku || 'UNKNOWN'}
           </span>
           <span className='mt-0.5 max-w-[120px] truncate text-[10px] text-muted-foreground'>
@@ -93,7 +93,7 @@ export function useSpokeLengthColumns({
           </span>
           <Badge
             variant='outline'
-            className='h-4 border-none bg-muted/50 px-1 font-mono text-[8px] uppercase'
+            className='h-4 border-none bg-muted/50 px-1 font-maple-ui text-[8px] uppercase'
           >
             mm
           </Badge>

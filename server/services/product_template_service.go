@@ -75,6 +75,9 @@ func normalizeProductTemplateAttributeBinding(input *models.ProductTemplateAttri
 }
 
 func syncProductTemplateAttributeBindingsTx(tx *gorm.DB, templateID string, bindings []models.ProductTemplateAttributeBinding) error {
+	if err := validateAndLockProductTemplateAttributeBindingReferences(tx, bindings); err != nil {
+		return err
+	}
 	if err := tx.Where("template_id = ?", templateID).Delete(&models.ProductTemplateAttributeBinding{}).Error; err != nil {
 		return err
 	}
@@ -207,6 +210,9 @@ func SyncProductTemplates(inputs []BulkSyncProductTemplateInput) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, in := range inputs {
 			template := models.ProductTemplate(in)
+			if err := validateAndLockProductTemplateAttributeBindingReferences(tx, template.AttributeBindings); err != nil {
+				return err
+			}
 			template.MasterDataControl.Normalize("R1")
 			if template.ID != "" {
 				if err := tx.Model(&models.ProductTemplate{}).Where("id = ?", template.ID).Omit("CreatedAt", "CreatedBy").Updates(&template).Error; err != nil {

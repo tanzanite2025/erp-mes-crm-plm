@@ -24,7 +24,7 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
         </h4>
         <Badge
           variant='outline'
-          className='h-4 rounded-full border-green-200 bg-white px-1.5 font-mono text-[8px] tracking-wide text-green-700 uppercase'
+          className='h-4 rounded-full border-green-200 bg-white px-1.5 font-maple-ui text-[8px] tracking-wide text-green-700 uppercase'
         >
           {t('engineering.specForms.fork.subtitle')}
         </Badge>
@@ -130,7 +130,7 @@ export function ForkSpecOverview({ product: _product }: { product: Product }) {
             {t('engineering.specForms.fork.overviewWeight')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-3xl font-black tracking-tighter text-emerald-600'>
+            <span className='font-maple-ui text-3xl font-black tracking-tighter text-emerald-600'>
               —
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>

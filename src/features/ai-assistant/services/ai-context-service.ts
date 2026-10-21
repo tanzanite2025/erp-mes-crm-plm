@@ -1,5 +1,5 @@
 import { TraceService } from '@/features/dashboard/services/trace-service'
-import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
+import { fetchCurrentAccountSystemNotificationInbox } from '@/features/system-mgmt/notifications/system-notification-inbox-service'
 import {
   buildSafeAiPageContext,
   normalizeAiContextTitle,
@@ -26,7 +26,8 @@ export const aiContextService = {
     }
 
     // 2. 状态告警聚合 (从通知中心状态获取)
-    const messages = NotificationGateway.getMessages()
+    const { items: messages } =
+      await fetchCurrentAccountSystemNotificationInbox()
     const alerts = {
       critical: messages.filter((m) => m.priority === 'critical').length,
       error: messages.filter((m) => m.priority === 'error').length,

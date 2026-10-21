@@ -98,7 +98,7 @@ export function BarcodePreview({
           </div>
         ) : null}
         <div
-          className='pointer-events-none flex max-w-full flex-wrap items-center gap-1.5 font-mono text-base font-black tracking-[0.2em] drop-shadow-sm select-none sm:text-lg'
+          className='pointer-events-none flex max-w-full flex-wrap items-center gap-1.5 font-maple-ui text-base font-black tracking-[0.2em] drop-shadow-sm select-none sm:text-lg'
           style={{ WebkitTouchCallout: 'none' }}
         >
           {isDrainHole ? <span className='text-red-500'>H</span> : null}

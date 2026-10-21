@@ -1,3 +1,4 @@
+import localMapleUiFontStyles from '@/styles/local-maple-ui-font.css?raw'
 import type {
   BatchOptimizerPlan,
   BatchOptimizerPlanDiffSummary,
@@ -161,7 +162,8 @@ export function printBatchEngineReviewPdf(
       <head>
         <title>Batch Engine Review ${plan.rank}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+          ${localMapleUiFontStyles}
+          body { padding: 24px; color: #111827; }
           h1, h2 { text-transform: uppercase; }
           pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: #f8fafc; padding: 16px; border: 1px dashed #cbd5e1; border-radius: 16px; }
         </style>
@@ -175,7 +177,9 @@ export function printBatchEngineReviewPdf(
   `)
   printWindow.document.close()
   printWindow.focus()
-  printWindow.print()
+  void printWindow.document.fonts.ready.then(() => {
+    if (!printWindow.closed) printWindow.print()
+  })
 }
 
 function downloadBlob(blob: Blob, fileName: string) {

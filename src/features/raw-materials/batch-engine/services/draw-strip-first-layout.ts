@@ -149,7 +149,7 @@ function drawZoneLabel(
   )
   context.clip()
   context.fillStyle = style.text
-  context.font = `${fontSizePx / scale}px "Segoe UI", Arial, sans-serif`
+  context.font = `${fontSizePx / scale}px "Maple UI"`
   context.textAlign = 'center'
   context.textBaseline = 'middle'
   context.fillText(

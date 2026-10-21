@@ -145,7 +145,7 @@ export function SegmentNode({
                   {process.name}
                 </span>
                 {process.code && (
-                  <span className='font-mono text-[10px] font-black text-muted-foreground/50'>
+                  <span className='font-maple-ui text-[10px] font-black text-muted-foreground/50'>
                     {process.code}
                   </span>
                 )}

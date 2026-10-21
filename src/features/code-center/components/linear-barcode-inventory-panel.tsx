@@ -149,10 +149,10 @@ export function LinearBarcodeInventoryPanel({
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} className='border-t'>
-                    <td className='px-3 py-2 font-mono font-bold text-foreground'>
+                    <td className='px-3 py-2 font-maple-ui font-bold text-foreground'>
                       {item.code}
                     </td>
-                    <td className='px-3 py-2 font-mono'>{item.batchNo}</td>
+                    <td className='px-3 py-2 font-maple-ui'>{item.batchNo}</td>
                     <td className='px-3 py-2'>#{item.salesOrderLineNo}</td>
                     <td className='px-3 py-2'>
                       <Badge

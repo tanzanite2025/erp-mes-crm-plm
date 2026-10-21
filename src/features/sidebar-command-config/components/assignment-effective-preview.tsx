@@ -44,7 +44,7 @@ export function AssignmentEffectivePreview({
               <span className='block truncate text-sm font-black tracking-tight'>
                 {command.title}
               </span>
-              <span className='mt-0.5 block truncate font-mono text-[10px] font-black text-muted-foreground/50'>
+              <span className='mt-0.5 block truncate font-maple-ui text-[10px] font-black text-muted-foreground/50'>
                 {command.code}
               </span>
             </span>

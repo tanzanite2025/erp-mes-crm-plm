@@ -482,7 +482,7 @@ function OutsourceOrderDialogContent({
               placeholder={t(
                 'productionOutsourcing.orders.placeholders.orderNo'
               )}
-              className={`${inputClass} font-mono uppercase`}
+              className={`${inputClass} font-maple-ui uppercase`}
             />
           </div>
           <div className='space-y-2 md:col-span-4'>

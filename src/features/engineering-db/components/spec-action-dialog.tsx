@@ -215,7 +215,7 @@ export function SpecActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-mono text-xs font-bold opacity-60'
+              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-bold opacity-60'
               value={formData.id}
             />
           </div>

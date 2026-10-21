@@ -83,12 +83,12 @@ export function SystemStatusPage() {
       </div>
 
       <div className='flex items-center justify-between border-t border-dashed border-slate-100 px-1 pt-1.5 opacity-50 sm:pt-2 dark:border-white/10'>
-        <span className='font-mono text-[8px] tracking-widest uppercase'>
+        <span className='font-maple-ui text-[8px] tracking-widest uppercase'>
           {t('systemManagement.statusPage.footer.nodeTime', {
             time: data.time,
           })}
         </span>
-        <span className='font-mono text-[8px] font-bold tracking-widest text-emerald-600 uppercase'>
+        <span className='font-maple-ui text-[8px] font-bold tracking-widest text-emerald-600 uppercase'>
           {t('systemManagement.statusPage.footer.runtimeSnapshot', {
             environment: data.identity.environment,
             runtime: data.identity.runtime,

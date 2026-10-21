@@ -4,19 +4,19 @@ import { type BusinessEventSourceTemplate } from '../business-event-source-types
  * 生产 BOM (MBOM) 业务事件源模板。
  *
  * 业务模型：
- * - MBOM 由已 RELEASED 的 EBOM **纯复制派生**，派生即生效（EFFECTIVE），无草稿/审批中间态。
+ * - 当前后端从已 RELEASED 的 EBOM 派生 DRAFT MBOM；实际发布后才映射为 EFFECTIVE。
  * - MBOM 没有自己的设计审批；EBOM 在设计侧已经审过了。
  * - MBOM 版本可以独立升级（场景：损耗系数 / 工序优化），不影响 EBOM。
  *   工艺师创建 MBOM 新版本时旧版自动 OBSOLETE。
  * - MBOM 通过两个标志位向外暴露"研发优化进度"：
  *     hasPendingRevision：同 productId 存在 EBOM 草稿/审核中（提示生产端：即将有变更）
  *     isStale：sourceEbomId 对应的 EBOM 已被升级（提示工艺端：必须重新派生）
- *   这两个标志由后端按规则计算，触发对应事件让通知中心可以监听。
+ *   这两个标志对应的动作目前只有模板定义，尚无服务端事件触发入口。
  *
- * 状态字典：仅 EFFECTIVE / OBSOLETE 两态。
+ * 状态字典包含真实草稿、审核中间态和 EFFECTIVE / OBSOLETE。
  *
- * 实时入口在 use-bom-write-actions.ts 中按 bomType 派发到本事件源；
- * deriveMBOMFromEBOM 成功时派发 CREATED_FROM_EBOM 动作。
+ * 事件由 bom_service.go 的业务事务调用服务端适配器生成；
+ * 派生时写 CREATED_FROM_EBOM，通知收件和投递任务与业务同时提交。
  */
 export const DEFAULT_BOM_MANUFACTURING_EVENT_SOURCE: BusinessEventSourceTemplate =
   {
@@ -49,7 +49,13 @@ export const DEFAULT_BOM_MANUFACTURING_EVENT_SOURCE: BusinessEventSourceTemplate
         },
         { code: 'OBSOLETED', name: '作废', kind: 'custom' },
       ],
-      statuses: [{ code: 'EFFECTIVE' }, { code: 'OBSOLETE' }],
+      statuses: [
+        { code: 'DRAFT' },
+        { code: 'REVIEWING' },
+        { code: 'APPROVED' },
+        { code: 'EFFECTIVE' },
+        { code: 'OBSOLETE' },
+      ],
       fields: [
         {
           key: 'bomId',

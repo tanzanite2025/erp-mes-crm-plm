@@ -40,7 +40,7 @@ export function KnowledgeBaseEntryCard({
               videoLabel={t('basicSettings.knowledgeBase.media.video')}
             />
             {entry.routePath ? (
-              <span className='truncate font-mono text-[10px] font-semibold text-muted-foreground/75'>
+              <span className='truncate font-maple-ui text-[10px] font-semibold text-muted-foreground/75'>
                 {entry.routePath}
               </span>
             ) : null}

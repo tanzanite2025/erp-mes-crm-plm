@@ -35,7 +35,7 @@ export function useMaterialColumns({
           </div>
         ),
         cell: ({ row }) => (
-          <div className='pl-8 font-mono text-[10px] font-black text-muted-foreground'>
+          <div className='pl-8 font-maple-ui text-[10px] font-black text-muted-foreground'>
             {row.original.code || t('materialArchive.columns.noCode')}
           </div>
         ),
@@ -69,7 +69,7 @@ export function useMaterialColumns({
                 <div className='flex flex-wrap gap-1.5'>
                   <Badge
                     variant='outline'
-                    className='h-4 rounded-full border-none bg-primary/10 px-2 py-0 font-mono text-[8px] font-black tracking-tighter text-primary'
+                    className='h-4 rounded-full border-none bg-primary/10 px-2 py-0 font-maple-ui text-[8px] font-black tracking-tighter text-primary'
                   >
                     {t('materialArchive.columns.internalTag')}:{' '}
                     {material.internalDimensions.length}x
@@ -79,7 +79,7 @@ export function useMaterialColumns({
                   {material.externalDimensions && (
                     <Badge
                       variant='outline'
-                      className='h-4 rounded-full border-none bg-muted/40 px-2 py-0 font-mono text-[8px] font-black tracking-tighter text-muted-foreground'
+                      className='h-4 rounded-full border-none bg-muted/40 px-2 py-0 font-maple-ui text-[8px] font-black tracking-tighter text-muted-foreground'
                     >
                       {t('materialArchive.columns.externalTag')}:{' '}
                       {material.externalDimensions.length}x

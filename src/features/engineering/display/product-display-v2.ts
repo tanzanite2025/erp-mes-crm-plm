@@ -1,14 +1,14 @@
 import {
   type Product,
-  type ProductAttributeCategory,
-  type ProductAttributeOption,
+  type ProductTemplateAttributeLevelOneCategory,
+  type ProductTemplateAttributeLevelTwoOption,
   type ProductTemplate,
 } from '../data/schema'
 import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import {
   getAttributeValue,
-  getCategoryName,
-  getOptionLabel,
+  getProductTemplateAttributeLevelOneCategoryName,
+  getProductTemplateAttributeLevelTwoOptionLabel,
 } from '../utils/product-attribute-utils'
 
 export const PRODUCT_DISPLAY_V2_STRATEGY_VERSION = 'product-display-v2' as const
@@ -37,11 +37,11 @@ export interface ResolveProductDisplayV2Params {
     | undefined
   template?: Pick<ProductTemplate, 'attributeBindings'> | null
   categories?: Array<
-    Pick<ProductAttributeCategory, 'key' | 'nameZh' | 'nameEn'>
+    Pick<ProductTemplateAttributeLevelOneCategory, 'key' | 'nameZh' | 'nameEn'>
   >
   options?: Array<
     Pick<
-      ProductAttributeOption,
+      ProductTemplateAttributeLevelTwoOption,
       'categoryKey' | 'value' | 'labelZh' | 'labelEn'
     >
   >
@@ -57,7 +57,7 @@ function resolveMatchedOption(
   rawValue: string,
   options?: Array<
     Pick<
-      ProductAttributeOption,
+      ProductTemplateAttributeLevelTwoOption,
       'categoryKey' | 'value' | 'labelZh' | 'labelEn'
     >
   >
@@ -132,9 +132,16 @@ export function resolveProductDisplaySummaryItemsV2(
 
     return {
       key: normalizedCategoryKey || binding.categoryKey,
-      label: getCategoryName(params.locale, category) || binding.categoryKey,
+      label:
+        getProductTemplateAttributeLevelOneCategoryName(
+          params.locale,
+          category
+        ) || binding.categoryKey,
       value: rawValue
-        ? getOptionLabel(params.locale, option) || rawValue
+        ? getProductTemplateAttributeLevelTwoOptionLabel(
+            params.locale,
+            option
+          ) || rawValue
         : (params.emptyValue ?? '-'),
       empty: !rawValue,
     }

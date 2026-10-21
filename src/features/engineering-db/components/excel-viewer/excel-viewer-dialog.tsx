@@ -50,7 +50,7 @@ export function ExcelViewerDialog({
                 <DialogDescription className='flex items-center gap-2 truncate text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
                   <TableProperties className='size-3 text-emerald-600' />
                   结构化报表工具 · 归档型号:{' '}
-                  <span className='font-mono text-emerald-600'>
+                  <span className='font-maple-ui text-emerald-600'>
                     {sku || 'N/A'}
                   </span>
                 </DialogDescription>

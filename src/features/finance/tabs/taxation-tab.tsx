@@ -113,7 +113,7 @@ export function TaxationTab() {
                           : translatedName
                       })()}
                     </CardTitle>
-                    <CardDescription className='font-mono text-[8px] font-black tracking-widest text-emerald-600/60 uppercase'>
+                    <CardDescription className='font-maple-ui text-[8px] font-black tracking-widest text-emerald-600/60 uppercase'>
                       {t('finance.taxation.card.codeLabel', {
                         code: rate.code,
                       })}
@@ -147,7 +147,7 @@ export function TaxationTab() {
                   <span className='rounded-full border border-emerald-500/20 bg-emerald-500/20 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-700 uppercase'>
                     {t('finance.taxation.card.ratioLabel', { rate: rate.rate })}
                   </span>
-                  <span className='font-mono text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
+                  <span className='font-maple-ui text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                     {t('finance.taxation.card.validBadge')}
                   </span>
                 </div>

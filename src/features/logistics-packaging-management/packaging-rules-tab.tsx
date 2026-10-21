@@ -159,10 +159,10 @@ export function LogisticsPackagingRulesTab() {
                   <TableCell className='text-xs font-medium opacity-80'>
                     {profile.targets[0]?.entityName || '-'}
                   </TableCell>
-                  <TableCell className='font-mono text-[10px] font-bold'>
+                  <TableCell className='font-maple-ui text-[10px] font-bold'>
                     {profile.capacity} {profile.capacityUnitCode}
                   </TableCell>
-                  <TableCell className='font-mono text-[10px]'>
+                  <TableCell className='font-maple-ui text-[10px]'>
                     <div className='flex flex-col gap-1'>
                       <span>
                         {profile.length} × {profile.width} × {profile.height}{' '}
@@ -200,7 +200,7 @@ export function LogisticsPackagingRulesTab() {
                             'logisticsPackagingManagement.packagingRules.packagingWeightLabel'
                           )}
                         </span>
-                        <span className='font-mono text-[10px] leading-none font-bold'>
+                        <span className='font-maple-ui text-[10px] leading-none font-bold'>
                           {profile.netWeight} {profile.weightUnitCode}
                         </span>
                       </div>
@@ -210,7 +210,7 @@ export function LogisticsPackagingRulesTab() {
                             'logisticsPackagingManagement.packagingRules.grossWeightLabel'
                           )}
                         </span>
-                        <span className='font-mono text-[10px] leading-none font-bold text-primary'>
+                        <span className='font-maple-ui text-[10px] leading-none font-bold text-primary'>
                           {profile.grossWeight} {profile.weightUnitCode}
                         </span>
                       </div>
@@ -220,7 +220,7 @@ export function LogisticsPackagingRulesTab() {
                     <Badge
                       variant={profile.isActive ? 'default' : 'secondary'}
                       className={cn(
-                        'h-5 rounded-full border-none px-2 font-mono text-[8px] tracking-tighter uppercase',
+                        'h-5 rounded-full border-none px-2 font-maple-ui text-[8px] tracking-tighter uppercase',
                         profile.isActive
                           ? 'bg-emerald-500/10 text-emerald-600'
                           : 'bg-amber-500/10 text-amber-600'

@@ -11,7 +11,7 @@ This system bridges complex industrial workflows with cloud-native architecture,
 - Real-time persistence with Go (Gin) + PostgreSQL.
 - Modular React + Vite frontend architecture.
 - Product lifecycle, engineering BOM, manufacturing BOM, and MRP-oriented workflows.
-- Workflow, approval, permission, and audit infrastructure.
+- Backend domain transactions, approval requests, permissions, audit, and a durable account notification inbox.
 - Full lifecycle tracking for molds and equipment.
 - JWT-based auth and enterprise security controls.
 - Atomic warehouse/inventory transaction flows.
@@ -54,6 +54,14 @@ For the current file responsibility and layering assessment, see `docs/architect
 - When a checklist becomes permanent practice, move the durable rule into the nearest source-of-truth doc and delete the historical checklist.
 - Prefer linking from this README to canonical docs instead of duplicating long instructions in multiple places.
 
+Canonical development, messaging, and approval references:
+
+- [Development boundaries](GEMINI.md) and [SDRTS implementation contract](DELTA_SYSTEM.md): frontend/backend responsibilities, version checks, and the boundary between editing deltas and semantic business transactions.
+
+- [System notification inbox, cross-device synchronization, and delivery contract](docs/architecture/workflow/system-notification-inbox-cross-device-synchronization-and-delivery-contract.md): implemented account inbox, synchronized read/archive/resolution states, shared delivery queue, retention, cutover, and actual source coverage limits.
+- [Quality standard approval transaction and notification delivery contract](docs/quality-standard-approval-transaction-and-notification-delivery-contract.md): quality approval transactions and their integration with the shared inbox and delivery queue, including the 2026-10-20 production release verification record.
+- [Logistics record transaction and notification delivery contract](docs/logistics-record-transaction-and-notification-delivery-contract.md): actual logistics states, versioned writes, sales/purchase visibility, record links, and shared inbox integration.
+
 ## Type Safety and Validation
 
 - Avoid explicit `any`; use `unknown` at trust boundaries and narrow before reading values.
@@ -72,6 +80,8 @@ pnpm install
 `pnpm install` runs `scripts/setup-git-hooks.mjs`, which configures `.githooks` as the repository hook path.
 
 Run `pnpm dev` to start Docker dependencies, generate route contracts, and launch the host Go API and Vite together. The launcher reads `server/.env.dev`, creating it from `server/.env.dev.example` when missing.
+
+Running it again automatically replaces this repository's previous development processes and builds the current backend source. Independent frontend/server commands replace only their selected service. Other projects' listeners are preserved. See [local development process restart and port ownership](docs/ops/local-development-process-auto-restart-and-port-ownership.md).
 
 ## Local Development Modes
 

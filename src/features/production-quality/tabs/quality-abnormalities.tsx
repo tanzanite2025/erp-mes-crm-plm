@@ -126,7 +126,7 @@ export function QualityAbnormalities() {
             <span className='text-[10px] font-black tracking-widest whitespace-nowrap text-rose-600/60 uppercase'>
               {t('quality.abnormalities.page.activeCriticals')}
             </span>
-            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-rose-600 tabular-nums'>
+            <div className='shrink-0 font-maple-ui text-xl font-black tracking-tighter text-rose-600 tabular-nums'>
               {abnormalities?.filter((item) => item.severity === 'CRITICAL')
                 .length || 0}
             </div>
@@ -137,7 +137,7 @@ export function QualityAbnormalities() {
             <span className='text-[10px] font-black tracking-widest whitespace-nowrap text-amber-600/60 uppercase'>
               {t('quality.abnormalities.page.openReports')}
             </span>
-            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-amber-600 tabular-nums'>
+            <div className='shrink-0 font-maple-ui text-xl font-black tracking-tighter text-amber-600 tabular-nums'>
               {abnormalities?.filter((item) => item.status === 'OPEN').length ||
                 0}
             </div>
@@ -148,7 +148,7 @@ export function QualityAbnormalities() {
             <span className='text-[10px] font-black tracking-widest whitespace-nowrap text-emerald-600/60 uppercase'>
               {t('quality.abnormalities.page.closedLooped')}
             </span>
-            <div className='shrink-0 font-mono text-xl font-black tracking-tighter text-emerald-600 tabular-nums'>
+            <div className='shrink-0 font-maple-ui text-xl font-black tracking-tighter text-emerald-600 tabular-nums'>
               {abnormalities?.filter((item) => item.status === 'CLOSED')
                 .length || 0}
             </div>
@@ -185,7 +185,7 @@ export function QualityAbnormalities() {
                   </div>
                   <div className='flex min-w-0 flex-col gap-0.5'>
                     <div className='flex items-center gap-2.5'>
-                      <span className='font-mono text-[9px] leading-none font-black text-muted-foreground/30'>
+                      <span className='font-maple-ui text-[9px] leading-none font-black text-muted-foreground/30'>
                         ID: {ab.id.slice(0, 8).toUpperCase()}
                       </span>
                       <Badge

@@ -57,7 +57,7 @@ export function UserActionSecurityFields({
                   <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                     {t('users.dialogs.labels.permissionPreset')}
                   </FormLabel>
-                  <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+                  <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                     ACCESS_PRESET
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export function UserActionSecurityFields({
                 <FormLabel className='text-[11px] leading-none font-black tracking-tight text-destructive/80'>
                   {t('users.dialogs.labels.adminChallenge')}
                 </FormLabel>
-                <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-30'>
+                <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-30'>
                   PRIVILEGE_CONFIRM
                 </span>
               </div>
@@ -156,7 +156,7 @@ export function UserActionSecurityFields({
               <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                 {t('users.dialogs.labels.password')}
               </FormLabel>
-              <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                 SECURITY_CRED
               </span>
             </div>
@@ -186,7 +186,7 @@ export function UserActionSecurityFields({
               <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
                 {t('users.dialogs.labels.confirm')}
               </FormLabel>
-              <span className='font-mono text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
                 CRED_VERIFICATION
               </span>
             </div>

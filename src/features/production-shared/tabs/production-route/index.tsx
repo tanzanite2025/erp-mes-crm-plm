@@ -196,7 +196,7 @@ export function ProductionRouteMgmt() {
                     <CardTitle className='text-base font-black tracking-tight'>
                       {route.name}
                     </CardTitle>
-                    <p className='mt-1 font-mono text-[10px] font-bold text-muted-foreground'>
+                    <p className='mt-1 font-maple-ui text-[10px] font-bold text-muted-foreground'>
                       {route.code} · v{route.version}
                     </p>
                   </div>

@@ -185,7 +185,7 @@ export function OrdersAnalysisTab() {
                       <span className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                         {t('trading.analytics.customerId')}
                       </span>
-                      <span className='font-mono text-[9px] font-semibold tracking-[0.12em] text-foreground/95'>
+                      <span className='font-maple-ui text-[9px] font-semibold tracking-[0.12em] text-foreground/95'>
                         {customer.customerId}
                       </span>
                     </div>
@@ -195,7 +195,7 @@ export function OrdersAnalysisTab() {
                   </div>
                   <Badge
                     variant='outline'
-                    className='h-5 rounded-full border-primary/25 bg-primary/10 px-2.5 font-mono text-[8px] tracking-[0.16em] text-primary uppercase'
+                    className='h-5 rounded-full border-primary/25 bg-primary/10 px-2.5 font-maple-ui text-[8px] tracking-[0.16em] text-primary uppercase'
                   >
                     {customer.products.length}{' '}
                     {t('trading.analytics.productCount')}
@@ -234,7 +234,7 @@ export function OrdersAnalysisTab() {
                             <span className='text-[8px] font-black tracking-widest uppercase opacity-40'>
                               {display.summaryText || '--'}
                             </span>
-                            <span className='font-mono text-[9px] tracking-[0.14em] text-foreground/70'>
+                            <span className='font-maple-ui text-[9px] tracking-[0.14em] text-foreground/70'>
                               {display.code || '--'}
                             </span>
                           </div>
@@ -291,11 +291,11 @@ export function OrdersAnalysisTab() {
                       <span className='block max-w-[150px] truncate text-[10px] font-black tracking-tight'>
                         {display.title}
                       </span>
-                      <span className='block max-w-[150px] truncate font-mono text-[8px] uppercase opacity-40'>
+                      <span className='block max-w-[150px] truncate font-maple-ui text-[8px] uppercase opacity-40'>
                         {display.code || display.summaryText || '--'}
                       </span>
                     </div>
-                    <span className='font-mono text-[10px] font-bold text-primary'>
+                    <span className='font-maple-ui text-[10px] font-bold text-primary'>
                       {Math.round(
                         (prod.totalQty / (globalRanking[0]?.totalQty || 1)) *
                           100

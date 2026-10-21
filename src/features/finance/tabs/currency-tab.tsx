@@ -124,7 +124,7 @@ export function CurrencyTab() {
                         })()}{' '}
                         ({curr.code})
                       </CardTitle>
-                      <CardDescription className='font-mono text-[8px] font-black tracking-widest text-muted-foreground uppercase'>
+                      <CardDescription className='font-maple-ui text-[8px] font-black tracking-widest text-muted-foreground uppercase'>
                         {t('finance.currencyRates.card.precisionLabel', {
                           digital: curr.precision,
                         })}

@@ -202,7 +202,7 @@ export function SpecsTab() {
               <div className='mt-0.5 flex items-center gap-2'>
                 <Badge
                   variant='outline'
-                  className='h-4 border-none bg-muted/50 px-1.5 py-0 font-mono text-[10px] font-bold text-muted-foreground uppercase'
+                  className='h-4 border-none bg-muted/50 px-1.5 py-0 font-maple-ui text-[10px] font-bold text-muted-foreground uppercase'
                 >
                   {row.original.item.fileExtension || 'PDF'}
                 </Badge>
@@ -498,7 +498,7 @@ export function SpecsTab() {
                     </div>
                     <Badge
                       variant='outline'
-                      className='h-5 rounded-full border-none bg-muted/50 px-3 font-mono text-[10px] font-black text-muted-foreground'
+                      className='h-5 rounded-full border-none bg-muted/50 px-3 font-maple-ui text-[10px] font-black text-muted-foreground'
                     >
                       {t('engineering.specs.table.rev')}: {item.version}
                     </Badge>
@@ -516,7 +516,7 @@ export function SpecsTab() {
                         {item.category}
                       </Badge>
                       <div className='size-1 rounded-full bg-muted-foreground/20' />
-                      <div className='flex items-center gap-1 font-mono text-[9px] text-muted-foreground/60'>
+                      <div className='flex items-center gap-1 font-maple-ui text-[9px] text-muted-foreground/60'>
                         <Hash className='size-2.5 opacity-30' />
                         {item.id.split('-').pop()}
                       </div>

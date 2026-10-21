@@ -1,8 +1,8 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { ProductAttributesMgmt } from '@/features/engineering/tabs/product-attributes-mgmt'
+import { ProductTemplateAttributeClassificationManagement } from '@/features/engineering/tabs/product-template-attribute-classification-management'
 
 export const Route = createLazyFileRoute(
   '/_authenticated/engineering/product-attributes'
 )({
-  component: ProductAttributesMgmt,
+  component: ProductTemplateAttributeClassificationManagement,
 })

@@ -209,7 +209,7 @@ export function MaintenancePlansPage() {
               保养排班日程周历
             </CardTitle>
             <div className='flex items-center gap-2'>
-              <span className='font-mono text-[10px] font-black text-muted-foreground'>
+              <span className='font-maple-ui text-[10px] font-black text-muted-foreground'>
                 {weekLabel}
               </span>
               <div className='flex gap-1'>
@@ -261,7 +261,7 @@ export function MaintenancePlansPage() {
                       }
                     </span>
                     <span
-                      className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-black ${
+                      className={`rounded-md px-1.5 py-0.5 font-maple-ui text-[10px] font-black ${
                         isToday
                           ? 'bg-primary text-primary-foreground'
                           : 'text-foreground/60'
@@ -287,7 +287,7 @@ export function MaintenancePlansPage() {
                           className='flex cursor-pointer flex-col gap-1 rounded-lg border border-dashed bg-background/80 p-1.5 text-[9px] shadow-xs transition-shadow hover:bg-background'
                         >
                           <div className='flex items-center justify-between'>
-                            <span className='max-w-[50px] truncate font-mono text-[8px] font-black text-muted-foreground/70'>
+                            <span className='max-w-[50px] truncate font-maple-ui text-[8px] font-black text-muted-foreground/70'>
                               {task.assetSn}
                             </span>
                             {getCycleBadge(task.priority)}
@@ -344,7 +344,7 @@ export function MaintenancePlansPage() {
                     <div className='absolute inset-y-0 left-0 w-1 bg-primary/20 transition-colors group-hover:bg-primary' />
                     <div className='flex items-center justify-between pl-1'>
                       <div className='flex items-center gap-1.5'>
-                        <span className='rounded-sm bg-muted/30 px-1 font-mono text-[8px] font-black text-muted-foreground/60'>
+                        <span className='rounded-sm bg-muted/30 px-1 font-maple-ui text-[8px] font-black text-muted-foreground/60'>
                           {task.assetSn}
                         </span>
                         <span className='text-[9px] font-bold text-muted-foreground'>

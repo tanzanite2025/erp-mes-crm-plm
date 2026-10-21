@@ -152,19 +152,19 @@ export function PurchaseOrderMaster({
                       <span className='max-w-[150px] truncate text-[11px] font-black text-foreground/80'>
                         {order.supplierName}
                       </span>
-                      <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/40 uppercase'>
+                      <span className='mt-0.5 font-maple-ui text-[8px] text-muted-foreground/40 uppercase'>
                         ID: {order.supplierId}
                       </span>
                     </div>
                   </td>
-                  <td className='px-4 py-3 font-mono text-[11px] font-bold text-muted-foreground'>
+                  <td className='px-4 py-3 font-maple-ui text-[11px] font-bold text-muted-foreground'>
                     {order.orderDate}
                   </td>
                   <td className='px-4 py-3'>
                     {order.expectedDate ? (
                       <div className='flex flex-col'>
                         <span
-                          className={`font-mono text-[11px] font-bold ${
+                          className={`font-maple-ui text-[11px] font-bold ${
                             isOverdue
                               ? 'text-rose-500'
                               : 'text-muted-foreground'
@@ -187,7 +187,7 @@ export function PurchaseOrderMaster({
                   </td>
                   <td className='px-4 py-3'>
                     <div className='flex flex-col'>
-                      <span className='font-mono text-[11px] font-bold text-emerald-600'>
+                      <span className='font-maple-ui text-[11px] font-bold text-emerald-600'>
                         {(order.exchangeRate ?? 1).toFixed(4)}
                       </span>
                       <span className='text-[8px] font-black tracking-widest uppercase opacity-30'>
@@ -202,7 +202,7 @@ export function PurchaseOrderMaster({
                           order.paymentMethod ||
                           t('purchase.orders.notSet')}
                       </span>
-                      <span className='font-mono text-[8px] text-muted-foreground/40 uppercase'>
+                      <span className='font-maple-ui text-[8px] text-muted-foreground/40 uppercase'>
                         {order.paymentMethod || '--'}
                       </span>
                     </div>
@@ -214,7 +214,7 @@ export function PurchaseOrderMaster({
                           order.paymentTerm ||
                           t('purchase.orders.notSet')}
                       </span>
-                      <span className='font-mono text-[8px] text-muted-foreground/40 uppercase'>
+                      <span className='font-maple-ui text-[8px] text-muted-foreground/40 uppercase'>
                         {order.paymentTerm || '--'}
                       </span>
                     </div>
@@ -436,7 +436,7 @@ export function PurchaseOrderMaster({
                     <div className='flex items-center justify-center gap-1.5 text-[8px] font-black text-emerald-600 uppercase'>
                       {t('purchase.orders.mobileRate')}
                     </div>
-                    <span className='font-mono text-[10px] font-bold text-emerald-600'>
+                    <span className='font-maple-ui text-[10px] font-bold text-emerald-600'>
                       {(order.exchangeRate ?? 1).toFixed(4)}
                     </span>
                   </div>

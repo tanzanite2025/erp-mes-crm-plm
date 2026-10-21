@@ -66,7 +66,7 @@ function PermissionBadgeList({
         </div>
         <Badge
           variant='outline'
-          className='rounded-full border-dashed bg-white font-mono text-[8px]'
+          className='rounded-full border-dashed bg-white font-maple-ui text-[8px]'
         >
           {items.length}
         </Badge>
@@ -78,7 +78,7 @@ function PermissionBadgeList({
               <Badge
                 key={item.key}
                 variant='outline'
-                className={`rounded-full border-dashed bg-white font-mono text-[8px] ${toneClassName}`}
+                className={`rounded-full border-dashed bg-white font-maple-ui text-[8px] ${toneClassName}`}
               >
                 {item.label}
               </Badge>
@@ -175,7 +175,7 @@ export function UserPermissionAuditEntry({
             </span>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <User className='size-3 opacity-50' />
-              <span className='font-mono text-[8px] font-bold uppercase'>
+              <span className='font-maple-ui text-[8px] font-bold uppercase'>
                 {log.operator}
               </span>
             </div>
@@ -187,21 +187,21 @@ export function UserPermissionAuditEntry({
           <div className='flex flex-wrap items-center gap-2 xl:justify-end'>
             <Badge
               variant='outline'
-              className='rounded-full border-dashed border-emerald-500/20 bg-emerald-500/5 font-mono text-[8px] text-emerald-700'
+              className='rounded-full border-dashed border-emerald-500/20 bg-emerald-500/5 font-maple-ui text-[8px] text-emerald-700'
             >
               {t('common.audit.actionLabels.added')}{' '}
               {summary.addedPermissionItems.length}
             </Badge>
             <Badge
               variant='outline'
-              className='rounded-full border-dashed border-rose-500/20 bg-rose-500/5 font-mono text-[8px] text-rose-700'
+              className='rounded-full border-dashed border-rose-500/20 bg-rose-500/5 font-maple-ui text-[8px] text-rose-700'
             >
               {t('common.audit.actionLabels.removed')}{' '}
               {summary.removedPermissionItems.length}
             </Badge>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2 py-1'>
               <Clock className='size-3 opacity-50' />
-              <span className='font-mono text-[8px]'>
+              <span className='font-maple-ui text-[8px]'>
                 {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}
               </span>
             </div>

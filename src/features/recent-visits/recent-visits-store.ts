@@ -10,6 +10,7 @@ const RECENT_VISITS_LIMIT = 20
 
 const RECENT_VISIT_SYSTEM_SHELL_EXACT_PATHS = [
   '/',
+  '/home',
   '/401',
   '/403',
   '/404',

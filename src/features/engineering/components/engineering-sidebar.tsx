@@ -110,7 +110,7 @@ export function EngineeringSidebar({
                     </h3>
                   </div>
                   <div className='h-px flex-1 border-t border-dashed bg-muted-foreground/10' />
-                  <span className='xs:block hidden font-mono text-[8px] font-black tracking-widest text-muted-foreground/30'>
+                  <span className='xs:block hidden font-maple-ui text-[8px] font-black tracking-widest text-muted-foreground/30'>
                     {t('engineering.productMgmt.sidebar.totalProducts', {
                       count: typeProducts.length,
                     })}

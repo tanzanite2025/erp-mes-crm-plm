@@ -151,7 +151,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.rim.overviewDepth')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-3xl font-black tracking-tighter text-slate-800'>
+            <span className='font-maple-ui text-3xl font-black tracking-tighter text-slate-800'>
               {product.depth || '0'}
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>
@@ -164,7 +164,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.rim.overviewWeight')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-2xl font-black tracking-tighter text-emerald-600 sm:text-3xl'>
+            <span className='font-maple-ui text-2xl font-black tracking-tighter text-emerald-600 sm:text-3xl'>
               —
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>
@@ -177,7 +177,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.rim.overviewInternalWidth')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-2xl font-black tracking-tighter text-slate-800 sm:text-3xl'>
+            <span className='font-maple-ui text-2xl font-black tracking-tighter text-slate-800 sm:text-3xl'>
               {product.widthInternal || '0'}
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>
@@ -190,7 +190,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.rim.overviewExternalWidth')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-2xl font-black tracking-tighter text-slate-800 sm:text-3xl'>
+            <span className='font-maple-ui text-2xl font-black tracking-tighter text-slate-800 sm:text-3xl'>
               {product.widthExternal || '0'}
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>
@@ -203,7 +203,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
             {t('engineering.specForms.rim.overviewMaxTirePressure')}
           </span>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-mono text-2xl font-black tracking-tighter text-amber-600 sm:text-3xl'>
+            <span className='font-maple-ui text-2xl font-black tracking-tighter text-amber-600 sm:text-3xl'>
               {product.maxTirePressure || '0'}
             </span>
             <span className='text-[10px] font-black text-muted-foreground/20'>

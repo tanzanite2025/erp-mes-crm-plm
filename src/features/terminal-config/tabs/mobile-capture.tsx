@@ -109,14 +109,14 @@ export function MobileCaptureTab() {
               onValueChange={setCapturedCode}
               onScanComplete={setCapturedCode}
               placeholder='手机扫码或拍照识别后的码值会显示在这里'
-              inputClassName='h-12 rounded-2xl border-dashed bg-background font-mono text-sm font-black tracking-widest'
+              inputClassName='h-12 rounded-2xl border-dashed bg-background font-maple-ui text-sm font-black tracking-widest'
             />
 
             <div className='rounded-[24px] border border-dashed border-muted/60 bg-background/80 p-4'>
               <div className='text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
                 采集结果
               </div>
-              <div className='mt-2 font-mono text-sm font-black tracking-wider break-all text-foreground'>
+              <div className='mt-2 font-maple-ui text-sm font-black tracking-wider break-all text-foreground'>
                 {capturedCode || '等待采集'}
               </div>
               <div className='mt-4 rounded-2xl border border-dashed border-blue-500/20 bg-blue-500/5 p-3 text-xs leading-relaxed font-bold text-blue-700'>

@@ -184,7 +184,7 @@ export function ScanPlatformModulePanel() {
                       <Workflow className='size-3.5' />
                       {t('scanPlatform.panel.entryPath')}
                     </div>
-                    <div className='mt-1 font-mono text-xs text-foreground'>
+                    <div className='mt-1 font-maple-ui text-xs text-foreground'>
                       {plugin.entryPath}
                     </div>
                   </div>
@@ -194,10 +194,10 @@ export function ScanPlatformModulePanel() {
                       <Lock className='size-3.5' />
                       {t('scanPlatform.panel.permission')}
                     </div>
-                    <div className='mt-1 font-mono text-[10px] break-all text-foreground'>
+                    <div className='mt-1 font-maple-ui text-[10px] break-all text-foreground'>
                       {plugin.permissions.page}
                     </div>
-                    <div className='mt-1 font-mono text-[10px] break-all text-muted-foreground/80'>
+                    <div className='mt-1 font-maple-ui text-[10px] break-all text-muted-foreground/80'>
                       {plugin.permissions.action ||
                         t('scanPlatform.panel.viewOnly')}
                     </div>

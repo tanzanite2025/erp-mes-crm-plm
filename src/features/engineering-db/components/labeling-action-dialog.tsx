@@ -273,7 +273,7 @@ export function LabelingActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-mono text-xs'
+              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui text-xs'
               value={formData.id ?? '--'}
             />
           </div>
@@ -283,7 +283,7 @@ export function LabelingActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-mono text-xs'
+              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui text-xs'
               value={`REV.${formData.version ?? 1}`}
             />
           </div>

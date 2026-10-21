@@ -10,7 +10,7 @@ function renderDateCell(value: string | undefined) {
   const formatted = formatPersonnelDate(value)
   if (!formatted) return <div className='opacity-30'>-</div>
   return (
-    <div className='font-mono text-[11px] font-medium tracking-tight uppercase'>
+    <div className='font-maple-ui text-[11px] font-medium tracking-tight uppercase'>
       {formatted}
     </div>
   )
@@ -58,7 +58,9 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <div className='font-mono text-[11px] opacity-40'>{row.index + 1}</div>
+      <div className='font-maple-ui text-[11px] opacity-40'>
+        {row.index + 1}
+      </div>
     ),
     enableSorting: false,
     meta: { viewLabel: t('orgPersonnel.excel.columns.serialNo') },
@@ -74,7 +76,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
     cell: ({ row }) => {
       const staffId = row.getValue('staffId') as string
       return (
-        <div className='font-mono text-xs font-black tracking-widest text-primary'>
+        <div className='font-maple-ui text-xs font-black tracking-widest text-primary'>
           {staffId || '-'}
         </div>
       )
@@ -177,7 +179,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <div className='font-mono text-xs font-medium'>
+      <div className='font-maple-ui text-xs font-medium'>
         {row.getValue('phone') || '-'}
       </div>
     ),
@@ -192,7 +194,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <div className='font-mono text-xs font-medium'>
+      <div className='font-maple-ui text-xs font-medium'>
         {row.getValue('emergencyPhone') || '-'}
       </div>
     ),
@@ -246,7 +248,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
     ),
     cell: ({ row }) => {
       const workYears = row.original.workYears
-      return <div className='font-mono text-[10px]'>{workYears || '-'}</div>
+      return <div className='font-maple-ui text-[10px]'>{workYears || '-'}</div>
     },
     enableSorting: false,
     meta: { viewLabel: t('orgPersonnel.excel.columns.workYears') },
@@ -294,7 +296,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <div className='font-mono text-xs font-medium'>
+      <div className='font-maple-ui text-xs font-medium'>
         {row.getValue('age') || '-'}
       </div>
     ),
@@ -309,7 +311,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <div className='font-mono text-[11px] font-medium text-muted-foreground'>
+      <div className='font-maple-ui text-[11px] font-medium text-muted-foreground'>
         {row.original.maskedIdCard || '-'}
       </div>
     ),
@@ -351,7 +353,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       />
     ),
     cell: ({ row }) => (
-      <div className='font-mono text-[11px] font-medium text-muted-foreground'>
+      <div className='font-maple-ui text-[11px] font-medium text-muted-foreground'>
         {row.original.maskedBankCard || '-'}
       </div>
     ),
@@ -399,7 +401,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
       const id = row.getValue('id') as string
       return (
         <div
-          className='w-[80px] truncate overflow-hidden font-mono text-[10.5px] leading-none text-muted-foreground/30'
+          className='w-[80px] truncate overflow-hidden font-maple-ui text-[10.5px] leading-none text-muted-foreground/30'
           title={id}
         >
           {id}

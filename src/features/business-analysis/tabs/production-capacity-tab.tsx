@@ -287,7 +287,7 @@ export function ProductionCapacityAnalysisTab() {
         }
       />
 
-      <Card className='rounded-[24px] border bg-background shadow-none'>
+      <Card className='gap-0 rounded-[24px] border bg-background py-0 shadow-none'>
         <CardHeader className='p-4 pb-2'>
           <CardTitle className='flex items-center gap-2 text-xs font-black tracking-widest text-muted-foreground uppercase'>
             <Filter className='size-3.5 text-primary' />
@@ -400,7 +400,7 @@ export function ProductionCapacityAnalysisTab() {
       </Card>
 
       {capacityQuery.isError && (
-        <Card className='rounded-[24px] border border-destructive/30 bg-destructive/5 shadow-none'>
+        <Card className='gap-0 rounded-[24px] border border-destructive/30 bg-destructive/5 py-0 shadow-none'>
           <CardContent className='flex items-center gap-2 p-4 text-xs font-bold text-destructive'>
             <AlertTriangle className='size-4 shrink-0' />
             {t('businessAnalysis.productionCapacity.loadError')}
@@ -412,9 +412,9 @@ export function ProductionCapacityAnalysisTab() {
         {metricCards.map((metric) => (
           <Card
             key={metric.key}
-            className='rounded-[20px] border bg-muted/5 shadow-none'
+            className='gap-0 rounded-[20px] border bg-muted/5 py-0 shadow-none'
           >
-            <CardContent className='flex min-h-20 items-center justify-between gap-3 p-4'>
+            <CardContent className='flex items-center justify-between gap-3 p-4'>
               <span className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                 {metric.label}
               </span>
@@ -428,7 +428,7 @@ export function ProductionCapacityAnalysisTab() {
 
       <Card
         className={cn(
-          'rounded-[24px] shadow-none',
+          'gap-0 rounded-[24px] py-0 shadow-none',
           dataQuality?.isComplete
             ? 'border-emerald-500/30 bg-emerald-500/5'
             : 'border-amber-500/30 bg-amber-500/5'
@@ -472,7 +472,7 @@ export function ProductionCapacityAnalysisTab() {
         </CardContent>
       </Card>
 
-      <div className='grid gap-4 xl:grid-cols-2'>
+      <div className='grid items-start gap-4 xl:grid-cols-2'>
         <BreakdownTable
           title={t('businessAnalysis.productionCapacity.byProductTitle')}
           emptyLabel={t('businessAnalysis.productionCapacity.noRows')}
@@ -534,7 +534,7 @@ export function ProductionCapacityAnalysisTab() {
         />
       </div>
 
-      <Card className='rounded-[24px] border bg-background shadow-none'>
+      <Card className='gap-0 rounded-[24px] border bg-background py-0 shadow-none'>
         <CardHeader className='flex flex-row items-center justify-between p-4 pb-2'>
           <CardTitle className='flex items-center gap-2 text-xs font-black tracking-widest text-muted-foreground uppercase'>
             <CalendarRange className='size-3.5 text-primary' />
@@ -635,7 +635,7 @@ export function ProductionCapacityAnalysisTab() {
                 {drilldownQuery.data.items.map((plan) => (
                   <Card
                     key={plan.planId}
-                    className='rounded-2xl border bg-background shadow-none'
+                    className='gap-0 rounded-2xl border bg-background py-0 shadow-none'
                   >
                     <CardHeader className='space-y-3 p-4 pb-2'>
                       <div className='flex flex-wrap items-center justify-between gap-2'>
@@ -827,7 +827,7 @@ function BreakdownTable({
   completedLabel: string
 }) {
   return (
-    <Card className='rounded-[24px] border bg-background shadow-none'>
+    <Card className='gap-0 rounded-[24px] border bg-background py-0 shadow-none'>
       <CardHeader className='p-4 pb-2'>
         <CardTitle className='text-xs font-black tracking-widest text-muted-foreground uppercase'>
           {title}

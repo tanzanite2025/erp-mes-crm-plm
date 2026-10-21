@@ -195,7 +195,7 @@ export function PackagingAssemblyPrintDialog({
                           type='code128'
                           className='package-label-code128 block h-[92px] w-full max-w-full'
                         />
-                        <div className='overflow-hidden font-mono text-[10px] leading-tight font-black text-ellipsis whitespace-nowrap'>
+                        <div className='overflow-hidden font-maple-ui text-[10px] leading-tight font-black text-ellipsis whitespace-nowrap'>
                           {normalizedPackageCode}
                         </div>
                       </div>
@@ -209,7 +209,7 @@ export function PackagingAssemblyPrintDialog({
                           type='qrcode'
                           className='package-label-qrcode mx-auto size-32 max-w-full'
                         />
-                        <div className='max-w-[220px] overflow-hidden font-mono text-[10px] leading-tight font-black text-ellipsis whitespace-nowrap'>
+                        <div className='max-w-[220px] overflow-hidden font-maple-ui text-[10px] leading-tight font-black text-ellipsis whitespace-nowrap'>
                           {normalizedPackageCode}
                         </div>
                       </div>
@@ -232,7 +232,7 @@ export function PackagingAssemblyPrintDialog({
                   <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
                     {copy.packageCode}
                   </div>
-                  <div className='mt-2 font-mono text-sm leading-5 font-black break-all xl:text-base'>
+                  <div className='mt-2 font-maple-ui text-sm leading-5 font-black break-all xl:text-base'>
                     {normalizedPackageCode}
                   </div>
                 </div>

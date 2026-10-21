@@ -121,7 +121,7 @@ export function BOMDialogShell({
                       <span className='text-[10px] font-black tracking-widest text-blue-700/60 uppercase'>
                         {t('engineering.bomArchive.form.version')}
                       </span>
-                      <span className='font-mono text-[11px] text-blue-700'>
+                      <span className='font-maple-ui text-[11px] text-blue-700'>
                         {version}
                       </span>
                     </div>

@@ -8,6 +8,7 @@ import {
 import { shouldTrackRecentVisit } from './recent-visits-store'
 
 const RECENT_VISIT_REDIRECT_AND_INTERNAL_PATHS = [
+  '/home',
   '/personal-workbench',
   '/personal-workbench/capture',
   '/basic-settings',

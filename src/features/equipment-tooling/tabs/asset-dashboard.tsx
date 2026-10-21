@@ -87,11 +87,11 @@ export function AssetDashboard() {
         gradient
         statusBadge={
           <div className='flex items-center gap-3'>
-            <div className='inline-flex h-5 items-center justify-center rounded-full border border-dashed border-emerald-500/20 bg-emerald-500/5 px-3 font-mono text-[8px] tracking-[0.2em] whitespace-nowrap text-emerald-600 uppercase'>
+            <div className='inline-flex h-5 items-center justify-center rounded-full border border-dashed border-emerald-500/20 bg-emerald-500/5 px-3 font-maple-ui text-[8px] tracking-[0.2em] whitespace-nowrap text-emerald-600 uppercase'>
               {t('equipmentTooling.dashboard.header.systemHealthLabel')}:{' '}
               {t('equipmentTooling.dashboard.header.stable')}
             </div>
-            <div className='inline-flex h-5 items-center justify-center rounded-full border border-dashed border-cyan-500/20 bg-cyan-500/5 px-3 font-mono text-[8px] tracking-[0.2em] whitespace-nowrap text-cyan-600 uppercase'>
+            <div className='inline-flex h-5 items-center justify-center rounded-full border border-dashed border-cyan-500/20 bg-cyan-500/5 px-3 font-maple-ui text-[8px] tracking-[0.2em] whitespace-nowrap text-cyan-600 uppercase'>
               {t('equipmentTooling.dashboard.header.activeSensorsLabel')}:{' '}
               {stats.moldStats.total + stats.furnaceStats.total}{' '}
               {t('equipmentTooling.dashboard.header.vectors')}
@@ -146,7 +146,7 @@ export function AssetDashboard() {
                       <span className='text-[10px] font-black tracking-tighter text-foreground uppercase'>
                         {log.moldSn} / {log.toFactory}
                       </span>
-                      <span className='font-mono text-[8px] font-bold opacity-30'>
+                      <span className='font-maple-ui text-[8px] font-bold opacity-30'>
                         {new Date(log.loanDate).toLocaleTimeString()}
                       </span>
                     </div>

@@ -33,7 +33,7 @@ export function CommandCategoryCard({
           <h3 className='truncate text-sm font-black tracking-tight'>
             {category.name}
           </h3>
-          <p className='mt-1 truncate font-mono text-[10px] font-black tracking-tight text-muted-foreground/50'>
+          <p className='mt-1 truncate font-maple-ui text-[10px] font-black tracking-tight text-muted-foreground/50'>
             {category.categoryId}
           </p>
         </div>

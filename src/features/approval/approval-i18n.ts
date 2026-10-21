@@ -11,6 +11,7 @@ const MODULE_KEYS = {
   Trading: 'approval.modules.trading',
   Production: 'approval.modules.production',
   Materials: 'approval.modules.materials',
+  Quality: 'approval.modules.quality',
 } as const satisfies Record<string, TranslationKey>
 
 const ACTION_KEYS = {
@@ -36,6 +37,8 @@ export function getApprovalModuleLabel(t: ApprovalTranslator, module: string) {
 }
 
 export function getApprovalActionLabel(t: ApprovalTranslator, action: string) {
+  if (action.startsWith('QUALITY_STANDARD_'))
+    return t('approval.actions.quality_standard_review')
   const key = ACTION_KEYS[action as keyof typeof ACTION_KEYS]
   return key ? t(key) : action
 }

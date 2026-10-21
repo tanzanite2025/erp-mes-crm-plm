@@ -67,7 +67,7 @@ export function RoutingQueryErrorState({
           <p>{state.description}</p>
           <p className='text-xs text-rose-700/80'>{state.hint}</p>
           {state.detail ? (
-            <div className='w-full rounded-2xl border border-dashed border-rose-200/90 bg-white/70 px-3 py-2 font-mono text-[11px] leading-5 text-rose-700'>
+            <div className='w-full rounded-2xl border border-dashed border-rose-200/90 bg-white/70 px-3 py-2 font-maple-ui text-[11px] leading-5 text-rose-700'>
               {state.detail}
             </div>
           ) : null}

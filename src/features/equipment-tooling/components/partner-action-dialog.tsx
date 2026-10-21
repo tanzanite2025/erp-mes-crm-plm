@@ -243,7 +243,7 @@ export function PartnerActionDialog({
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui font-bold'
                       placeholder={t(
                         'equipmentTooling.partners.dialog.placeholders.phone'
                       )}

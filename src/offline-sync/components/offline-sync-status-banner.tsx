@@ -48,7 +48,7 @@ export function OfflineSyncStatusBanner() {
           <p className='text-[10px] font-black tracking-widest text-muted-foreground/80 uppercase'>
             {detail || '离线同步状态正常。'}
           </p>
-          <div className='flex flex-wrap gap-2 font-mono text-[8px] text-muted-foreground/80 uppercase'>
+          <div className='flex flex-wrap gap-2 font-maple-ui text-[8px] text-muted-foreground/80 uppercase'>
             <span>online={String(isOnline)}</span>
             <span>pending={summary.pendingCount}</span>
             <span>conflicts={summary.conflictCount}</span>

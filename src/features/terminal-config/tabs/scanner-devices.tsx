@@ -285,7 +285,7 @@ export function ScannerDevicesTab() {
                   <div className='text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
                     原始扫码结果
                   </div>
-                  <div className='font-mono text-sm font-black tracking-wider break-all text-foreground'>
+                  <div className='font-maple-ui text-sm font-black tracking-wider break-all text-foreground'>
                     {scanResult?.rawCode || '等待扫码'}
                   </div>
                 </div>
@@ -302,7 +302,7 @@ export function ScannerDevicesTab() {
                     <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       规范化结果
                     </div>
-                    <div className='mt-1 font-mono text-xs font-black break-all'>
+                    <div className='mt-1 font-maple-ui text-xs font-black break-all'>
                       {scanResult.normalizedCode}
                     </div>
                   </div>
@@ -310,7 +310,7 @@ export function ScannerDevicesTab() {
                     <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       协议候选
                     </div>
-                    <div className='mt-1 font-mono text-xs font-black break-all'>
+                    <div className='mt-1 font-maple-ui text-xs font-black break-all'>
                       {analysis.candidate || '-'}
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export function ScannerDevicesTab() {
                     <div className='text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       前缀 / 后缀
                     </div>
-                    <div className='mt-1 font-mono text-xs font-black break-all'>
+                    <div className='mt-1 font-maple-ui text-xs font-black break-all'>
                       {analysis.prefix || analysis.suffix
                         ? `${analysis.prefix || '-'} / ${analysis.suffix || '-'}`
                         : '无'}
@@ -452,7 +452,7 @@ export function ScannerDevicesTab() {
                 key={`${item.completedAt}-${item.rawCode}`}
                 className='rounded-2xl border border-dashed border-muted/50 bg-background/80 p-4'
               >
-                <div className='font-mono text-xs font-black break-all'>
+                <div className='font-maple-ui text-xs font-black break-all'>
                   {item.normalizedCode}
                 </div>
                 <div className='mt-2 text-[10px] font-bold text-muted-foreground/60'>

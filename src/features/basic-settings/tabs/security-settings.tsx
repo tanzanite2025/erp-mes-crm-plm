@@ -150,7 +150,7 @@ export function SecuritySettings() {
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
                   placeholder={t('basicSettings.securityPage.placeholder')}
-                  className='h-12 rounded-2xl border-none bg-muted/50 text-center font-mono text-lg tracking-[0.5em]'
+                  className='h-12 rounded-2xl border-none bg-muted/50 text-center font-maple-ui text-lg tracking-[0.5em]'
                 />
                 <Button
                   variant='ghost'
@@ -165,7 +165,7 @@ export function SecuritySettings() {
                   )}
                 </Button>
               </div>
-              <p className='font-mono text-[8px] text-rose-500 opacity-40'>
+              <p className='font-maple-ui text-[8px] text-rose-500 opacity-40'>
                 {t('basicSettings.securityPage.warning')}
               </p>
             </div>
@@ -205,7 +205,7 @@ export function SecuritySettings() {
                 <div className='h-full w-2/3 bg-primary' />
               </div>
             </div>
-            <p className='text-right font-mono text-[8px] tracking-widest uppercase opacity-60'>
+            <p className='text-right font-maple-ui text-[8px] tracking-widest uppercase opacity-60'>
               {t('basicSettings.securityPage.version')}
             </p>
           </CardContent>

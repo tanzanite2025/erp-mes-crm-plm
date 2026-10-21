@@ -20,10 +20,8 @@ import {
 import {
   deserializeRuleExecutionLog,
   deserializeRuleExecutionLogPage,
-  serializeRuleExecutionLog,
   type RuleExecutionLog,
   type RuleExecutionLogPage,
-  type RuleExecutionLogWritePayload,
 } from '../data/rule-execution-log-schema'
 import { type StandardCommand } from '../data/schema'
 
@@ -227,16 +225,6 @@ export const RoutingService = {
       `/message-center/execution-logs${suffix}`
     )
     return deserializeRuleExecutionLogPage(response)
-  },
-
-  recordExecutionLog: async (
-    payload: RuleExecutionLogWritePayload
-  ): Promise<RuleExecutionLog> => {
-    const response = await apiFetch<unknown>('/message-center/execution-logs', {
-      method: 'POST',
-      body: JSON.stringify(serializeRuleExecutionLog(payload)),
-    })
-    return deserializeRuleExecutionLog(response)
   },
 
   retryExecutionLogNotification: async (

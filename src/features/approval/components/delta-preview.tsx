@@ -76,7 +76,7 @@ export function DeltaPreview({ delta, className }: DeltaPreviewProps) {
               <div className='text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 {path}
               </div>
-              <div className='flex items-center gap-3 font-mono text-[11px] font-bold'>
+              <div className='flex items-center gap-3 font-maple-ui text-[11px] font-bold'>
                 {hasChange ? (
                   <>
                     <span className='text-rose-500/80 line-through decoration-rose-500/30'>

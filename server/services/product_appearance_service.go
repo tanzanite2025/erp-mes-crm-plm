@@ -221,6 +221,13 @@ func SaveProductAppearance(input SaveProductAppearanceAPIRequest) (models.Produc
 		if err := tx.Create(&modelInput).Error; err != nil {
 			return err
 		}
+		// GORM applies the model's default:true to false struct values on create.
+		if !input.Active {
+			if err := tx.Model(&modelInput).UpdateColumn("active", false).Error; err != nil {
+				return err
+			}
+			modelInput.Active = false
+		}
 		saved = modelInput
 		return nil
 	})
