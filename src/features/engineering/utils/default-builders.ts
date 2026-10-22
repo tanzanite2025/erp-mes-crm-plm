@@ -32,7 +32,6 @@ export function createProductDraft(
     axleCrown: undefined,
     steerer: '',
     engineeringSpecId: '',
-    bomId: '',
     attachments: [],
     version: 1,
     ...overrides,

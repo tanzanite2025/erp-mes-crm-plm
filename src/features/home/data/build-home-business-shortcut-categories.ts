@@ -15,6 +15,7 @@ export type HomeBusinessShortcut = {
   title: string
   url: string
   domainTitle: string
+  description?: string
   icon?: ElementType
 }
 
@@ -44,6 +45,7 @@ const homeBusinessCategoryDescriptionKeys: Record<string, TranslationKey> = {
 
 // Promote the product and BOM starting points; URLs still come from module tabs.
 const productStartingPointUrls = [
+  '/engineering/product-creation-guide',
   '/engineering/products',
   '/product-structure/bom',
   '/engineering/templates',
@@ -86,6 +88,10 @@ export function buildHomeBusinessShortcutCategories(
               title: entry.title,
               url: entry.url,
               domainTitle: domain.title,
+              description:
+                entry.url === '/engineering/product-creation-guide'
+                  ? t('home.productCreationGuideShortcutDescription')
+                  : undefined,
               icon: domain.icon,
             })
           }

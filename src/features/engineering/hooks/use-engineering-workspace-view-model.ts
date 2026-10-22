@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearch } from '@tanstack/react-router'
 import { useProductOwnersMap } from '@/features/product-structure/hooks/use-product-owners-map'
 import { type Product } from '../data/schema'
 import { useEngineeringBootstrap } from './use-engineering-bootstrap'
@@ -9,6 +10,9 @@ import { useProductWriteActions } from './use-product-write-actions'
 const EMPTY_PRODUCTS: Product[] = []
 
 export function useEngineeringWorkspaceViewModel() {
+  const { productId: requestedProductId } = useSearch({
+    from: '/_authenticated/engineering/products',
+  })
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null
   )
@@ -41,12 +45,13 @@ export function useEngineeringWorkspaceViewModel() {
       return undefined
     }
 
-    if (selectedProductId && productMap.has(selectedProductId)) {
-      return productMap.get(selectedProductId)
+    const requestedSelection = selectedProductId ?? requestedProductId
+    if (requestedSelection && productMap.has(requestedSelection)) {
+      return productMap.get(requestedSelection)
     }
 
     return products[0]
-  }, [productMap, products, selectedProductId])
+  }, [productMap, products, requestedProductId, selectedProductId])
 
   const effectiveSelectedProductId = selectedProduct?.id ?? null
   const selectedProductDisplayMetadata = useMemo(() => {

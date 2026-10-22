@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
   type BOMItemDraft,
   type SaveBOMInput,
@@ -135,6 +135,18 @@ function parseSingleBOMResponse(res: unknown, scope: string): BOM {
  * BOM 配方清单服务层
  */
 export const bomService = {
+  async getBOMAssociationOptions(params?: {
+    productId: string
+  }): Promise<BOM[]> {
+    const query = new URLSearchParams({ options: 'true' })
+    if (params?.productId) query.set('productId', params.productId)
+    const response = await apiFetch<unknown>(`/engineering/bom?${query}`)
+    return ensureArrayResponse<Record<string, unknown>>(
+      response,
+      'BOMService.getBOMAssociationOptions'
+    ).map((entry) => bomSchema.parse(mapBOMWireToSchema(entry)))
+  },
+
   /**
    * 获取 BOM 列表
    * @param productId 可选，按产品 ID 过滤

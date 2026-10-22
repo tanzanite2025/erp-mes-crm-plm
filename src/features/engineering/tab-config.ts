@@ -46,8 +46,19 @@ export function getEngineeringTabs(t: TranslateFn): TabItem[] {
   ]
 }
 
+export function getProductCreationGuideTabs(t: TranslateFn): TabItem[] {
+  return [
+    {
+      key: 'product-creation-guide',
+      label: t('engineering.tabs.productCreationGuide'),
+      href: '/engineering/product-creation-guide',
+    },
+  ]
+}
+
 export const engineeringPermissionTabs = (t: TranslateFn): TabItem[] => [
   ...getEngineeringTabs(t),
+  ...getProductCreationGuideTabs(t),
   {
     key: 'types',
     label: t('engineering.tabs.types'),

@@ -71,7 +71,6 @@ export const productSchema = z.object({
   moldGroup: z.string().optional(),
   description: z.string().optional(),
   engineeringSpecId: z.string().optional(),
-  bomId: z.string().optional(),
   attributeValues: z
     .array(
       z.object({

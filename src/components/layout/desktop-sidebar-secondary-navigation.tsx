@@ -17,9 +17,10 @@ export function DesktopSidebarSecondaryNavigation({
   pathname,
 }: DesktopSidebarSecondaryNavigationProps) {
   const { t } = useLanguage()
-  // AppSidebar keys this component by category: every category starts collapsed,
-  // including the module containing the current route.
-  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null)
+  // AppSidebar keys this component by category: every category starts expanded.
+  const [collapsedModuleIds, setCollapsedModuleIds] = useState<Set<string>>(
+    () => new Set()
+  )
   const allEntries = [
     ...category.directLinks,
     ...category.sections.flatMap((section) => section.links),
@@ -33,15 +34,21 @@ export function DesktopSidebarSecondaryNavigation({
     .sort((left, right) => right.url.length - left.url.length)[0]?.url
 
   function toggleSidebarModuleExpansion(moduleId: string) {
-    setExpandedModuleId((currentModuleId) =>
-      currentModuleId === moduleId ? null : moduleId
-    )
+    setCollapsedModuleIds((currentCollapsedModuleIds) => {
+      const nextCollapsedModuleIds = new Set(currentCollapsedModuleIds)
+      if (nextCollapsedModuleIds.has(moduleId)) {
+        nextCollapsedModuleIds.delete(moduleId)
+      } else {
+        nextCollapsedModuleIds.add(moduleId)
+      }
+      return nextCollapsedModuleIds
+    })
   }
 
   const directoryLinkProps = {
     categoryId: category.id,
     activeEntryUrl,
-    expandedModuleId,
+    collapsedModuleIds,
     onToggleModule: toggleSidebarModuleExpansion,
   }
 
@@ -89,20 +96,20 @@ function DesktopSidebarDirectoryLinks({
   links,
   categoryId,
   activeEntryUrl,
-  expandedModuleId,
+  collapsedModuleIds,
   onToggleModule,
 }: {
   links: SidebarCategoryDomainLink[]
   categoryId: string
   activeEntryUrl?: string
-  expandedModuleId: string | null
+  collapsedModuleIds: ReadonlySet<string>
   onToggleModule: (moduleId: string) => void
 }) {
   if (!links.length) return null
   return (
     <ul className='desktop-sidebar-directory-modules'>
       {links.map((link) => {
-        const isExpanded = expandedModuleId === link.id
+        const isExpanded = !collapsedModuleIds.has(link.id)
         const containsCurrentPage = link.tabs.some(
           (tab) => tab.url === activeEntryUrl
         )

@@ -21,10 +21,11 @@ interface UseProductFormProps {
   currentRow?: Product
   open: boolean
   productTypes: ProductType[]
+  initialTypeId?: string
   onOpenChange: (open: boolean) => void
   onSubmit?: (
     payload: ProductSubmitPayload
-  ) => Promise<Product[] | void> | Product[] | void
+  ) => Promise<Product[] | void | null> | Product[] | void | null
   onSaved?: (products: Product[]) => void
 }
 
@@ -32,6 +33,7 @@ export function useProductForm({
   currentRow,
   open,
   productTypes,
+  initialTypeId,
   onOpenChange,
   onSubmit,
   onSaved,
@@ -44,11 +46,14 @@ export function useProductForm({
   })
   const currentSessionIdentity = isEdit
     ? `edit:${currentRow?.id ?? ''}`
-    : 'create'
+    : `create:${initialTypeId ?? ''}`
 
   const form = useForm<Product>({
     resolver: zodResolver(productDraftSchema) as Resolver<Product>,
-    defaultValues: initialState.formValues,
+    defaultValues: {
+      ...initialState.formValues,
+      ...(!isEdit && initialTypeId ? { typeId: initialTypeId } : {}),
+    },
   })
 
   const {
@@ -56,10 +61,6 @@ export function useProductForm({
     attributeOptions,
     moldOptions,
     specOptions,
-    boms,
-    bomOptions,
-    customerNameMap,
-    isBomOptionsPending,
     metadataInitError,
     metadataReady,
   } = useProductFormInit({
@@ -84,9 +85,20 @@ export function useProductForm({
       isEdit,
       currentRow,
     })
-    form.reset(nextInitialState.formValues)
+    form.reset({
+      ...nextInitialState.formValues,
+      ...(!isEdit && initialTypeId ? { typeId: initialTypeId } : {}),
+    })
     initializedSessionIdentityRef.current = currentSessionIdentity
-  }, [currentRow, currentSessionIdentity, form, isEdit, metadataReady, open])
+  }, [
+    currentRow,
+    currentSessionIdentity,
+    form,
+    initialTypeId,
+    isEdit,
+    metadataReady,
+    open,
+  ])
 
   const { boundTemplate, templateResolveError, templateResolutionPending } =
     useProductFormPreviewTemplate({
@@ -104,7 +116,6 @@ export function useProductForm({
     specPreviewAggregateLabel,
     specPreviewV2,
     specPreviewItems,
-    selectedBomContext,
     skuPreview,
     nextCodeDeriveError,
   } = useProductFormDerive({
@@ -114,8 +125,6 @@ export function useProductForm({
     previewTemplate: boundTemplate,
     attributeCategories,
     attributeOptions,
-    boms,
-    customerNameMap,
     productTypes,
   })
 
@@ -125,8 +134,6 @@ export function useProductForm({
     form,
     productTypes,
     attributeOptions,
-    boms,
-    customerNameMap,
     onOpenChange,
     onSubmit,
     onSaved,
@@ -140,8 +147,6 @@ export function useProductForm({
     attributeOptions,
     moldOptions,
     specOptions,
-    bomOptions,
-    isBomOptionsPending,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,
@@ -154,7 +159,6 @@ export function useProductForm({
     specPreviewAggregateLabel,
     specPreviewV2,
     specPreviewItems,
-    selectedBomContext,
     handleFormSubmit,
   }
 }

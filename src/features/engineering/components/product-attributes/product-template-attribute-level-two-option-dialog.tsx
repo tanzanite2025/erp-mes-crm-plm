@@ -19,8 +19,21 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { type ProductTemplateAttributeLevelOneCategory } from '../../data/schema'
 import { type SaveProductTemplateAttributeLevelTwoOptionInput } from '../../mutation-types'
+
+const productTemplateAttributeOptionDialogClasses =
+  buildActionDialogShellClasses({
+    content:
+      'flex max-h-[90dvh] flex-col gap-0 [&_[data-slot=button]]:rounded-full',
+    header: 'px-6 py-5 pr-16 text-start',
+    title: 'text-base text-primary sm:text-lg',
+    description:
+      'text-[11px] leading-relaxed font-bold tracking-normal normal-case',
+    body: 'min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5',
+    footer: 'shrink-0 flex-row justify-end px-6 py-4',
+  })
 
 interface ProductTemplateAttributeLevelTwoOptionDialogProps {
   locale: string
@@ -71,10 +84,15 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         size='2xl'
-        className='flex flex-col gap-0 overflow-hidden rounded-3xl border bg-background p-0 shadow-2xl'
+        className={productTemplateAttributeOptionDialogClasses.content}
+        closeButtonClassName='top-5 end-5 flex size-8 items-center justify-center rounded-full bg-muted/60'
       >
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-2 text-start'>
-          <DialogTitle className='text-xl font-semibold text-foreground'>
+        <DialogHeader
+          className={productTemplateAttributeOptionDialogClasses.header}
+        >
+          <DialogTitle
+            className={productTemplateAttributeOptionDialogClasses.title}
+          >
             {option.id
               ? isZh
                 ? '编辑二级属性分类'
@@ -83,7 +101,9 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
                 ? '新增二级属性分类'
                 : 'Create Level 2 Attribute Category'}
           </DialogTitle>
-          <DialogDescription className='text-sm leading-relaxed text-muted-foreground'>
+          <DialogDescription
+            className={productTemplateAttributeOptionDialogClasses.description}
+          >
             {isZh
               ? '为所属一级属性分类维护可选项，例如“材质”下的“碳纤维”，供产品模板对应的属性字段选择。'
               : 'Define an option under a level 1 attribute category, such as Carbon Fiber under Material, for the corresponding product template field.'}
@@ -92,7 +112,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
 
         <form
           id={optionFormId}
-          className='min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5'
+          className={productTemplateAttributeOptionDialogClasses.body}
           onSubmit={(event) => {
             event.preventDefault()
             if (!isSaving && isCatalogReady) onSave()
@@ -235,11 +255,13 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
           </fieldset>
         </form>
 
-        <DialogFooter className='shrink-0 flex-row justify-end border-t bg-muted/20 px-6 py-4'>
+        <DialogFooter
+          className={productTemplateAttributeOptionDialogClasses.footer}
+        >
           <Button
             variant='outline'
             type='button'
-            className='h-10 rounded-xl px-5 text-sm font-medium'
+            className='h-10 rounded-full px-5 text-xs font-bold'
             disabled={isSaving}
             onClick={() => onOpenChange(false)}
           >
@@ -249,7 +271,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
             type='submit'
             form={optionFormId}
             disabled={isSaving || !isCatalogReady}
-            className='h-10 rounded-xl px-5 text-sm font-medium'
+            className='h-10 rounded-full px-5 text-xs font-bold'
           >
             {isSaving ? (isZh ? '保存中…' : 'Saving…') : isZh ? '保存' : 'Save'}
           </Button>

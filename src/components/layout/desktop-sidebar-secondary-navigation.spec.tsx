@@ -45,10 +45,10 @@ const productionDirectory: SidebarCategoryPreview = {
   ],
 }
 
-describe('desktop collapsed module accordion', () => {
+describe('desktop expanded module directory', () => {
   afterEach(cleanup)
 
-  it('starts with every module collapsed even on an active child route, without a search or directory header', () => {
+  it('starts with every module expanded on an active child route, without a search or directory header', () => {
     render(
       <DesktopSidebarSecondaryNavigation
         category={productionDirectory}
@@ -57,15 +57,15 @@ describe('desktop collapsed module accordion', () => {
     )
     expect(screen.getByRole('button', { name: 'Scheduling' })).toHaveAttribute(
       'aria-expanded',
-      'false'
+      'true'
     )
-    expect(screen.queryByRole('link', { name: 'Queue' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
     expect(screen.getByRole('link', { name: 'Execution' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Production' })).toBeNull()
   })
 
-  it('expands on click and keeps the directory open after selecting a destination', () => {
+  it('keeps modules expanded after selecting a destination and supports manual collapse and expansion', () => {
     render(
       <DesktopSidebarSecondaryNavigation
         category={productionDirectory}
@@ -73,7 +73,6 @@ describe('desktop collapsed module accordion', () => {
       />
     )
     const moduleButton = screen.getByRole('button', { name: 'Scheduling' })
-    fireEvent.click(moduleButton)
     expect(moduleButton).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('link', { name: 'Queue' })).toHaveAttribute(
       'aria-current',
@@ -88,9 +87,12 @@ describe('desktop collapsed module accordion', () => {
     fireEvent.click(moduleButton)
     expect(moduleButton).toHaveAttribute('aria-expanded', 'false')
     expect(screen.queryByRole('link', { name: 'Queue' })).toBeNull()
+    fireEvent.click(moduleButton)
+    expect(moduleButton).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
   })
 
-  it('opens only one module across all sections', () => {
+  it('expands every module across sections by default and toggles them independently', () => {
     const directory = {
       ...productionDirectory,
       sections: [
@@ -114,17 +116,24 @@ describe('desktop collapsed module accordion', () => {
     render(
       <DesktopSidebarSecondaryNavigation category={directory} pathname='/aps' />
     )
+    expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Daily report' })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Scheduling' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Reporting' }))
     expect(screen.getByRole('button', { name: 'Scheduling' })).toHaveAttribute(
       'aria-expanded',
       'false'
     )
     expect(screen.queryByRole('link', { name: 'Queue' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Daily report' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Scheduling' }))
+    expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Daily report' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Reporting' }))
+    expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Daily report' })).toBeNull()
   })
 
-  it('starts collapsed again when AppSidebar switches the keyed category', () => {
+  it('starts expanded again when AppSidebar switches the keyed category', () => {
     const { rerender } = render(
       <DesktopSidebarSecondaryNavigation
         key='production'
@@ -133,6 +142,7 @@ describe('desktop collapsed module accordion', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'Scheduling' }))
+    expect(screen.queryByRole('link', { name: 'Queue' })).toBeNull()
     rerender(
       <DesktopSidebarSecondaryNavigation
         key='another-category'
@@ -142,9 +152,9 @@ describe('desktop collapsed module accordion', () => {
     )
     expect(screen.getByRole('button', { name: 'Scheduling' })).toHaveAttribute(
       'aria-expanded',
-      'false'
+      'true'
     )
-    expect(screen.queryByRole('link', { name: 'Queue' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
   })
 
   it('removes expanded destinations immediately when the permission-filtered model changes', () => {
@@ -154,7 +164,6 @@ describe('desktop collapsed module accordion', () => {
         pathname='/aps'
       />
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Scheduling' }))
     rerender(
       <DesktopSidebarSecondaryNavigation
         category={{ ...productionDirectory, sections: [], linkCount: 0 }}

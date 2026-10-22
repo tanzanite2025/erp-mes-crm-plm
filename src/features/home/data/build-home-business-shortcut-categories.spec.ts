@@ -46,7 +46,7 @@ describe('HOME business shortcuts and independent navigation domains', () => {
     ])
   })
 
-  it('prioritizes product records and BOM using the existing module tab routes', () => {
+  it('prioritizes the independent product guide shortcut, product records and BOM', () => {
     const user = {
       permissions: [getMenuPermissionForPath('/engineering/products')],
     }
@@ -57,8 +57,18 @@ describe('HOME business shortcuts and independent navigation domains', () => {
     )
     expect(categories[0].id).toBe('product-management')
     expect(
-      categories[0].shortcuts.slice(0, 2).map((shortcut) => shortcut.url)
-    ).toEqual(['/engineering/products', '/product-structure/bom'])
+      categories[0].shortcuts.slice(0, 3).map((shortcut) => shortcut.url)
+    ).toEqual([
+      '/engineering/product-creation-guide',
+      '/engineering/products',
+      '/product-structure/bom',
+    ])
+    expect(categories[0].shortcuts[0]).toMatchObject({
+      title: '如何建立产品',
+      description: translateHomeShortcutLabel(
+        'home.productCreationGuideShortcutDescription'
+      ),
+    })
     expect(
       categories.some((category) => category.id === 'resource-management')
     ).toBe(false)

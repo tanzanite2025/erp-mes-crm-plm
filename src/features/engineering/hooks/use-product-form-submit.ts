@@ -2,7 +2,6 @@ import { type UseFormReturn } from 'react-hook-form'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
-import { type BOM } from '@/features/product-structure/data/schema'
 import { ProductCommand } from '../commands/product-command'
 import {
   type Product,
@@ -19,12 +18,10 @@ interface UseProductFormSubmitParams {
   form: UseFormReturn<Product>
   productTypes: ProductType[]
   attributeOptions?: ProductTemplateAttributeLevelTwoOption[]
-  boms?: BOM[]
-  customerNameMap?: Map<string, string>
   onOpenChange: (open: boolean) => void
   onSubmit?: (
     payload: ProductSubmitPayload
-  ) => Promise<Product[] | void> | Product[] | void
+  ) => Promise<Product[] | void | null> | Product[] | void | null
   onSaved?: (products: Product[]) => void
 }
 
@@ -38,8 +35,6 @@ export function useProductFormSubmit({
   form: _form,
   productTypes,
   attributeOptions,
-  boms,
-  customerNameMap,
   onOpenChange,
   onSubmit,
   onSaved,
@@ -49,17 +44,13 @@ export function useProductFormSubmit({
   const handleFormSubmit = async (values: Product) => {
     const selectedType = productTypes.find((type) => type.id === values.typeId)
     const typeCode = selectedType?.code || 'X'
-    const selectedBom =
-      (boms ?? []).find((bom) => bom.id === values.bomId) ?? null
     const normalizedValues: Product = {
       ...values,
       name: resolveProductAggregateDisplayLabel({
         locale,
         product: values,
         productTypes,
-        bom: selectedBom,
         options: attributeOptions,
-        customerNameMap,
         ownerTypeInternalLabel: t(
           'engineering.bomArchive.form.ownerTypeInternal'
         ),
@@ -95,13 +86,15 @@ export function useProductFormSubmit({
       throw error
     }
 
-    let savedProducts: Product[] | void = undefined
+    let savedProducts: Product[] | void | null = undefined
     if (onSubmit) {
       savedProducts = await onSubmit({
         products: [finalData],
         currentRow,
       })
     }
+
+    if (savedProducts === null) return
 
     toast.success(
       submitPayload.mode === 'edit'

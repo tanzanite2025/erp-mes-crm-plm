@@ -3,17 +3,17 @@ import { matchesPathPermissionProjection } from '@/features/authz/guards/route-a
 import type { AuthSessionUserLike } from '@/features/authz/utils/auth-session'
 import { engineeringPermissionTabs } from '@/features/engineering/tab-config'
 import { getProductStructureTabs } from '@/features/product-structure/tab-config'
+import type { ProductCreationOperationGuideStepKey } from './product-creation-operation-guide-progress'
 
 const productCreationGuideStepDefinitions = [
-  { key: 'attributes', tabKey: 'product-attributes', stage: 'configuration' },
   { key: 'template', tabKey: 'templates', stage: 'configuration' },
   { key: 'baseModel', tabKey: 'types', stage: 'configuration' },
   { key: 'product', tabKey: 'products', stage: 'product' },
   { key: 'bom', tabKey: 'bom', stage: 'followup' },
 ] as const
 
-export type HomeProductCreationGuideStep = {
-  key: string
+export type ProductCreationOperationGuideStep = {
+  key: ProductCreationOperationGuideStepKey
   number: number
   title: string
   action: string
@@ -25,10 +25,10 @@ export type HomeProductCreationGuideStep = {
   canAccess: boolean
 }
 
-export function buildHomeProductCreationGuideSteps(
+export function buildProductCreationOperationGuideSteps(
   user: AuthSessionUserLike | null | undefined,
   t: (key: TranslationKey) => string
-): HomeProductCreationGuideStep[] {
+): ProductCreationOperationGuideStep[] {
   const productModuleTabs = [
     ...engineeringPermissionTabs(t),
     ...getProductStructureTabs(t),
@@ -44,10 +44,18 @@ export function buildHomeProductCreationGuideSteps(
       {
         key: definition.key,
         number: index + 1,
-        title: t(`home.productCreationGuide.steps.${definition.key}.title`),
-        action: t(`home.productCreationGuide.steps.${definition.key}.action`),
-        fields: t(`home.productCreationGuide.steps.${definition.key}.fields`),
-        result: t(`home.productCreationGuide.steps.${definition.key}.result`),
+        title: t(
+          `engineering.productCreationGuide.steps.${definition.key}.title`
+        ),
+        action: t(
+          `engineering.productCreationGuide.steps.${definition.key}.action`
+        ),
+        fields: t(
+          `engineering.productCreationGuide.steps.${definition.key}.fields`
+        ),
+        result: t(
+          `engineering.productCreationGuide.steps.${definition.key}.result`
+        ),
         href: targetTab.href,
         pageLabel: targetTab.label,
         stage: definition.stage,

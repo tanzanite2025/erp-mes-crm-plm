@@ -1,5 +1,9 @@
+import { productCreationOperationGuide } from './product-creation-operation-guide'
+
 export const engineering = {
+  productCreationGuide: productCreationOperationGuide,
   tabs: {
+    productCreationGuide: '如何建立产品',
     products: '产品管理',
     productAppearance: '产品外观',
     productAttributes: '产品模板属性分类',
@@ -844,9 +848,9 @@ export const engineering = {
     genericParts: '通用配件',
     dialog: {
       titleEdit: '编辑产品规格',
-      titleCreate: '绑定 BOM 生成产品',
+      titleCreate: '建立产品',
       description:
-        '选择基础型号并绑定 BOM，生成独立产品并配置几何参数、规格权重及生产约束。',
+        '选择基础型号，填写产品规格及生产约束后保存。BOM 的准备、验证和关联在 BOM 管理中独立进行。',
       validationError: '表单校验未通过，请检查必填项后重试',
       templatePending: '待选择规格模板',
       templateHint: '请先选择“产品分类”或手动指定“规格模板”以开启配置。',
@@ -869,14 +873,14 @@ export const engineering = {
       category: '基础型号',
       categoryPlaceholder: '选择基础型号...',
       categoryRequired: '请选择基础型号',
+      baseModelSourceHelp:
+        '基础型号来自产品分类的第三级，由你自行命名。新增：产品管理 → {{manageCategories}} → {{addCategory}}，父级选二级分类，手填“分类名称”和“分类编码”后保存；此处选用已有型号。“型号编码”另填两位数字序号。',
       modelCode: '型号编码',
       modelCodePlaceholder: '01~99',
       modelCodeLinked: '已联动编码规则',
       template: '规格模板',
       templatePlaceholder: '选择规格模板...',
       status: '状态',
-      bom: '绑定 BOM',
-      bomPlaceholder: '选择已建立 BOM...',
       sku: '产品料号',
       skuPlaceholder: '将自动生成 SKU',
       spec: '绑定工艺',
@@ -889,6 +893,18 @@ export const engineering = {
       ownerTypeInternal: '内部型号',
       ownerTypeCustomer: '客户定制',
       ownerPlaceholder: '选择归属...',
+    },
+    linkedBoms: {
+      title: '关联的 BOM',
+      description: '显示当前产品实际关联的 BOM，关联操作在 BOM 管理中维护。',
+      saveProductFirst:
+        '先保存产品。BOM 可独立准备和验证，确认可用后在 BOM 管理中关联此产品。',
+      empty: '当前产品尚未关联 BOM。',
+      loading: '正在读取关联的 BOM…',
+      loadFailed: '关联信息读取失败，可重试；不影响产品资料保存。',
+      retry: '重试读取关联信息',
+      accessRequired: '需要 BOM 页面访问权限才能查看关联信息。',
+      openManagement: '进入 BOM 管理',
     },
     restrictions: {
       title: '生产约束项（风险标识）',
@@ -1079,12 +1095,18 @@ export const engineering = {
       component: '所选组件将决定在创建产品时系统自动生成的物理参数表单。',
       assembly:
         '加入一级属性分类后，产品表单将使用其下全部已启用的二级属性选项。',
+      catalogEditing:
+        '点击选项可直接编辑。属性修改保存后会应用到所有引用模板；当前模板的属性组合需点击“保存模板”。',
     },
     buttons: {
       cancel: '取消',
       save: '保存模板',
       saving: '保存中…',
       addAttribute: '加入一级属性分类',
+      manageAttributeCatalog: '管理产品模板属性分类',
+      manageAttributeCategory: '管理属性分类',
+      addAttributeOption: '新增二级属性选项',
+      editAttributeOption: '编辑二级属性选项 · {{name}}',
       removeAttribute: '移除',
     },
     confirms: {
@@ -1113,10 +1135,12 @@ export const engineering = {
       levelTwoOptions: '二级属性分类（属性选项）',
       levelTwoOptionCount: '二级属性分类 · {{count}} 项已启用',
       noActiveLevelTwoOptions:
-        '暂无已启用的二级属性选项，可在产品模板属性分类中维护。',
+        '暂无已启用的二级属性选项，可直接新增或管理属性分类。',
       selectedCategoryPreview: '待加入的一级属性分类及二级选项',
       levelOneCategoryCount: '已加入的一级属性分类 · {{count}} 个',
       unavailableCategory: '该一级属性分类已不可用',
+      unavailableCategoryHint:
+        '该一级属性分类已被删除，请移除这项绑定后再保存模板。',
       empty: '当前模板尚未接入一级属性分类。',
       required: '必填',
       optional: '可选',

@@ -18,6 +18,7 @@ export const sidebar = {
     purchaseAndSales: 'Purchase & Sales',
     purchaseManagement: 'Purchase Management',
     productManagement: 'Product Management',
+    productHandbook: 'Product Handbook',
     productConfig: 'Product Configuration',
     businessAnalysis: 'Business Analysis',
     analysisAggregation: 'Analysis Aggregation',

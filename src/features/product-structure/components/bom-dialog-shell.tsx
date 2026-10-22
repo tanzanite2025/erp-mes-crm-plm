@@ -82,6 +82,7 @@ interface BOMDialogShellProps {
     name: string
   }
   children: ReactNode
+  wizardHeader?: ReactNode
 }
 
 export function BOMDialogShell({
@@ -91,6 +92,7 @@ export function BOMDialogShell({
   headerMeta,
   auditTarget,
   children,
+  wizardHeader,
 }: BOMDialogShellProps) {
   const { t } = useLanguage()
   const version = headerMeta?.version?.trim() ?? ''
@@ -101,8 +103,13 @@ export function BOMDialogShell({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className='flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'
+        className={
+          wizardHeader
+            ? 'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[1100px]'
+            : 'flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'
+        }
       >
+        {wizardHeader}
         <DialogHeader className='relative flex-none px-3 pt-2.5 pb-1 text-start sm:px-4 sm:pt-3 sm:pb-1'>
           <div className='flex w-full items-start justify-between gap-3'>
             <div className='flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden'>

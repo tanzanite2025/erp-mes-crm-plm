@@ -30,6 +30,7 @@ import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductBasicInfo } from './product/product-basic-info'
+import { ProductLinkedBomRecordsReadOnlySection } from './product/product-linked-bom-records-read-only-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { getLocalizedSpecComponents } from './specs'
 
@@ -41,9 +42,11 @@ interface ProductActionDialogProps {
   onOpenChange: (open: boolean) => void
   onSubmit?: (
     payload: ProductSubmitPayload
-  ) => Promise<Product[] | void> | Product[] | void
+  ) => Promise<Product[] | void | null> | Product[] | void | null
   onSaved?: (products: Product[]) => void
   productTypes?: ProductType[]
+  initialTypeId?: string
+  wizardHeader?: React.ReactNode
 }
 
 function getFirstErrorPath(
@@ -81,6 +84,8 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     onSubmit,
     onSaved,
     productTypes = [],
+    initialTypeId,
+    wizardHeader,
   } = props
 
   const {
@@ -91,8 +96,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     attributeOptions = [],
     moldOptions,
     specOptions,
-    bomOptions,
-    isBomOptionsPending,
     metadataInitError,
     metadataReady,
     nextCodeDeriveError,
@@ -104,7 +107,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     specPreviewAggregateLabel = '',
     specPreviewV2 = null,
     specPreviewItems = [],
-    selectedBomContext = null,
     handleFormSubmit,
   } = useProductForm({
     currentRow,
@@ -113,6 +115,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     onOpenChange,
     onSubmit,
     onSaved,
+    initialTypeId,
   })
   const { deleteProduct, isDeletingProduct } = useProductWriteActions()
 
@@ -160,7 +163,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   )
   const errorLabelMap: Record<string, string> = {
     typeId: t('engineering.productMgmt.form.category'),
-    bomId: t('engineering.productMgmt.form.bom'),
     modelCode: t('engineering.productMgmt.form.modelCode'),
     name: t('engineering.productMgmt.form.category'),
     sku: t('engineering.productMgmt.form.sku'),
@@ -207,20 +209,31 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={buildHostedQuickActionDialogContentClassName(
-          'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:h-[90vh] md:max-h-[90vh] md:w-[85vw] md:max-w-[85vw]'
-        )}
+        className={
+          wizardHeader
+            ? 'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[1100px]'
+            : buildHostedQuickActionDialogContentClassName(
+                'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:h-[90vh] md:max-h-[90vh] md:w-[85vw] md:max-w-[85vw]'
+              )
+        }
         aria-describedby={undefined}
       >
+        {wizardHeader}
         <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-8 py-3 text-start'>
           <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter text-slate-800'>
             <div className='size-2 animate-pulse rounded-full bg-blue-600' />
-            {isEdit
-              ? t('engineering.productMgmt.dialog.titleEdit')
-              : t('engineering.productMgmt.dialog.titleCreate')}
+            {wizardHeader
+              ? t('engineering.productCreationGuide.steps.product.title')
+              : isEdit
+                ? t('engineering.productMgmt.dialog.titleEdit')
+                : t('engineering.productMgmt.dialog.titleCreate')}
           </DialogTitle>
           <DialogDescription className='sr-only'>
-            {t('engineering.productMgmt.dialog.description')}
+            {t(
+              wizardHeader
+                ? 'engineering.productCreationGuide.steps.product.action'
+                : 'engineering.productMgmt.dialog.description'
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className='scrollbar-hide flex-1 overflow-y-auto px-6 py-3 sm:px-8'>
@@ -247,13 +260,18 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 dynamicTypes={dynamicTypes}
                 productTypes={productTypes}
                 handleImageUpload={handleImageUpload}
-                bomOptions={bomOptions}
-                isBomOptionsPending={isBomOptionsPending}
                 specOptions={specOptions}
                 moldOptions={moldOptions}
                 isEdit={isEdit}
                 templateLabel={boundTemplate?.name ?? activeSpec?.label}
               />
+
+              {!wizardHeader && (
+                <ProductLinkedBomRecordsReadOnlySection
+                  productId={currentRow?.id}
+                  onNavigateToBomManagement={() => onOpenChange(false)}
+                />
+              )}
 
               {baseModelError ? (
                 <div className='rounded-[20px] border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-amber-900'>
@@ -287,7 +305,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 </div>
               ) : null}
 
-              {boundTemplate ? (
+              {boundTemplate && !wizardHeader ? (
                 <div className='rounded-2xl border border-dashed border-blue-300 bg-blue-50/90 px-3 py-1.5 text-blue-900'>
                   <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='min-w-0'>
@@ -368,46 +386,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               {SpecComponent ? (
                 <div className='space-y-2'>
                   <SpecComponent form={form} />
-                  <div className='rounded-[18px] border border-dashed border-indigo-200/60 bg-indigo-50/30 p-2'>
-                    <div className='mb-1.5 flex items-center justify-between gap-2 border-b border-dashed border-indigo-200/50 pb-1.5'>
-                      <div className='text-[8px] font-black tracking-widest text-indigo-700/60 uppercase'>
-                        {locale.startsWith('zh')
-                          ? 'BOM 承接信息'
-                          : 'BOM Context'}
-                      </div>
-                      <div
-                        className={cn(
-                          'text-[8px] font-black tracking-widest uppercase',
-                          selectedBomContext?.hasSelection
-                            ? 'text-emerald-700/70'
-                            : 'text-amber-700/70'
-                        )}
-                      >
-                        {selectedBomContext?.hint ||
-                          (locale.startsWith('zh') ? '待绑定' : 'Pending')}
-                      </div>
-                    </div>
-                    <div className='grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-5'>
-                      {(selectedBomContext?.items ?? []).map((item) => (
-                        <div
-                          key={item.key}
-                          className='rounded-xl border border-dashed border-indigo-100/80 bg-white/90 px-2.5 py-2'
-                        >
-                          <div className='text-[8px] font-black tracking-widest text-indigo-700/60 uppercase'>
-                            {item.label}
-                          </div>
-                          <div
-                            className={cn(
-                              'mt-1 truncate text-[11px] font-black tracking-tight',
-                              item.empty ? 'text-slate-400' : 'text-slate-800'
-                            )}
-                          >
-                            {item.value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <div className='flex flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed bg-muted/5 p-6 text-center transition-all hover:bg-muted/10'>
@@ -456,7 +434,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   : specPreviewSummary ||
                     t('engineering.productArchive.states.unnamed'))}
             </p>
-            {specPreviewItems.length > 0 && (
+            {!wizardHeader && specPreviewItems.length > 0 && (
               <div className='mt-2 flex flex-wrap gap-1.5'>
                 {specPreviewItems.map((item) => (
                   <Badge
@@ -476,7 +454,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             )}
           </div>
           <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end'>
-            {isEdit && currentRow ? (
+            {isEdit && currentRow && !wizardHeader ? (
               <AuditTimelineTriggerButton
                 module={AUDIT_MODULES.product}
                 targetId={currentRow.id}
@@ -484,7 +462,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 label={t('common.audit.trigger')}
               />
             ) : null}
-            {isEdit ? (
+            {isEdit && !wizardHeader ? (
               <Button
                 type='button'
                 variant='outline'
@@ -504,7 +482,11 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               disabled={submissionBlocked || isDeletingProduct}
               className='h-11 rounded-full bg-blue-600 px-10 text-[11px] font-black shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:h-9'
             >
-              {t('engineering.productMgmt.dialog.saveStandard')}
+              {t(
+                wizardHeader
+                  ? 'engineering.productCreationGuide.saveProductAndContinue'
+                  : 'engineering.productMgmt.dialog.saveStandard'
+              )}
             </Button>
           </div>
         </DialogFooter>

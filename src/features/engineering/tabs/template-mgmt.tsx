@@ -201,6 +201,16 @@ export function TemplateMgmt() {
       toast.error(t('engineering.templateMgmt.toasts.required'))
       return
     }
+    if (
+      hasLoadedCatalog &&
+      !attributeCatalogError &&
+      assembledCategories.some(({ category }) => !category)
+    ) {
+      toast.error(
+        t('engineering.templateMgmt.assembly.unavailableCategoryHint')
+      )
+      return
+    }
 
     templateSaveInProgressRef.current = true
     try {

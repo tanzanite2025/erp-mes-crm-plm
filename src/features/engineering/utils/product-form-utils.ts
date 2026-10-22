@@ -54,7 +54,6 @@ export function buildDefaultProductValues(
     axleCrown: undefined,
     steerer: '',
     engineeringSpecId: '',
-    bomId: '',
     attachments: [],
     version: includeVersion ? 1 : 1,
     templateKey: normalizeProductTemplateKeyValue(''),

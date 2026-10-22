@@ -83,7 +83,6 @@ export function buildProductCandidate(
     moldGroup: dto.moldGroup,
     description: dto.description,
     engineeringSpecId: dto.engineeringSpecId,
-    bomId: dto.bomId,
     attributeValues: filterProductSpecificationOwnedAttributeValues(
       attributeValues
     ).map(toProductAttributeValueContract),

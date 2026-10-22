@@ -1,6 +1,8 @@
 export const bomQueryKeys = {
   list: () => ['engineering', 'boms'] as const,
   detail: (id: string) => ['engineering', 'boms', id] as const,
+  associationOptions: (productId?: string) =>
+    ['engineering', 'boms', 'association-options', { productId }] as const,
 }
 
 export const BOMS_QUERY_KEY = bomQueryKeys.list()

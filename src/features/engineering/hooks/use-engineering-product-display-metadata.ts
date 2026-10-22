@@ -3,8 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useLanguage } from '@/context/language-provider'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
-import { BOMS_QUERY_KEY } from '@/features/product-structure/query-keys'
+import { bomQueryKeys } from '@/features/product-structure/query-keys'
 import { bomService } from '@/features/product-structure/services/bom-service'
+import { pickReleasedBOM } from '@/features/product-structure/utils/pick-released-bom'
 import { getCustomers } from '@/features/trading/customer'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import {
@@ -78,8 +79,8 @@ export function useEngineeringProductDisplayMetadata({
     queryFn: () => SpecsService.getSpecs(),
   })
   const bomsQuery = useQuery({
-    queryKey: BOMS_QUERY_KEY,
-    queryFn: () => bomService.getBOMs(),
+    queryKey: bomQueryKeys.associationOptions(),
+    queryFn: () => bomService.getBOMAssociationOptions(),
   })
   const customersQuery = useQuery({
     queryKey: tradingQueryKeys.customers(),
@@ -137,8 +138,13 @@ export function useEngineeringProductDisplayMetadata({
         const engineeringSpec = engineeringSpecId
           ? specsLookup.get(engineeringSpecId)
           : undefined
+        const productBoms = bomsQuery.data.filter(
+          (bom) => bom.productId === product.id
+        )
         const selectedBom =
-          bomsQuery.data.find((bom) => bom.id === product.bomId) ?? null
+          pickReleasedBOM(productBoms) ??
+          productBoms.find((bom) => bom.status !== 'OBSOLETE') ??
+          null
         const aggregateDisplay = resolveProductAggregateDisplay({
           locale,
           product,

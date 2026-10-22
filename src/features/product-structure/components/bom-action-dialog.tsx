@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
 import { createLogger } from '@/lib/logger'
+import { cn } from '@/lib/utils'
 import { Form } from '@/components/ui/form'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
@@ -31,6 +32,7 @@ type BOMActionDialogProps = {
   currentRow?: BOM
   initialItems?: BOMItemDraft[]
   initialProductId?: string
+  wizardHeader?: React.ReactNode
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit?: (data: SaveBOMInput) => BOM | Promise<BOM | null>
@@ -45,6 +47,7 @@ export function BOMActionDialog({
   currentRow,
   initialItems,
   initialProductId,
+  wizardHeader,
   open,
   onOpenChange,
   onSubmit,
@@ -159,6 +162,7 @@ export function BOMActionDialog({
   return (
     <>
       <BOMDialogShell
+        wizardHeader={wizardHeader}
         open={open}
         onOpenChange={onOpenChange}
         isEdit={isEdit}
@@ -212,7 +216,12 @@ export function BOMActionDialog({
                   </div>
                 </div>
 
-                <div className='shrink-0 px-3 pb-3 sm:px-4 sm:pb-4'>
+                <div
+                  className={cn(
+                    'shrink-0 px-3 pb-3 sm:px-4 sm:pb-4',
+                    wizardHeader && '[&_button]:rounded-full'
+                  )}
+                >
                   <BOMDialogFooter
                     form={typedForm}
                     currentRow={currentRow}

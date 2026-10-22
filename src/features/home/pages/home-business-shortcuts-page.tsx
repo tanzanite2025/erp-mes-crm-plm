@@ -5,9 +5,7 @@ import { useLanguage } from '@/context/language-provider'
 import { getSidebarData } from '@/components/layout/data/sidebar-data'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { HomeBusinessShortcutCategorySection } from '../components/home-business-shortcut-category-section'
-import { HomeProductCreationStepGuide } from '../components/home-product-creation-step-guide'
 import { buildHomeBusinessShortcutCategories } from '../data/build-home-business-shortcut-categories'
-import { buildHomeProductCreationGuideSteps } from '../data/build-home-product-creation-guide-steps'
 import { getHomeShortcutTabs } from '../home-shortcut-tabs'
 
 export function HomeBusinessShortcutsPage() {
@@ -23,10 +21,6 @@ export function HomeBusinessShortcutsPage() {
             t
           )
         : [],
-    [isIdentitySynced, t, user]
-  )
-  const productCreationGuideSteps = useMemo(
-    () => (isIdentitySynced ? buildHomeProductCreationGuideSteps(user, t) : []),
     [isIdentitySynced, t, user]
   )
 
@@ -45,30 +39,27 @@ export function HomeBusinessShortcutsPage() {
             {t('home.description')}
           </p>
         </header>
-        <HomeProductCreationStepGuide steps={productCreationGuideSteps} />
         {categories.map((category) => (
           <HomeBusinessShortcutCategorySection
             key={category.id}
             category={category}
           />
         ))}
-        {isIdentitySynced &&
-          categories.length === 0 &&
-          !productCreationGuideSteps.some((step) => step.canAccess) && (
-            <div
-              role='status'
-              className='rounded-2xl border border-dashed p-8 text-center'
-            >
-              <LayoutGrid
-                aria-hidden='true'
-                className='mx-auto mb-3 size-6 text-muted-foreground'
-              />
-              <p className='text-sm font-medium'>{t('home.emptyTitle')}</p>
-              <p className='mt-2 text-sm text-muted-foreground'>
-                {t('home.emptyDescription')}
-              </p>
-            </div>
-          )}
+        {isIdentitySynced && categories.length === 0 && (
+          <div
+            role='status'
+            className='rounded-2xl border border-dashed p-8 text-center'
+          >
+            <LayoutGrid
+              aria-hidden='true'
+              className='mx-auto mb-3 size-6 text-muted-foreground'
+            />
+            <p className='text-sm font-medium'>{t('home.emptyTitle')}</p>
+            <p className='mt-2 text-sm text-muted-foreground'>
+              {t('home.emptyDescription')}
+            </p>
+          </div>
+        )}
       </div>
     </ModuleTabbedLayout>
   )

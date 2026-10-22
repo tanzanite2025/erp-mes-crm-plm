@@ -3,8 +3,6 @@ import { type UseFormReturn, useWatch } from 'react-hook-form'
 import { getServerErrorPresentation } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
-import { type BOM } from '@/features/product-structure/data/schema'
-import { resolveBOMOwnerDisplay } from '@/features/product-structure/utils/bom-owner-display'
 import {
   type Product,
   type ProductTemplateAttributeLevelOneCategory,
@@ -18,15 +16,8 @@ import {
   type ProductDisplayProjectionV2,
 } from '../display/product-display-v2'
 import { ProductCoreService } from '../services/product-core-service'
-import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
-import {
-  PRODUCT_ATTRIBUTE_CATEGORY_KEYS,
-  getProductTemplateAttributeLevelTwoOptionLabel,
-  upsertAttributeValue,
-} from '../utils/product-attribute-utils'
 import { normalizeProductModelCodeValue } from '../utils/product-code-normalization'
 import {
-  formatBOMMeasuredWeight,
   resolveProductAggregateDisplay,
   resolveProductAggregateDisplayLabel,
 } from '../utils/product-display-aggregate'
@@ -49,17 +40,7 @@ interface UseProductFormDeriveParams {
   previewTemplate?: ProductTemplate | null
   attributeCategories?: ProductTemplateAttributeLevelOneCategory[]
   attributeOptions?: ProductTemplateAttributeLevelTwoOption[]
-  boms?: BOM[]
-  customerNameMap?: Map<string, string>
   productTypes: ProductType[]
-}
-
-interface SelectedBomContextDisplay {
-  bomId: string
-  bomNo: string
-  hasSelection: boolean
-  hint: string
-  items: ProductDisplaySummaryItemV2[]
 }
 
 interface UseProductFormDeriveResult {
@@ -69,7 +50,6 @@ interface UseProductFormDeriveResult {
   specPreviewAggregateLabel: string
   specPreviewV2: ProductDisplayProjectionV2 | null
   specPreviewItems: ProductDisplaySummaryItemV2[]
-  selectedBomContext: SelectedBomContextDisplay | null
   skuPreview: string
   nextCodeDeriveError: string | null
 }
@@ -81,14 +61,11 @@ export function useProductFormDerive({
   previewTemplate,
   attributeCategories,
   attributeOptions,
-  boms,
-  customerNameMap,
   productTypes,
 }: UseProductFormDeriveParams): UseProductFormDeriveResult {
   const { locale, t } = useLanguage()
 
   const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
-  const watchedBomId = useWatch({ control: form.control, name: 'bomId' })
   const watchedModelCode = useWatch({
     control: form.control,
     name: 'modelCode',
@@ -120,10 +97,6 @@ export function useProductFormDerive({
   const selectedType = useMemo(
     () => (productTypes || []).find((type) => type.id === watchedTypeId),
     [productTypes, watchedTypeId]
-  )
-  const selectedBom = useMemo(
-    () => (boms || []).find((bom) => bom.id === watchedBomId) ?? null,
-    [boms, watchedBomId]
   )
   const dynamicTypes = useMemo(() => {
     return baseModelTypes
@@ -179,147 +152,8 @@ export function useProductFormDerive({
     })
   }, [open, productTypes, selectedType?.code, watchedModelCode, watchedTypeId])
 
-  const selectedBomContext = useMemo<SelectedBomContextDisplay | null>(() => {
-    if (!open) {
-      return null
-    }
-
-    const isChineseLocale = locale.startsWith('zh')
-    const unboundValue = isChineseLocale ? '未绑定' : 'Unbound'
-
-    if (!selectedBom) {
-      return {
-        bomId: '',
-        bomNo: '',
-        hasSelection: false,
-        hint: isChineseLocale
-          ? '未选择 BOM，当前显示为调试占位状态'
-          : 'No BOM selected, showing debug placeholders',
-        items: [
-          {
-            key: 'bom-type',
-            label: isChineseLocale ? 'BOM类型' : 'BOM Type',
-            value: unboundValue,
-            empty: true,
-          },
-          {
-            key: 'bom-owner-type',
-            label: isChineseLocale ? '归属' : 'Owner',
-            value: unboundValue,
-            empty: true,
-          },
-          {
-            key: 'bom-owner-customer',
-            label: isChineseLocale ? '归属客户' : 'Owner Customer',
-            value: unboundValue,
-            empty: true,
-          },
-          {
-            key: 'bom-version-level',
-            label: isChineseLocale ? '产品档次' : 'Product Grade',
-            value: unboundValue,
-            empty: true,
-          },
-          {
-            key: 'bom-measured-weight',
-            label: isChineseLocale ? '成品重量' : 'Finished Weight',
-            value: unboundValue,
-            empty: true,
-          },
-        ],
-      }
-    }
-
-    const bomTypeCode = (selectedBom.bomType || 'EBOM').trim().toUpperCase()
-    const versionValue = (selectedBom.versionLevel || '').trim()
-    const normalizedVersionValue =
-      normalizeProductAttributeMachineValue(versionValue)
-    const versionOption = normalizedVersionValue
-      ? attributeOptions?.find((option) => {
-          if (
-            normalizeProductAttributeMachineValue(option.categoryKey) !==
-            normalizeProductAttributeMachineValue(
-              PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
-            )
-          ) {
-            return false
-          }
-          const optionValue = (option.value || '').trim()
-          return (
-            optionValue === versionValue ||
-            normalizeProductAttributeMachineValue(optionValue) ===
-              normalizedVersionValue
-          )
-        })
-      : undefined
-    const ownerDisplay = resolveBOMOwnerDisplay(selectedBom, {
-      internalLabel: t('engineering.bomArchive.form.ownerTypeInternal'),
-      unknownCustomerLabel: t('engineering.bomArchive.table.ownerUnknown'),
-      customerNameMap,
-    })
-    const ownerCustomerValue =
-      ownerDisplay.ownerType === 'CUSTOMER' ? ownerDisplay.label : '-'
-    const measuredWeightValue = formatBOMMeasuredWeight(selectedBom)
-
-    return {
-      bomId: selectedBom.id,
-      bomNo: (selectedBom.bomNo || '').trim() || selectedBom.id,
-      hasSelection: true,
-      hint: isChineseLocale
-        ? `已绑定 BOM ${(selectedBom.bomNo || '').trim() || selectedBom.id}`
-        : `Bound BOM ${(selectedBom.bomNo || '').trim() || selectedBom.id}`,
-      items: [
-        {
-          key: 'bom-type',
-          label: isChineseLocale ? 'BOM类型' : 'BOM Type',
-          value:
-            bomTypeCode === 'MBOM'
-              ? isChineseLocale
-                ? '生产BOM'
-                : 'MBOM'
-              : isChineseLocale
-                ? '研发BOM'
-                : 'EBOM',
-          empty: false,
-        },
-        {
-          key: 'bom-owner-type',
-          label: isChineseLocale ? '归属' : 'Owner',
-          value:
-            ownerDisplay.ownerType === 'CUSTOMER'
-              ? t('engineering.bomArchive.form.ownerTypeCustomer')
-              : t('engineering.bomArchive.form.ownerTypeInternal'),
-          empty: false,
-        },
-        {
-          key: 'bom-owner-customer',
-          label: isChineseLocale ? '归属客户' : 'Owner Customer',
-          value: ownerCustomerValue,
-          empty: ownerCustomerValue === '-',
-        },
-        {
-          key: 'bom-version-level',
-          label: isChineseLocale ? '产品档次' : 'Product Grade',
-          value: versionValue
-            ? getProductTemplateAttributeLevelTwoOptionLabel(
-                locale,
-                versionOption
-              ) || versionValue
-            : '-',
-          empty: !versionValue,
-        },
-        {
-          key: 'bom-measured-weight',
-          label: isChineseLocale ? '成品重量' : 'Finished Weight',
-          value: measuredWeightValue || '-',
-          empty: !measuredWeightValue,
-        },
-      ],
-    }
-  }, [attributeOptions, customerNameMap, locale, open, selectedBom, t])
-
   const previewProduct = useMemo(() => {
-    const baseProduct = {
+    return {
       ...(allValues as Product),
       name: resolveEffectiveProductName({
         product: allValues as Product,
@@ -331,13 +165,7 @@ export function useProductFormDerive({
         typeCode: selectedType?.code,
       }),
     }
-
-    return upsertAttributeValue(
-      baseProduct,
-      PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version,
-      (selectedBom?.versionLevel || '').trim()
-    )
-  }, [allValues, productTypes, selectedBom?.versionLevel, selectedType?.code])
+  }, [allValues, productTypes, selectedType?.code])
 
   const specPreviewV2 = useMemo(
     () =>
@@ -362,9 +190,7 @@ export function useProductFormDerive({
       locale,
       product: previewProduct,
       productTypes,
-      bom: selectedBom,
       options: attributeOptions,
-      customerNameMap,
       ownerTypeInternalLabel: t(
         'engineering.bomArchive.form.ownerTypeInternal'
       ),
@@ -372,31 +198,14 @@ export function useProductFormDerive({
       emptyBaseLabel: t('engineering.productArchive.states.unnamed'),
     })
     const titleCoveredKeySet = new Set(aggregateDisplay.titleCoveredKeys)
-    const baseItems = specPreviewV2.summaryItems.filter(
+    return specPreviewV2.summaryItems.filter(
       (item) => !titleCoveredKeySet.has(item.key)
     )
-    const versionCategoryKey = normalizeProductAttributeMachineValue(
-      PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
-    )
-    const hasVersionItem = baseItems.some(
-      (item) => item.key === versionCategoryKey
-    )
-    const bomItems = (selectedBomContext?.items ?? []).filter((item) => {
-      if (titleCoveredKeySet.has(item.key)) {
-        return false
-      }
-
-      return item.key !== 'bom-version-level' || !hasVersionItem
-    })
-    return [...baseItems, ...bomItems]
   }, [
     attributeOptions,
-    customerNameMap,
     locale,
     previewProduct,
     productTypes,
-    selectedBom,
-    selectedBomContext?.items,
     specPreviewV2.summaryItems,
     t,
   ])
@@ -406,24 +215,14 @@ export function useProductFormDerive({
       locale,
       product: previewProduct,
       productTypes,
-      bom: selectedBom,
       options: attributeOptions,
-      customerNameMap,
       ownerTypeInternalLabel: t(
         'engineering.bomArchive.form.ownerTypeInternal'
       ),
       unknownCustomerLabel: t('engineering.bomArchive.table.ownerUnknown'),
       emptyBaseLabel: t('engineering.productArchive.states.unnamed'),
     })
-  }, [
-    attributeOptions,
-    customerNameMap,
-    locale,
-    previewProduct,
-    productTypes,
-    selectedBom,
-    t,
-  ])
+  }, [attributeOptions, locale, previewProduct, productTypes, t])
 
   const specPreviewTitle = specPreviewV2.title
   const specPreviewSummary = specPreviewV2.summaryText
@@ -437,7 +236,6 @@ export function useProductFormDerive({
     specPreviewAggregateLabel,
     specPreviewV2,
     specPreviewItems,
-    selectedBomContext,
     skuPreview,
     nextCodeDeriveError,
   }

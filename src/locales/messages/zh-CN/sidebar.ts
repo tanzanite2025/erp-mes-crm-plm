@@ -18,6 +18,7 @@ export const sidebar = {
     purchaseAndSales: '购销管理',
     purchaseManagement: '采购管理',
     productManagement: '产品管理',
+    productHandbook: '产品操作手册',
     productConfig: '产品配置',
     businessAnalysis: '经营分析',
     analysisAggregation: '分析聚合',

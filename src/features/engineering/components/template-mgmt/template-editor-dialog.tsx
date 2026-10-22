@@ -1,8 +1,15 @@
 'use client'
 
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { type TranslationKey } from '@/locales'
-import { LayoutTemplate, Plus, Save, Trash2 } from 'lucide-react'
+import {
+  LayoutTemplate,
+  Pencil,
+  Plus,
+  Save,
+  Settings2,
+  Trash2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -34,6 +41,8 @@ import {
   getProductTemplateAttributeLevelOneCategoryName,
   getProductTemplateAttributeLevelTwoOptionLabel,
 } from '../../utils/product-attribute-utils'
+import { ProductTemplateAttributeClassificationManagementDialog } from '../product-attributes/product-template-attribute-classification-management-dialog'
+import { ProductTemplateAttributeLevelTwoOptionEditorDialog } from '../product-attributes/product-template-attribute-level-two-option-editor-dialog'
 
 const productTemplateEditorDialogClasses = buildActionDialogShellClasses({
   content:
@@ -51,6 +60,14 @@ interface AssembledCategoryItem {
   binding: NonNullable<ProductTemplate['attributeBindings']>[number]
   category?: ProductTemplateAttributeLevelOneCategory
 }
+
+type ProductTemplateAttributeCatalogEditorTarget =
+  | { kind: 'management'; categoryKey?: string }
+  | {
+      kind: 'option'
+      categoryKey: string
+      option?: ProductTemplateAttributeLevelTwoOption
+    }
 
 interface TemplateEditorDialogProps {
   open: boolean
@@ -73,9 +90,20 @@ interface TemplateEditorDialogProps {
   attributeOptions: ProductTemplateAttributeLevelTwoOption[]
   isAttributeCatalogReady: boolean
   attributeCatalogRequestState: ReactNode
+  wizardHeader?: ReactNode
 }
 
-export function TemplateEditorDialog({
+export function TemplateEditorDialog(props: TemplateEditorDialogProps) {
+  if (!props.open) return null
+  return (
+    <ProductTemplateEditorDialogSession
+      key={props.editingTemplate?.id || 'new-product-template'}
+      {...props}
+    />
+  )
+}
+
+function ProductTemplateEditorDialogSession({
   open,
   onOpenChange,
   editingTemplate,
@@ -94,8 +122,11 @@ export function TemplateEditorDialog({
   attributeOptions,
   isAttributeCatalogReady,
   attributeCatalogRequestState,
+  wizardHeader,
 }: TemplateEditorDialogProps) {
   const templateFormId = useId()
+  const [attributeCatalogEditorTarget, setAttributeCatalogEditorTarget] =
+    useState<ProductTemplateAttributeCatalogEditorTarget | null>(null)
   const templateNameFieldId = `${templateFormId}-name`
   const templateDescriptionFieldId = `${templateFormId}-description`
   const levelOneAttributeCategoryFieldId = `${templateFormId}-level-one-category`
@@ -115,22 +146,59 @@ export function TemplateEditorDialog({
 
     return (
       <div className='space-y-2'>
-        <p className='text-[10px] font-bold text-muted-foreground'>
-          {t('engineering.templateMgmt.assembly.levelTwoOptionCount', {
-            count: activeOptions.length,
-          })}
-        </p>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <p className='text-[10px] font-bold text-muted-foreground'>
+            {t('engineering.templateMgmt.assembly.levelTwoOptionCount', {
+              count: activeOptions.length,
+            })}
+          </p>
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='h-7 rounded-full px-3 text-[10px] font-bold text-primary'
+            onClick={() =>
+              setAttributeCatalogEditorTarget({ kind: 'option', categoryKey })
+            }
+          >
+            <Plus className='size-3' />
+            {t('engineering.templateMgmt.buttons.addAttributeOption')}
+          </Button>
+        </div>
         {activeOptions.length > 0 ? (
           <ul
             className='flex max-h-36 flex-wrap gap-1.5 overflow-y-auto'
             aria-label={t('engineering.templateMgmt.assembly.levelTwoOptions')}
           >
             {activeOptions.map((option) => (
-              <li
-                key={option.id}
-                className='rounded-full border border-dashed border-primary/15 bg-background px-3 py-1 text-[11px] font-bold text-foreground/80'
-              >
-                {getProductTemplateAttributeLevelTwoOptionLabel(locale, option)}
+              <li key={option.id} className='max-w-full'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  className='h-auto max-w-full rounded-full border-dashed border-primary/15 bg-background px-3 py-1 text-left text-[11px] font-bold whitespace-normal text-foreground/80 shadow-none hover:border-primary/40 hover:bg-primary/5'
+                  aria-label={t(
+                    'engineering.templateMgmt.buttons.editAttributeOption',
+                    {
+                      name: getProductTemplateAttributeLevelTwoOptionLabel(
+                        locale,
+                        option
+                      ),
+                    }
+                  )}
+                  onClick={() =>
+                    setAttributeCatalogEditorTarget({
+                      kind: 'option',
+                      categoryKey,
+                      option,
+                    })
+                  }
+                >
+                  {getProductTemplateAttributeLevelTwoOptionLabel(
+                    locale,
+                    option
+                  )}
+                  <Pencil className='size-3 shrink-0 text-muted-foreground' />
+                </Button>
               </li>
             ))}
           </ul>
@@ -144,12 +212,23 @@ export function TemplateEditorDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (isSaving || attributeCatalogEditorTarget) return
+        onOpenChange(nextOpen)
+      }}
+    >
       <DialogContent
         size='6xl'
-        className={productTemplateEditorDialogClasses.content}
+        className={
+          wizardHeader
+            ? 'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[1100px]'
+            : productTemplateEditorDialogClasses.content
+        }
         closeButtonClassName='top-5 end-5 flex size-8 items-center justify-center rounded-full bg-muted/60 opacity-80 transition-colors hover:bg-muted hover:opacity-100 sm:top-6 sm:end-6'
       >
+        {wizardHeader}
         <DialogHeader className={productTemplateEditorDialogClasses.header}>
           <DialogTitle className={productTemplateEditorDialogClasses.title}>
             <span className='flex size-9 shrink-0 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400'>
@@ -171,7 +250,7 @@ export function TemplateEditorDialog({
           className={productTemplateEditorDialogClasses.body}
           onSubmit={(event) => {
             event.preventDefault()
-            if (!isSaving) onSubmit()
+            if (!isSaving && !attributeCatalogEditorTarget) onSubmit()
           }}
         >
           <fieldset
@@ -242,11 +321,30 @@ export function TemplateEditorDialog({
               aria-label={t('engineering.templateMgmt.fields.assemblyTitle')}
             >
               <div className='space-y-2'>
-                <h3 className='text-[11px] font-black tracking-wide text-primary uppercase'>
-                  {t('engineering.templateMgmt.fields.assemblyTitle')}
-                </h3>
+                <div className='flex flex-wrap items-center justify-between gap-2'>
+                  <h3 className='text-[11px] font-black tracking-wide text-primary uppercase'>
+                    {t('engineering.templateMgmt.fields.assemblyTitle')}
+                  </h3>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='h-8 rounded-full border-dashed bg-transparent px-4 text-[10px] font-black shadow-none'
+                    onClick={() =>
+                      setAttributeCatalogEditorTarget({ kind: 'management' })
+                    }
+                  >
+                    <Settings2 className='size-3.5' />
+                    {t(
+                      'engineering.templateMgmt.buttons.manageAttributeCatalog'
+                    )}
+                  </Button>
+                </div>
                 <p className='text-[11px] leading-relaxed text-muted-foreground'>
                   {t('engineering.templateMgmt.hints.assembly')}
+                </p>
+                <p className='text-[10px] leading-relaxed text-muted-foreground'>
+                  {t('engineering.templateMgmt.hints.catalogEditing')}
                 </p>
               </div>
               {attributeCatalogRequestState}
@@ -312,12 +410,31 @@ export function TemplateEditorDialog({
                       'engineering.templateMgmt.assembly.selectedCategoryPreview'
                     )}
                   >
-                    <p className='text-xs font-black text-primary'>
-                      {getProductTemplateAttributeLevelOneCategoryName(
-                        locale,
-                        selectedCategory
-                      )}
-                    </p>
+                    <div className='flex flex-wrap items-center justify-between gap-2'>
+                      <p className='text-xs font-black text-primary'>
+                        {getProductTemplateAttributeLevelOneCategoryName(
+                          locale,
+                          selectedCategory
+                        )}
+                      </p>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        className='h-7 rounded-full px-3 text-[10px] font-bold'
+                        onClick={() =>
+                          setAttributeCatalogEditorTarget({
+                            kind: 'management',
+                            categoryKey: selectedCategory.key,
+                          })
+                        }
+                      >
+                        <Settings2 className='size-3' />
+                        {t(
+                          'engineering.templateMgmt.buttons.manageAttributeCategory'
+                        )}
+                      </Button>
+                    </div>
                     {renderLevelTwoAttributeOptions(selectedCategory.key)}
                   </div>
                 )}
@@ -368,7 +485,27 @@ export function TemplateEditorDialog({
                             </span>
                           )}
                         </div>
-                        <div className='flex items-center gap-2'>
+                        <div className='flex flex-wrap items-center gap-2'>
+                          {category && (
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='sm'
+                              className='h-7 rounded-full px-3 text-[10px] font-bold'
+                              disabled={!isAttributeCatalogReady}
+                              onClick={() =>
+                                setAttributeCatalogEditorTarget({
+                                  kind: 'management',
+                                  categoryKey: category.key,
+                                })
+                              }
+                            >
+                              <Settings2 className='size-3' />
+                              {t(
+                                'engineering.templateMgmt.buttons.manageAttributeCategory'
+                              )}
+                            </Button>
+                          )}
                           <label className='flex cursor-pointer items-center gap-2 rounded-full bg-muted/30 px-3 py-1.5 text-[10px] font-bold'>
                             <Checkbox
                               checked={binding.required}
@@ -398,7 +535,15 @@ export function TemplateEditorDialog({
                           </Button>
                         </div>
                       </div>
-                      {renderLevelTwoAttributeOptions(binding.categoryKey)}
+                      {category ? (
+                        renderLevelTwoAttributeOptions(category.key)
+                      ) : isAttributeCatalogReady ? (
+                        <p role='alert' className='text-xs text-destructive'>
+                          {t(
+                            'engineering.templateMgmt.assembly.unavailableCategoryHint'
+                          )}
+                        </p>
+                      ) : null}
                     </article>
                   ))
                 )}
@@ -412,7 +557,7 @@ export function TemplateEditorDialog({
             type='button'
             variant='outline'
             className='h-11 rounded-full border-dashed bg-transparent px-6 text-[11px] font-black tracking-wide shadow-none transition-all active:scale-95'
-            disabled={isSaving}
+            disabled={isSaving || Boolean(attributeCatalogEditorTarget)}
             onClick={() => onOpenChange(false)}
           >
             {t('engineering.templateMgmt.buttons.cancel')}
@@ -420,7 +565,12 @@ export function TemplateEditorDialog({
           <Button
             type='submit'
             form={templateFormId}
-            disabled={isSaving}
+            disabled={
+              isSaving ||
+              Boolean(attributeCatalogEditorTarget) ||
+              (isAttributeCatalogReady &&
+                assembledCategories.some(({ category }) => !category))
+            }
             className='h-11 rounded-full bg-blue-600 px-8 text-[11px] font-black tracking-wide text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95'
           >
             <Save className='size-3.5' />
@@ -429,6 +579,28 @@ export function TemplateEditorDialog({
               : t('engineering.templateMgmt.buttons.save')}
           </Button>
         </DialogFooter>
+
+        {open && attributeCatalogEditorTarget?.kind === 'management' && (
+          <ProductTemplateAttributeClassificationManagementDialog
+            open
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) setAttributeCatalogEditorTarget(null)
+            }}
+            initialLevelOneCategoryKey={
+              attributeCatalogEditorTarget.categoryKey
+            }
+          />
+        )}
+        {open && attributeCatalogEditorTarget?.kind === 'option' && (
+          <ProductTemplateAttributeLevelTwoOptionEditorDialog
+            open
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) setAttributeCatalogEditorTarget(null)
+            }}
+            categoryKey={attributeCatalogEditorTarget.categoryKey}
+            option={attributeCatalogEditorTarget.option}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

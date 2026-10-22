@@ -33,7 +33,6 @@ export interface ProductApiDTO {
   moldGroup?: string
   description?: string
   engineeringSpecId?: string
-  bomId?: string
   attributeValues?: ProductAttributeValueApiDTO[]
   techSpecs?: unknown
   barcodeConfig?: unknown

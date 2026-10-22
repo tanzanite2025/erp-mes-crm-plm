@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowUpRight, ChevronDown, ChevronUp, LayoutGrid } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
+import { ProductCreationOperationGuideLauncher } from '@/features/engineering/components/product-creation-guide/product-creation-operation-guide-launcher'
 import type { HomeBusinessShortcutCategory } from '../data/build-home-business-shortcut-categories'
 
 const HOME_CATEGORY_PREVIEW_SHORTCUT_COUNT = 4
@@ -71,11 +72,15 @@ export function HomeBusinessShortcutCategorySection({
       >
         {visibleShortcuts.map((shortcut) => {
           const ShortcutIcon = shortcut.icon ?? LayoutGrid
+          const ShortcutLink =
+            shortcut.url === '/engineering/product-creation-guide'
+              ? ProductCreationOperationGuideLauncher
+              : Link
           return (
             <li key={shortcut.url}>
-              <Link
+              <ShortcutLink
                 to={shortcut.url}
-                className='group flex h-full items-center gap-3 rounded-2xl border border-border/70 bg-card p-3.5 transition-colors hover:border-primary/30 hover:bg-primary/4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
+                className='group flex h-full w-full items-center gap-3 rounded-2xl border border-border/70 bg-card p-3.5 text-start transition-colors hover:border-primary/30 hover:bg-primary/4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
               >
                 <ShortcutIcon
                   aria-hidden='true'
@@ -86,14 +91,14 @@ export function HomeBusinessShortcutCategorySection({
                     {shortcut.title}
                   </span>
                   <span className='mt-1 block text-xs leading-snug text-muted-foreground'>
-                    {shortcut.domainTitle}
+                    {shortcut.description ?? shortcut.domainTitle}
                   </span>
                 </span>
                 <ArrowUpRight
                   aria-hidden='true'
                   className='size-3.5 shrink-0 text-muted-foreground/60 group-hover:text-primary'
                 />
-              </Link>
+              </ShortcutLink>
             </li>
           )
         })}

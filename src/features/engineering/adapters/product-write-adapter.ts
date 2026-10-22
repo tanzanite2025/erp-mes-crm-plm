@@ -65,7 +65,6 @@ export function buildProductWriteCandidate(
     moldGroup: normalizedProduct.moldGroup,
     description: normalizedProduct.description,
     engineeringSpecId: normalizedProduct.engineeringSpecId || '',
-    bomId: normalizedProduct.bomId || '',
     attributeValues: filterProductSpecificationOwnedAttributeValues(
       normalizedProduct.attributeValues
     ).map(toProductAttributeValueApiDTO),

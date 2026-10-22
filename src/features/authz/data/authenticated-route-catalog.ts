@@ -28,6 +28,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/warehouse-config/packaging-assembly',
   '/attendance-management/hall-of-fame',
   '/cutting-operations/product-binding',
+  '/engineering/product-creation-guide',
   '/engineering-reference/spoke-length',
   '/finance-management/payment-methods',
   '/business-analysis/production-load',

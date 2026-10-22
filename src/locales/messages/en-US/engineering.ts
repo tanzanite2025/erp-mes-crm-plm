@@ -1,5 +1,9 @@
+import { productCreationOperationGuide } from './product-creation-operation-guide'
+
 export const engineering = {
+  productCreationGuide: productCreationOperationGuide,
   tabs: {
+    productCreationGuide: 'How to Create a Product',
     products: 'Product Management',
     productAppearance: 'Product Appearance',
     productAttributes: 'Product Template Attribute Categories',
@@ -879,9 +883,9 @@ export const engineering = {
     genericParts: 'General Accessories',
     dialog: {
       titleEdit: 'Edit Product Specs',
-      titleCreate: 'Bind BOM to Generate Product',
+      titleCreate: 'Create Product',
       description:
-        'Select a base model and bind a BOM to generate an independent product, then configure geometry, spec weighting, and production constraints.',
+        'Select a base model, fill in product specifications and production constraints, then save. Prepare, validate and link BOMs separately in BOM Management.',
       validationError: 'Validation failed. Please check required fields.',
       templatePending: 'Spec Template Not Selected',
       templateHint:
@@ -905,14 +909,14 @@ export const engineering = {
       category: 'Base Model',
       categoryPlaceholder: 'Select base model...',
       categoryRequired: 'Please select a base model',
+      baseModelSourceHelp:
+        'You name base models at level 3 of the product category tree. To add one, open Product Management → {{manageCategories}} → {{addCategory}}, select a level 2 parent, enter Category Name and Category Code, then save. Select the saved model here. Model Code is a separate two-digit sequence number.',
       modelCode: 'Model Code',
       modelCodePlaceholder: '01~99',
       modelCodeLinked: 'Linked to numbering rule',
       template: 'Spec Template',
       templatePlaceholder: 'Select template...',
       status: 'Status',
-      bom: 'Bind BOM',
-      bomPlaceholder: 'Select an existing BOM...',
       sku: 'Product SKU',
       skuPlaceholder: 'Generated Automatically...',
       spec: 'Bound Process Spec',
@@ -925,6 +929,20 @@ export const engineering = {
       ownerTypeInternal: 'Internal Model',
       ownerTypeCustomer: 'Customer Custom',
       ownerPlaceholder: 'Select owner...',
+    },
+    linkedBoms: {
+      title: 'Linked BOMs',
+      description:
+        'Shows BOMs linked to this product. Maintain these associations in BOM Management.',
+      saveProductFirst:
+        'Save the product first. Prepare and validate its BOM separately, then link the product in BOM Management once confirmed.',
+      empty: 'No BOM is currently linked to this product.',
+      loading: 'Loading linked BOMs…',
+      loadFailed:
+        'Could not load associations. Retry; product details can still be saved.',
+      retry: 'Reload associations',
+      accessRequired: 'BOM page access is required to view associations.',
+      openManagement: 'Open BOM Management',
     },
     restrictions: {
       title: 'Production Restrictions',
@@ -1122,12 +1140,18 @@ export const engineering = {
         'The selected component determines which physical parameter form is generated when creating a product.',
       assembly:
         'Adding a level 1 attribute category makes all its active level 2 options available in the product form.',
+      catalogEditing:
+        'Click an option to edit it. Saved attribute changes apply to every template using them. Click Save Template to save this template’s attribute bindings.',
     },
     buttons: {
       cancel: 'Cancel',
       save: 'Save Template',
       saving: 'Saving…',
       addAttribute: 'Add Level 1 Attribute Category',
+      manageAttributeCatalog: 'Manage Product Template Attribute Categories',
+      manageAttributeCategory: 'Manage Attribute Category',
+      addAttributeOption: 'Add Level 2 Attribute Option',
+      editAttributeOption: 'Edit Level 2 Attribute Option · {{name}}',
       removeAttribute: 'Remove',
     },
     confirms: {
@@ -1157,10 +1181,12 @@ export const engineering = {
       levelTwoOptions: 'Level 2 Attribute Categories (Options)',
       levelTwoOptionCount: 'Level 2 Attribute Options · {{count}} Active',
       noActiveLevelTwoOptions:
-        'No active level 2 options. Manage them in Product Template Attribute Categories.',
+        'No active level 2 options. Add an option here or manage this attribute category.',
       selectedCategoryPreview: 'Level 1 category and level 2 options to add',
       levelOneCategoryCount: 'Added Level 1 Attribute Categories · {{count}}',
       unavailableCategory: 'This level 1 attribute category is unavailable',
+      unavailableCategoryHint:
+        'This level 1 attribute category was deleted. Remove its binding before saving the template.',
       empty:
         'No level 1 attribute categories have been added to this template yet.',
       required: 'Required',

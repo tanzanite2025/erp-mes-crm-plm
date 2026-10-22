@@ -1,6 +1,6 @@
 # Master Data Ownership Table (Field -> Module -> Read Entry)
 
-Updated: 2026-04-09
+Updated: 2026-10-22 (product attribute catalog and BOM grade ownership)
 Scope: `src/**` and current dictionary seeds in `server/db/seeds.go`
 
 ## 1) Rules
@@ -19,13 +19,17 @@ Scope: `src/**` and current dictionary seeds in `server/db/seeds.go`
 | `ORDER_CLASSIFICATION` | `trading` | Fixed enum + ext rule | `getSalesOrderClassificationOptions/getSalesOrderClassificationLabel/getSalesOrderClassificationExt` in `src/features/trading/data/sales-order-options.ts` | Module file constants | No |
 | `HOLE_COUNT` | `engineering-db` | Fixed enum | `STANDARD_HOLE_COUNT_OPTIONS` in `src/features/engineering-db/data/drilling-options.ts` | Module file constants | No |
 | `LACING_PATTERN` | `engineering-db` | Fixed enum | `LACING_PATTERN_OPTIONS` in `src/features/engineering-db/data/drilling-options.ts` | Module file constants | No |
-| `TIRE_TYPE` | `engineering` | Fixed enum (product meta) | `getTireTypeOptions(locale)` in `src/features/engineering/data/product-meta-options.ts` | Module file constants (current), later module meta write API | No (current) |
-| `BRAKE_TYPE` | `engineering` | Fixed enum (product meta) | `getBrakeTypeOptions(locale)` in `src/features/engineering/data/product-meta-options.ts` | Module file constants (current), later module meta write API | No (current) |
-| `TECH_SERIES` | `engineering` | Fixed enum (product meta) | `getTechSeriesOptions(locale)` in `src/features/engineering/data/product-meta-options.ts` | Module file constants (current), later module meta write API | No (current) |
-| `VERSION_LEVEL` | `engineering` | Fixed enum (product meta) | `getVersionLevelOptions(locale)` in `src/features/engineering/data/product-meta-options.ts` | Module file constants (current), later module meta write API | No (current) |
+| `TIRE_TYPE` | `engineering` | Maintainable product attribute options | `ProductAttributeOptionService.getProductAttributeOptions({ categoryKey: 'tireType' })` | Product Template Attribute Categories and shared business dialogs | Yes (existing module TAB) |
+| `BRAKE_TYPE` | `engineering` | Maintainable product attribute options | `ProductAttributeOptionService.getProductAttributeOptions({ categoryKey: 'brakeType' })` | Product Template Attribute Categories and shared business dialogs | Yes (existing module TAB) |
+| `TECH_SERIES` | `engineering` | Maintainable product attribute options | `ProductAttributeOptionService.getProductAttributeOptions({ categoryKey: 'techSeries' })` | Product Template Attribute Categories and shared business dialogs | Yes (existing module TAB) |
+| `VERSION_LEVEL` | `engineering` (option catalog) | Maintainable grade options; selected grade belongs to BOM | `ProductAttributeOptionService.getProductAttributeOptions({ categoryKey: 'versionLevel' })`; selected value from `BOM.versionLevel` | Product Template Attribute Categories (options); BOM Formulas (selected grade) | Yes (existing module TABs) |
 | `UNIT` | `basic-settings` (global exception) | Global maintainable master | `unitService.getUnits()` in `src/features/basic-settings/services/unit-service.ts` | `/basic/units` + unit management UI | Yes (global exception) |
 | `DRILLING_PLAN` | `engineering-db` | Maintainable module master | `ProductionDBService.getDrilling()` | Engineering-DB drilling management | Yes (module) |
 | `LABELING_PLAN` | `engineering-db` | Maintainable module master | `ProductionDBService.getLabeling()` | Engineering-DB labeling management | Yes (module) |
+
+The product attribute rows describe maintained catalogs, not fixed frontend enums. Their uppercase field codes and the category keys shown above are existing compatibility identifiers. `ProductAttributeCategoryService` and `ProductAttributeOptionService` in `src/features/engineering/services/` read and maintain the catalogs; `useProductAttributeCatalogQueries` shares the complete catalog queries. The maintenance page is `/engineering/product-attributes`.
+
+Product templates bind attribute categories and required settings; product forms select their option values. `techSeries`, `tireType` and `brakeType` are product specifications. The `versionLevel` option catalog is maintained by engineering, while each selected grade is stored on the BOM in the `product-structure` domain. Product saves exclude this grade from product attributes. See [product template attribute ownership and reuse](../frontend/product-template-attribute-classification-business-components-reuse-guide.md).
 
 ## 3) Pending (Explicitly Scoped)
 

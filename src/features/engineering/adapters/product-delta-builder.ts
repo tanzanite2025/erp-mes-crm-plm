@@ -25,7 +25,6 @@ const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
   'moldGroup',
   'description',
   'engineeringSpecId',
-  'bomId',
   'attributeValues',
   'techSpecs',
   'barcodeConfig',

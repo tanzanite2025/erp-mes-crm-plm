@@ -65,6 +65,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/product-structure/bom-records': 'engineering.tabs.bomRecords',
   '/product-structure/section-config': 'engineering.tabs.sectionConfig',
   '/engineering/products': 'engineering.tabs.products',
+  '/engineering/product-creation-guide':
+    'engineering.tabs.productCreationGuide',
   '/engineering/product-appearance': 'engineering.tabs.productAppearance',
   '/engineering/product-attributes': 'engineering.tabs.productAttributes',
   '/engineering/bom': 'engineering.tabs.bom',

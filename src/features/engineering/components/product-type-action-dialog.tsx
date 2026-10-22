@@ -58,6 +58,8 @@ type ProductTypeActionDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit?: (data: SaveProductTypeInput) => void | Promise<void>
+  initialTemplateId?: string
+  wizardHeader?: React.ReactNode
 }
 
 const CODE_RULES = [
@@ -76,6 +78,8 @@ export function ProductTypeActionDialog({
   open,
   onOpenChange,
   onSubmit,
+  initialTemplateId,
+  wizardHeader,
 }: ProductTypeActionDialogProps) {
   const { t } = useLanguage()
   const isEdit = Boolean(currentRow)
@@ -108,7 +112,7 @@ export function ProductTypeActionDialog({
     const loadInitialData = async () => {
       try {
         const [storedTypes, storedTemplates] = await Promise.all([
-          ProductTypeService.getProductTypes(),
+          ProductTypeService.getProductTypes({ isOptions: true }),
           productTemplateService.getTemplates(),
         ])
 
@@ -132,7 +136,7 @@ export function ProductTypeActionDialog({
         parentId: 'root',
         name: '',
         code: '',
-        templateId: 'none',
+        templateId: initialTemplateId || 'none',
         description: '',
         active: true,
         sortOrder: 0,
@@ -142,7 +146,7 @@ export function ProductTypeActionDialog({
     }
 
     if (open) void loadInitialData()
-  }, [currentRow, form, isEdit, open])
+  }, [currentRow, form, initialTemplateId, isEdit, open])
 
   useEffect(() => {
     if (isEdit || !categoryName) return
@@ -346,7 +350,14 @@ export function ProductTypeActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex w-[96vw] flex-col gap-0 overflow-hidden rounded-[24px] border-none p-0 shadow-2xl sm:max-w-4xl sm:rounded-[32px]'>
+      <DialogContent
+        className={
+          wizardHeader
+            ? 'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-4xl'
+            : 'flex w-[96vw] flex-col gap-0 overflow-hidden rounded-[24px] border-none p-0 shadow-2xl sm:max-w-4xl sm:rounded-[32px]'
+        }
+      >
+        {wizardHeader}
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
         <DialogHeader className='relative p-4 pb-2 sm:p-8'>
           <DialogTitle className='text-base font-black tracking-tighter text-primary uppercase sm:text-lg'>

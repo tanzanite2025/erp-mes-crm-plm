@@ -23,8 +23,6 @@ interface ProductBasicInfoProps {
   dynamicTypes: ProductType[]
   productTypes: ProductType[]
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
-  bomOptions: { label: string; value: string }[]
-  isBomOptionsPending?: boolean
   specOptions: { label: string; value: string }[]
   moldOptions: { label: string; value: string }[]
   isEdit: boolean
@@ -40,8 +38,6 @@ export function ProductBasicInfo({
   dynamicTypes,
   productTypes,
   handleImageUpload,
-  bomOptions,
-  isBomOptionsPending,
   specOptions,
   moldOptions,
   isEdit,
@@ -157,29 +153,6 @@ export function ProductBasicInfo({
             />
             <FormField
               control={form.control}
-              name='bomId'
-              render={({ field }) => (
-                <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
-                    {t('engineering.productMgmt.form.bom')}
-                  </FormLabel>
-                  <SelectDropdown
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    isControlled={true}
-                    isPending={isBomOptionsPending}
-                    items={bomOptions}
-                    placeholder={t(
-                      'engineering.productMgmt.form.bomPlaceholder'
-                    )}
-                    className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
-                  />
-                  <FormMessage className='text-[10px] font-bold' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name='modelCode'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
@@ -279,6 +252,15 @@ export function ProductBasicInfo({
               )}
             />
           </div>
+
+          <p className='text-xs leading-relaxed text-muted-foreground'>
+            {t('engineering.productMgmt.form.baseModelSourceHelp', {
+              manageCategories: t(
+                'engineering.productMgmt.sidebar.editCategory'
+              ),
+              addCategory: t('engineering.categoryArchive.buttons.add'),
+            })}
+          </p>
 
           <div className='grid grid-cols-1 gap-2.5'>
             <div className='min-w-0 space-y-0.5'>

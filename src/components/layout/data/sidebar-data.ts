@@ -17,6 +17,7 @@ import type { TranslationKey } from '@/locales'
 import {
   BarChart3,
   Barcode,
+  BookOpen,
   Box,
   Calendar,
   CheckSquare,
@@ -40,6 +41,7 @@ import {
 } from 'lucide-react'
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
 import { BUSINESS_ANALYSIS_DOMAIN_ROUTES } from '@/features/business-analysis/tabs'
+import { engineeringTabs } from '@/features/engineering/tab-config'
 import type { NavGroup, NavNode, SidebarData } from '../types'
 
 type TranslateFn = (
@@ -383,6 +385,19 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     icon: Box,
     children: [
       {
+        id: 'product-handbook-group',
+        titleKey: 'sidebar.groups.productHandbook',
+        icon: BookOpen,
+        children: [
+          {
+            id: 'product-creation-handbook',
+            titleKey: 'engineering.tabs.productCreationGuide',
+            url: '/engineering/product-creation-guide',
+            icon: BookOpen,
+          },
+        ],
+      },
+      {
         id: 'product-config-group',
         titleKey: 'sidebar.groups.productConfig',
         icon: Box,
@@ -390,7 +405,11 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           {
             id: 'product-engineering',
             titleKey: 'sidebar.items.productEngineering',
-            url: '/engineering',
+            url: '/engineering/products',
+            activeMatches: [
+              ...engineeringTabs.map((tab) => tab.href),
+              '/engineering/types',
+            ],
             icon: Box,
             permissionId: permissionIdForPath('/engineering'),
           },
