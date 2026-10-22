@@ -1,11 +1,27 @@
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import test from 'node:test'
-import { createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin } from './chrome109-business-page-and-bottom-dock-color-fallbacks-postcss-plugin.js'
+import { createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin } from './chrome109-business-content-and-floating-surface-color-fallbacks-postcss-plugin.js'
 
 // Exercise the same PostCSS engine Vite uses, without another build dependency.
 const requireFromVite = createRequire(import.meta.resolve('vite'))
 const postcss = requireFromVite('postcss')
+const expectedCompatibilityScopes = [
+  '[data-slot="sidebar-inset"]',
+  '[data-slot="global-bottom-dock"]',
+  '[data-slot="sidebar"]',
+  '[role="dialog"]',
+  '[role="alertdialog"]',
+  '[role="menu"]',
+  '[role="listbox"]',
+  '[role="tooltip"]',
+  '[data-slot="popover-content"]',
+  '[data-slot="tooltip-content"]',
+  '[data-slot="command-menu-knowledge-detail-drawer"]',
+  '[data-slot="knowledge-base-entry-editor-overlay"]',
+  '[data-slot="vehicle-contact-delete-dialog-overlay"]',
+]
+const expectedCompatibilitySubject = `:where(${expectedCompatibilityScopes.flatMap((scope) => [scope, `${scope} *`]).join(', ')})`
 const themeFixture = `
 @layer theme {
   :root, :host { --color-blue-600: oklch(0.546 0.245 262.881); --color-white: #fff; }
@@ -14,19 +30,22 @@ const themeFixture = `
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --border: oklch(0.929 0.013 255.508);
+  --primary: oklch(0.208 0.042 265.755);
+  --primary-foreground: oklch(0.984 0.003 247.858);
   --accent: var(--background);
 }
 .dark {
   --foreground: oklch(0.95 0.01 247.858);
   --border: oklch(0.28 0.02 264.695 / 60%);
+  --primary: oklch(0.85 0.03 255.508);
 }
 `
 
-async function compileBusinessPageColorFallbackFixture(css = '') {
+async function compileChrome109ScopedColorFallbackFixture(css = '') {
   const original = postcss.parse(themeFixture + css)
   const before = original.toString()
   const result = await postcss([
-    createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin(),
+    createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin(),
   ]).process(original, { from: undefined })
   const fallback = result.root.last
   assert.equal(fallback.name, 'supports')
@@ -43,7 +62,7 @@ async function compileBusinessPageColorFallbackFixture(css = '') {
   return result.root
 }
 
-function findGeneratedBusinessPageColorRule(root, selectorPart) {
+function findGeneratedChrome109ColorFallbackRule(root, selectorPart) {
   let match
   root.walkAtRules('supports', (condition) => {
     if (condition.params !== 'not (color: oklch(1 0 0))') return
@@ -55,7 +74,7 @@ function findGeneratedBusinessPageColorRule(root, selectorPart) {
 }
 
 test('generates light/dark sRGB tokens, palette colors and local aliases', async () => {
-  const fallback = (await compileBusinessPageColorFallbackFixture()).last
+  const fallback = (await compileChrome109ScopedColorFallbackFixture()).last
   const light = fallback.nodes[0]
   const dark = fallback.nodes[1]
   const lightValues = Object.fromEntries(
@@ -66,11 +85,11 @@ test('generates light/dark sRGB tokens, palette colors and local aliases', async
   )
   assert.equal(
     light.selector,
-    ':where([data-slot="sidebar-inset"], [data-slot="global-bottom-dock"])'
+    `:where(${expectedCompatibilityScopes.join(', ')})`
   )
   assert.equal(
     dark.selector,
-    '.dark :where([data-slot="sidebar-inset"], [data-slot="global-bottom-dock"])'
+    `.dark :where(${expectedCompatibilityScopes.join(', ')})`
   )
   assert.equal(lightValues['--foreground'], 'rgb(2 6 24 / 1)')
   assert.equal(darkValues['--foreground'], 'rgb(233 239 245 / 1)')
@@ -89,7 +108,7 @@ test('generates light/dark sRGB tokens, palette colors and local aliases', async
 })
 
 test('retains layer/media/state rules while removing the positive color-mix gate', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     @layer utilities {
       @media (width >= 48rem) {
         @supports (color: color-mix(in lab, red, red)) {
@@ -98,15 +117,12 @@ test('retains layer/media/state rules while removing the positive color-mix gate
       }
     }
   `)
-  const rule = findGeneratedBusinessPageColorRule(root, '.button:hover')
+  const rule = findGeneratedChrome109ColorFallbackRule(root, '.button:hover')
   assert.equal(rule.parent.name, 'supports')
   assert.equal(rule.parent.parent.name, 'media')
   assert.equal(rule.parent.parent.parent.name, 'layer')
   assert.equal(rule.parent.parent.parent.params, 'utilities')
-  assert.equal(
-    rule.selector,
-    '.button:hover:where([data-slot="sidebar-inset"], [data-slot="sidebar-inset"] *, [data-slot="global-bottom-dock"], [data-slot="global-bottom-dock"] *)'
-  )
+  assert.equal(rule.selector, `.button:hover${expectedCompatibilitySubject}`)
   assert.equal(
     rule.first.value,
     'rgb(var(--chrome109-background-rgb) / calc(var(--chrome109-background-alpha) * 0.2))'
@@ -114,69 +130,131 @@ test('retains layer/media/state rules while removing the positive color-mix gate
 })
 
 test('preserves theme alpha when applying another transparency percentage', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     .border { border-color: color-mix(in oklab, var(--border) 45%, transparent) }
   `)
   assert.equal(
-    findGeneratedBusinessPageColorRule(root, '.border').first.value,
+    findGeneratedChrome109ColorFallbackRule(root, '.border').first.value,
     'rgb(var(--chrome109-border-rgb) / calc(var(--chrome109-border-alpha) * 0.45))'
   )
 })
 
+test('covers portal roots and descendants for arbitrary primary and palette alpha utilities', async () => {
+  const root = await compileChrome109ScopedColorFallbackFixture(`
+    @layer utilities {
+      @supports (color: color-mix(in lab, red, red)) {
+        .active-step { background-color: color-mix(in oklab, var(--primary) 8%, transparent) }
+        .completed-marker { background-color: color-mix(in oklab, var(--primary) 10%, transparent) }
+        .level-badge { background-color: color-mix(in oklab, var(--primary) 5%, transparent) }
+        .future-palette-color { border-color: color-mix(in oklab, var(--color-blue-600) 17%, transparent) }
+      }
+    }
+  `)
+  for (const [selector, token, alpha] of [
+    ['.active-step', 'primary', '0.08'],
+    ['.completed-marker', 'primary', '0.1'],
+    ['.level-badge', 'primary', '0.05'],
+    ['.future-palette-color', 'color-blue-600', '0.17'],
+  ]) {
+    const rule = findGeneratedChrome109ColorFallbackRule(root, selector)
+    assert.equal(rule.selector, `${selector}${expectedCompatibilitySubject}`)
+    assert.equal(
+      rule.first.value,
+      `rgb(var(--chrome109-${token}-rgb) / calc(var(--chrome109-${token}-alpha) * ${alpha}))`
+    )
+  }
+  const themeFallback = root.last
+  const lightValues = Object.fromEntries(
+    themeFallback.nodes[0].nodes.map((node) => [node.prop, node.value])
+  )
+  const darkValues = Object.fromEntries(
+    themeFallback.nodes[1].nodes.map((node) => [node.prop, node.value])
+  )
+  assert.equal(lightValues['--chrome109-primary-rgb'], '15 23 43')
+  assert.equal(darkValues['--chrome109-primary-rgb'], '193 207 226')
+  assert.equal(lightValues['--chrome109-primary-alpha'], '1')
+})
+
+test('limits default text to established surfaces and preserves inverse tooltip colors', async () => {
+  const fallback = (await compileChrome109ScopedColorFallbackFixture()).last
+  const defaultTextLayer = fallback.nodes.find((node) => node.name === 'layer')
+  assert.equal(defaultTextLayer.params, 'base')
+  assert.equal(defaultTextLayer.first.first.value, 'var(--foreground)')
+  for (const surface of [
+    '[data-slot="sidebar-inset"]',
+    '[data-slot="global-bottom-dock"]',
+    '[role="dialog"]',
+    '[role="alertdialog"]',
+    '[data-slot="command-menu-knowledge-detail-drawer"]',
+    '[data-slot="knowledge-base-entry-editor-overlay"]',
+    '[data-slot="vehicle-contact-delete-dialog-overlay"]',
+  ]) {
+    assert.ok(defaultTextLayer.first.selector.includes(surface))
+  }
+  assert.doesNotMatch(
+    defaultTextLayer.first.selector,
+    /tooltip|listbox|menu"|popover/
+  )
+  for (const rule of fallback.nodes.filter((node) => node.type === 'rule')) {
+    assert.doesNotMatch(rule.selector, /:root|:host|\bbody\b/)
+  }
+})
+
 test('preserves dark ancestors, pseudo elements and escaped utility names', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     .dark .placeholder\\:text-muted::placeholder {
       color: color-mix(in oklab, var(--foreground) 44%, transparent)
     }
   `)
   assert.equal(
-    findGeneratedBusinessPageColorRule(root, '.dark .placeholder').selector,
-    '.dark .placeholder\\:text-muted:where([data-slot="sidebar-inset"], [data-slot="sidebar-inset"] *, [data-slot="global-bottom-dock"], [data-slot="global-bottom-dock"] *)::placeholder'
+    findGeneratedChrome109ColorFallbackRule(root, '.dark .placeholder')
+      .selector,
+    `.dark .placeholder\\:text-muted${expectedCompatibilitySubject}::placeholder`
   )
 })
 
 test('converts nested transparent shadow colors without losing runtime alpha', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     .shadow {
       --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--foreground) 20%, transparent) var(--tw-shadow-alpha), transparent);
     }
   `)
   assert.equal(
-    findGeneratedBusinessPageColorRule(root, '.shadow').first.value,
+    findGeneratedChrome109ColorFallbackRule(root, '.shadow').first.value,
     'rgb(var(--chrome109-foreground-rgb) / calc(var(--chrome109-foreground-alpha) * 0.2 * var(--tw-shadow-alpha)))'
   )
 })
 
 test('leaves unknown local variables, currentColor and unrelated declarations intact', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     .local {
       color: color-mix(in oklab, var(--local-color) 40%, transparent);
       outline-color: color-mix(in oklab, currentcolor 50%, transparent);
       padding: 8px;
     }
   `)
-  assert.equal(findGeneratedBusinessPageColorRule(root, '.local'), undefined)
+  assert.equal(
+    findGeneratedChrome109ColorFallbackRule(root, '.local'),
+    undefined
+  )
 })
 
 test('supports nested development CSS and keeps parent dark selectors unscoped', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     .dark {
       .button {
         &:hover { color: color-mix(in oklab, var(--foreground) 80%, transparent) }
       }
     }
   `)
-  const rule = findGeneratedBusinessPageColorRule(root, '&:hover')
+  const rule = findGeneratedChrome109ColorFallbackRule(root, '&:hover')
   assert.equal(rule.parent.parent.selector, '.button')
   assert.equal(rule.parent.parent.parent.selector, '.dark')
-  assert.equal(
-    rule.selector,
-    '&:hover:where([data-slot="sidebar-inset"], [data-slot="sidebar-inset"] *, [data-slot="global-bottom-dock"], [data-slot="global-bottom-dock"] *)'
-  )
+  assert.equal(rule.selector, `&:hover${expectedCompatibilitySubject}`)
 })
 
 test('keeps alpha fallbacks before later opaque rules with equal specificity', async () => {
-  const root = await compileBusinessPageColorFallbackFixture(`
+  const root = await compileChrome109ScopedColorFallbackFixture(`
     @layer utilities {
       @supports (color: color-mix(in lab, red, red)) {
         .translucent { color: color-mix(in oklab, var(--foreground) 50%, transparent) }
@@ -194,7 +272,7 @@ test('keeps alpha fallbacks before later opaque rules with equal specificity', a
 test('does not alter separate stylesheets that contain no application theme', async () => {
   const css = '.other { color: red; }'
   const result = await postcss([
-    createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin(),
+    createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin(),
   ]).process(css, { from: undefined })
   assert.equal(result.css, css)
 })

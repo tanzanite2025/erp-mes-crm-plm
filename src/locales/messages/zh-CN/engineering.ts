@@ -874,7 +874,7 @@ export const engineering = {
       categoryPlaceholder: '选择基础型号...',
       categoryRequired: '请选择基础型号',
       baseModelSourceHelp:
-        '基础型号来自产品分类的第三级，由你自行命名。新增：产品管理 → {{manageCategories}} → {{addCategory}}，父级选二级分类，手填“分类名称”和“分类编码”后保存；此处选用已有型号。“型号编码”另填两位数字序号。',
+        '基础型号来自产品分类的第三级，由你自行命名。一级、二级分类用于归类，不会出现在此选择框；只有一级分类时，需要先补齐二级分类和三级型号。新增：产品管理 → {{manageCategories}} → {{addCategory}}，父级选二级分类，手填“分类名称”和“分类编码”后保存；此处选用已有型号。“型号编码”另填两位数字序号。',
       modelCode: '型号编码',
       modelCodePlaceholder: '01~99',
       modelCodeLinked: '已联动编码规则',
@@ -1223,6 +1223,24 @@ export const engineering = {
       parent: '父级分类',
       parentPlaceholder: '请选择父级分类...',
       parentNone: '无父级（一级分类）',
+      categoryDetailsTitle: '分类信息',
+      templateConfigurationTitle: '模板配置',
+      templatePreviewPlaceholder: '选择模板后，可在这里查看已装配的属性分类。',
+      catalogLoading: '正在读取父级分类和模板…',
+      catalogLoadFailed:
+        '分类或模板读取失败，当前父级选项可能不完整，并不代表已有分类不存在。请重新加载后核对父级；重试会保留已填写的名称和编码。',
+      requiredFieldsMissing:
+        '请填写分类名称和分类编码，并检查标红字段后再保存。',
+      validationFailed: '请检查并修正表单中标红的字段后再保存。',
+      savePermissionDenied:
+        '当前账号没有维护产品分类的权限，请联系有权限的人员处理；已填写内容已保留。',
+      saveCsrfRejected:
+        '会话校验未通过，请刷新页面后重试。刷新前请记录已填写内容。',
+      saveDuplicateCode:
+        '分类编码已被使用，请修改编码后再保存；已填写内容已保留。',
+      saveResultUncertain:
+        '网络或响应异常，暂时无法确认是否已保存。请先返回分类列表核对，避免重复新增；当前填写内容已保留。',
+      saveErrorUnknown: '服务未返回具体原因，请稍后重试。',
       name: '分类名称',
       namePlaceholder: '例如：公路开口车圈',
       code: '分类编码',
@@ -1247,10 +1265,12 @@ export const engineering = {
         '当前分类尚未建立属性绑定，可在保存时按模板初始化。',
       targetLevel: '目标层级',
       parentPath: '父级路径',
-      levelHintTop: '一级分类用于定义主类目骨架，本阶段不直接作为基础型号。',
-      levelHintMiddle: '二级分类用于细分结构系列，下一层才进入基础型号层。',
+      levelHintTop:
+        '当前选择“无父级”，将保存为一级分类，用于归类，不会出现在基础型号选择框。已有一级分类时，选择它作为父级即可新增二级分类。',
+      levelHintMiddle:
+        '当前父级是一级分类，将保存为二级分类。保存后再新增一次，父级选择该二级分类，即可手填三级基础型号。',
       levelHintLeaf:
-        '第三级即基础型号层，后续会在此基础上继续绑定 BOM 变体形成独立产品。',
+        '第三级是自行命名的通用基础型号（如 R50），可供产品表单选择。同一型号下可分别保存多个具体产品卡片，产品保存与后续 BOM 验证、关联独立进行。',
       levelLimitError: '当前父级选择会超过三级限制，请重新选择父级分类。',
       active: '启用状态',
       activeDescription: '只有启用中的分类才可用于新建产品档案。',

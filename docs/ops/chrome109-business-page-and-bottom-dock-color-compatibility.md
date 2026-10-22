@@ -4,9 +4,9 @@
 
 ## 实现与边界
 
-- `scripts/chrome109-business-page-and-bottom-dock-color-fallbacks-postcss-plugin.js` 由 Vite 的 PostCSS 配置调用，读取现有应用主题和 Tailwind 调色板，构建时生成对应的 sRGB 颜色。没有新增依赖。
-- 所有新增 CSS 都位于 `@supports not (color: oklch(1 0 0))` 中，作用域仅为 `[data-slot="sidebar-inset"]`、`[data-slot="global-bottom-dock"]` 及其后代，不覆盖 `:root` 或 `body`。
-- 浮层与左侧菜单继续使用各自的兼容规则。Portal 浮层不因业务内容规则而改变；业务内容与底栏的颜色回退随现有主题和调色板一起生成。
+- `scripts/chrome109-business-content-and-floating-surface-color-fallbacks-postcss-plugin.js` 由 Vite 的 PostCSS 配置调用，读取现有应用主题和 Tailwind 调色板，构建时生成对应的 sRGB 颜色。没有新增依赖。2026-10-22 将原业务区与底栏插件扩展为业务区、侧栏和浮层共用的生成器。
+- 所有生成的兼容 CSS 都位于 `@supports not (color: oklch(1 0 0))` 中，作用域为 `[data-slot="sidebar-inset"]`、`[data-slot="global-bottom-dock"]`、侧栏和已登记浮层及其后代，不覆盖 `:root` 或 `body`。
+- Portal 浮层独立登记为作用域根节点，因此即使挂在 `body` 下，也能获得与业务区相同的主题、调色板和透明色回退。通用角色及自定义浮层的登记约定见[浮层兼容文档](./chrome109-floating-overlay-compatibility.md)。侧栏导航状态与底栏表面继续使用各自的专用规则。
 - 半透明语义颜色、调色板颜色与透明阴影使用局部 RGB 通道和 alpha 变量，保留主题自身透明度、工具类百分比以及阴影的运行时 alpha。
 - 每条透明度回退紧邻原规则，保留 layer、媒体查询、深色祖先、伪元素与选择器优先级，避免覆盖后续同优先级的实色工具类。默认文字颜色放在 base layer，保留反色按钮和状态文字。
 - `src/styles/chrome109-bottom-dock-color-fallbacks.css` 单独处理底栏的背景。原底栏把完整主题颜色嵌入 `hsl(var(...))`，无法解析；旧浏览器改用局部 sRGB 通道，保留原透明度、背景模糊、桌面和窄屏表面结构。组件仅添加定位作用域的 `data-slot`。

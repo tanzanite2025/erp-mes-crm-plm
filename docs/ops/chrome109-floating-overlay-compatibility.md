@@ -5,13 +5,21 @@
 ## 样式边界
 
 - `src/styles/theme.css` 继续作为现代浏览器的主题来源。
-- `src/styles/chrome109-overlay-color-fallbacks.css` 只在不支持 OKLCH 颜色时生效。
+- `scripts/chrome109-business-content-and-floating-surface-color-fallbacks-postcss-plugin.js` 通过 Vite 构建统一生成浮层、侧栏、业务区和底栏的颜色回退，只在不支持 OKLCH 颜色时生效。原手写的 `src/styles/chrome109-overlay-color-fallbacks.css` 已合并进生成器，不再维护第二份浮层主题颜色表。
 - 回退颜色仅在浮层根节点、`[data-slot='sidebar']` 及其后代中使用，不能改成 `:root` 或 `body` 上的全局覆盖。
-- `src/styles/chrome109-sidebar-menu-color-fallbacks.css` 单独处理左侧菜单的透明度和导航状态，同样只在不支持 OKLCH 时生效。主题颜色复用浮层回退表，避免维护两份主题值。
+- `src/styles/chrome109-sidebar-menu-color-fallbacks.css` 保留左侧菜单专用的透明度和导航状态，同样只在不支持 OKLCH 时生效。侧栏基础主题、调色板及 RGB 通道由公共生成器统一提供。
 - 使用语义角色识别通用浮层；没有对应角色的自定义浮层使用明确的 `data-slot`。
 - 知识详情抽屉、知识编辑弹层与车型联系人删除确认框通过专用 `data-slot` 纳入兼容范围，保留原有组件样式和业务行为。
-- sRGB 回退值对应现有主题颜色。修改主题时同步核对浅色、深色回退值。
+- sRGB 回退值、RGB 通道和 alpha 随 `src/styles/theme.css` 及 Tailwind 调色板自动生成。新增语义颜色、调色板颜色和透明度工具类时，已登记浮层自动获得回退，修改主题后仍须复核浅色、深色实际效果。
 - 只设置弹窗的默认文字颜色，并保留工具类的优先级，避免破坏反色提示和业务状态文字。
+
+## 新增浮层接入约定
+
+- 通用浮层使用 `dialog`、`alertdialog`、`menu`、`listbox`、`tooltip` 语义角色，或公共组件既有的 `popover-content`、`tooltip-content` 数据标记。生成器同时覆盖根节点和后代，支持弹窗内选择器再次通过 Portal 打开的情况。
+- 没有合适语义角色的自定义浮层，使用明确的 `data-slot`，登记到生成器的 `FLOATING_SURFACE_SCOPES`。需要默认正文颜色的自定义浮层，同时登记到 `DEFAULT_FOREGROUND_SCOPES`。不依赖浮层仍在业务区 DOM 内，也不为业务步骤单独硬编码颜色。
+- 透明背景、文字、边框和阴影从原有声明生成回退，保留原来的层级、媒体查询、悬停、深色祖先、伪元素和规则顺序。Tooltip 等反色表面继续由原工具类决定文字颜色。
+- 自动转换范围是已知主题或调色板变量与 `transparent` 的混色；未知局部变量、`currentColor`、任意两种颜色的混合和动画关键帧仍需单独验证。
+- 公共生成器修改时运行 `node --test scripts/chrome109-business-content-and-floating-surface-color-fallbacks-postcss-plugin.test.mjs`，并按下述要求验证真实旧内核及现代浏览器。
 
 ## 验收要求
 
@@ -42,3 +50,13 @@
 - Chromium 155 的浅色、深色共 8 组修改前后整页截图逐像素一致。菜单尺寸、位置未改变；菜单外业务内容和已修复浮层的计算样式未改变。
 - 从生产 CSS 中移除 Chrome 109 条件块后，其余 CSS 与本次修改前逐字节一致。生产构建、修改文件的 Prettier 和 `git diff --check` 通过。
 - 浏览器检查使用本地模拟接口，在较新 Windows 上运行旧内核；仍需 Win7 实机复核。本轮未部署服务器，业务页面和底部栏的兼容问题不在本轮修复范围。
+
+## 2026-10-22 公共浮层透明色兼容验证
+
+- 将业务区与底栏的构建生成器扩展为公共颜色生成器，纳入侧栏、通用浮层角色和已登记的自定义浮层。删除手写浮层主题表及其导入，浅深主题的 sRGB、调色板、RGB 通道和 alpha 均从现有主题生成。
+- 修复步骤建档导航的当前步骤文字、已完成勾号、新增分类弹窗的层级标签，以及完成面板的成功图标和产品名称对比度。产品建档、分类保存及 BOM 关联的业务逻辑没有修改。
+- 使用当前生产 CSS，在真实 Chromium 109.0.5414.46 和 Chromium 155 中分别检查 48 个页面与弹窗状态，覆盖 1366×768、390×844、浅深主题及中英界面。手册与产品管理往返、搜索、打开向导、模板选择、进入第二步、打开分类弹窗和 Escape 返回均正常，无运行时异常或弹窗越界。
+- 分类层级标签及完成面板另行验证浅深主题；13 种公共作用域分别检查根节点、后代、透明边框和调色板透明色，共 26 组／浏览器通过。Tooltip 的反色文字保持可读，作用域外的节点与正文颜色未变。
+- Chromium 155 的 48 组计算样式与几何和修改前一致。24 组截图中 22 组逐像素一致，另 2 组仅有 6／201 个局部像素差异；剔除旧浏览器条件块后的生产 CSS 与修改前逐字节一致，现代浏览器样式规则没有改变。
+- 11 项 PostCSS 回归测试、生产构建、Vite 配置类型检查、所改脚本的 ESLint、Prettier 和差异空白检查通过。CSS gzip 大小增加约 6.6 KiB，无新增运行时依赖。
+- 验证使用隔离模拟数据，不提交业务记录。Win7 实机字体、缩放及实际交互仍需复核；本轮未部署服务器。产物位于忽略提交的 `output/playwright/product-creation-guide-chrome109-compatibility-fix/`。

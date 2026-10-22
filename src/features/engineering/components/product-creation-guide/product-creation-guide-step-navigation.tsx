@@ -51,7 +51,7 @@ export function ProductCreationGuideStepNavigation({
         </span>
       </div>
       <nav aria-label={t('engineering.productCreationGuide.stepNavigation')}>
-        <ol className='grid grid-cols-4 gap-1 sm:gap-3'>
+        <ol className='grid auto-cols-fr grid-flow-col gap-1 sm:gap-3'>
           {steps.map((step, index) => {
             const completed =
               verifiedRecordCompletion?.[step.key] ??

@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
-import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type Product, type ProductType } from '../data/schema'
 import {
@@ -28,6 +27,10 @@ import {
 } from '../hooks/use-product-form'
 import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import {
+  productCreationDialogViewportClassName,
+  productCreationGuideDialogContentClassName,
+} from './product-creation-dialog-layout.styles'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductBasicInfo } from './product/product-basic-info'
 import { ProductLinkedBomRecordsReadOnlySection } from './product/product-linked-bom-records-read-only-section'
@@ -211,9 +214,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
       <DialogContent
         className={
           wizardHeader
-            ? 'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[1100px]'
-            : buildHostedQuickActionDialogContentClassName(
-                'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:h-[90vh] md:max-h-[90vh] md:w-[85vw] md:max-w-[85vw]'
+            ? productCreationGuideDialogContentClassName
+            : cn(
+                productCreationDialogViewportClassName,
+                'flex flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'
               )
         }
         aria-describedby={undefined}
@@ -236,7 +240,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             )}
           </DialogDescription>
         </DialogHeader>
-        <div className='scrollbar-hide flex-1 overflow-y-auto px-6 py-3 sm:px-8'>
+        <div className='scrollbar-hide min-h-0 flex-1 overflow-y-auto px-6 py-3 sm:px-8'>
           <Form {...form}>
             <form
               id='product-form'

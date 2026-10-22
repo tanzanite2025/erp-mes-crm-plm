@@ -8,4 +8,4 @@ type PostcssPluginEntry = NonNullable<
   InlinePostcssConfiguration['plugins']
 >[number]
 
-export function createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin(): PostcssPluginEntry
+export function createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin(): PostcssPluginEntry

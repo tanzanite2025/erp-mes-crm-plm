@@ -9,12 +9,14 @@ import {
   LayoutTemplate,
   ListChecks,
   MapPin,
+  Search,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { matchesPathPermissionProjection } from '@/features/authz/guards/route-access'
 import { ProductCreationOperationGuideLauncher } from '../components/product-creation-guide/product-creation-operation-guide-launcher'
+import { productCreationOperationGuideStepKeys } from '../data/product-creation-operation-guide-step-definitions'
 
 const productCreationHandbookReferenceTopics = [
   {
@@ -43,12 +45,6 @@ const productCreationHandbookProductRecordSections = [
   { key: 'supportingInformation', icon: Image },
   { key: 'bom', icon: Layers },
 ] as const
-const productCreationHandbookWizardSteps = [
-  'template',
-  'baseModel',
-  'product',
-  'bom',
-] as const
 const productCreationHandbookDisplayMappings = [
   'classification',
   'productCard',
@@ -67,6 +63,10 @@ const productCreationHandbookContents = [
 export function ProductCreationOperationGuidePage() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
+  const canAccessProducts = matchesPathPermissionProjection(
+    user,
+    '/engineering/products'
+  )
 
   return (
     <div className='@container mx-2 min-w-0 space-y-5 pb-8 md:mx-4'>
@@ -84,10 +84,35 @@ export function ProductCreationOperationGuidePage() {
               {t('engineering.productCreationGuide.handbook.introduction')}
             </p>
           </div>
-          <ProductCreationOperationGuideLauncher className='inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 @3xl:w-auto dark:bg-sky-500 dark:text-sky-950 dark:hover:bg-sky-400'>
-            {t('engineering.productCreationGuide.openWizard')}
-            <ArrowRight aria-hidden='true' className='size-4 shrink-0' />
-          </ProductCreationOperationGuideLauncher>
+          <div className='w-full space-y-2 @3xl:w-auto @3xl:shrink-0'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <ProductCreationOperationGuideLauncher className='inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 @sm:w-auto dark:bg-sky-500 dark:text-sky-950 dark:hover:bg-sky-400'>
+                {t('engineering.productCreationGuide.openWizard')}
+                <ArrowRight aria-hidden='true' className='size-4 shrink-0' />
+              </ProductCreationOperationGuideLauncher>
+              {canAccessProducts && (
+                <Button
+                  asChild
+                  variant='outline'
+                  className='min-h-10 w-full rounded-full border-sky-200 bg-background/80 px-5 text-sky-800 @sm:w-auto dark:border-sky-800 dark:text-sky-200'
+                >
+                  <Link to='/engineering/products'>
+                    <Search aria-hidden='true' className='size-4' />
+                    {t(
+                      'engineering.productCreationGuide.handbook.viewExistingProducts'
+                    )}
+                  </Link>
+                </Button>
+              )}
+            </div>
+            {canAccessProducts && (
+              <p className='text-xs leading-6 text-muted-foreground'>
+                {t(
+                  'engineering.productCreationGuide.handbook.existingProductsHint'
+                )}
+              </p>
+            )}
+          </div>
         </div>
       </header>
 
@@ -133,7 +158,7 @@ export function ProductCreationOperationGuidePage() {
                 'engineering.productCreationGuide.handbook.productRecordTitle'
               )}
             </h2>
-            {matchesPathPermissionProjection(user, '/engineering/products') && (
+            {canAccessProducts && (
               <Button
                 asChild
                 variant='link'
@@ -270,7 +295,7 @@ export function ProductCreationOperationGuidePage() {
             {t('engineering.productCreationGuide.handbook.workflowTitle')}
           </h2>
           <ol className='mt-5 grid gap-5 @2xl:grid-cols-2 @5xl:grid-cols-1'>
-            {productCreationHandbookWizardSteps.map((stepKey, index) => (
+            {productCreationOperationGuideStepKeys.map((stepKey, index) => (
               <li key={stepKey} className='flex items-start gap-3'>
                 <span className='flex size-7 shrink-0 items-center justify-center rounded-full border border-sky-200 bg-background text-xs font-semibold text-sky-700 dark:border-sky-800 dark:text-sky-300'>
                   {index + 1}

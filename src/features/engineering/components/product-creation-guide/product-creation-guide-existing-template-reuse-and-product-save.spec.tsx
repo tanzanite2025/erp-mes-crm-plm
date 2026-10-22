@@ -13,8 +13,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LanguageProvider } from '@/context/language-provider'
 import { buildProductCreationOperationGuideSteps } from '../../data/build-product-creation-operation-guide-steps'
 import type { ProductCreationGuideProgress } from '../../data/product-creation-operation-guide-progress'
-import type { Product } from '../../data/schema'
+import type { Product, ProductType } from '../../data/schema'
 import type { ProductSubmitPayload } from '../../hooks/use-product-form'
+import { PRODUCT_TYPES_QUERY_KEY } from '../../query-keys'
 import {
   createProductDraft,
   createProductTemplateDraft,
@@ -106,25 +107,60 @@ const confirmedProgress: ProductCreationGuideProgress = {
   bomSkipped: false,
 }
 
+const templateConfirmedProgress: ProductCreationGuideProgress = {
+  completedSteps: { template: confirmedProgress.completedSteps.template },
+  bomSkipped: false,
+}
+
+const existingProductCategoryBranch: ProductType[] = [
+  {
+    id: 'category-1',
+    name: '一级分类',
+    code: 'L1',
+    active: true,
+    sortOrder: 0,
+    version: 1,
+  },
+  {
+    id: 'category-2',
+    name: '二级分类',
+    code: 'L2',
+    parentId: 'category-1',
+    active: true,
+    sortOrder: 0,
+    version: 1,
+  },
+  {
+    id: 'model-1',
+    name: '基础型号',
+    code: 'M1',
+    parentId: 'category-2',
+    templateId: 'template-1',
+    active: true,
+    sortOrder: 0,
+    version: 1,
+  },
+]
+
 function renderExistingProductCreationConfiguration(
-  stepKey: 'template' | 'product'
+  stepKey: 'template' | 'baseModel' | 'product',
+  progress = confirmedProgress
 ) {
   const onCompleted = vi.fn()
   const onClose = vi.fn()
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   const step = buildProductCreationOperationGuideSteps(
     { permissions: ['menu_engineering'] },
     (key: TranslationKey) => translate('zh-CN', key)
   ).find((candidate) => candidate.key === stepKey)!
   render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+    <QueryClientProvider client={queryClient}>
       <LanguageProvider defaultLocale='zh-CN'>
         <ProductCreationGuideBusinessOperationDialog
           step={step}
-          progress={confirmedProgress}
+          progress={progress}
           wizardHeader={<p>当前步骤导航</p>}
           onBusyChange={vi.fn()}
           onClose={onClose}
@@ -133,7 +169,7 @@ function renderExistingProductCreationConfiguration(
       </LanguageProvider>
     </QueryClientProvider>
   )
-  return { onCompleted, onClose }
+  return { onCompleted, onClose, queryClient }
 }
 
 beforeEach(() => {
@@ -141,32 +177,7 @@ beforeEach(() => {
   businessMocks.getTemplates.mockResolvedValue([
     createProductTemplateDraft({ id: 'template-1', name: '已有模板' }),
   ])
-  businessMocks.getProductTypes.mockResolvedValue([
-    {
-      id: 'category-1',
-      name: '一级分类',
-      code: 'L1',
-      active: true,
-      version: 1,
-    },
-    {
-      id: 'category-2',
-      name: '二级分类',
-      code: 'L2',
-      parentId: 'category-1',
-      active: true,
-      version: 1,
-    },
-    {
-      id: 'model-1',
-      name: '基础型号',
-      code: 'M1',
-      parentId: 'category-2',
-      templateId: 'template-1',
-      active: true,
-      version: 1,
-    },
-  ])
+  businessMocks.getProductTypes.mockResolvedValue(existingProductCategoryBranch)
   const savedProduct = createProductDraft({
     id: 'product-1',
     name: '真实产品记录',
@@ -182,6 +193,265 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('existing configuration reuse in the product creation wizard', () => {
+  it.each([
+    {
+      name: 'no categories exist',
+      types: [] as ProductType[],
+      explanation: '当前读取的产品分类为空。',
+      summary:
+        '已读取：一级分类 0 个，二级分类 0 个，三级基础型号 0 个；本步可选 0 个。',
+    },
+    {
+      name: 'only one level 1 category exists',
+      types: existingProductCategoryBranch.slice(0, 1),
+      explanation: '目前只有一级分类，尚无二级分类和三级基础型号。',
+      summary:
+        '已读取：一级分类 1 个，二级分类 0 个，三级基础型号 0 个；本步可选 0 个。',
+    },
+    {
+      name: 'level 1 and 2 categories exist without a base model',
+      types: existingProductCategoryBranch.slice(0, 2),
+      explanation: '已有一级、二级分类，尚无三级基础型号。',
+      summary:
+        '已读取：一级分类 1 个，二级分类 1 个，三级基础型号 0 个；本步可选 0 个。',
+    },
+    {
+      name: 'the only level 3 base model is inactive',
+      types: existingProductCategoryBranch.map((type) =>
+        type.id === 'model-1' ? { ...type, active: false } : type
+      ),
+      explanation: '1 个三级基础型号已停用，因此未列出。',
+      summary:
+        '已读取：一级分类 1 个，二级分类 1 个，三级基础型号 1 个；本步可选 0 个。',
+    },
+    {
+      name: 'the only base model has no resolvable template',
+      types: existingProductCategoryBranch.map((type) =>
+        type.id === 'model-1' ? { ...type, templateId: undefined } : type
+      ),
+      explanation: '1 个已启用的三级基础型号未关联到可用模板，因此未列出。',
+      summary:
+        '已读取：一级分类 1 个，二级分类 1 个，三级基础型号 1 个；本步可选 0 个。',
+    },
+  ])(
+    'explains unavailable choices when $name without advancing or writing records',
+    async ({ types, explanation, summary }) => {
+      businessMocks.getProductTypes.mockResolvedValue(types)
+      const { onCompleted } = renderExistingProductCreationConfiguration(
+        'baseModel',
+        templateConfirmedProgress
+      )
+      expect(await screen.findByText(summary)).toBeInTheDocument()
+      expect(
+        screen.getByText(explanation, { exact: false })
+      ).toBeInTheDocument()
+      expect(screen.getByRole('combobox')).toHaveAccessibleDescription(
+        /一级、二级分类用于归类，不会出现在此下拉列表中/
+      )
+      expect(
+        screen.getByRole('button', { name: '确认使用并继续' })
+      ).toBeDisabled()
+      expect(screen.getByRole('button', { name: '重新加载' })).toBeEnabled()
+      expect(onCompleted).not.toHaveBeenCalled()
+      expect(businessMocks.saveProducts).not.toHaveBeenCalled()
+      expect(businessMocks.getTemplateResolution).not.toHaveBeenCalled()
+    }
+  )
+
+  it('explains a different template and tells the user how to return to the template step', async () => {
+    businessMocks.getTemplates.mockResolvedValue([
+      createProductTemplateDraft({ id: 'template-1', name: '已有模板' }),
+      createProductTemplateDraft({ id: 'template-2', name: '其他模板' }),
+    ])
+    businessMocks.getProductTypes.mockResolvedValue(
+      existingProductCategoryBranch.map((type) =>
+        type.id === 'model-1' ? { ...type, templateId: 'template-2' } : type
+      )
+    )
+    renderExistingProductCreationConfiguration(
+      'baseModel',
+      templateConfirmedProgress
+    )
+    expect(
+      await screen.findByText(
+        /1 个已启用的三级基础型号使用其他模板，与本次“已有模板”不同/
+      )
+    ).toHaveTextContent('可点击顶部“选择模板”重新选用对应模板')
+    expect(
+      screen.getByRole('button', { name: '确认使用并继续' })
+    ).toBeDisabled()
+  })
+
+  it('explains a saved structural category without presenting it as a missing base model', async () => {
+    businessMocks.getProductTypes.mockResolvedValue(
+      existingProductCategoryBranch.slice(0, 1)
+    )
+    renderExistingProductCreationConfiguration('baseModel', {
+      ...templateConfirmedProgress,
+      completedSteps: {
+        ...templateConfirmedProgress.completedSteps,
+        baseModel: { id: 'category-1', label: '一级分类' },
+      },
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '当前记录是一级或二级分类，仅用于归类'
+    )
+    expect(screen.queryByText(/上次选择的记录已不存在/)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '确认使用并继续' })
+    ).toBeDisabled()
+  })
+
+  it('recognizes an inherited template and keeps an existing base model selectable', async () => {
+    businessMocks.getProductTypes.mockResolvedValue(
+      existingProductCategoryBranch.map((type) => ({
+        ...type,
+        templateId: type.id === 'category-2' ? 'template-1' : undefined,
+      }))
+    )
+    renderExistingProductCreationConfiguration('baseModel')
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: '确认使用并继续' })
+      ).toBeEnabled()
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('本步可选 1 个')
+    expect(
+      screen.queryByText(/未关联到可用模板，因此未列出/)
+    ).not.toBeInTheDocument()
+  })
+
+  it.each(['categories', 'templates'] as const)(
+    'distinguishes a failed %s request from a successfully loaded empty category tree',
+    async (failedRequest) => {
+      if (failedRequest === 'categories')
+        businessMocks.getProductTypes.mockRejectedValue(
+          new Error('Network failed')
+        )
+      else
+        businessMocks.getTemplates.mockRejectedValue(
+          new Error('Network failed')
+        )
+      renderExistingProductCreationConfiguration(
+        'baseModel',
+        templateConfirmedProgress
+      )
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        failedRequest === 'categories'
+          ? '产品分类读取失败，当前无法确认有哪些基础型号。'
+          : '模板读取失败，当前无法核对哪些基础型号符合上一步的模板。'
+      )
+      expect(
+        screen.queryByText(/当前读取的产品分类为空/)
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText(/目前只有一级分类/)).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: '确认使用并继续' })
+      ).toBeDisabled()
+    }
+  )
+
+  it('reloads a single level 1 category into a completed hierarchy and lets the user select the new base model', async () => {
+    businessMocks.getProductTypes.mockResolvedValue(
+      existingProductCategoryBranch.slice(0, 1)
+    )
+    const { onCompleted } = renderExistingProductCreationConfiguration(
+      'baseModel',
+      templateConfirmedProgress
+    )
+    await screen.findByText(/目前只有一级分类/)
+    businessMocks.getProductTypes.mockResolvedValue(
+      existingProductCategoryBranch
+    )
+    fireEvent.click(screen.getByRole('button', { name: '重新加载' }))
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('本步可选 1 个')
+    )
+    expect(screen.queryByText(/目前只有一级分类/)).not.toBeInTheDocument()
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' })
+    fireEvent.click(
+      await screen.findByRole('option', {
+        name: '一级分类 / 二级分类 / 基础型号',
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: '确认使用并继续' }))
+    await waitFor(() =>
+      expect(onCompleted).toHaveBeenCalledWith({
+        id: 'model-1',
+        label: '一级分类 / 二级分类 / 基础型号',
+      })
+    )
+  })
+
+  it('explains how to return to the base model step when a saved selection disappears before product generation', async () => {
+    businessMocks.getProductTypes.mockResolvedValue(
+      existingProductCategoryBranch.slice(0, 1)
+    )
+    renderExistingProductCreationConfiguration('product')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '请点击顶部“基础型号”返回第二步'
+    )
+    expect(screen.queryByText('配置加载失败，请重试。')).not.toBeInTheDocument()
+    expect(businessMocks.saveProducts).not.toHaveBeenCalled()
+  })
+
+  it('refreshes a remotely changed category catalog on confirmation so a removed selection can be replaced', async () => {
+    const { onCompleted, queryClient } =
+      renderExistingProductCreationConfiguration('baseModel')
+    const confirmButton = screen.getByRole('button', {
+      name: '确认使用并继续',
+    })
+    await waitFor(() => expect(confirmButton).toBeEnabled())
+    const latestTypes = [
+      {
+        id: 'category-1',
+        name: '一级分类',
+        code: 'L1',
+        active: true,
+        version: 1,
+      },
+      {
+        id: 'category-2',
+        name: '二级分类',
+        code: 'L2',
+        parentId: 'category-1',
+        active: true,
+        version: 1,
+      },
+      {
+        id: 'new-model',
+        name: '新增基础型号',
+        code: 'NEW-MODEL',
+        parentId: 'category-2',
+        templateId: 'template-1',
+        active: true,
+        version: 1,
+      },
+    ]
+    businessMocks.getProductTypes.mockResolvedValue(latestTypes)
+    fireEvent.click(confirmButton)
+    await waitFor(() =>
+      expect(
+        queryClient.getQueryData([...PRODUCT_TYPES_QUERY_KEY, 'options'])
+      ).toEqual(latestTypes)
+    )
+    expect(confirmButton).toBeDisabled()
+    expect(onCompleted).not.toHaveBeenCalled()
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' })
+    fireEvent.click(
+      await screen.findByRole('option', {
+        name: '一级分类 / 二级分类 / 新增基础型号',
+      })
+    )
+    fireEvent.click(confirmButton)
+    await waitFor(() =>
+      expect(onCompleted).toHaveBeenCalledWith({
+        id: 'new-model',
+        label: '一级分类 / 二级分类 / 新增基础型号',
+      })
+    )
+  })
+
   it('restores the chosen template and confirms it directly without an attribute preparation step', async () => {
     const { onCompleted } =
       renderExistingProductCreationConfiguration('template')

@@ -18,7 +18,9 @@ export function useEngineeringBootstrap() {
 
   const productTypesQuery = useQuery({
     queryKey: PRODUCT_TYPES_QUERY_KEY,
-    queryFn: () => ProductTypeService.getProductTypes(),
+    queryFn: () => ProductTypeService.getProductTypes({ isOptions: true }),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
   })
 
   if (productsQuery.isSuccess && !productsQuery.data) {

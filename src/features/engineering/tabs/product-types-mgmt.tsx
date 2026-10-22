@@ -52,7 +52,9 @@ export function ProductTypesMgmt() {
   const { saveProductType, deleteProductType } = useProductTypeWriteActions()
   const productTypesQuery = useQuery({
     queryKey: PRODUCT_TYPES_QUERY_KEY,
-    queryFn: () => ProductTypeService.getProductTypes(),
+    queryFn: () => ProductTypeService.getProductTypes({ isOptions: true }),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
   })
   const data = productTypesQuery.data
   const error = productTypesQuery.error

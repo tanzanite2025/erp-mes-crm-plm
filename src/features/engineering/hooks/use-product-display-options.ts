@@ -39,7 +39,9 @@ export function useProductDisplayOptions({
   })
   const productTypesQuery = useQuery({
     queryKey: PRODUCT_TYPES_QUERY_KEY,
-    queryFn: () => ProductTypeService.getProductTypes(),
+    queryFn: () => ProductTypeService.getProductTypes({ isOptions: true }),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
     enabled,
   })
   const productAttributeCategoriesQuery = useQuery({

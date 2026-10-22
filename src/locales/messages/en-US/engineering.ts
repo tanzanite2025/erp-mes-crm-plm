@@ -910,7 +910,7 @@ export const engineering = {
       categoryPlaceholder: 'Select base model...',
       categoryRequired: 'Please select a base model',
       baseModelSourceHelp:
-        'You name base models at level 3 of the product category tree. To add one, open Product Management → {{manageCategories}} → {{addCategory}}, select a level 2 parent, enter Category Name and Category Code, then save. Select the saved model here. Model Code is a separate two-digit sequence number.',
+        'You name base models at level 3 of the product category tree. Level 1 and 2 categories organize the hierarchy and do not appear in this selector. If only a level 1 category exists, create a level 2 category and a level 3 model first. To add a model, open Product Management → {{manageCategories}} → {{addCategory}}, select a level 2 parent, enter Category Name and Category Code, then save. Select the saved model here. Model Code is a separate two-digit sequence number.',
       modelCode: 'Model Code',
       modelCodePlaceholder: '01~99',
       modelCodeLinked: 'Linked to numbering rule',
@@ -1275,6 +1275,27 @@ export const engineering = {
       parent: 'Parent Category',
       parentPlaceholder: 'Select a parent category...',
       parentNone: 'No parent (top-level category)',
+      categoryDetailsTitle: 'Category details',
+      templateConfigurationTitle: 'Template configuration',
+      templatePreviewPlaceholder:
+        'Select a template to preview its assembled attribute categories.',
+      catalogLoading: 'Loading parent categories and templates…',
+      catalogLoadFailed:
+        'Categories or templates could not be loaded. Parent choices may be incomplete; this does not mean existing categories are missing. Reload and check the parent before proceeding. Retrying preserves the name and code you have entered.',
+      requiredFieldsMissing:
+        'Enter a category name and code, then check the highlighted fields before saving.',
+      validationFailed:
+        'Check and correct the highlighted fields before saving.',
+      savePermissionDenied:
+        'Your account does not have permission to maintain product categories. Contact someone with this permission. Your entries have been kept.',
+      saveCsrfRejected:
+        'Session verification failed. Refresh the page and try again. Copy your entries before refreshing.',
+      saveDuplicateCode:
+        'This category code is already in use. Choose another code and save again. Your entries have been kept.',
+      saveResultUncertain:
+        'A network or response error prevented confirmation of the save result. Check the category list before creating another record to avoid duplicates. Your entries have been kept.',
+      saveErrorUnknown:
+        'The service returned no specific reason. Please try again later.',
       name: 'Category Name',
       namePlaceholder: 'e.g. Road Clincher Rim',
       code: 'Category Code',
@@ -1305,11 +1326,11 @@ export const engineering = {
       targetLevel: 'Target Level',
       parentPath: 'Parent Path',
       levelHintTop:
-        'Level 1 categories define the top hierarchy and are not treated as base models in this phase.',
+        'No parent is selected, so this will be saved as a level 1 category used for grouping. It will not appear in the base model selector. To add a level 2 category, select an existing level 1 category as its parent.',
       levelHintMiddle:
-        'Level 2 categories split structural series, while the next level becomes the base-model layer.',
+        'The parent is a level 1 category, so this will be saved as level 2. After saving, create another category, select that level 2 parent, and enter your level 3 base model name.',
       levelHintLeaf:
-        'Level 3 is the base-model layer. A later phase will bind BOM variants here to form independent products.',
+        'Level 3 is a shared base model you name, such as R50, available in product forms. Save separate product cards under the same model. Product saving, BOM validation and BOM linking are independent operations.',
       levelLimitError:
         'The selected parent would exceed the three-level limit. Please choose another parent category.',
       active: 'Active',

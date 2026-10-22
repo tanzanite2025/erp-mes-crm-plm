@@ -1,49 +1,8 @@
-import { useMemo, useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
-import { createLogger } from '@/lib/logger'
-import { useLanguage } from '@/context/language-provider'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { buildProductCreationOperationGuideSteps } from '../../data/build-product-creation-operation-guide-steps'
-import {
-  completeProductCreationGuideStep,
-  createEmptyProductCreationGuideProgress,
-  getCurrentProductCreationGuideStep,
-  productCreationGuideProgressSchema,
-  type ProductCreationGuideProgress,
-  type ProductCreationGuideStepResult,
-  type ProductCreationOperationGuideStepKey,
-} from '../../data/product-creation-operation-guide-progress'
-import { useProductCreationGuideSavedRecordVerification } from '../../hooks/use-product-creation-guide-saved-record-verification'
+import { useProductCreationGuideSession } from '../../hooks/use-product-creation-guide-session'
 import { ProductCreationGuideBusinessOperationDialog } from './product-creation-guide-business-operation-dialog'
+import { ProductCreationGuideCompletionSummaryDialog } from './product-creation-guide-completion-summary-dialog'
 import { ProductCreationGuideStepNavigation } from './product-creation-guide-step-navigation'
-
-const logger = createLogger('ProductCreationOperationGuideDialog')
-
-function readSavedProductCreationGuideProgress(storageKey: string) {
-  try {
-    const stored = window.localStorage.getItem(storageKey)
-    if (stored) {
-      const parsed = productCreationGuideProgressSchema.safeParse(
-        JSON.parse(stored)
-      )
-      if (parsed.success) return parsed.data
-    }
-  } catch (error) {
-    logger.warn('Could not read product creation guide progress', error)
-  }
-  return createEmptyProductCreationGuideProgress()
-}
 
 export function ProductCreationOperationGuideDialog({
   onClose,
@@ -69,83 +28,21 @@ function ProductCreationOperationGuideDialogSession({
   accountId: string
   onClose: () => void
 }) {
-  const { t } = useLanguage()
-  const user = useAuthStore((state) => state.user)
-  const storageKey = `product-creation-operation-guide:v1:${accountId}`
-  const [progress, setProgress] = useState<ProductCreationGuideProgress>(() =>
-    readSavedProductCreationGuideProgress(storageKey)
-  )
-  const [activeStepKey, setActiveStepKey] =
-    useState<ProductCreationOperationGuideStepKey>(
-      () => getCurrentProductCreationGuideStep(progress) ?? 'bom'
-    )
-  const [isBusy, setIsBusy] = useState(false)
-  const [isBomEditorOpen, setIsBomEditorOpen] = useState(false)
-  const [isRestartConfirmationVisible, setIsRestartConfirmationVisible] =
-    useState(false)
-  const steps = useMemo(
-    () => buildProductCreationOperationGuideSteps(user, t),
-    [t, user]
-  )
-  const activeStep = steps.find((step) => step.key === activeStepKey)!
-  const productResult = progress.completedSteps.product
-  const isCompletionSummary = activeStepKey === 'bom' && Boolean(productResult)
-  const canViewProduct = steps.some(
-    (step) => step.key === 'product' && step.canAccess
-  )
-  const canViewBom = steps.some((step) => step.key === 'bom' && step.canAccess)
-  const recordVerification = useProductCreationGuideSavedRecordVerification({
-    savedProduct: productResult,
-    savedBom: progress.completedSteps.bom,
-    canViewProduct,
-    canViewBom,
-  })
-  const { verifiedProduct, verifiedBom, productStatus, bomStatus } =
-    recordVerification
-  const canContinueBom =
-    productStatus !== 'missing' &&
-    (bomStatus === 'verified' ? !verifiedBom : !progress.completedSteps.bom)
-
-  function updateAndPersistProductCreationGuideProgress(
-    nextProgress: ProductCreationGuideProgress
-  ) {
-    setProgress(nextProgress)
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify(nextProgress))
-    } catch (error) {
-      logger.warn('Could not persist product creation guide progress', error)
-      toast.error(t('engineering.productCreationGuide.storageFailed'))
-    }
-  }
-
-  function selectProductCreationWizardStep(
-    stepKey: ProductCreationOperationGuideStepKey
-  ) {
-    if (isBusy) return
-    if (stepKey === 'product' && productStatus === 'missing') {
-      const { template, baseModel } = progress.completedSteps
-      updateAndPersistProductCreationGuideProgress({
-        completedSteps: { template, baseModel },
-        bomSkipped: false,
-      })
-    }
-    setActiveStepKey(stepKey)
-    setIsBomEditorOpen(false)
-    setIsRestartConfirmationVisible(false)
-  }
-
-  function completeProductCreationWizardStep(
-    result: ProductCreationGuideStepResult
-  ) {
-    updateAndPersistProductCreationGuideProgress(
-      completeProductCreationGuideStep(progress, activeStepKey, result)
-    )
-    setIsBusy(false)
-    setIsBomEditorOpen(false)
-    const nextStep =
-      steps[steps.findIndex((step) => step.key === activeStepKey) + 1]
-    if (nextStep) setActiveStepKey(nextStep.key)
-  }
+  const session = useProductCreationGuideSession({ accountId, onClose })
+  const {
+    progress,
+    activeStepKey,
+    steps,
+    activeStep,
+    isBusy,
+    setIsBusy,
+    isBomEditorOpen,
+    productResult,
+    recordVerification,
+    selectProductCreationWizardStep,
+    completeProductCreationWizardStep,
+  } = session
+  const { verifiedProduct, verifiedBom } = recordVerification
 
   const wizardHeader = (
     <ProductCreationGuideStepNavigation
@@ -179,207 +76,10 @@ function ProductCreationOperationGuideDialogSession({
   }
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose()
-      }}
-    >
-      <DialogContent
-        size='4xl'
-        className='flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0'
-        closeButtonClassName='flex size-7 items-center justify-center rounded-full'
-      >
-        {wizardHeader}
-        <DialogHeader className='px-5 pt-5 text-start'>
-          <DialogTitle>
-            {isCompletionSummary && verifiedProduct
-              ? t('engineering.productCreationGuide.productComplete')
-              : isCompletionSummary
-                ? t('engineering.productCreationGuide.savedResult')
-                : activeStep.title}
-          </DialogTitle>
-          <DialogDescription>
-            {isCompletionSummary && verifiedProduct
-              ? t('engineering.productCreationGuide.productCompleteDescription')
-              : isCompletionSummary
-                ? t('engineering.productCreationGuide.recordVerificationHint')
-                : t('engineering.productCreationGuide.accessRequired')}
-          </DialogDescription>
-        </DialogHeader>
-        <div className='min-h-0 space-y-4 overflow-y-auto p-5'>
-          {isCompletionSummary && verifiedProduct && (
-            <div className='flex flex-wrap items-center gap-3 rounded-xl bg-primary/5 p-4'>
-              <CheckCircle2
-                aria-hidden='true'
-                className='size-6 shrink-0 text-primary'
-              />
-              <div>
-                <p className='text-sm font-semibold'>{verifiedProduct.label}</p>
-                <p className='mt-1 text-xs text-muted-foreground'>
-                  {verifiedProduct.code}
-                </p>
-              </div>
-              {canViewProduct && (
-                <Button
-                  asChild
-                  variant='outline'
-                  size='sm'
-                  className='ml-auto rounded-full'
-                >
-                  <Link
-                    to='/engineering/products'
-                    search={{ productId: verifiedProduct.id }}
-                    onClick={onClose}
-                  >
-                    {t('engineering.productCreationGuide.viewProduct')}
-                  </Link>
-                </Button>
-              )}
-            </div>
-          )}
-          {isCompletionSummary && !verifiedProduct && (
-            <div role='status' className='space-y-3 rounded-xl border p-4'>
-              <p className='text-sm font-semibold'>{productResult?.label}</p>
-              <p className='text-sm text-muted-foreground'>
-                {t(
-                  productStatus === 'missing'
-                    ? 'engineering.productCreationGuide.productRecordMissing'
-                    : productStatus === 'unavailable'
-                      ? 'engineering.productCreationGuide.productVerificationUnavailable'
-                      : productStatus === 'error'
-                        ? 'engineering.productCreationGuide.productVerificationFailed'
-                        : 'engineering.productCreationGuide.productVerificationChecking'
-                )}
-              </p>
-              {productStatus === 'missing' && canViewProduct && (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='rounded-full'
-                  onClick={() => selectProductCreationWizardStep('product')}
-                >
-                  {t('engineering.productCreationGuide.returnToProductStep')}
-                </Button>
-              )}
-            </div>
-          )}
-          {isCompletionSummary &&
-            (productStatus === 'error' || bomStatus === 'error') && (
-              <Button
-                variant='outline'
-                size='sm'
-                className='rounded-full'
-                onClick={recordVerification.retrySavedProductAndBomVerification}
-              >
-                {t('engineering.productCreationGuide.retry')}
-              </Button>
-            )}
-          {!activeStep.canAccess && (
-            <p role='status' className='text-sm text-muted-foreground'>
-              {activeStep.pageLabel} ·{' '}
-              {t('engineering.productCreationGuide.accessRequired')}
-            </p>
-          )}
-          {activeStepKey === 'bom' && productResult && (
-            <>
-              {verifiedBom ? (
-                <p className='text-sm'>
-                  {t('engineering.productCreationGuide.bomComplete')}：
-                  {verifiedBom.label}
-                </p>
-              ) : bomStatus === 'verified' ? (
-                <p className='text-sm text-muted-foreground'>
-                  {t('engineering.productCreationGuide.optionalBomDescription')}
-                </p>
-              ) : bomStatus !== 'missing' ? (
-                <p role='status' className='text-sm text-muted-foreground'>
-                  {t(
-                    bomStatus === 'unavailable'
-                      ? 'engineering.productCreationGuide.bomVerificationUnavailable'
-                      : bomStatus === 'error'
-                        ? 'engineering.productCreationGuide.bomVerificationFailed'
-                        : 'engineering.productCreationGuide.bomVerificationChecking'
-                  )}
-                </p>
-              ) : null}
-              {isRestartConfirmationVisible ? (
-                <div className='space-y-3 rounded-lg border p-3'>
-                  <p className='text-sm'>
-                    {t(
-                      'engineering.productCreationGuide.startAnotherDescription'
-                    )}
-                  </p>
-                  <div className='flex gap-2'>
-                    <Button
-                      size='sm'
-                      className='rounded-full'
-                      onClick={() => {
-                        updateAndPersistProductCreationGuideProgress(
-                          createEmptyProductCreationGuideProgress()
-                        )
-                        setActiveStepKey('template')
-                        setIsRestartConfirmationVisible(false)
-                      }}
-                    >
-                      {t('engineering.productCreationGuide.confirm')}
-                    </Button>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='rounded-full'
-                      onClick={() => setIsRestartConfirmationVisible(false)}
-                    >
-                      {t('engineering.productCreationGuide.cancel')}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='rounded-full'
-                  onClick={() => setIsRestartConfirmationVisible(true)}
-                >
-                  {t('engineering.productCreationGuide.startAnother')}
-                </Button>
-              )}
-            </>
-          )}
-        </div>
-        <DialogFooter className='shrink-0 border-t p-4'>
-          {isCompletionSummary && canContinueBom && activeStep.canAccess && (
-            <Button
-              variant='outline'
-              className='rounded-full px-6'
-              onClick={() => setIsBomEditorOpen(true)}
-            >
-              {t('engineering.productCreationGuide.createBom')}
-            </Button>
-          )}
-          <Button
-            className='rounded-full px-6'
-            onClick={() => {
-              if (
-                isCompletionSummary &&
-                productStatus !== 'missing' &&
-                !progress.completedSteps.bom
-              )
-                updateAndPersistProductCreationGuideProgress({
-                  ...progress,
-                  bomSkipped: true,
-                })
-              onClose()
-            }}
-          >
-            {t(
-              isCompletionSummary && productStatus !== 'missing'
-                ? 'engineering.productCreationGuide.finish'
-                : 'engineering.productCreationGuide.close'
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ProductCreationGuideCompletionSummaryDialog
+      session={session}
+      wizardHeader={wizardHeader}
+      onClose={onClose}
+    />
   )
 }

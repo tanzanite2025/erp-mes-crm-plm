@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { productCreationGuideDialogContentClassName } from '@/features/engineering/components/product-creation-dialog-layout.styles'
 
 type BOMDialogHeaderMeta = {
   version?: string
@@ -105,7 +106,7 @@ export function BOMDialogShell({
         showCloseButton={false}
         className={
           wizardHeader
-            ? 'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[1100px]'
+            ? productCreationGuideDialogContentClassName
             : 'flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'
         }
       >

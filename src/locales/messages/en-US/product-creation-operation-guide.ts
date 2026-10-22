@@ -3,6 +3,9 @@ export const productCreationOperationGuide = {
   launcherDescription:
     'Reuse a template and base model to create the product. Link its BOM separately after validation.',
   openWizard: 'Start / continue setup',
+  guidedCreation: 'Guided setup',
+  readHandbook: 'Operation guide',
+  productManagementEntryHint: 'Need help? Create a product step by step.',
   previousStep: 'Previous step',
   stepNavigation: 'Product creation steps',
   templateIncludesAttributes: 'Attributes included in this template',
@@ -49,6 +52,13 @@ export const productCreationOperationGuide = {
   selectExisting: 'Use existing configuration',
   manageAttributes: 'Create or manage attributes',
   createBaseModel: 'Create category or base model',
+  baseModelMeaningTitle: 'Shared base models and specific product cards',
+  baseModelMeaning:
+    'A base model, such as R50, is a shared model identifier used to group similar products. Create separate products under the same model when different customer requirements or BOM configurations need to be managed separately. Each saved product has its own card and can be linked to its corresponding BOM.',
+  baseModelProductCardExample:
+    'For example, R50 (Disc brake) and R50 (V-brake) share the R50 base model, with their own specifications and BOMs. Card names follow Final Model Preview in the product editor.',
+  baseModelProductAndBomTiming:
+    'This step selects the base model. Create the specific product in the next step. Save the product first and link its BOM separately after validation and confirmation.',
   baseModelCreateHelp:
     'To create a base model, select a level 2 parent, enter its name in Category Name and its code in Category Code, then link the template selected in the previous step. If level 1 or 2 categories are missing, create them in the same dialog first. You can also add models through Product Management → Edit Category → Add Category. Reuse an existing model when suitable.',
   selectAttributes: 'Select the level 1 attribute categories for this product',
@@ -56,6 +66,32 @@ export const productCreationOperationGuide = {
   noAttributes: 'No additional attributes are needed',
   selectTemplate: 'Select product template',
   selectBaseModel: 'Select a level 3 base model',
+  baseModelSelectionRule:
+    'Product categories follow Level 1 → Level 2 → Level 3 base model (such as R50). This list includes only active level 3 models that resolve to the template selected in the previous step. Level 1 and 2 categories organize the hierarchy and do not appear here.',
+  baseModelCatalogSummary:
+    'Loaded: {{levelOneCount}} level 1 categories, {{levelTwoCount}} level 2 categories, {{baseModelCount}} level 3 base models; {{availableCount}} available in this step.',
+  baseModelCatalogEmpty:
+    'The product category list returned no records. Use Create category or base model below to build the hierarchy. If categories were created on another computer, reload to check first.',
+  baseModelMissingSecondLevel:
+    'Only level 1 categories exist; level 2 categories and level 3 base models are missing. Use Create category or base model below, select an existing level 1 parent, and save a level 2 category. Open it again, select the level 2 parent, enter a model name and code, and link the template selected in the previous step.',
+  baseModelMissingThirdLevel:
+    'Level 1 and 2 categories exist, but no level 3 base model has been created. Use Create category or base model below, select a level 2 parent, enter the model name and code, and link the template selected in the previous step.',
+  baseModelInactiveCount:
+    '{{count}} level 3 base models are inactive and are not listed. Review them under Product Management → Edit Category and activate them when appropriate.',
+  baseModelUnresolvedTemplateCount:
+    '{{count}} active level 3 base models do not resolve to an available template and are not listed. Review the model and its parent template links under Product Management → Edit Category.',
+  baseModelOtherTemplateCount:
+    '{{count}} active level 3 base models use another template instead of “{{template}}” and are not listed. Use Select template in the step navigation to choose the matching template, or review template links under Product Management → Edit Category.',
+  baseModelSelectionUnavailable:
+    'The previous selection no longer exists, is inactive, or does not meet this step’s level 3 model and template requirements. Select another model. To change templates, use Select template in the step navigation.',
+  baseModelSelectedStructuralCategory:
+    'The current record is a level 1 or 2 category used for grouping. Follow the guidance above to complete the hierarchy and select a level 3 base model before continuing.',
+  baseModelCatalogLoadFailed:
+    'Product categories could not be loaded, so available base models cannot be determined. Reload to retry; a failed request does not mean the categories have not been created.',
+  baseModelTemplateLoadFailed:
+    'Templates could not be loaded, so models cannot be matched to the previous selection. Reload to retry.',
+  productBaseModelUnavailable:
+    'The base model selected in the previous step could not be found. Use Base model in the step navigation to return to step 2, check the category hierarchy, active status and template, and select again. A level 1 category alone is insufficient to create a specific product.',
   selectPlaceholder: 'Please select',
   emptyOptions: 'No configuration available. Create one to continue.',
   selectedResult: 'Configuration used for this task',
@@ -68,6 +104,10 @@ export const productCreationOperationGuide = {
     'This template does not include all attributes selected earlier. Select a matching template or create one.',
   baseModelMismatch:
     'The base model resolves to a different template. Select or configure a matching base model.',
+  savedBaseModelTemplateMismatch:
+    'The category was saved, but this base model uses a different template from the previous step. Check its template configuration. You do not need to create it again.',
+  savedBaseModelConfirmationFailed:
+    'The category was saved, but template verification failed. Click “Confirm and continue” to retry verification without creating another record. Reason: {{message}}',
   missingAttributeOptions:
     'Each selected category needs at least one active level 2 option.',
   loading: 'Loading business configuration…',
@@ -124,6 +164,9 @@ export const productCreationOperationGuide = {
     introduction:
       'Confirm the level 3 base model, fill in the template specifications and save the specific product. One base model can contain several product cards. Card names correspond to the aggregate preview in the product editor. Link a BOM to the specific product after validation and confirmation.',
     productRecordTitle: 'What a product record contains',
+    viewExistingProducts: 'View existing products',
+    existingProductsHint:
+      'Search, view and edit existing products in Product Management.',
     viewPage: 'View {{page}}',
     productRecord: {
       identity: {

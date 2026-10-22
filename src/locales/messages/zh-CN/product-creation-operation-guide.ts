@@ -3,6 +3,9 @@ export const productCreationOperationGuide = {
   launcherDescription:
     '选用已有模板和基础型号建立产品；BOM 可在验证确认后另行绑定。',
   openWizard: '开始 / 继续建档',
+  guidedCreation: '步骤建档',
+  readHandbook: '操作手册',
+  productManagementEntryHint: '需要指引？可使用步骤建档。',
   previousStep: '上一步',
   stepNavigation: '产品建立步骤',
   templateIncludesAttributes: '模板已包含的属性',
@@ -46,6 +49,13 @@ export const productCreationOperationGuide = {
   selectExisting: '选用已有配置',
   manageAttributes: '新增或维护属性分类',
   createBaseModel: '新增分类或基础型号',
+  baseModelMeaningTitle: '通用基础型号与具体产品卡片',
+  baseModelMeaning:
+    '基础型号（如 R50）是同类产品共用的型号标识，用于归类。同一型号下，可以针对不同客户需求或 BOM 方案，分别建立具体产品；每个具体产品保存后形成一张独立卡片，并分别关联对应的 BOM。',
+  baseModelProductCardExample:
+    '例如：R50（碟刹）与 R50（V刹）共用 R50 基础型号，各自维护规格和 BOM。卡片名称以产品编辑中的“最终型号显示预览”为准。',
+  baseModelProductAndBomTiming:
+    '本步只选定基础型号，下一步再建立具体产品；产品可先保存，BOM 经验证确认后再单独关联。',
   baseModelCreateHelp:
     '新增时，父级选择二级分类，在“分类名称”和“分类编码”中手填型号名称和基础型号编码，并关联上一步选定的模板。尚无一级、二级分类时，可在同一弹窗逐级新增。也可在“产品管理 → 编辑分类 → 新增分类”中建立，已有型号直接选用。',
   selectAttributes: '选择本次需要的一级属性分类',
@@ -53,6 +63,32 @@ export const productCreationOperationGuide = {
   noAttributes: '本次不需要附加属性',
   selectTemplate: '选择产品模板',
   selectBaseModel: '选择三级基础型号',
+  baseModelSelectionRule:
+    '产品分类按“一级分类 → 二级分类 → 三级基础型号（如 R50）”组织。这里只列出已启用、且对应上一步所选模板的三级基础型号；一级、二级分类用于归类，不会出现在此下拉列表中。',
+  baseModelCatalogSummary:
+    '已读取：一级分类 {{levelOneCount}} 个，二级分类 {{levelTwoCount}} 个，三级基础型号 {{baseModelCount}} 个；本步可选 {{availableCount}} 个。',
+  baseModelCatalogEmpty:
+    '当前读取的产品分类为空。可点击下方“新增分类或基础型号”逐级建立；如已在其他电脑建立，请先重新加载核对。',
+  baseModelMissingSecondLevel:
+    '目前只有一级分类，尚无二级分类和三级基础型号。点击下方“新增分类或基础型号”，先选择已有一级分类作为父级，保存二级分类；再新增一次，选择二级父分类，手填三级型号名称、编码并关联上一步的模板。',
+  baseModelMissingThirdLevel:
+    '已有一级、二级分类，尚无三级基础型号。点击下方“新增分类或基础型号”，父级选择已有二级分类，手填型号名称、编码并关联上一步的模板，保存后即可选用。',
+  baseModelInactiveCount:
+    '{{count}} 个三级基础型号已停用，因此未列出。请在“产品管理 → 编辑分类”中核对，按实际需要启用。',
+  baseModelUnresolvedTemplateCount:
+    '{{count}} 个已启用的三级基础型号未关联到可用模板，因此未列出。请在“产品管理 → 编辑分类”中核对该型号及其父级的模板关联。',
+  baseModelOtherTemplateCount:
+    '{{count}} 个已启用的三级基础型号使用其他模板，与本次“{{template}}”不同，因此未列出。可点击顶部“选择模板”重新选用对应模板，或在“产品管理 → 编辑分类”中核对模板关联。',
+  baseModelSelectionUnavailable:
+    '上次选择的记录已不存在、已停用，或不符合本步的三级型号及模板要求，请重新选择。需要更换模板时，可点击顶部“选择模板”返回第一步。',
+  baseModelSelectedStructuralCategory:
+    '当前记录是一级或二级分类，仅用于归类；请按上方提示补齐并选用三级基础型号后继续。',
+  baseModelCatalogLoadFailed:
+    '产品分类读取失败，当前无法确认有哪些基础型号。请重新加载；读取失败不代表分类未建立。',
+  baseModelTemplateLoadFailed:
+    '模板读取失败，当前无法核对哪些基础型号符合上一步的模板。请重新加载。',
+  productBaseModelUnavailable:
+    '当前找不到上一步选定的基础型号。请点击顶部“基础型号”返回第二步，核对分类层级、启用状态及模板后重新选择；仅建立一级分类还不能生成具体产品。',
   selectPlaceholder: '请选择',
   emptyOptions: '暂无可用配置，请先新增。',
   selectedResult: '本次使用的配置',
@@ -64,6 +100,10 @@ export const productCreationOperationGuide = {
     '该模板没有包含上一步选择的全部属性，请选用合适模板或新建模板。',
   baseModelMismatch:
     '该基础型号解析出的模板与上一步不一致，请选择合适的基础型号或重新配置。',
+  savedBaseModelTemplateMismatch:
+    '分类已保存，但该基础型号的模板与上一步不一致。请核对模板配置，无需重复新增。',
+  savedBaseModelConfirmationFailed:
+    '分类已保存，但模板核对失败。请点击“确认使用并继续”重试核对，无需重复新增。原因：{{message}}',
   missingAttributeOptions: '所选属性分类需要至少一个启用中的二级可选项。',
   loading: '正在加载业务配置…',
   loadFailed: '配置加载失败，请重试。',
@@ -112,6 +152,8 @@ export const productCreationOperationGuide = {
     introduction:
       '先确认三级基础型号，再按模板填写规格并保存具体产品。一个三级型号下面可以有多张产品卡片，卡片名称对应产品编辑中的聚合显示。BOM 经验证确认可用后再关联到具体产品。',
     productRecordTitle: '一个产品包含哪些资料',
+    viewExistingProducts: '查看已有产品',
+    existingProductsHint: '在产品管理中搜索、查看和编辑已有产品。',
     viewPage: '查看{{page}}',
     productRecord: {
       identity: {

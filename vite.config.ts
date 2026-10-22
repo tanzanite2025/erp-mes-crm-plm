@@ -3,7 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
-import { createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin } from './scripts/chrome109-business-page-and-bottom-dock-color-fallbacks-postcss-plugin.js'
+import { createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin } from './scripts/chrome109-business-content-and-floating-surface-color-fallbacks-postcss-plugin.js'
 import { tanstackRouterConfig } from './scripts/tanstack-router-config.js'
 
 // https://vite.dev/config/
@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     css: {
       postcss: {
         plugins: [
-          createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin(),
+          createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin(),
         ],
       },
     },

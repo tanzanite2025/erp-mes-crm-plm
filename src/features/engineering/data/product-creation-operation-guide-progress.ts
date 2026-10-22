@@ -1,14 +1,13 @@
 import { z } from 'zod'
+import {
+  productCreationOperationGuideStepKeys,
+  type ProductCreationOperationGuideStepKey,
+} from './product-creation-operation-guide-step-definitions'
 
-export const productCreationOperationGuideStepKeys = [
-  'template',
-  'baseModel',
-  'product',
-  'bom',
-] as const
-
-export type ProductCreationOperationGuideStepKey =
-  (typeof productCreationOperationGuideStepKeys)[number]
+export {
+  productCreationOperationGuideStepKeys,
+  type ProductCreationOperationGuideStepKey,
+}
 
 const productCreationGuideStepResultSchema = z.object({
   id: z.string().min(1),

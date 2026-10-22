@@ -10,6 +10,7 @@ import { type ProductOwnerEntry } from '@/features/product-structure/hooks/use-p
 import { type Product, type ProductType } from '../data/schema'
 import { type EngineeringProductDisplayMetadata } from '../hooks/use-engineering-product-display-metadata'
 import { useEngineeringSidebarViewModel } from '../hooks/use-engineering-sidebar-view-model'
+import { ProductManagementCreationGuideEntry } from './product-creation-guide/product-management-creation-guide-entry'
 
 type EngineeringSidebarProps = {
   products: Product[]
@@ -76,6 +77,7 @@ export function EngineeringSidebar({
             </Button>
           </div>
         </div>
+        <ProductManagementCreationGuideEntry />
       </div>
 
       {/* 垂直品类分组展示区 */}

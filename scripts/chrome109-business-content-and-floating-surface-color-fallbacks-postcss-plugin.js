@@ -1,6 +1,34 @@
-const COMPATIBILITY_SCOPES = [
+// Portal surfaces are siblings of the business content. Include each surface
+// root so theme tokens, palette colors and alpha utilities also work there.
+const FLOATING_SURFACE_SCOPES = [
+  '[role="dialog"]',
+  '[role="alertdialog"]',
+  '[role="menu"]',
+  '[role="listbox"]',
+  '[role="tooltip"]',
+  '[data-slot="popover-content"]',
+  '[data-slot="tooltip-content"]',
+  '[data-slot="command-menu-knowledge-detail-drawer"]',
+  '[data-slot="knowledge-base-entry-editor-overlay"]',
+  '[data-slot="vehicle-contact-delete-dialog-overlay"]',
+]
+const BUSINESS_CONTENT_SCOPES = [
   '[data-slot="sidebar-inset"]',
   '[data-slot="global-bottom-dock"]',
+]
+const COMPATIBILITY_SCOPES = [
+  ...BUSINESS_CONTENT_SCOPES,
+  '[data-slot="sidebar"]',
+  ...FLOATING_SURFACE_SCOPES,
+]
+// Keep inverse tooltip/menu text governed by their existing utility classes.
+const DEFAULT_FOREGROUND_SCOPES = [
+  ...BUSINESS_CONTENT_SCOPES,
+  '[role="dialog"]',
+  '[role="alertdialog"]',
+  '[data-slot="command-menu-knowledge-detail-drawer"]',
+  '[data-slot="knowledge-base-entry-editor-overlay"]',
+  '[data-slot="vehicle-contact-delete-dialog-overlay"]',
 ]
 const COMPATIBILITY_SCOPE_ROOTS = COMPATIBILITY_SCOPES.join(', ')
 const COMPATIBILITY_SCOPE_SUBJECT = `:where(${COMPATIBILITY_SCOPES.flatMap((scope) => [scope, `${scope} *`]).join(', ')})`
@@ -153,7 +181,7 @@ function replaceTransparentColorMixes(value, knownColors) {
   return result
 }
 
-function scopeBusinessPageAndBottomDockSelectorSubject(selector) {
+function scopeChrome109CompatibleColorSelectorSubject(selector) {
   let depth = 0
   for (let index = 0; index < selector.length; index++) {
     if (selector[index] === '\\') {
@@ -194,7 +222,7 @@ function cloneScopedColorMixFallbacks(node, knownColors) {
   const clone = node.clone({ nodes: children })
   if (node.type === 'rule' && children.some((child) => child.type === 'decl')) {
     clone.selectors = node.selectors.map(
-      scopeBusinessPageAndBottomDockSelectorSubject
+      scopeChrome109CompatibleColorSelectorSubject
     )
   }
   return [clone]
@@ -236,7 +264,7 @@ function insertScopedColorFallbacksInOriginalCascadeOrder(
     if (!declarations.length) continue
     const scopedRule = node.clone({ nodes: declarations })
     scopedRule.selectors = node.selectors.map(
-      scopeBusinessPageAndBottomDockSelectorSubject
+      scopeChrome109CompatibleColorSelectorSubject
     )
     // Insert beside the source rule. Appending every fallback at the end would
     // let an alpha utility override a later opaque utility with equal specificity.
@@ -248,9 +276,10 @@ function insertScopedColorFallbacksInOriginalCascadeOrder(
   }
 }
 
-export function createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlugin() {
+export function createChrome109BusinessContentAndFloatingSurfaceColorFallbacksPostcssPlugin() {
   return {
-    postcssPlugin: 'chrome109-business-page-and-bottom-dock-color-fallbacks',
+    postcssPlugin:
+      'chrome109-business-content-and-floating-surface-color-fallbacks',
     OnceExit(root, { postcss }) {
       const { light, dark, knownColors } = collectRootThemeColors(root)
       if (!knownColors.has('--foreground')) return
@@ -292,13 +321,13 @@ export function createChrome109BusinessPageAndBottomDockColorFallbacksPostcssPlu
       // These regions inherit body text, whose OKLCH color fails in 109.
       // Keeping this default in base preserves semantic/inverse utility colors.
       compatibility.append(
-        postcss
-          .atRule({ name: 'layer', params: 'base' })
-          .append(
-            postcss
-              .rule({ selector: `:where(${COMPATIBILITY_SCOPE_ROOTS})` })
-              .append({ prop: 'color', value: 'var(--foreground)' })
-          )
+        postcss.atRule({ name: 'layer', params: 'base' }).append(
+          postcss
+            .rule({
+              selector: `:where(${DEFAULT_FOREGROUND_SCOPES.join(', ')})`,
+            })
+            .append({ prop: 'color', value: 'var(--foreground)' })
+        )
       )
       insertScopedColorFallbacksInOriginalCascadeOrder(
         root,
