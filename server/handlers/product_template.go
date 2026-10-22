@@ -85,7 +85,7 @@ func PatchProductTemplateHandler(c *gin.Context) {
 func DeleteProductTemplateHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductTemplate(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product template: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] failed to delete product template: ")
 		return
 	}
 	c.Status(http.StatusNoContent)

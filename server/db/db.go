@@ -1770,6 +1770,9 @@ func InitDB(dsn string) {
 	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()
+	if err := MigrateProductTemplateOwnedAttributeDefinitions(DB); err != nil {
+		log.Fatal("Failed to migrate template-owned product attribute definitions: ", err)
+	}
 	ensureDefaultUnits()
 	ensureDefaultWarehouseCategories()
 	ensureDefaultBOMSections()

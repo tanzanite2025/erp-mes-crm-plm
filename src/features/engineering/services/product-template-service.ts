@@ -11,11 +11,9 @@ import { normalizeProductTemplateInput } from '../utils/product-code-normalizati
 
 export { type ProductTemplate }
 
-let templateCache: ProductTemplate[] | null = null
 let templateRequest: Promise<ProductTemplate[]> | null = null
 
-function invalidateTemplateCache() {
-  templateCache = null
+function invalidatePendingProductTemplateReadRequest() {
   templateRequest = null
 }
 
@@ -23,24 +21,24 @@ export const productTemplateService = {
   getTemplates: async (options?: {
     fresh?: boolean
   }): Promise<ProductTemplate[]> => {
-    if (options?.fresh) invalidateTemplateCache()
-    if (templateCache) return templateCache
+    if (options?.fresh) invalidatePendingProductTemplateReadRequest()
 
     if (!templateRequest) {
-      templateRequest = apiFetch<ProductTemplateApiDTO[]>(
+      const pendingTemplateRequest = apiFetch<ProductTemplateApiDTO[]>(
         '/engineering/templates?options=true'
       )
         .then((response) => {
-          const templates = ensureArrayResponse<ProductTemplateApiDTO>(
+          return ensureArrayResponse<ProductTemplateApiDTO>(
             response,
             'productTemplateService.getTemplates'
           ).map(toProductTemplateContract)
-          templateCache = templates
-          return templates
         })
         .finally(() => {
-          templateRequest = null
+          if (templateRequest === pendingTemplateRequest) {
+            templateRequest = null
+          }
         })
+      templateRequest = pendingTemplateRequest
     }
 
     return templateRequest
@@ -59,7 +57,7 @@ export const productTemplateService = {
         ),
       }
     )
-    invalidateTemplateCache()
+    invalidatePendingProductTemplateReadRequest()
     return toProductTemplateContract(
       ensureObjectResponse<ProductTemplateApiDTO & Record<string, unknown>>(
         saved,
@@ -87,7 +85,7 @@ export const productTemplateService = {
         ),
       }
     )
-    invalidateTemplateCache()
+    invalidatePendingProductTemplateReadRequest()
     return toProductTemplateContract(
       ensureObjectResponse<ProductTemplateApiDTO & Record<string, unknown>>(
         saved,
@@ -115,7 +113,7 @@ export const productTemplateService = {
     await apiFetch(`/engineering/templates/${id}`, {
       method: 'DELETE',
     })
-    invalidateTemplateCache()
+    invalidatePendingProductTemplateReadRequest()
   },
 
   sync: async (templates: ProductTemplate[]) => {
@@ -127,7 +125,7 @@ export const productTemplateService = {
         body: JSON.stringify(normalizedTemplates),
       }
     )
-    invalidateTemplateCache()
+    invalidatePendingProductTemplateReadRequest()
     return result
   },
 }

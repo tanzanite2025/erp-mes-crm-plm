@@ -13,11 +13,6 @@ export const engineeringTabs: TabItem[] = [
     label: '产品外观',
     href: '/engineering/product-appearance',
   },
-  {
-    key: 'product-attributes',
-    label: '产品模板属性分类',
-    href: '/engineering/product-attributes',
-  },
   { key: 'templates', label: '产品模板', href: '/engineering/templates' },
 ]
 
@@ -32,11 +27,6 @@ export function getEngineeringTabs(t: TranslateFn): TabItem[] {
       key: 'product-appearance',
       label: t('engineering.tabs.productAppearance'),
       href: '/engineering/product-appearance',
-    },
-    {
-      key: 'product-attributes',
-      label: t('engineering.tabs.productAttributes'),
-      href: '/engineering/product-attributes',
     },
     {
       key: 'templates',

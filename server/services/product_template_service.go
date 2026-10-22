@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func ListProductTemplates(query ProductTemplateListQuery) ([]models.ProductTemplate, int64, error) {
@@ -55,6 +56,11 @@ func normalizeProductTemplateResponse(template *models.ProductTemplate) {
 	if template.AttributeBindings == nil {
 		template.AttributeBindings = []models.ProductTemplateAttributeBinding{}
 	}
+	for index := range template.AttributeBindings {
+		if template.AttributeBindings[index].Options == nil {
+			template.AttributeBindings[index].Options = []models.ProductTemplateAttributeOptionDefinition{}
+		}
+	}
 }
 
 func normalizeProductTemplateResponses(templates []models.ProductTemplate) {
@@ -75,7 +81,10 @@ func normalizeProductTemplateAttributeBinding(input *models.ProductTemplateAttri
 }
 
 func syncProductTemplateAttributeBindingsTx(tx *gorm.DB, templateID string, bindings []models.ProductTemplateAttributeBinding) error {
-	if err := validateAndLockProductTemplateAttributeBindingReferences(tx, bindings); err != nil {
+	if err := normalizeAndValidateTemplateOwnedAttributeDefinitions(bindings); err != nil {
+		return err
+	}
+	if err := ensureTemplateOwnedAttributeEditsPreserveExistingProductValues(tx, templateID, bindings); err != nil {
 		return err
 	}
 	if err := tx.Where("template_id = ?", templateID).Delete(&models.ProductTemplateAttributeBinding{}).Error; err != nil {
@@ -93,19 +102,37 @@ func syncProductTemplateAttributeBindingsTx(tx *gorm.DB, templateID string, bind
 		normalizeProductTemplateAttributeBinding(&item)
 		items = append(items, item)
 	}
-	return tx.Create(&items).Error
+	if err := tx.Create(&items).Error; err != nil {
+		return err
+	}
+	// GORM applies default:true during Create, including explicitly false booleans.
+	// Restore the submitted disabled states before this transaction becomes visible.
+	inactiveDefinitionIDs := make([]string, 0)
+	for index, binding := range bindings {
+		if !binding.Active {
+			inactiveDefinitionIDs = append(inactiveDefinitionIDs, items[index].ID)
+		}
+	}
+	if len(inactiveDefinitionIDs) == 0 {
+		return nil
+	}
+	return tx.Model(&models.ProductTemplateAttributeBinding{}).Where("id IN ?", inactiveDefinitionIDs).Update("active", false).Error
 }
 
 func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate, error) {
+	return saveProductTemplateWithinTransaction(db.DB, input)
+}
+
+func saveProductTemplateWithinTransaction(database *gorm.DB, input SaveProductTemplateInput) (models.ProductTemplate, error) {
 	modelInput := models.ProductTemplate(input)
 	bindings := append([]models.ProductTemplateAttributeBinding(nil), modelInput.AttributeBindings...)
 	modelInput.AttributeBindings = nil
 	var saved models.ProductTemplate
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := database.Transaction(func(tx *gorm.DB) error {
 		if modelInput.ID != "" {
 			var existing models.ProductTemplate
-			if err := tx.Preload("AttributeBindings").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("AttributeBindings").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
 				return err
 			}
 			if modelInput.Version != existing.Version {
@@ -114,7 +141,7 @@ func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate
 
 			modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
 			modelInput.Version = existing.Version + 1
-			if err := tx.Model(&existing).Updates(modelInput).Error; err != nil {
+			if err := tx.Model(&existing).Select("Name", "Code", "ComponentKey", "Description", "Active", "Version", "MasterDataControl").Updates(modelInput).Error; err != nil {
 				return err
 			}
 			if err := syncProductTemplateAttributeBindingsTx(tx, existing.ID, bindings); err != nil {
@@ -181,47 +208,54 @@ func BuildProductTemplateUpdates(payload map[string]json.RawMessage) (map[string
 }
 
 func PatchProductTemplate(id string, version int, updates map[string]interface{}) (models.ProductTemplate, error) {
-	var existing models.ProductTemplate
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
+	var saved models.ProductTemplate
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var existing models.ProductTemplate
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if version > 0 && existing.Version != version {
+			return domainConflictError("product template version conflict")
+		}
+		updates["version"] = existing.Version + 1
+		if err := tx.Model(&existing).Updates(updates).Error; err != nil {
+			return err
+		}
+		return tx.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
+			return database.Order("sort_order asc").Order("category_key asc")
+		}).First(&saved, "id = ?", id).Error
+	})
+	if err != nil {
 		return models.ProductTemplate{}, err
 	}
-	if version > 0 && existing.Version != version {
-		return models.ProductTemplate{}, domainConflictError("product template version conflict")
-	}
-
-	updates["version"] = existing.Version + 1
-	if err := db.DB.Model(&existing).Updates(updates).Error; err != nil {
-		return models.ProductTemplate{}, err
-	}
-	if err := db.DB.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
-		return database.Order("sort_order asc").Order("category_key asc")
-	}).First(&existing, "id = ?", id).Error; err != nil {
-		return models.ProductTemplate{}, err
-	}
-	normalizeProductTemplateResponse(&existing)
-	return existing, nil
+	normalizeProductTemplateResponse(&saved)
+	return saved, nil
 }
 
 func DeleteProductTemplate(id string) error {
-	return db.DB.Delete(&models.ProductTemplate{}, "id = ?", id).Error
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var template models.ProductTemplate
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&template, "id = ?", id).Error; err != nil {
+			return err
+		}
+		var boundCategoryCount int64
+		if err := tx.Model(&models.ProductType{}).Where("template_id = ?", id).Count(&boundCategoryCount).Error; err != nil {
+			return err
+		}
+		if boundCategoryCount > 0 {
+			return domainConflictError("该模板仍被产品分类或基础型号引用，请先在分类管理中调整模板关联")
+		}
+		if err := tx.Where("template_id = ?", id).Delete(&models.ProductTemplateAttributeBinding{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&template).Error
+	})
 }
 
 func SyncProductTemplates(inputs []BulkSyncProductTemplateInput) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, in := range inputs {
-			template := models.ProductTemplate(in)
-			if err := validateAndLockProductTemplateAttributeBindingReferences(tx, template.AttributeBindings); err != nil {
-				return err
-			}
-			template.MasterDataControl.Normalize("R1")
-			if template.ID != "" {
-				if err := tx.Model(&models.ProductTemplate{}).Where("id = ?", template.ID).Omit("CreatedAt", "CreatedBy").Updates(&template).Error; err != nil {
-					return err
-				}
-				continue
-			}
-
-			if err := tx.Create(&template).Error; err != nil {
+			if _, err := saveProductTemplateWithinTransaction(tx, SaveProductTemplateInput(in)); err != nil {
 				return err
 			}
 		}

@@ -63,28 +63,6 @@ type productAttributeCatalogConcurrentReferenceScenario struct {
 func listProductAttributeCatalogConcurrentReferenceScenarios() []productAttributeCatalogConcurrentReferenceScenario {
 	return []productAttributeCatalogConcurrentReferenceScenario{
 		{
-			name: "dynamic_product_value", categoryKey: "color", referenceTable: "product_attribute_values",
-			writeReference: func(tx *gorm.DB, category models.ProductAttributeCategory, option models.ProductAttributeOption) error {
-				return replaceProductAttributeValues(tx, uuid.NewString(), []models.ProductAttributeValue{{CategoryKey: category.Key, OptionValue: option.Value}})
-			},
-		},
-		{
-			name: "template_category_binding", categoryKey: "color", referenceTable: "product_template_attribute_bindings", deleteCategory: true,
-			writeReference: func(tx *gorm.DB, category models.ProductAttributeCategory, _ models.ProductAttributeOption) error {
-				return syncProductTemplateAttributeBindingsTx(tx, uuid.NewString(), []models.ProductTemplateAttributeBinding{{CategoryKey: category.Key, Active: true}})
-			},
-		},
-		{
-			name: "legacy_product_field", categoryKey: "techSeries", referenceTable: "products",
-			writeReference: func(tx *gorm.DB, _ models.ProductAttributeCategory, option models.ProductAttributeOption) error {
-				product := models.Product{TechSeries: option.Value}
-				if err := validateAndLockProductLegacyAttributeFieldReferences(tx, &product); err != nil {
-					return err
-				}
-				return tx.Exec("INSERT INTO products (tech_series) VALUES (?)", product.TechSeries).Error
-			},
-		},
-		{
 			name: "bom_version_level", categoryKey: "versionLevel", referenceTable: "boms",
 			writeReference: func(tx *gorm.DB, _ models.ProductAttributeCategory, option models.ProductAttributeOption) error {
 				bom := models.BOM{VersionLevel: option.Value}
@@ -215,68 +193,4 @@ func TestProductAttributeCatalogCommittedDeletionRejectsConcurrentNewReference(t
 			require.Zero(t, referenceCount, "deletion must never leave an orphan reference")
 		})
 	}
-}
-
-func TestProductAttributeCatalogRejectedReplacementPreservesExistingReferences(t *testing.T) {
-	database, _ := createIsolatedProductAttributeCatalogReferenceConcurrencyFixture(t)
-	category := models.ProductAttributeCategory{Key: "techSeries", NameZh: "工艺", Active: true, Version: 1}
-	require.NoError(t, database.Create(&category).Error)
-	option := models.ProductAttributeOption{CategoryKey: category.Key, Value: "Legacy_Blue", LabelZh: "蓝色", Active: true, Version: 1}
-	require.NoError(t, database.Create(&option).Error)
-	require.NoError(t, database.Model(&option).Update("active", false).Error)
-	productID, templateID := uuid.NewString(), uuid.NewString()
-	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
-		return replaceProductAttributeValues(tx, productID, []models.ProductAttributeValue{{CategoryKey: "TECHSERIES", OptionValue: "legacy-blue"}})
-	}))
-	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
-		return syncProductTemplateAttributeBindingsTx(tx, templateID, []models.ProductTemplateAttributeBinding{{CategoryKey: "TECHSERIES"}})
-	}))
-	require.ErrorContains(t, database.Transaction(func(tx *gorm.DB) error {
-		return replaceProductAttributeValues(tx, productID, []models.ProductAttributeValue{{CategoryKey: category.Key, OptionValue: "missing"}})
-	}), "不存在")
-	require.ErrorContains(t, database.Transaction(func(tx *gorm.DB) error {
-		return syncProductTemplateAttributeBindingsTx(tx, templateID, []models.ProductTemplateAttributeBinding{{CategoryKey: "deleted-category"}})
-	}), "不存在")
-	var values []models.ProductAttributeValue
-	require.NoError(t, database.Find(&values, "product_id = ?", productID).Error)
-	require.Len(t, values, 1)
-	require.Equal(t, category.Key, values[0].CategoryKey)
-	require.Equal(t, option.Value, values[0].OptionValue)
-	var bindings []models.ProductTemplateAttributeBinding
-	require.NoError(t, database.Find(&bindings, "template_id = ?", templateID).Error)
-	require.Len(t, bindings, 1)
-	require.Equal(t, category.Key, bindings[0].CategoryKey)
-}
-
-func TestProductAttributeCatalogTemplateSaveValidatesBindingsWithoutPartialPersistence(t *testing.T) {
-	database, _ := createIsolatedProductAttributeCatalogReferenceConcurrencyFixture(t)
-	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}))
-	category := models.ProductAttributeCategory{Key: "techSeries", NameZh: "工艺", Active: true, Version: 1}
-	require.NoError(t, database.Create(&category).Error)
-	input := models.ProductTemplate{Name: "引用校验模板", Code: "reference-validation", Active: true,
-		AttributeBindings: []models.ProductTemplateAttributeBinding{{CategoryKey: "TECHSERIES", Active: true}}}
-	saved, err := SaveProductTemplate(SaveProductTemplateInput(input))
-	require.NoError(t, err)
-	require.Len(t, saved.AttributeBindings, 1)
-	require.Equal(t, category.Key, saved.AttributeBindings[0].CategoryKey)
-	saved.Name = "编辑后的模板"
-	saved, err = SaveProductTemplate(SaveProductTemplateInput(saved))
-	require.NoError(t, err)
-	require.Len(t, saved.AttributeBindings, 1)
-	var historicalBindingCount int64
-	require.NoError(t, database.Unscoped().Model(&models.ProductTemplateAttributeBinding{}).Where("template_id = ?", saved.ID).Count(&historicalBindingCount).Error)
-	require.EqualValues(t, 2, historicalBindingCount, "only the explicit replacement path may persist bindings")
-	saved.Name = "不应落库的名称"
-	saved.AttributeBindings = []models.ProductTemplateAttributeBinding{{CategoryKey: "missing-category"}}
-	_, err = SaveProductTemplate(SaveProductTemplateInput(saved))
-	require.ErrorContains(t, err, "不存在")
-	var persisted models.ProductTemplate
-	require.NoError(t, database.Preload("AttributeBindings").First(&persisted, "id = ?", saved.ID).Error)
-	require.Equal(t, "编辑后的模板", persisted.Name)
-	require.Len(t, persisted.AttributeBindings, 1)
-	_, err = SaveProductTemplate(SaveProductTemplateInput(models.ProductTemplate{Name: "无效新增", Code: "invalid-new", AttributeBindings: saved.AttributeBindings}))
-	require.ErrorContains(t, err, "不存在")
-	var invalidTemplateCount int64
-	require.NoError(t, database.Model(&models.ProductTemplate{}).Where("code = ?", "invalid-new").Count(&invalidTemplateCount).Error)
-	require.Zero(t, invalidTemplateCount)
 }

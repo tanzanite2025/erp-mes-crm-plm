@@ -37,8 +37,12 @@ export function useProductAttributeCatalogQueries({
   }
 
   return {
-    categories: categoriesQuery.data ?? EMPTY_PRODUCT_ATTRIBUTE_CATEGORIES,
-    options: optionsQuery.data ?? EMPTY_PRODUCT_ATTRIBUTE_OPTIONS,
+    categories:
+      categoriesQuery.data?.filter((category) => !category.templateId) ??
+      EMPTY_PRODUCT_ATTRIBUTE_CATEGORIES,
+    options:
+      optionsQuery.data?.filter((option) => !option.templateId) ??
+      EMPTY_PRODUCT_ATTRIBUTE_OPTIONS,
     hasLoadedCatalog:
       categoriesQuery.data !== undefined &&
       (!includeOptions || optionsQuery.data !== undefined),

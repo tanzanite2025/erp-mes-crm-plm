@@ -16,11 +16,9 @@ import {
   localizeTemplateDefinition,
   localizeTemplateDefinitions,
 } from '../../data/template-defaults'
-import { useProductAttributeCatalogQueries } from '../../hooks/use-product-attribute-catalog-queries'
 import { useProductCreationGuideSubmissionLock } from '../../hooks/use-product-creation-guide-submission-lock'
 import { PRODUCT_TEMPLATES_QUERY_KEY } from '../../query-keys'
 import { productTemplateService } from '../../services/product-template-service'
-import { areSameProductAttributeCategoryKey } from '../../utils/product-attribute-machine-value'
 import {
   getProductTemplateAttributeLevelOneCategoryName,
   getProductTemplateAttributeLevelTwoOptionLabel,
@@ -33,14 +31,6 @@ export function ProductCreationGuideTemplateSelectionDialog(
   props: ProductCreationGuideOperationDialogProps
 ) {
   const { t, locale } = useLanguage()
-  const {
-    categories,
-    options,
-    hasLoadedCatalog,
-    isLoading: isAttributeCatalogLoading,
-    error: attributeCatalogError,
-    retry: retryAttributeCatalog,
-  } = useProductAttributeCatalogQueries()
   const [selectedTemplateId, setSelectedTemplateId] = useState(
     props.progress.completedSteps.template?.id ?? ''
   )
@@ -142,31 +132,14 @@ export function ProductCreationGuideTemplateSelectionDialog(
           <p className='text-xs font-medium text-muted-foreground'>
             {t('engineering.productCreationGuide.templateIncludesAttributes')}
           </p>
-          <ProductCreationGuideConfigurationRequestState
-            isLoading={isAttributeCatalogLoading}
-            error={attributeCatalogError}
-            onRetry={() => void retryAttributeCatalog()}
-          />
           <ul className='space-y-3'>
             {selectedTemplate.attributeBindings
               .filter((binding) => binding.active)
               .sort((left, right) => left.sortOrder - right.sortOrder)
               .map((binding) => {
-                const category = categories.find((category) =>
-                  areSameProductAttributeCategoryKey(
-                    category.key,
-                    binding.categoryKey
-                  )
-                )
-                const activeOptions = options
-                  .filter(
-                    (option) =>
-                      option.active &&
-                      areSameProductAttributeCategoryKey(
-                        option.categoryKey,
-                        binding.categoryKey
-                      )
-                  )
+                const category = { ...binding, key: binding.categoryKey }
+                const activeOptions = binding.options
+                  .filter((option) => option.active)
                   .sort((left, right) => left.sortOrder - right.sortOrder)
                 return (
                   <li
@@ -196,54 +169,52 @@ export function ProductCreationGuideTemplateSelectionDialog(
                             : 'engineering.productCreationGuide.optionalAttribute'
                         )}
                       </span>
-                      {hasLoadedCatalog && !attributeCatalogError && (
+                      {
                         <span className='text-xs text-muted-foreground sm:ml-auto'>
                           {t('engineering.productCreationGuide.optionCount', {
                             count: activeOptions.length,
                           })}
                         </span>
-                      )}
+                      }
                     </div>
                     {category?.description && (
                       <p className='text-xs leading-relaxed break-words text-muted-foreground'>
                         {category.description}
                       </p>
                     )}
-                    {hasLoadedCatalog &&
-                      !attributeCatalogError &&
-                      (activeOptions.length > 0 ? (
-                        <ul
-                          aria-label={t(
-                            'engineering.templateMgmt.assembly.levelTwoOptions'
-                          )}
-                          className='grid gap-2 sm:grid-cols-2'
-                        >
-                          {activeOptions.map((option) => (
-                            <li
-                              key={option.id}
-                              className='min-w-0 rounded-md border bg-background px-3 py-2 text-xs'
-                            >
-                              <p className='font-medium break-words'>
-                                {getProductTemplateAttributeLevelTwoOptionLabel(
-                                  locale,
-                                  option
-                                )}
-                              </p>
-                              {option.description && (
-                                <p className='mt-1 leading-relaxed break-words text-muted-foreground'>
-                                  {option.description}
-                                </p>
+                    {activeOptions.length > 0 ? (
+                      <ul
+                        aria-label={t(
+                          'engineering.templateMgmt.assembly.levelTwoOptions'
+                        )}
+                        className='grid gap-2 sm:grid-cols-2'
+                      >
+                        {activeOptions.map((option) => (
+                          <li
+                            key={option.value}
+                            className='min-w-0 rounded-md border bg-background px-3 py-2 text-xs'
+                          >
+                            <p className='font-medium break-words'>
+                              {getProductTemplateAttributeLevelTwoOptionLabel(
+                                locale,
+                                option
                               )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className='text-xs text-muted-foreground'>
-                          {t(
-                            'engineering.productCreationGuide.noActiveAttributeOptions'
-                          )}
-                        </p>
-                      ))}
+                            </p>
+                            {option.description && (
+                              <p className='mt-1 leading-relaxed break-words text-muted-foreground'>
+                                {option.description}
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className='text-xs text-muted-foreground'>
+                        {t(
+                          'engineering.productCreationGuide.noActiveAttributeOptions'
+                        )}
+                      </p>
+                    )}
                   </li>
                 )
               })}

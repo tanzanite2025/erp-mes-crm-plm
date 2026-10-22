@@ -6,6 +6,7 @@ import { useProductAttributeCatalogQueries } from '../../hooks/use-product-attri
 import { useProductAttributeWriteActions } from '../../hooks/use-product-attribute-write-actions'
 import { type SaveProductTemplateAttributeLevelTwoOptionInput } from '../../mutation-types'
 import {
+  areSameProductAttributeCategoryKey,
   buildProductAttributeOptionSaveInput,
   generateProductAttributeOptionMachineValue,
   resolveProductAttributeCategoryKey,
@@ -45,6 +46,10 @@ function ProductTemplateAttributeLevelTwoOptionEditorDialogSession({
 }: ProductTemplateAttributeLevelTwoOptionEditorDialogProps) {
   const { locale } = useLanguage()
   const isZh = locale === 'zh-CN'
+  const isBOMGradeOption = areSameProductAttributeCategoryKey(
+    categoryKey ?? option?.categoryKey ?? '',
+    'versionLevel'
+  )
   const { categories, isLoading, error, retry } =
     useProductAttributeCatalogQueries({ includeOptions: false })
   const { saveOption, isSavingOption } = useProductAttributeWriteActions()
@@ -126,7 +131,13 @@ function ProductTemplateAttributeLevelTwoOptionEditorDialogSession({
     }
 
     toast.success(
-      isZh ? '二级属性分类已保存' : 'Level 2 attribute option saved'
+      isBOMGradeOption
+        ? isZh
+          ? '产品档次选项已保存'
+          : 'Product grade option saved'
+        : isZh
+          ? '二级属性分类已保存'
+          : 'Level 2 attribute option saved'
     )
     onOpenChange(false)
     onSaved?.(savedOption)
@@ -154,8 +165,8 @@ function ProductTemplateAttributeLevelTwoOptionEditorDialogSession({
           {!isLoading && !error && categories.length === 0 && (
             <p role='status' className='text-sm text-muted-foreground'>
               {isZh
-                ? '暂无一级属性分类，请先在产品模板属性分类管理中新增一级属性分类。'
-                : 'No level 1 attribute categories are available. Create one in Product Template Attribute Category Management first.'}
+                ? '暂无可用的属性分类，请刷新重试；若仍为空，请联系管理员检查初始化数据。'
+                : 'No attribute categories are available. Refresh and retry; if none appear, ask an administrator to check the initial data.'}
             </p>
           )}
           {!isLoading &&

@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react'
 import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
 
 interface GlobalBottomDockProps {
   children: ReactNode
@@ -22,11 +21,11 @@ type DockSize = {
 type DockSurfaceStyle = CSSProperties & {
   '--dock-surface': string
   '--dock-surface-dark': string
-  '--dock-surface-supported': string
-  '--dock-surface-dark-supported': string
+  '--dock-border': string
+  '--dock-border-dark': string
 }
 
-type DockContentStyle = DockSurfaceStyle & {
+type DockContentStyle = CSSProperties & {
   '--dock-content-padding-x': string
 }
 
@@ -76,7 +75,7 @@ const buildMobileDockGeometry = (width: number, height: number) => {
   }
 }
 
-type DockMaskStyle = DockSurfaceStyle & {
+type DockMaskStyle = CSSProperties & {
   WebkitMaskImage: string
   maskImage: string
   filter: string
@@ -132,10 +131,10 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const dockItems = Children.toArray(children)
   const dockSurfaceVars: DockSurfaceStyle = {
-    '--dock-surface': 'hsl(var(--muted) / 0.8)',
-    '--dock-surface-dark': 'hsl(var(--background) / 0.95)',
-    '--dock-surface-supported': 'hsl(var(--muted) / 0.7)',
-    '--dock-surface-dark-supported': 'hsl(var(--background) / 0.8)',
+    '--dock-surface': '#dce6f2',
+    '--dock-surface-dark': '#263449',
+    '--dock-border': '#a9bdd5',
+    '--dock-border-dark': '#52647d',
   }
   const [dockSize, setDockSize] = useState<DockSize>(DEFAULT_DOCK_SIZE)
 
@@ -178,7 +177,6 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
   )
 
   const mobileDockMaskStyle: DockMaskStyle = {
-    ...dockSurfaceVars,
     WebkitMaskImage: mobileDockGeometry.maskImage,
     maskImage: mobileDockGeometry.maskImage,
     filter:
@@ -191,12 +189,12 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
     maskSize: '100% 100%',
   }
   const dockContentStyle: DockContentStyle = {
-    ...dockSurfaceVars,
     '--dock-content-padding-x': `${mobileDockGeometry.safePaddingX}px`,
   }
   return (
     <div
       data-slot='global-bottom-dock'
+      style={dockSurfaceVars}
       className='pointer-events-none fixed right-(--header-fixed-right,0px) bottom-0 left-(--header-fixed-left,0px) z-9 flex items-end justify-center px-2 sm:bottom-3 sm:items-center sm:px-4'
     >
       <div ref={wrapperRef} className='relative isolate overflow-visible'>
@@ -204,10 +202,7 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
           data-slot='global-bottom-dock-mobile-surface'
           aria-hidden='true'
           style={mobileDockMaskStyle}
-          className={cn(
-            'pointer-events-none absolute inset-0 -z-10 bg-(--dock-surface) backdrop-blur-xl sm:hidden dark:bg-(--dock-surface-dark)',
-            'supports-backdrop-filter:bg-(--dock-surface-supported) dark:supports-backdrop-filter:bg-(--dock-surface-dark-supported)'
-          )}
+          className='pointer-events-none absolute inset-0 -z-10 bg-(--dock-surface) sm:hidden dark:bg-(--dock-surface-dark)'
         />
         <svg
           aria-hidden='true'
@@ -221,17 +216,14 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
             vectorEffect='non-scaling-stroke'
             strokeLinecap='round'
             strokeLinejoin='round'
-            className='stroke-border/70'
+            className='stroke-(--dock-border) dark:stroke-(--dock-border-dark)'
             strokeWidth='1.2'
           />
         </svg>
         <div
           data-slot='global-bottom-dock-content'
           style={dockContentStyle}
-          className={cn(
-            'pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-border/70 sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-lg sm:shadow-black/10 sm:backdrop-blur-xl sm:hover:border-primary/25 sm:hover:shadow-2xl sm:hover:shadow-primary/10 dark:sm:bg-(--dock-surface-dark)',
-            'supports-backdrop-filter:sm:bg-(--dock-surface-supported) dark:supports-backdrop-filter:sm:bg-(--dock-surface-dark-supported)'
-          )}
+          className='pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-(--dock-border) sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-xl sm:shadow-black/20 sm:hover:shadow-2xl dark:sm:border-(--dock-border-dark) dark:sm:bg-(--dock-surface-dark)'
         >
           {dockItems.map((child, index) => (
             <FloatingDockItem key={index}>{child}</FloatingDockItem>

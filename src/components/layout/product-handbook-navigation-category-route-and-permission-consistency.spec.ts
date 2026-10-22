@@ -1,7 +1,10 @@
 import { translate, type TranslationKey } from '@/locales'
 import { describe, expect, it } from 'vitest'
+import { getAuthenticatedRoutePaths } from '@/features/authz/data/authenticated-route-paths'
+import { getRouteDerivedPermissions } from '@/features/authz/data/route-permission-registry'
 import { getAccessibleNavGroups } from '@/features/authz/guards/navigation-access'
 import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
+import { engineeringPermissionTabs } from '@/features/engineering/tab-config'
 import { getSidebarData } from './data/sidebar-data'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { createSidebarCategoryPreviews } from './sidebar-category-scrubber-utils'
@@ -53,6 +56,27 @@ describe('product handbook category and existing route permissions', () => {
     expect(
       allEntries.filter((entry) => entry.url === productHandbookRoute)
     ).toHaveLength(1)
+    expect(
+      allEntries.some(
+        (entry) => entry.url === '/engineering/product-attributes'
+      )
+    ).toBe(false)
+    expect(
+      allEntries.filter((entry) => entry.url === '/engineering/templates')
+    ).toHaveLength(1)
+    expect(
+      engineeringPermissionTabs(translateProductHandbookNavigationLabel).some(
+        (tab) => tab.href === '/engineering/product-attributes'
+      )
+    ).toBe(false)
+    expect(getAuthenticatedRoutePaths()).not.toContain(
+      '/engineering/product-attributes'
+    )
+    expect(
+      getRouteDerivedPermissions().some(
+        (permission) => permission.id === 'tab_engineering_product_attributes'
+      )
+    ).toBe(false)
     expect(
       resolveActiveSidebarPath(groups, productHandbookRoute)?.nodeIds
     ).toEqual(['product-handbook-group', 'product-creation-handbook'])

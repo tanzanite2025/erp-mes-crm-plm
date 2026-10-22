@@ -147,6 +147,7 @@ export function useEngineeringProductDisplayMetadata({
           null
         const aggregateDisplay = resolveProductAggregateDisplay({
           locale,
+          template: displayMetadata.resolvedTemplate,
           product,
           productTypes,
           bom: selectedBom,

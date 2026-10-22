@@ -116,10 +116,29 @@ export const productDraftSchema = productSchema.extend({
   name: z.string().default(''),
 })
 
+export const productTemplateOwnedAttributeOptionDefinitionSchema = z.object({
+  value: z.string(),
+  labelZh: z.string(),
+  labelEn: z.string().optional(),
+  description: z.string().optional(),
+  sortOrder: z.number().default(0),
+  active: z.boolean().default(true),
+})
+
+export type ProductTemplateOwnedAttributeOptionDefinition = z.infer<
+  typeof productTemplateOwnedAttributeOptionDefinitionSchema
+>
+
 export const productTemplateAttributeBindingSchema = z.object({
   id: z.string().optional(),
   templateId: z.string().optional(),
   categoryKey: z.string().min(1, 'Category key is required'),
+  nameZh: z.string().default(''),
+  nameEn: z.string().optional(),
+  description: z.string().optional(),
+  options: z
+    .array(productTemplateOwnedAttributeOptionDefinitionSchema)
+    .default([]),
   sortOrder: z.number().default(0),
   required: z.boolean().default(false),
   active: z.boolean().default(true),
@@ -175,6 +194,7 @@ export type ProductAttributeValue = z.infer<typeof productAttributeValueSchema>
 /** Product template attribute dimension (level 1), e.g. Material. Separate from the ProductType classification tree. */
 export const productTemplateAttributeLevelOneCategorySchema = z.object({
   id: z.string(),
+  templateId: z.string().optional(),
   key: z.string().min(1, 'Level 1 attribute category key is required'),
   nameZh: z.string().min(1, 'Level 1 attribute Chinese name is required'),
   nameEn: z.string().optional(),
@@ -200,6 +220,7 @@ export type ProductTemplateAttributeLevelOneCategory = z.infer<
 /** Selectable value (level 2), e.g. Carbon Fiber. categoryKey references its level 1 attribute category. */
 export const productTemplateAttributeLevelTwoOptionSchema = z.object({
   id: z.string(),
+  templateId: z.string().optional(),
   categoryKey: z
     .string()
     .min(1, 'Parent level 1 attribute category key is required'),

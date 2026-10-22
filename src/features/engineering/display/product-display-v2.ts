@@ -109,7 +109,13 @@ export function resolveProductDisplaySummaryItemsV2(
 ): ProductDisplaySummaryItemV2[] {
   const product = params.product
   const bindings = [...(params.template?.attributeBindings ?? [])]
-    .filter((binding) => binding.active !== false)
+    .filter(
+      (binding) =>
+        binding.active !== false ||
+        Boolean(
+          getAttributeValue(product ?? undefined, binding.categoryKey).trim()
+        )
+    )
     .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0))
 
   if (!product || bindings.length === 0) {
@@ -121,13 +127,16 @@ export function resolveProductDisplaySummaryItemsV2(
       binding.categoryKey
     )
     const rawValue = getAttributeValue(product, binding.categoryKey).trim()
-    const category = params.categories?.find(
-      (item) =>
-        normalizeProductAttributeMachineValue(item.key) ===
-        normalizedCategoryKey
-    )
+    const category = { ...binding, key: binding.categoryKey }
     const option = rawValue
-      ? resolveMatchedOption(normalizedCategoryKey, rawValue, params.options)
+      ? resolveMatchedOption(
+          normalizedCategoryKey,
+          rawValue,
+          binding.options.map((option) => ({
+            ...option,
+            categoryKey: binding.categoryKey,
+          }))
+        )
       : undefined
 
     return {

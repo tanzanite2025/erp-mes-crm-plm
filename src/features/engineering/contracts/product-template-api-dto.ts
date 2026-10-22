@@ -1,9 +1,14 @@
 import { type DeltaPayload } from '@/lib/delta/types'
+import { type ProductTemplateOwnedAttributeOptionDefinition } from '../data/schema'
 
 export interface ProductTemplateAttributeBindingApiDTO {
   id?: string
   templateId?: string
   categoryKey: string
+  nameZh: string
+  nameEn?: string
+  description?: string
+  options: ProductTemplateOwnedAttributeOptionDefinition[]
   sortOrder: number
   required: boolean
   active: boolean

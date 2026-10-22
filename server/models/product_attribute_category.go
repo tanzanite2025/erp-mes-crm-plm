@@ -3,6 +3,7 @@ package models
 type ProductAttributeCategory struct {
 	BaseModel
 	MasterDataControl
+	TemplateID  string `gorm:"-" json:"templateId,omitempty"`
 	Key         string `gorm:"size:50;not null" json:"key"`
 	NameZh      string `gorm:"size:255;not null" json:"nameZh"`
 	NameEn      string `gorm:"size:255" json:"nameEn"`

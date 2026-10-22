@@ -5,6 +5,7 @@ import { useLanguage } from '@/context/language-provider'
 import { ProductCommand } from '../commands/product-command'
 import {
   type Product,
+  type ProductTemplate,
   type ProductTemplateAttributeLevelTwoOption,
   type ProductType,
 } from '../data/schema'
@@ -18,6 +19,7 @@ interface UseProductFormSubmitParams {
   form: UseFormReturn<Product>
   productTypes: ProductType[]
   attributeOptions?: ProductTemplateAttributeLevelTwoOption[]
+  template?: ProductTemplate | null
   onOpenChange: (open: boolean) => void
   onSubmit?: (
     payload: ProductSubmitPayload
@@ -35,6 +37,7 @@ export function useProductFormSubmit({
   form: _form,
   productTypes,
   attributeOptions,
+  template,
   onOpenChange,
   onSubmit,
   onSaved,
@@ -48,6 +51,7 @@ export function useProductFormSubmit({
       ...values,
       name: resolveProductAggregateDisplayLabel({
         locale,
+        template,
         product: values,
         productTypes,
         options: attributeOptions,

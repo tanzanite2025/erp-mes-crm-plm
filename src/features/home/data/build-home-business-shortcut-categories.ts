@@ -49,7 +49,6 @@ const productStartingPointUrls = [
   '/engineering/products',
   '/product-structure/bom',
   '/engineering/templates',
-  '/engineering/product-attributes',
 ]
 
 export function buildHomeBusinessShortcutCategories(

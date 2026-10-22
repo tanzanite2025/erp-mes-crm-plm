@@ -1,16 +1,16 @@
 # 产品外观业务组件复用
 
-产品外观对应 `/engineering/product-appearance`，与 `/engineering/product-attributes` 的产品模板属性分类是两个独立业务。原产品外观页面已经使用共享管理面板，其他页面可以直接打开编辑弹窗或完整管理弹窗，无需跳转到管理页面。
+产品外观对应 `/engineering/product-appearance`，与“产品模板 → 当前模板属性配置”（`/engineering/templates`）是两个独立业务。原产品外观页面已经使用共享管理面板，其他页面可以直接打开编辑弹窗或完整管理弹窗，无需跳转到管理页面。
 
 ## 组件入口
 
 组件均位于 `src/features/engineering/components/product-appearance/`。
 
-| 文件与导出组件 | 用途 |
-| --- | --- |
-| `product-appearance-editor-dialog.tsx` → `ProductAppearanceEditorDialog` | 快捷新增或编辑一项外观，保存后回传完整记录。 |
+| 文件与导出组件                                                                   | 用途                                             |
+| -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `product-appearance-editor-dialog.tsx` → `ProductAppearanceEditorDialog`         | 快捷新增或编辑一项外观，保存后回传完整记录。     |
 | `product-appearance-management-dialog.tsx` → `ProductAppearanceManagementDialog` | 在弹窗中浏览、新增、编辑、删除、启停和选用外观。 |
-| `product-appearance-management-panel.tsx` → `ProductAppearanceManagementPanel` | 将同一套管理功能直接嵌入页面或现有布局。 |
+| `product-appearance-management-panel.tsx` → `ProductAppearanceManagementPanel`   | 将同一套管理功能直接嵌入页面或现有布局。         |
 
 组件使用应用已有的 `QueryClientProvider` 和 `LanguageProvider`，无需路由上下文或额外创建查询客户端。中英文文案与弹窗样式共用系统约定，操作按钮使用胶囊样式。
 
@@ -47,11 +47,11 @@ export function ProductAppearanceQuickCreateAndSelectionExample() {
 }
 ```
 
-| 参数 | 用途 |
-| --- | --- |
-| `open`、`onOpenChange` | 控制弹窗；关闭后再次打开建立新表单会话。 |
-| `appearance` | 可选，传入已有完整 `ProductAppearance` 进入编辑模式；不传则新增。 |
-| `onSaved` | 可选，保存及缓存刷新结束后回传后端完整记录，包含 ID、启用状态、排序和版本。后台刷新失败仍回传已成功保存的记录。 |
+| 参数                   | 用途                                                                                                            |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `open`、`onOpenChange` | 控制弹窗；关闭后再次打开建立新表单会话。                                                                        |
+| `appearance`           | 可选，传入已有完整 `ProductAppearance` 进入编辑模式；不传则新增。                                               |
+| `onSaved`              | 可选，保存及缓存刷新结束后回传后端完整记录，包含 ID、启用状态、排序和版本。后台刷新失败仍回传已成功保存的记录。 |
 
 编辑时直接传入目录查询中的记录。弹窗自行加载目录、校验条码位值及重复项、上传图片并保存，无需调用方组织 API 请求。外观的 `barcodeCode` 是业务条码位值，限定 1–9，并非自动生成的记录 ID。
 
@@ -60,7 +60,7 @@ export function ProductAppearanceQuickCreateAndSelectionExample() {
 ```tsx
 import { ProductAppearanceManagementDialog } from '@/features/engineering/components/product-appearance/product-appearance-management-dialog'
 
-<ProductAppearanceManagementDialog
+;<ProductAppearanceManagementDialog
   open={appearanceManagementOpen}
   onOpenChange={setAppearanceManagementOpen}
   onAppearanceSelected={(appearance) => {

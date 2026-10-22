@@ -1,22 +1,11 @@
-/* The dock's existing hsl(var(--muted)) surfaces contain complete OKLCH tokens.
-   Resolve the generated local sRGB channels only on browsers without OKLCH. */
+/* Reuse the dock's opaque sRGB surfaces so Chrome 109 has the same contrast. */
 @supports not (color: oklch(1 0 0)) {
   :where([data-slot='global-bottom-dock']) {
-    --chrome109-dock-background: rgb(var(--chrome109-muted-rgb) / 0.8);
+    --chrome109-dock-background: var(--dock-surface);
   }
 
   .dark :where([data-slot='global-bottom-dock']) {
-    --chrome109-dock-background: rgb(var(--chrome109-background-rgb) / 0.95);
-  }
-
-  @supports (backdrop-filter: blur(1px)) {
-    :where([data-slot='global-bottom-dock']) {
-      --chrome109-dock-background: rgb(var(--chrome109-muted-rgb) / 0.7);
-    }
-
-    .dark :where([data-slot='global-bottom-dock']) {
-      --chrome109-dock-background: rgb(var(--chrome109-background-rgb) / 0.8);
-    }
+    --chrome109-dock-background: var(--dock-surface-dark);
   }
 
   :where([data-slot='global-bottom-dock-mobile-surface']) {

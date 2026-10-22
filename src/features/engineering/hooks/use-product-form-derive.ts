@@ -188,6 +188,7 @@ export function useProductFormDerive({
   const specPreviewItems = useMemo(() => {
     const aggregateDisplay = resolveProductAggregateDisplay({
       locale,
+      template: previewTemplate,
       product: previewProduct,
       productTypes,
       options: attributeOptions,
@@ -203,6 +204,7 @@ export function useProductFormDerive({
     )
   }, [
     attributeOptions,
+    previewTemplate,
     locale,
     previewProduct,
     productTypes,
@@ -213,6 +215,7 @@ export function useProductFormDerive({
   const specPreviewAggregateLabel = useMemo(() => {
     return resolveProductAggregateDisplayLabel({
       locale,
+      template: previewTemplate,
       product: previewProduct,
       productTypes,
       options: attributeOptions,
@@ -222,7 +225,14 @@ export function useProductFormDerive({
       unknownCustomerLabel: t('engineering.bomArchive.table.ownerUnknown'),
       emptyBaseLabel: t('engineering.productArchive.states.unnamed'),
     })
-  }, [attributeOptions, locale, previewProduct, productTypes, t])
+  }, [
+    attributeOptions,
+    locale,
+    previewProduct,
+    previewTemplate,
+    productTypes,
+    t,
+  ])
 
   const specPreviewTitle = specPreviewV2.title
   const specPreviewSummary = specPreviewV2.summaryText

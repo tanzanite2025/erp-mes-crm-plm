@@ -10,12 +10,14 @@ import {
 } from '@/features/engineering/data/schema'
 import { resolveProductDisplayV2 } from '@/features/engineering/display/product-display-v2'
 import { resolveProductDisplayMetadataV2 } from '@/features/engineering/display/product-display-v2-metadata'
+import { normalizeProductAttributeMachineValue } from '@/features/engineering/utils/product-attribute-machine-value'
 import type { AuditLog } from '../types'
 import {
   buildProductAuditSummary,
   buildProductStructuredDiffRows,
   formatProductAuditDisplayText,
 } from '../utils/product-audit'
+import { resolveProductAuditTemplateOwnedAttributeLabelCatalog } from '../utils/product-audit-template-owned-attribute-label-resolution'
 import {
   AuditEntryColumnCard,
   AuditEntryColumns,
@@ -127,7 +129,10 @@ function resolveStructuredRowLabel(
   categoriesByKey: ReadonlyMap<string, ProductTemplateAttributeLevelOneCategory>
 ): string {
   if (field === 'attributeValues') {
-    return getLocalizedCategoryName(locale, categoriesByKey.get(rowKey))
+    const category = categoriesByKey.get(
+      normalizeProductAttributeMachineValue(rowKey)
+    )
+    return category ? getLocalizedCategoryName(locale, category) : rowKey
   }
 
   if (field === 'attachments') {
@@ -156,10 +161,10 @@ function resolveStructuredRowValue(
   }
 
   if (field === 'attributeValues' && categoryKey) {
-    return getLocalizedOptionLabel(
-      locale,
-      optionsByCategoryAndValue.get(`${categoryKey}::${rawValue}`)
+    const option = optionsByCategoryAndValue.get(
+      `${normalizeProductAttributeMachineValue(categoryKey)}::${normalizeProductAttributeMachineValue(rawValue)}`
     )
+    return option ? getLocalizedOptionLabel(locale, option) : rawValue
   }
 
   return rawValue
@@ -184,26 +189,37 @@ export function ProductAuditEntry({
 }) {
   const { locale, t } = useLanguage()
   const summary = useMemo(() => buildProductAuditSummary(log), [log])
-  const categoriesByKey = useMemo(
-    () =>
-      new Map(attributeCategories.map((category) => [category.key, category])),
-    [attributeCategories]
-  )
-  const optionsByCategoryAndValue = useMemo(
-    () =>
-      new Map(
-        attributeOptions.map((option) => [
-          `${option.categoryKey}::${option.value}`,
-          option,
-        ])
-      ),
-    [attributeOptions]
-  )
   const productsById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products]
   )
   const targetProduct = productsById.get(log.target_id)
+  const attributeLabelCatalogs = useMemo(() => {
+    const context = {
+      log,
+      product: targetProduct,
+      templates: productTemplates,
+      productTypes,
+    }
+    return {
+      before: resolveProductAuditTemplateOwnedAttributeLabelCatalog({
+        ...context,
+        side: 'o',
+      }),
+      after: resolveProductAuditTemplateOwnedAttributeLabelCatalog({
+        ...context,
+        side: 'n',
+      }),
+    }
+  }, [log, targetProduct, productTemplates, productTypes])
+  const categoriesByKey = useMemo(
+    () =>
+      new Map([
+        ...attributeLabelCatalogs.before.categoriesByKey,
+        ...attributeLabelCatalogs.after.categoriesByKey,
+      ]),
+    [attributeLabelCatalogs]
+  )
   const displayMetadataV2 = useMemo(
     () =>
       targetProduct
@@ -414,7 +430,8 @@ export function ProductAuditEntry({
                               change.field,
                               row.before,
                               locale,
-                              optionsByCategoryAndValue,
+                              attributeLabelCatalogs.before
+                                .optionsByCategoryAndValue,
                               row.key
                             )}
                           </div>
@@ -428,7 +445,8 @@ export function ProductAuditEntry({
                               change.field,
                               row.after,
                               locale,
-                              optionsByCategoryAndValue,
+                              attributeLabelCatalogs.after
+                                .optionsByCategoryAndValue,
                               row.key
                             )}
                           </div>

@@ -6,7 +6,6 @@ export const engineering = {
     productCreationGuide: '如何建立产品',
     products: '产品管理',
     productAppearance: '产品外观',
-    productAttributes: '产品模板属性分类',
     bom: 'BOM 配方',
     bomRecords: 'BOM追溯',
     sectionConfig: '段位配置',
@@ -1072,7 +1071,7 @@ export const engineering = {
     dialog: {
       createTitle: '新建产品模板',
       editTitle: '编辑产品模板',
-      description: '填写模板信息，加入一级属性分类并查看其下的二级属性选项。',
+      description: '填写模板信息，直接维护当前模板独立的属性和选项。',
     },
     fields: {
       basicInformation: '模板信息',
@@ -1093,10 +1092,11 @@ export const engineering = {
     },
     hints: {
       component: '所选组件将决定在创建产品时系统自动生成的物理参数表单。',
-      assembly:
-        '加入一级属性分类后，产品表单将使用其下全部已启用的二级属性选项。',
+      assembly: '在当前模板中添加属性及其选项，产品建档时按模板填写。',
       catalogEditing:
-        '点击选项可直接编辑。属性修改保存后会应用到所有引用模板；当前模板的属性组合需点击“保存模板”。',
+        '属性和选项直接编辑，所有修改通过“保存模板”统一提交，仅作用于当前模板。',
+      sharedCatalogSaving:
+        '属性名称、选项和必填设置均属于当前模板，随模板一起保存。',
     },
     buttons: {
       cancel: '取消',
@@ -1108,6 +1108,7 @@ export const engineering = {
       addAttributeOption: '新增二级属性选项',
       editAttributeOption: '编辑二级属性选项 · {{name}}',
       removeAttribute: '移除',
+      returnToTemplateConfiguration: '返回模板配置',
     },
     confirms: {
       delete: '确认删除此模板吗？已绑定该模板的分类可能会失效。',
@@ -1137,7 +1138,7 @@ export const engineering = {
       noActiveLevelTwoOptions:
         '暂无已启用的二级属性选项，可直接新增或管理属性分类。',
       selectedCategoryPreview: '待加入的一级属性分类及二级选项',
-      levelOneCategoryCount: '已加入的一级属性分类 · {{count}} 个',
+      levelOneCategoryCount: '模板属性 · {{count}} 项',
       unavailableCategory: '该一级属性分类已不可用',
       unavailableCategoryHint:
         '该一级属性分类已被删除，请移除这项绑定后再保存模板。',

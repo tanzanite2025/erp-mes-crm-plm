@@ -3,6 +3,7 @@ package models
 type ProductAttributeOption struct {
 	BaseModel
 	MasterDataControl
+	TemplateID  string `gorm:"-" json:"templateId,omitempty"`
 	CategoryKey string `gorm:"column:category;size:50;index:idx_product_attribute_option_category_value,priority:1;not null" json:"categoryKey"`
 	Value       string `gorm:"size:100;index:idx_product_attribute_option_category_value,priority:2;not null" json:"value"`
 	LabelZh     string `gorm:"column:label;size:255;not null" json:"labelZh"`

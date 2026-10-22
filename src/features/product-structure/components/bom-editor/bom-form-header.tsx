@@ -1,9 +1,11 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useQuery } from '@tanstack/react-query'
+import { Settings2 } from 'lucide-react'
 import { getBomStatusOrderByType } from '@/lib/codecs/code-normalization'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import {
   FormControl,
   FormField,
@@ -20,6 +22,7 @@ import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '@/features/engineering/utils/pr
 import { getCustomers } from '@/features/trading/customer'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type BOM, type Product } from '../../data/schema'
+import { BOMGradeOptionManagementDialog } from './bom-grade-option-management-dialog'
 import {
   buildHeaderGridTemplate,
   getBOMHeaderFields,
@@ -47,6 +50,8 @@ export function BOMFormHeader({
   isEdit,
 }: BOMFormHeaderProps) {
   const { t, locale } = useLanguage()
+  const [isGradeOptionManagementOpen, setIsGradeOptionManagementOpen] =
+    useState(false)
 
   type BOMStatusLabelKey =
     | 'engineering.bomArchive.status.draft'
@@ -204,9 +209,18 @@ export function BOMFormHeader({
             form={form}
             fieldConfig={fieldConfig}
             ctx={ctx}
+            onManageGradeOptions={
+              fieldConfig.name === 'versionLevel'
+                ? () => setIsGradeOptionManagementOpen(true)
+                : undefined
+            }
           />
         ))}
       </div>
+      <BOMGradeOptionManagementDialog
+        open={isGradeOptionManagementOpen}
+        onOpenChange={setIsGradeOptionManagementOpen}
+      />
     </div>
   )
 }
@@ -215,22 +229,42 @@ interface BOMHeaderFormFieldProps {
   form: UseFormReturn<BOM>
   fieldConfig: BOMHeaderField
   ctx: BOMHeaderFieldContext
+  onManageGradeOptions?: () => void
 }
 
 function BOMHeaderFormField({
   form,
   fieldConfig,
   ctx,
+  onManageGradeOptions,
 }: BOMHeaderFormFieldProps) {
+  const { locale } = useLanguage()
   return (
     <FormField
       control={form.control}
       name={fieldConfig.name as keyof BOM}
       render={({ field }) => (
         <FormItem className='min-w-0'>
-          <FormLabel className='mb-1.5 block text-[10px] font-black tracking-widest text-primary/80 uppercase'>
-            {fieldConfig.label}
-          </FormLabel>
+          <div className='mb-1.5 flex items-center justify-between gap-1'>
+            <FormLabel className='text-[10px] font-black tracking-widest text-primary/80 uppercase'>
+              {fieldConfig.label}
+            </FormLabel>
+            {onManageGradeOptions && (
+              <Button
+                type='button'
+                variant='ghost'
+                className='size-5 rounded-full p-0'
+                aria-label={
+                  locale.startsWith('zh')
+                    ? '管理产品档次选项'
+                    : 'Manage product grade options'
+                }
+                onClick={onManageGradeOptions}
+              >
+                <Settings2 className='size-3.5' />
+              </Button>
+            )}
+          </div>
 
           {fieldConfig.type === 'select' ? (
             <SelectDropdown

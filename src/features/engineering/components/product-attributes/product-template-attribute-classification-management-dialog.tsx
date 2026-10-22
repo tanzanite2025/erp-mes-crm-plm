@@ -63,8 +63,8 @@ export function ProductTemplateAttributeClassificationManagementDialog({
             }
           >
             {isZh
-              ? '维护产品模板的一级属性分类和二级属性分类（属性选项），完成后可继续当前操作。'
-              : 'Manage level 1 attribute categories and level 2 attribute options for product templates, then continue your current task.'}
+              ? '维护多个模板共用的一级属性分类和二级属性选项。分类和选项保存后会应用到所有引用模板，模板的属性组合需另行保存。'
+              : 'Manage level 1 categories and level 2 options shared by multiple templates. Saved catalog changes apply to every template using them. Save each template’s attribute bindings separately.'}
           </DialogDescription>
         </DialogHeader>
         <div className={productTemplateAttributeManagementDialogClasses.body}>

@@ -129,6 +129,7 @@ export function useProductForm({
   })
 
   const { handleFormSubmit } = useProductFormSubmit({
+    template: boundTemplate,
     currentRow,
     isEdit,
     form,

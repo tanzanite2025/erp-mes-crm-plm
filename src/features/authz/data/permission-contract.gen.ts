@@ -271,7 +271,6 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "tab_engineering_db_labeling",
   "tab_engineering_db_specs",
   "tab_engineering_product_appearance",
-  "tab_engineering_product_attributes",
   "tab_engineering_product_creation_guide",
   "tab_engineering_products",
   "tab_engineering_reference_hubs",

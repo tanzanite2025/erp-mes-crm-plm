@@ -50,7 +50,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/business-analysis/defect-trend',
   '/code-center/shared-code-source',
   '/engineering/product-appearance',
-  '/engineering/product-attributes',
   '/equipment-maintenance/overview',
   '/production-architecture/routes',
   '/production-quality/special-buy',

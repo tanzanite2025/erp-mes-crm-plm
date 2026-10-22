@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { type ProductTemplateAttributeLevelOneCategory } from '../../data/schema'
 import { type SaveProductTemplateAttributeLevelTwoOptionInput } from '../../mutation-types'
+import { areSameProductAttributeCategoryKey } from '../../utils/product-attribute-machine-value'
 
 const productTemplateAttributeOptionDialogClasses =
   buildActionDialogShellClasses({
@@ -72,6 +73,10 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
   onSave,
 }: ProductTemplateAttributeLevelTwoOptionDialogProps) {
   const isZh = locale === 'zh-CN'
+  const isBOMGradeOption = areSameProductAttributeCategoryKey(
+    option.categoryKey,
+    'versionLevel'
+  )
   const optionFormId = useId()
   const categoryFieldId = `${optionFormId}-category`
   const chineseNameFieldId = `${optionFormId}-chinese-name`
@@ -93,20 +98,32 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
           <DialogTitle
             className={productTemplateAttributeOptionDialogClasses.title}
           >
-            {option.id
-              ? isZh
-                ? '编辑二级属性分类'
-                : 'Edit Level 2 Attribute Category'
-              : isZh
-                ? '新增二级属性分类'
-                : 'Create Level 2 Attribute Category'}
+            {isBOMGradeOption
+              ? option.id
+                ? isZh
+                  ? '编辑产品档次选项'
+                  : 'Edit product grade option'
+                : isZh
+                  ? '新增产品档次选项'
+                  : 'Add product grade option'
+              : option.id
+                ? isZh
+                  ? '编辑二级属性分类'
+                  : 'Edit Level 2 Attribute Category'
+                : isZh
+                  ? '新增二级属性分类'
+                  : 'Create Level 2 Attribute Category'}
           </DialogTitle>
           <DialogDescription
             className={productTemplateAttributeOptionDialogClasses.description}
           >
-            {isZh
-              ? '为所属一级属性分类维护可选项，例如“材质”下的“碳纤维”，供产品模板对应的属性字段选择。'
-              : 'Define an option under a level 1 attribute category, such as Carbon Fiber under Material, for the corresponding product template field.'}
+            {isBOMGradeOption
+              ? isZh
+                ? '维护 BOM 中可选择的产品档次。具体产品的档次在 BOM 中填写。'
+                : 'Maintain product grade choices for BOMs. Select the product’s grade in its BOM.'
+              : isZh
+                ? '为所属一级属性分类维护可选项，例如“材质”下的“碳纤维”，供产品模板对应的属性字段选择。'
+                : 'Define an option under a level 1 attribute category, such as Carbon Fiber under Material, for the corresponding product template field.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -125,9 +142,13 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
           >
             <div className='space-y-2'>
               <Label htmlFor={categoryFieldId} className='text-sm font-medium'>
-                {isZh
-                  ? '所属一级属性分类'
-                  : 'Parent Level 1 Attribute Category'}
+                {isBOMGradeOption
+                  ? isZh
+                    ? '所属档次分类'
+                    : 'Grade category'
+                  : isZh
+                    ? '所属一级属性分类'
+                    : 'Parent Level 1 Attribute Category'}
               </Label>
               <Select
                 value={option.categoryKey || ''}
@@ -238,9 +259,13 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
                   id={activeStatusDescriptionId}
                   className='text-xs leading-relaxed text-muted-foreground'
                 >
-                  {isZh
-                    ? '启用后可在产品模板对应的属性字段中选择，停用后隐藏。'
-                    : 'Active level 2 options are available in product template attribute fields; inactive options are hidden.'}
+                  {isBOMGradeOption
+                    ? isZh
+                      ? '启用后可在 BOM 的产品档次中选择；停用后保留已有记录，后续不再提供选择。'
+                      : 'Active options can be selected in BOMs. Disabling an option preserves existing records and prevents new selections.'
+                    : isZh
+                      ? '启用后可在产品模板对应的属性字段中选择，停用后隐藏。'
+                      : 'Active level 2 options are available in product template attribute fields; inactive options are hidden.'}
                 </p>
               </div>
               <Switch

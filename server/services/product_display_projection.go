@@ -20,7 +20,7 @@ type ProductDisplayProjection struct {
 	Subtitle        string                      `json:"subtitle"`
 	Code            string                      `json:"code"`
 	FullLabel       string                      `json:"fullLabel"`
-	SummaryItems    []ProductDisplaySummaryItem  `json:"summaryItems"`
+	SummaryItems    []ProductDisplaySummaryItem `json:"summaryItems"`
 	StrategyVersion string                      `json:"strategyVersion"`
 }
 
@@ -104,10 +104,10 @@ func resolveProductDisplaySummaryItemsV2(
 
 	items := make([]ProductDisplaySummaryItem, 0, len(bindings))
 	for _, binding := range bindings {
-		if !binding.Active {
+		rawValue := getProductDisplayAttributeValue(product, binding.CategoryKey)
+		if !binding.Active && rawValue == "" {
 			continue
 		}
-		rawValue := getProductDisplayAttributeValue(product, binding.CategoryKey)
 		label := resolveCategoryDisplayLabel(binding.CategoryKey, categories)
 		value := ""
 		empty := rawValue == ""
@@ -268,17 +268,6 @@ func LoadProductDisplayProjections(productIDs []string) (map[string]ProductDispl
 		}
 	}
 
-	// Load all attribute categories and options for label resolution
-	var categories []models.ProductAttributeCategory
-	if err := db.DB.Where("active = ?", true).Find(&categories).Error; err != nil {
-		return nil, err
-	}
-
-	var options []models.ProductAttributeOption
-	if err := db.DB.Where("active = ?", true).Find(&options).Error; err != nil {
-		return nil, err
-	}
-
 	// Filter out inactive templates
 	activeTemplateIDs := make(map[string]bool)
 	for id, tmpl := range templatesByID {
@@ -296,7 +285,8 @@ func LoadProductDisplayProjections(productIDs []string) (map[string]ProductDispl
 			bindings = bindingsByTemplateID[templateID]
 		}
 
-		result[product.ID] = ResolveProductDisplayProjectionV2(product, bindings, categories, options)
+		ownedCategories, ownedOptions := projectTemplateOwnedAttributeDefinitionsToCatalog(bindings)
+		result[product.ID] = ResolveProductDisplayProjectionV2(product, bindings, ownedCategories, ownedOptions)
 	}
 
 	return result, nil

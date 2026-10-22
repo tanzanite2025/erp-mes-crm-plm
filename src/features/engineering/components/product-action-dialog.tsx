@@ -95,8 +95,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     form,
     isEdit,
     dynamicTypes,
-    attributeCategories = [],
-    attributeOptions = [],
     moldOptions,
     specOptions,
     metadataInitError,
@@ -381,8 +379,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               <DynamicAttributeSection
                 form={form}
                 locale={locale}
-                categories={attributeCategories}
-                options={attributeOptions}
                 bindings={effectiveAttributeBindings}
                 excludeCategoryKeys={[PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version]}
               />

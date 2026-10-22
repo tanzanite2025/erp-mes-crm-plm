@@ -7,13 +7,17 @@ import (
 
 // ProductTemplateAttributeBindingResponseDTO 模板属性绑定响应
 type ProductTemplateAttributeBindingResponseDTO struct {
-	ID          string `json:"id,omitempty"`
-	TemplateID  string `json:"templateId,omitempty"`
-	CategoryKey string `json:"categoryKey"`
-	SortOrder   int    `json:"sortOrder"`
-	Required    bool   `json:"required"`
-	Active      bool   `json:"active"`
-	Version     int    `json:"version"`
+	ID          string                                            `json:"id,omitempty"`
+	TemplateID  string                                            `json:"templateId,omitempty"`
+	CategoryKey string                                            `json:"categoryKey"`
+	NameZh      string                                            `json:"nameZh"`
+	NameEn      string                                            `json:"nameEn"`
+	Description string                                            `json:"description"`
+	Options     []models.ProductTemplateAttributeOptionDefinition `json:"options"`
+	SortOrder   int                                               `json:"sortOrder"`
+	Required    bool                                              `json:"required"`
+	Active      bool                                              `json:"active"`
+	Version     int                                               `json:"version"`
 }
 
 // ProductTemplateResponseDTO 产品模板响应 DTO（含嵌套 masterDataControl）
@@ -37,6 +41,10 @@ func mapProductTemplateAttributeBindingToDTO(binding models.ProductTemplateAttri
 		ID:          binding.ID,
 		TemplateID:  binding.TemplateID,
 		CategoryKey: binding.CategoryKey,
+		NameZh:      binding.NameZh,
+		NameEn:      binding.NameEn,
+		Description: binding.Description,
+		Options:     binding.Options,
 		SortOrder:   binding.SortOrder,
 		Required:    binding.Required,
 		Active:      binding.Active,

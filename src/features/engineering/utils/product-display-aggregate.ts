@@ -2,6 +2,7 @@ import { type BOM } from '@/features/product-structure/data/schema'
 import { resolveBOMOwnerDisplay } from '@/features/product-structure/utils/bom-owner-display'
 import {
   type Product,
+  type ProductTemplate,
   type ProductTemplateAttributeLevelOneCategory,
   type ProductTemplateAttributeLevelTwoOption,
   type ProductType,
@@ -15,6 +16,8 @@ import {
   getProductTemplateAttributeLevelTwoOptionLabel,
 } from './product-attribute-utils'
 import { resolveEffectiveProductName } from './product-form-utils'
+import { projectProductTemplateOwnedAttributesForProductDisplay } from './product-template-owned-attribute-catalog-projection'
+import { resolveTemplateFromTypeChain } from './product-template-resolution'
 
 function normalizeTrimmedValue(value?: string | null): string {
   return value?.trim() ?? ''
@@ -116,7 +119,9 @@ function buildSupplementalItem(params: {
 
 export function resolveProductAggregateDisplay(params: {
   locale: string
-  product: Pick<Product, 'name' | 'typeId' | 'attributeValues'>
+  template?: Pick<ProductTemplate, 'id' | 'attributeBindings'> | null
+  product: Pick<Product, 'name' | 'typeId' | 'attributeValues'> &
+    Partial<Pick<Product, 'resolvedTemplateId'>>
   productTypes: ProductType[]
   bom?: Pick<
     BOM,
@@ -136,6 +141,47 @@ export function resolveProductAggregateDisplay(params: {
   emptyBaseLabel?: string
   emptyValue?: string
 }): ProductAggregateDisplayResult {
+  const templateId =
+    resolveTemplateFromTypeChain(params.productTypes, params.product.typeId)
+      ?.templateId || params.product.resolvedTemplateId
+  const ownedCatalog =
+    params.template && params.template.id === templateId
+      ? projectProductTemplateOwnedAttributesForProductDisplay(params.template)
+      : undefined
+  const belongsToProductAttributeScope = (item: {
+    templateId?: string
+    categoryKey?: string
+    key?: string
+  }) =>
+    item.templateId
+      ? item.templateId === templateId
+      : normalizeProductAttributeMachineValue(
+          item.categoryKey ?? item.key ?? ''
+        ) ===
+        normalizeProductAttributeMachineValue(
+          PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
+        )
+  params = {
+    ...params,
+    categories: ownedCatalog
+      ? [
+          ...ownedCatalog.categories,
+          ...(params.categories?.filter(
+            (category) =>
+              !category.templateId && belongsToProductAttributeScope(category)
+          ) ?? []),
+        ]
+      : params.categories?.filter(belongsToProductAttributeScope),
+    options: ownedCatalog
+      ? [
+          ...ownedCatalog.options,
+          ...(params.options?.filter(
+            (option) =>
+              !option.templateId && belongsToProductAttributeScope(option)
+          ) ?? []),
+        ]
+      : params.options?.filter(belongsToProductAttributeScope),
+  }
   const baseModelLabel =
     normalizeTrimmedValue(
       resolveEffectiveProductName({
@@ -277,7 +323,9 @@ export function resolveProductAggregateDisplay(params: {
 
 export function resolveProductAggregateDisplayLabel(params: {
   locale: string
-  product: Pick<Product, 'name' | 'typeId' | 'attributeValues'>
+  template?: Pick<ProductTemplate, 'id' | 'attributeBindings'> | null
+  product: Pick<Product, 'name' | 'typeId' | 'attributeValues'> &
+    Partial<Pick<Product, 'resolvedTemplateId'>>
   productTypes: ProductType[]
   bom?: Pick<
     BOM,

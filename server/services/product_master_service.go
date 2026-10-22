@@ -144,8 +144,14 @@ func normalizeProductAttributeValues(items []models.ProductAttributeValue) []mod
 }
 
 func replaceProductAttributeValues(tx *gorm.DB, productID string, items []models.ProductAttributeValue) error {
-	if err := validateAndLockProductAttributeValueReferences(tx, items); err != nil {
-		return err
+	if len(items) > 0 {
+		var product models.Product
+		if err := tx.Select("id", "type_id").First(&product, "id = ?", productID).Error; err != nil {
+			return err
+		}
+		if err := validateAndLockProductValuesAgainstOwnedTemplate(tx, product.TypeID, items, productID); err != nil {
+			return err
+		}
 	}
 	if err := tx.Where("product_id = ?", productID).Delete(&models.ProductAttributeValue{}).Error; err != nil {
 		return err

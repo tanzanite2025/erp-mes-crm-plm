@@ -16,19 +16,16 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { ProductTemplateAttributeCatalogRequestState } from '../components/product-attributes/product-template-attribute-catalog-request-state'
 import { TemplateEditorDialog } from '../components/template-mgmt/template-editor-dialog'
 import { type ProductTemplate } from '../data/schema'
 import {
   DEFAULT_PRODUCT_TEMPLATES,
   localizeTemplateDefinitions,
 } from '../data/template-defaults'
-import { useProductAttributeCatalogQueries } from '../hooks/use-product-attribute-catalog-queries'
 import { useProductTemplateWriteActions } from '../hooks/use-product-template-write-actions'
 import { PRODUCT_TEMPLATES_QUERY_KEY } from '../query-keys'
 import { productTemplateService } from '../services/product-template-service'
 import { createProductTemplateDraft } from '../utils/default-builders'
-import { areSameProductAttributeCategoryKey } from '../utils/product-attribute-machine-value'
 import { normalizeProductTemplateEntity } from '../utils/product-code-normalization'
 
 function getErrorMessage(error: unknown) {
@@ -41,7 +38,6 @@ export function TemplateMgmt() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] =
     useState<ProductTemplate | null>(null)
-  const [selectedCategoryKey, setSelectedCategoryKey] = useState('')
   const editingTemplateBaselineRef = useRef<ProductTemplate | undefined>(
     undefined
   )
@@ -52,14 +48,6 @@ export function TemplateMgmt() {
     queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
     queryFn: () => productTemplateService.getTemplates(),
   })
-  const {
-    categories,
-    options: attributeOptions,
-    hasLoadedCatalog,
-    isLoading: isAttributeCatalogLoading,
-    error: attributeCatalogError,
-    retry: retryAttributeCatalog,
-  } = useProductAttributeCatalogQueries()
   if (templatesQuery.isSuccess && !templatesQuery.data)
     throw new Error('[CRITICAL] Templates Data missing')
 
@@ -74,28 +62,6 @@ export function TemplateMgmt() {
     () => new Set(DEFAULT_PRODUCT_TEMPLATES.map((template) => template.code)),
     []
   )
-
-  const assembledCategories = useMemo(() => {
-    if (!editingTemplate) return []
-    return (editingTemplate.attributeBindings ?? [])
-      .map((binding) => ({
-        binding,
-        category: categories.find((item) =>
-          areSameProductAttributeCategoryKey(item.key, binding.categoryKey)
-        ),
-      }))
-      .sort((a, b) => (a.binding.sortOrder ?? 0) - (b.binding.sortOrder ?? 0))
-  }, [categories, editingTemplate])
-
-  const availableCategories = useMemo(() => {
-    return categories.filter(
-      (category) =>
-        category.active &&
-        !(editingTemplate?.attributeBindings ?? []).some((binding) =>
-          areSameProductAttributeCategoryKey(category.key, binding.categoryKey)
-        )
-    )
-  }, [categories, editingTemplate])
 
   useEffect(() => {
     if (!error) return
@@ -113,7 +79,6 @@ export function TemplateMgmt() {
   const handleAdd = () => {
     editingTemplateBaselineRef.current = undefined
     setEditingTemplate(createProductTemplateDraft())
-    setSelectedCategoryKey('')
     setIsDialogOpen(true)
   }
 
@@ -121,63 +86,7 @@ export function TemplateMgmt() {
     editingTemplateBaselineRef.current =
       templates?.find((item) => item.id === template.id) ?? template
     setEditingTemplate(normalizeProductTemplateEntity(template))
-    setSelectedCategoryKey('')
     setIsDialogOpen(true)
-  }
-
-  const handleAddAttributeBinding = () => {
-    const selectedCategory = availableCategories.find((category) =>
-      areSameProductAttributeCategoryKey(category.key, selectedCategoryKey)
-    )
-    if (!selectedCategory || attributeCatalogError || !hasLoadedCatalog) return
-    setEditingTemplate((prev) => {
-      if (!prev) return prev
-      const nextBindings = [...(prev.attributeBindings ?? [])]
-      if (
-        nextBindings.some((item) =>
-          areSameProductAttributeCategoryKey(
-            item.categoryKey,
-            selectedCategory.key
-          )
-        )
-      ) {
-        return prev
-      }
-      nextBindings.push({
-        templateId: prev.id || undefined,
-        categoryKey: selectedCategory.key,
-        sortOrder: nextBindings.length + 1,
-        required: false,
-        active: true,
-        version: 1,
-      })
-      return { ...prev, attributeBindings: nextBindings }
-    })
-    setSelectedCategoryKey('')
-  }
-
-  const handleRemoveAttributeBinding = (categoryKey: string) => {
-    setEditingTemplate((prev) => {
-      if (!prev) return prev
-      const nextBindings = (prev.attributeBindings ?? [])
-        .filter((item) => item.categoryKey !== categoryKey)
-        .map((item, index) => ({ ...item, sortOrder: index + 1 }))
-      return { ...prev, attributeBindings: nextBindings }
-    })
-  }
-
-  const handleToggleRequired = (categoryKey: string, checked: boolean) => {
-    setEditingTemplate((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        attributeBindings: (prev.attributeBindings ?? []).map((item) =>
-          item.categoryKey === categoryKey
-            ? { ...item, required: checked }
-            : item
-        ),
-      }
-    })
   }
 
   const handleDelete = async (id: string) => {
@@ -201,17 +110,6 @@ export function TemplateMgmt() {
       toast.error(t('engineering.templateMgmt.toasts.required'))
       return
     }
-    if (
-      hasLoadedCatalog &&
-      !attributeCatalogError &&
-      assembledCategories.some(({ category }) => !category)
-    ) {
-      toast.error(
-        t('engineering.templateMgmt.assembly.unavailableCategoryHint')
-      )
-      return
-    }
-
     templateSaveInProgressRef.current = true
     try {
       const isEdit = Boolean(editingTemplate.id)
@@ -266,13 +164,15 @@ export function TemplateMgmt() {
             {t('engineering.templateMgmt.status.synced')}
           </span>
         </div>
-        <Button
-          onClick={handleAdd}
-          className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
-        >
-          <Plus className='mr-2 size-4' />
-          {t('engineering.templateMgmt.actions.create')}
-        </Button>
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            onClick={handleAdd}
+            className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
+          >
+            <Plus className='mr-2 size-4' />
+            {t('engineering.templateMgmt.actions.create')}
+          </Button>
+        </div>
       </div>
 
       {displayTemplates.length === 0 ? (
@@ -389,27 +289,11 @@ export function TemplateMgmt() {
           if (!templateSaveInProgressRef.current) setIsDialogOpen(nextOpen)
         }}
         editingTemplate={editingTemplate}
-        selectedCategoryKey={selectedCategoryKey}
-        onSelectedCategoryKeyChange={setSelectedCategoryKey}
         onTemplateChange={setEditingTemplate}
-        onAddAttributeBinding={handleAddAttributeBinding}
-        onRemoveAttributeBinding={handleRemoveAttributeBinding}
-        onToggleRequired={handleToggleRequired}
         onSubmit={handleSubmit}
         isSaving={isSavingTemplate}
         locale={locale}
         t={t}
-        assembledCategories={assembledCategories}
-        availableCategories={availableCategories}
-        attributeOptions={attributeOptions}
-        isAttributeCatalogReady={hasLoadedCatalog && !attributeCatalogError}
-        attributeCatalogRequestState={
-          <ProductTemplateAttributeCatalogRequestState
-            isLoading={isAttributeCatalogLoading}
-            error={attributeCatalogError}
-            onRetry={() => void retryAttributeCatalog()}
-          />
-        }
       />
     </div>
   )

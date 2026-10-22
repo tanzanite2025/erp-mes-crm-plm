@@ -127,7 +127,9 @@ func defaultProductAttributeCategories() []models.ProductAttributeCategory {
 }
 
 func ListProductAttributeCategories(query ProductAttributeCategoryListQuery) ([]models.ProductAttributeCategory, error) {
-	tx := db.DB.Model(&models.ProductAttributeCategory{})
+	// Only BOM grade definitions remain in the standalone catalog. Product
+	// attributes are projected from each owning template below.
+	tx := db.DB.Model(&models.ProductAttributeCategory{}).Where("LOWER(key) = ?", "versionlevel")
 	if query.ActiveOnly {
 		tx = tx.Where("active = ?", true)
 	}
@@ -135,6 +137,15 @@ func ListProductAttributeCategories(query ProductAttributeCategoryListQuery) ([]
 	var items []models.ProductAttributeCategory
 	if err := tx.Order("sort_order asc").Order("name_zh asc").Find(&items).Error; err != nil {
 		return nil, err
+	}
+	ownedCategories, _, err := loadTemplateOwnedAttributeCatalog(db.DB)
+	if err != nil {
+		return nil, err
+	}
+	for _, category := range ownedCategories {
+		if !query.ActiveOnly || category.Active {
+			items = append(items, category)
+		}
 	}
 	return items, nil
 }

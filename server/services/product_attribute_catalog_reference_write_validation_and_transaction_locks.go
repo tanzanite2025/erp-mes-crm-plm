@@ -77,21 +77,6 @@ func validateAndLockProductAttributeValueReferences(tx *gorm.DB, references []mo
 	return nil
 }
 
-func validateAndLockProductTemplateAttributeBindingReferences(tx *gorm.DB, bindings []models.ProductTemplateAttributeBinding) error {
-	categoryKeys := make([]string, 0, len(bindings))
-	for _, binding := range bindings {
-		categoryKeys = append(categoryKeys, binding.CategoryKey)
-	}
-	categories, err := lockProductAttributeCatalogCategoriesWithinTransaction(tx, categoryKeys, "KEY SHARE")
-	if err != nil {
-		return err
-	}
-	for index := range bindings {
-		bindings[index].CategoryKey, _ = resolveCanonicalProductAttributeCategoryKeyFromList(categories, bindings[index].CategoryKey)
-	}
-	return nil
-}
-
 func validateAndLockProductLegacyAttributeFieldReferences(tx *gorm.DB, product *models.Product) error {
 	fields := []struct {
 		categoryKey string
@@ -105,7 +90,7 @@ func validateAndLockProductLegacyAttributeFieldReferences(tx *gorm.DB, product *
 			references = append(references, models.ProductAttributeValue{CategoryKey: field.categoryKey, OptionValue: *field.value})
 		}
 	}
-	if err := validateAndLockProductAttributeValueReferences(tx, references); err != nil {
+	if err := validateAndLockProductValuesAgainstOwnedTemplate(tx, product.TypeID, references, product.ID); err != nil {
 		return err
 	}
 	for _, reference := range references {

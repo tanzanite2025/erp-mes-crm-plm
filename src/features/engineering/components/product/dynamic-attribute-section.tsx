@@ -5,8 +5,7 @@ import { FormItem, FormLabel } from '@/components/ui/form'
 import { SelectDropdown } from '@/components/select-dropdown'
 import {
   type Product,
-  type ProductTemplateAttributeLevelOneCategory,
-  type ProductTemplateAttributeLevelTwoOption,
+  type ProductTemplateAttributeBinding,
 } from '../../data/schema'
 import { areSameProductAttributeCategoryKey } from '../../utils/product-attribute-machine-value'
 import {
@@ -16,20 +15,10 @@ import {
   getProductTemplateAttributeLevelTwoOptionLabel,
 } from '../../utils/product-attribute-utils'
 
-type DynamicAttributeBinding = {
-  id?: string
-  categoryKey: string
-  sortOrder?: number
-  required?: boolean
-  active?: boolean
-}
-
 interface DynamicAttributeSectionProps {
   form: UseFormReturn<Product>
   locale: string
-  categories: ProductTemplateAttributeLevelOneCategory[]
-  options: ProductTemplateAttributeLevelTwoOption[]
-  bindings: DynamicAttributeBinding[]
+  bindings: ProductTemplateAttributeBinding[]
   excludeCategoryKeys?: string[]
   onAttributeValueChange?: (categoryKey: string, nextValue: string) => void
 }
@@ -37,8 +26,6 @@ interface DynamicAttributeSectionProps {
 export function DynamicAttributeSection({
   form,
   locale,
-  categories,
-  options,
   bindings,
   excludeCategoryKeys = [],
   onAttributeValueChange,
@@ -62,18 +49,10 @@ export function DynamicAttributeSection({
     <div className='rounded-[18px] border border-dashed border-muted/30 bg-muted/5 p-2'>
       <div className='grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5'>
         {visibleBindings.map((binding) => {
-          const category = categories.find((item) =>
-            areSameProductAttributeCategoryKey(item.key, binding.categoryKey)
-          )
+          const category = { ...binding, key: binding.categoryKey }
           const currentValue = getAttributeValue(values, binding.categoryKey)
-          const categoryOptions = options
-            .filter(
-              (item) =>
-                areSameProductAttributeCategoryKey(
-                  item.categoryKey,
-                  binding.categoryKey
-                ) && item.active
-            )
+          const categoryOptions = binding.options
+            .filter((option) => option.active || option.value === currentValue)
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((item) => ({
               value: item.value,

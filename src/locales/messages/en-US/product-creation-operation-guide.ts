@@ -237,7 +237,7 @@ export const productCreationOperationGuide = {
           meaning:
             'These values come from the product specifications entered through its template, such as Standard Series or Hooked. The name and remaining labels together describe the product card.',
           location:
-            'Fill in the template fields when creating or editing the product. Maintain available choices in Product Template Attribute Categories and configure which attributes are used in Product Templates.',
+            'Fill in the selected template’s fields when creating or editing a product. Maintain attributes and choices directly in that template. Each template owns its configuration, and each product stores its own selections.',
         },
         bomAttributes: {
           display: 'BOM type, ownership, customer, grade and finished weight',
@@ -296,7 +296,7 @@ export const productCreationOperationGuide = {
     attributes: {
       title: 'Prepare the two levels of product template attributes',
       action:
-        'In Product Template Attribute Categories, maintain level 1 attribute categories (e.g. Material) and level 2 attribute options (e.g. Carbon Fiber), or reuse existing ones.',
+        'Edit the relevant product template to add attributes (e.g. Material) and options (e.g. Carbon Fiber), and configure required status, availability and order. Each template is maintained independently and saved with its definitions.',
       fields:
         'Chinese names for level 1 and level 2 attributes. Add English names and descriptions as needed. Internal identifiers are generated automatically.',
       result:

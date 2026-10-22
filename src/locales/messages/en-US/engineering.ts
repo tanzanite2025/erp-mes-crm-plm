@@ -6,7 +6,6 @@ export const engineering = {
     productCreationGuide: 'How to Create a Product',
     products: 'Product Management',
     productAppearance: 'Product Appearance',
-    productAttributes: 'Product Template Attribute Categories',
     bom: 'BOM Recipes',
     bomRecords: 'BOM Trace',
     sectionConfig: 'Section Config',
@@ -1139,9 +1138,11 @@ export const engineering = {
       component:
         'The selected component determines which physical parameter form is generated when creating a product.',
       assembly:
-        'Adding a level 1 attribute category makes all its active level 2 options available in the product form.',
+        'Add attributes and options within this template. Products fill in the fields of their selected template.',
       catalogEditing:
-        'Click an option to edit it. Saved attribute changes apply to every template using them. Click Save Template to save this template’s attribute bindings.',
+        'Edit attributes and options directly. Save Template commits the complete configuration and affects only the current template.',
+      sharedCatalogSaving:
+        'Attribute names, options and required settings belong to the current template and are saved together.',
     },
     buttons: {
       cancel: 'Cancel',
@@ -1153,6 +1154,7 @@ export const engineering = {
       addAttributeOption: 'Add Level 2 Attribute Option',
       editAttributeOption: 'Edit Level 2 Attribute Option · {{name}}',
       removeAttribute: 'Remove',
+      returnToTemplateConfiguration: 'Return to Template Configuration',
     },
     confirms: {
       delete:

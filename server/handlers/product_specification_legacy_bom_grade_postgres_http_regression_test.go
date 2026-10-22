@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
@@ -42,6 +43,7 @@ func createProductSpecificationLegacyBOMGradePostgresHTTPFixture(t *testing.T) (
 		{ProductID: product.ID, CategoryKey: "brakeType", OptionValue: "disc", SortOrder: 4, Version: 1},
 	}
 	require.NoError(t, database.Create(&product.AttributeValues).Error)
+	require.NoError(t, db.MigrateProductTemplateOwnedAttributeDefinitions(database))
 	require.NoError(t, database.Exec("ALTER TABLE boms ADD COLUMN product_id uuid").Error)
 	require.NoError(t, database.Exec("INSERT INTO boms (id, product_id, version_level) VALUES (?, ?, ?)", uuid.NewString(), product.ID, "lightweight").Error)
 	router.GET("/products", GetProductsHandler)

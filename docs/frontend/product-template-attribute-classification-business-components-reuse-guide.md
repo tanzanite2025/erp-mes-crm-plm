@@ -1,142 +1,64 @@
-# 产品模板属性分类业务组件复用
+# 产品模板独立属性配置与组件复用
 
-产品模板属性分类管理页、完整管理弹窗和快捷新增弹窗共用服务、校验及缓存刷新逻辑。调用方无需传入属性分类列表、组织保存请求或生成内部标识。
+产品模板直接拥有自己的属性定义和可选内容。打开车圈模板即可维护工艺系列、轮圈类型、制动类型等字段；其他模板分别维护自己的字段。不同模板可以有同名属性、同名选项，但各自保存，增删修改互不影响。
 
-## 领域与层级语义
+## 业务关系
 
-| 界面术语                 | 英文术语                            | 代码类型                                   | 含义                                                                                  |
-| ------------------------ | ----------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
-| 一级属性分类             | Level 1 Attribute Category          | `ProductTemplateAttributeLevelOneCategory` | 产品模板的属性维度，如材质、颜色。                                                    |
-| 二级属性分类（属性选项） | Level 2 Attribute Category (Option) | `ProductTemplateAttributeLevelTwoOption`   | 一级属性维度下的可选值，如材质下的碳纤维、铝合金。代码使用 `Option`，表示它是可选值。 |
-| 产品分类                 | Product Category                    | `ProductType`                              | 独立的产品分类树及基础型号，用于组织产品并关联产品模板。                              |
-
-产品模板通过属性绑定装配一级属性分类，产品表单在对应字段中选择二级属性选项。一级分类不从属于某个单独的模板，可以被多个产品模板复用。
-
-业务组件、组件文件及领域类型包含 `ProductTemplateAttribute` 和层级语义。现有路由 `/engineering/product-attributes`、HTTP 端点、数据库表和请求字段保留原协议：`categoryKey` 表示一级属性分类编码，`value` / `optionValue` 表示二级属性选项的内部值，`option` 表示二级属性记录。
-
-组件使用应用已有的 `QueryClientProvider` 和 `LanguageProvider`，请在应用上下文中调用。
-
-## 产品分类、具体产品与展示关系
-
-产品分类树与两级属性分类各自独立。产品分类按一级、二级、第三级基础型号组织，例如“碳纤维车圈 → 山地车车圈 → R50”。第三级的 R50 是自行命名的基础型号，在“产品管理 → 编辑分类 → 新增分类”中选择二级父分类，手填“分类名称”“分类编码”并关联模板；分类弹窗维护分类层级、基础型号和模板关系。
-
-具体产品是 `Product` 记录，通过 `typeId` 归入基础型号 `ProductType`。在“生成产品”中选用 R50，填写具体产品的两位数字型号编码、规格和属性后保存，即形成一张独立产品卡片。继续选用同一个 R50，可分别保存碟刹、V刹等不同规格的具体产品，各自保留产品身份、规格及 BOM 关联，展示在同一型号下面。卡片数量由实际保存的产品记录决定。基础型号的分类编码与具体产品的两位型号编码分别维护。
-
-卡片名称对应产品编辑底部“最终型号显示预览”的聚合名称。例如 R50（碟刹）中的 R50 对应三级基础型号，碟刹对应该产品选择的制动类型；完整名称及其余标签沿用现有聚合预览。工艺系列、轮圈类型等产品规格在产品编辑中维护，可选内容来自属性分类，使用哪些属性及是否必填由关联模板决定。BOM 类型、归属、归属客户、产品档次和成品重量等资料在关联的 BOM 中维护，卡片按现有展示规则读取。
-
-## 产品与 BOM 的操作边界
+- 模板定义字段名称、选项、排序、启用状态、是否必填。
+- 具体产品使用所属基础型号关联的模板，并单独保存自己的属性选择值。同一模板建立的多个产品可以填写不同选项。
+- 产品分类树独立维护一级分类、二级分类和第三级基础型号。例如“碳纤维车圈 → 山地车车圈 → R50”；R50 是自行命名的基础型号，在“产品管理 → 编辑分类 → 新增分类”中选择二级父分类，填写分类名称、编码并关联模板。
+- 分类弹层维护分类和基础型号；产品管理的每张卡片对应一条具体产品记录。同属 R50 的多个产品可分别填写碟刹、V 刹等规格，并在 BOM 中管理各自需求。
+- 卡片标题继续使用产品编辑底部“最终型号显示预览”的聚合规则。基础型号、产品规格和 BOM 资料分别读取自己的来源；属性选项名称必须按产品实际使用的模板解析，不能按同名字段从其他模板取值。
 
 BOM 是产品生命周期管理的必备资料，承载物料组成、版本和升级记录。产品建立、BOM 准备与验证、确认后的关联可以分开操作：产品可先保存，BOM 经验证确认可用后再在“BOM 配方”中关联具体产品。产品保存不以先绑定 BOM 为前提。
 
-BOM 通过 `productId` 关联具体的 `Product` 记录；产品通过 `typeId` 对应三级基础型号。产品编辑展示当前实际关联的 BOM，关联操作在 BOM 管理中完成。“如何建立产品”说明页和分步向导应按此解释；向导本次是否继续 BOM 步骤，不改变 BOM 在生命周期管理中的必备地位。
+产品档次 versionLevel 继续由 BOM 保存，其可选内容使用独立档次目录。在 BOM 表单的产品档次字段旁维护档次选项；它不参与产品模板的动态属性配置。
 
-## 快捷新增和编辑二级属性分类
+## 编辑与保存
 
-入口：`src/features/engineering/components/product-attributes/product-template-attribute-level-two-option-editor-dialog.tsx`。
+统一入口为 /engineering/templates。模板编辑直接展开当前模板的属性及其选项，支持新增、修改、移除、排序、必填和启用设置，无需进入公共属性库或先创建公共分类。
 
-```tsx
-import { useState } from 'react'
-import { ProductTemplateAttributeLevelTwoOptionEditorDialog } from '@/features/engineering/components/product-attributes/product-template-attribute-level-two-option-editor-dialog'
-import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '@/features/engineering/utils/product-attribute-utils'
+所有属性编辑保留在当前模板草稿内，通过“保存模板”一次提交。取消不写入属性或选项，保存失败保留草稿，保存期间阻止重复提交和关闭。模板保存成功后刷新模板及属性展示缓存。
 
-export function ProductTechnicalSeriesQuickCreateExample() {
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [selectedSeriesValue, setSelectedSeriesValue] = useState('')
+已有产品引用的属性或选项不能直接删除；可停用以限制后续新选择，既有产品仍保留并显示原值。未被使用的属性和选项可以删除。后端按基础型号的分类继承链定位模板，并验证产品提交的属性和选项属于该模板。
 
-  return (
-    <>
-      <button onClick={() => setCreateDialogOpen(true)}>新增工艺系列</button>
-      <output>{selectedSeriesValue}</output>
-      <ProductTemplateAttributeLevelTwoOptionEditorDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        categoryKey={PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series}
-        onSaved={(savedOption) => {
-          if (savedOption.active) setSelectedSeriesValue(savedOption.value)
-        }}
-      />
-    </>
-  )
-}
-```
+分类或基础型号仍关联模板时禁止删除该模板，并提示先调整分类的模板关联。未使用的模板删除时，其独立属性定义一并移除。
 
-| 参数                   | 用途                                                                                             |
-| ---------------------- | ------------------------------------------------------------------------------------------------ |
-| `open`、`onOpenChange` | 控制弹窗开关；关闭后下次打开会创建新的表单会话。                                                 |
-| `categoryKey`          | 可选，预选并锁定归属分类；不传时允许选择分类。兼容现有分类编码的大小写和分隔符规范化规则。       |
-| `option`               | 可选，传入已有 `ProductTemplateAttributeLevelTwoOption` 即进入编辑模式，保留原有内部标识和版本。 |
-| `onSaved`              | 可选，保存和共享查询刷新结束后，回传后端返回的完整分类项。可用于原表单自动选中。                 |
+不提供独立属性分类 TAB、独立分类路由、公共分类库入口或旧地址兼容跳转。HOME 和操作手册统一进入产品模板页。
 
-弹窗打开时自行加载分类。未加载成功、分类不存在或尚未创建分类时禁止提交。新增内部标识在当前会话生成一次，保存失败后保留表单及标识，重试不会生成另一个标识。保存期间禁止重复提交和主动关闭。
+## 文件职责
 
-当前会话保留最初的编辑记录、版本和默认归属分类。调用方收到更新后的同一记录，或后台刷新导致分类消失时，不会覆盖草稿、改用新版本提交或自动切换到另一分类；分类消失时阻止保存，避免意外归类。
+| 文件                                                                                                      | 职责                                                                                     |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| src/features/engineering/tabs/template-mgmt.tsx                                                           | 模板列表、草稿生命周期及提交                                                             |
+| src/features/engineering/components/template-mgmt/template-editor-dialog.tsx                              | 模板弹窗、固定尺寸、统一保存及取消                                                       |
+| src/features/engineering/components/template-mgmt/product-template-owned-attribute-definitions-editor.tsx | 可复用的模板属性与选项编辑组件；通过参数接收并返回当前模板草稿，不自行请求或保存公共数据 |
+| src/features/engineering/components/product/dynamic-attribute-section.tsx                                 | 根据当前模板定义生成产品属性输入                                                         |
+| server/services/product_template_owned_attribute_definitions.go                                           | 独立定义校验、产品引用保护、模板范围校验及展示投影                                       |
+| server/services/product_template_service.go                                                               | 模板与其属性定义的事务保存、版本检查                                                     |
+| server/db/product_template_owned_attribute_definitions_migration.go                                       | 将现有公共引用一次性复制为每个模板的独立定义                                             |
 
-## 完整管理弹窗
+复用界面组件和校验代码，不共享模板的业务数据。
 
-入口：`src/features/engineering/components/product-attributes/product-template-attribute-classification-management-dialog.tsx`。
+## 数据与迁移
 
-```tsx
-<ProductTemplateAttributeClassificationManagementDialog
-  open={managementDialogOpen}
-  onOpenChange={setManagementDialogOpen}
-  initialLevelOneCategoryKey={PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series}
-  onLevelTwoOptionSaved={(savedOption) => {
-    if (
-      savedOption.active &&
-      areSameProductAttributeCategoryKey(
-        savedOption.categoryKey,
-        PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series
-      )
-    ) {
-      setSelectedSeriesValue(savedOption.value)
-    }
-  }}
-/>
-```
+ProductTemplateAttributeBinding 记录模板自身的字段名称及 options 选项数组，不再只记录公共分类引用。categoryKey 和 optionValue 继续作为当前模板范围内的字段和值标识，具体产品的已有选择无需改写。
 
-`ProductTemplateAttributeClassificationManagementDialog` 从上述入口导入；`areSameProductAttributeCategoryKey` 从 `utils/product-attribute-machine-value.ts` 导入。完整管理支持分类及分类项的新增、编辑、删除和排序。`initialLevelOneCategoryKey` 在每次打开时预选分类；没有有效匹配时选中列表首项。`onLevelTwoOptionSaved` 可能回传其他分类的分类项，调用方应按归属分类和启用状态决定是否回填。
+启动迁移按已有模板引用复制名称、说明和全部选项，每个模板获得独立数据。迁移包含事务与一次性标记；重复启动不会覆盖已经独立编辑的模板，遇到缺失定义整批回滚并报告问题。
 
-需要直接嵌入现有布局时，可使用同目录的 `ProductTemplateAttributeClassificationManagementPanel`；原 `/engineering/product-attributes` 页面已使用该面板。
+属性展示查询返回带 templateId 的模板属性投影，独立目录只返回 BOM 档次。产品卡片、产品填写和建档步骤优先直接读取模板自己的定义；聚合名称按模板范围匹配选项。
 
-新增一级属性分类时，组件自动生成内部分类编码，表单与分类列表仅展示业务名称，不要求手填编码。编码在打开新增表单时生成一次，保存失败重试时沿用；关闭后重新新增会生成新的编码。编辑已有一级属性分类保留原编码和引用关系。二级属性分类的内部值同样自动生成。
+模板读取由查询层管理缓存，服务层仅合并同时进行的请求，重新查询会读取服务端数据。产品弹窗关闭时不发起模板请求，重新打开时更新定义；切换基础型号时重新解析对应模板，解析完成前暂停提交，旧请求不得覆盖当前选择。
 
-## 数据刷新
+模板 ID 和分类继承链中的模板关联优先于表单组件类型。明确关联的模板不存在时显示未解析状态，不借用其他模板；多个模板可以复用同一表单组件，组件类型本身不能用来区分模板的业务数据。
 
-`/engineering/templates` 的产品模板编辑弹窗已接入完整管理弹窗和二级选项编辑弹窗：属性配置区可管理全部产品模板属性分类；已加入的分类及待加入分类可定向打开管理；点击选项胶囊可编辑，并可在分类下直接新增二级属性选项。无需跳转页面。
+产品变更记录按变更前后各自的模板读取属性名称和选项名称。产品已删除时，优先使用记录中的模板或分类定位；无法定位时展示原始记录值，不从其他模板借用名称。停用属性不影响已有产品已填值的展示。
 
-分类、选项的保存即时生效并应用于所有引用模板，模板的名称、说明、属性绑定及必填状态仍需通过“保存模板”提交。子弹窗复用当前查询客户端，更新目录及预览时保留模板草稿和原始版本；子弹窗提交不触发模板提交。若分类在维护期间被删除，保留草稿中的绑定并提示移除，阻止提交失效引用。
+模板全量保存、字段补丁和产品属性写入锁定同一模板记录。并发修改时取得锁后重新核对版本和引用，失败整笔回滚，避免保存已被删除的选项或被旧版本覆盖。
 
-管理组件读取独立的完整数据缓存，包含停用项，避免与业务表单的启用项缓存混用。保存后统一按产品属性查询前缀刷新完整管理数据及已挂载业务表单的数据。未挂载的查询会标记为失效，下次使用时重新加载。组件不自行创建第二个查询客户端，也不依赖管理页面的路由或状态。
+## 验证
 
-后端返回的保存结果会先合并到已有缓存，再请求刷新。若后台刷新失败，保留已有数据和正在编辑的草稿，并显示重试入口；已落库的保存仍会正常回传 `onSaved`，避免用户误以为保存失败而重复创建。启用项缓存会剔除停用项，完整缓存保留停用项。审计弹窗使用完整缓存，避免污染业务表单的启用项数据。
-
-合并保存结果前会取消该目录尚未结束的查询，防止旧请求覆盖保存结果；首次正在加载的业务表单也会重新请求。删除成功后先从现有缓存移除记录及分类下的分类项，再刷新；即使刷新失败，也不会继续显示已删除记录和旧数量。服务端拒绝删除时保留缓存。
-
-## 保存与引用约束
-
-产品规格与 BOM 的属性归属需保持一致：`techSeries`、`tireType`、`brakeType` 属于产品规格；`versionLevel`（产品档次）已迁到 BOM，不再作为产品动态属性保存。产品读取适配器和写入适配器都会排除历史残留的 `versionLevel`；后端产品读取和保存也执行同一约束，兼容已打开的旧表单和旧客户端。
-
-产品读取不修改历史数据。成功保存规格后，旧动态属性由现有替换流程软删除，历史值仍可追溯，不会用旧产品档次覆盖任何 BOM。其他缺失分类或分类项仍拒绝保存并回滚，版本冲突保护保持生效。BOM 读取和写入的档次字段不经过产品属性过滤。
-
-新增和编辑仍使用现有 POST 保存端点。编辑请求采用 SDRTS `{ op: 'PATCH', delta, metadata: { id, version } }`，仅提交实际变化的字段。业务组件自行保留打开编辑时的原始记录；直接调用 `saveProductAttributeOption(next, current)` 或 `saveProductAttributeCategory(next, current)` 时，必须传入原始记录作为第二个参数。未发生变化时不发送请求。
-
-清空英文名称或说明会显式提交空字符串，清空生效时间提交 `null`。历史分类编码和分类项内部值不会在编辑时自动规范化，避免破坏已有引用。后端以版本条件更新防止并发覆盖，冲突返回 409 并保留当前草稿，需刷新后重新打开编辑。
-
-已被产品使用的分类、分类项，以及已被产品模板绑定的分类禁止删除，可通过停用控制后续使用。检查范围包含动态产品属性、旧版产品工艺系列/轮圈/制动字段和 BOM 档次。删除和排序均按兼容分类编码识别历史分类项，排序参数无效时整批回滚。
-
-引用写入和目录删除使用同一分类行的事务锁：引用先提交则拒绝删除；删除先提交则拒绝写入失效引用。产品和模板替换引用前会验证分类、分类项仍然存在，验证失败会回滚整个保存并保留原引用。已有停用项允许保留，避免阻断历史记录编辑。
-
-## 回归验证
-
-前端业务交互及真实 API 客户端请求契约：
-
-```sh
-pnpm exec vitest run src/features/engineering/components/product-attributes/product-template-attribute-classification-business-dialogs.spec.tsx src/features/engineering/services/product-attribute-catalog-save-http-contract.spec.ts src/features/engineering/hooks/use-product-attribute-write-actions-cache-synchronization.spec.tsx
-```
-
-后端 HTTP → 服务 → PostgreSQL 持久化验证：设置 `PRODUCT_ATTRIBUTE_CATALOG_TEST_POSTGRES_DSN` 后，在 `server` 目录执行下列命令。测试使用临时独立 schema 并在结束时清理，覆盖停用状态、字段清空、字段列映射、历史编码、并发冲突、排序回滚及引用删除保护。
-
-```sh
-go test ./handlers -run '^TestProductAttributeCatalogHTTP' -count=1 -v
-go test ./services -run '^TestProductAttributeCatalog' -count=1 -v
-```
+- PostgreSQL 隔离测试：迁移独立性、重复执行、失败回滚和产品原值保留。
+- PostgreSQL 服务和 HTTP 测试：同名属性隔离、跨模板选项拒绝、版本冲突、已有引用保护及并发保存。
+- 前端测试：直接增删编辑、草稿隔离、取消、失败重试、重复提交拦截、产品标签按模板解析，以及远端刷新、弹窗重开和型号切换时的请求隔离。
+- 类型、格式、国际化和生产构建检查；浏览器布局与 Chrome 109 兼容检查另行记录实测结果。

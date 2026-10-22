@@ -28,8 +28,8 @@ const productCreationHandbookReferenceTopics = [
   {
     key: 'attributes',
     icon: Layers,
-    href: '/engineering/product-attributes',
-    pageLabelKey: 'engineering.tabs.productAttributes',
+    href: '/engineering/templates',
+    pageLabelKey: 'engineering.tabs.templates',
   },
   {
     key: 'appearance',

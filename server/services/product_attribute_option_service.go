@@ -350,7 +350,7 @@ func classifyProductAttributeOptionError(err error) error {
 }
 
 func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]models.ProductAttributeOption, error) {
-	tx := db.DB.Model(&models.ProductAttributeOption{})
+	tx := db.DB.Model(&models.ProductAttributeOption{}).Where("LOWER(category) = ?", "versionlevel")
 	if query.ActiveOnly {
 		tx = tx.Where("active = ?", true)
 	}
@@ -364,6 +364,15 @@ func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]model
 		return nil, err
 	}
 	canonicalizeProductAttributeOptionCategoryKeys(categories, items)
+	_, ownedOptions, err := loadTemplateOwnedAttributeCatalog(db.DB)
+	if err != nil {
+		return nil, err
+	}
+	for _, option := range ownedOptions {
+		if !query.ActiveOnly || option.Active {
+			items = append(items, option)
+		}
+	}
 	if strings.TrimSpace(query.CategoryKey) == "" {
 		return items, nil
 	}

@@ -44,7 +44,7 @@ export function resolveTemplateFromType(
   return templates.find((template) => template.id === templateId) || null
 }
 
-function resolveTemplateFromTypeChain(
+export function resolveTemplateFromTypeChain(
   types: ProductType[],
   typeId?: string | null
 ): TemplateBoundType | null {
@@ -88,8 +88,7 @@ export function resolveTemplateFromComponentKey(
     return matches[0]
   }
 
-  const activeMatch = matches.find((template) => template.active)
-  return activeMatch || null
+  return null
 }
 
 export function resolveEffectiveTemplate(
@@ -101,10 +100,10 @@ export function resolveEffectiveTemplate(
     params.typeId
   )
   const templateFromType = resolveTemplateFromType(templates, resolvedType)
-  if (templateFromType) {
+  if (normalizeTemplateIdentity(resolvedType?.templateId)) {
     return {
       template: templateFromType,
-      source: 'typeBinding',
+      source: templateFromType ? 'typeBinding' : 'none',
     }
   }
 
@@ -129,15 +128,25 @@ export function resolveAuthoritativeTemplate(
   templates: ProductTemplate[],
   params: ProductAuthoritativeTemplateParams
 ): ProductTemplateResolution {
-  const templateFromResolvedId = templates.find(
-    (template) =>
-      template.id === normalizeTemplateIdentity(params.resolvedTemplateId)
+  const resolvedTemplateId = normalizeTemplateIdentity(
+    params.resolvedTemplateId
   )
-  if (templateFromResolvedId) {
+  if (resolvedTemplateId) {
+    const templateFromResolvedId = templates.find(
+      (template) => template.id === resolvedTemplateId
+    )
     return {
-      template: templateFromResolvedId,
-      source: 'resolvedTemplateId',
+      template: templateFromResolvedId ?? null,
+      source: templateFromResolvedId ? 'resolvedTemplateId' : 'none',
     }
+  }
+
+  const boundType = resolveTemplateFromTypeChain(
+    params.productTypes,
+    params.typeId
+  )
+  if (normalizeTemplateIdentity(boundType?.templateId)) {
+    return resolveEffectiveTemplate(templates, params)
   }
 
   const templateFromResolvedKey = resolveTemplateFromComponentKey(
