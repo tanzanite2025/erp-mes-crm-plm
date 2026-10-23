@@ -1,0 +1,6 @@
+/* Chrome 109 counts the stable root gutter again when centering fixed portals. */
+@supports not (color: color-mix(in oklab, black, white)) {
+  html:has(.mold-master-library-floating-surface[data-state='open']) {
+    scrollbar-gutter: auto;
+  }
+}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { GitBranch, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
@@ -108,9 +109,9 @@ export function ProductionRouteMgmt() {
   const handleDelete = async (route: ProductionRoute) => {
     if (
       !canManage ||
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         t('productionArchitecture.routes.deleteConfirm', { name: route.name })
-      )
+      ))
     ) {
       return
     }

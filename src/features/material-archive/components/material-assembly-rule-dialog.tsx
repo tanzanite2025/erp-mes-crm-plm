@@ -72,7 +72,7 @@ export function MaterialAssemblyRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-[550px]'>
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-        <div className='relative max-h-[90vh] overflow-y-auto p-8'>
+        <div className='relative overflow-y-auto p-8'>
           <DialogHeader className='mb-8'>
             <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter text-primary'>
               <Settings2 className='size-5' />
@@ -109,7 +109,7 @@ export function MaterialAssemblyRuleDialog({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className='w-[486px] overflow-hidden rounded-2xl border-none p-0 shadow-2xl'
+                  className='w-[var(--radix-popover-trigger-width)] max-w-[var(--radix-popover-content-available-width)] overflow-hidden rounded-2xl border-none p-0 shadow-2xl'
                   align='start'
                 >
                   <Command className='rounded-2xl'>
@@ -119,7 +119,7 @@ export function MaterialAssemblyRuleDialog({
                       )}
                       className='h-12 border-none'
                     />
-                    <CommandList className='max-h-[300px]'>
+                    <CommandList className='max-h-[min(300px,calc(var(--radix-popover-content-available-height)-3rem))]'>
                       <CommandEmpty>
                         {t(
                           'materialArchive.assemblyManager.dialog.noMaterialFound'

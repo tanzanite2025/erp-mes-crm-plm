@@ -395,6 +395,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             url: '/engineering/product-creation-guide',
             icon: BookOpen,
           },
+          {
+            id: 'bom-creation-handbook',
+            titleKey: 'engineering.tabs.bomCreationGuide',
+            url: '/engineering/bom-creation-guide',
+            icon: BookOpen,
+          },
         ],
       },
       {

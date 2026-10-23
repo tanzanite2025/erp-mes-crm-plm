@@ -35,22 +35,28 @@ export function ExcelViewerDialog({
 }: ExcelViewerDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex h-[85vh] w-[95vw] flex-col overflow-hidden border-none bg-card p-0 sm:max-w-[95vw]'>
+      <DialogContent
+        data-mobile-floating-surface-layout='column'
+        className='flex h-[85vh] w-[95vw] flex-col overflow-hidden border-none bg-card p-0 sm:max-w-[95vw]'
+      >
         {/* 装饰性页头 */}
         <DialogHeader className='border-b bg-emerald-500/5 p-6'>
-          <div className='flex items-center justify-between pr-8'>
-            <div className='flex items-center gap-4'>
-              <div className='flex size-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 shadow-inner'>
+          <div className='flex min-w-0 items-center justify-between pr-8'>
+            <div className='flex min-w-0 flex-1 items-center gap-4'>
+              <div className='flex size-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 shadow-inner'>
                 <FileSpreadsheet className='size-6' />
               </div>
-              <div className='min-w-0 space-y-0.5'>
-                <DialogTitle className='truncate text-lg font-black tracking-tight uppercase'>
+              <div className='min-w-0 flex-1 space-y-0.5'>
+                <DialogTitle
+                  title={fileName}
+                  className='truncate text-lg font-black tracking-tight uppercase'
+                >
                   {fileName}
                 </DialogTitle>
-                <DialogDescription className='flex items-center gap-2 truncate text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
-                  <TableProperties className='size-3 text-emerald-600' />
+                <DialogDescription className='flex flex-wrap items-center gap-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
+                  <TableProperties className='size-3 shrink-0 text-emerald-600' />
                   结构化报表工具 · 归档型号:{' '}
-                  <span className='font-maple-ui text-emerald-600'>
+                  <span className='min-w-0 font-maple-ui break-all text-emerald-600'>
                     {sku || 'N/A'}
                   </span>
                 </DialogDescription>
@@ -60,7 +66,10 @@ export function ExcelViewerDialog({
         </DialogHeader>
 
         {/* 预览区 */}
-        <div className='min-h-0 flex-1 overflow-hidden bg-muted/5 p-6'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='min-h-0 flex-1 overflow-auto bg-muted/5 p-4 sm:p-6'
+        >
           <Suspense
             fallback={
               <div className='flex h-full items-center justify-center rounded-2xl border border-dashed bg-muted/20 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
@@ -71,7 +80,7 @@ export function ExcelViewerDialog({
             {open ? (
               <ExcelViewer
                 fileUrl={fileUrl}
-                className='h-full shadow-2xl shadow-emerald-500/5'
+                className='h-full min-h-48 shadow-2xl shadow-emerald-500/5'
               />
             ) : null}
           </Suspense>

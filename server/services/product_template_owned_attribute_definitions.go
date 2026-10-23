@@ -21,7 +21,7 @@ func normalizeAndValidateTemplateOwnedAttributeDefinitions(bindings []models.Pro
 			return domainValidationError("当前模板的属性标识无效或重复")
 		}
 		if sameProductAttributeCategoryKey(binding.CategoryKey, "versionLevel") {
-			return domainValidationError("产品档次由 BOM 管理，不能添加到产品模板属性")
+			return domainValidationError("性能版本由 BOM 管理，不能添加到产品模板属性")
 		}
 		if binding.NameZh == "" || len([]rune(binding.NameZh)) > 255 || len([]rune(binding.NameEn)) > 255 {
 			return domainValidationError("模板属性名称不能为空，且不能超过 255 个字符")

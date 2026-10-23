@@ -8,11 +8,12 @@ import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { type Mold, type MoldLoan } from '../data/schema'
+import { MOLDS_QUERY_KEY } from '../mold-master-library-query-keys'
 import { AssetService } from '../services/asset-service'
 import { MoldCoreService } from '../services/mold-core-service'
 import { MoldLoanService } from '../services/mold-loan-service'
 import { EquipmentPartnerService } from '../services/partner-service'
-import { MOLD_LOANS_QUERY_KEY, MOLDS_QUERY_KEY } from './use-assets'
+import { MOLD_LOANS_QUERY_KEY } from './use-assets'
 
 export type LoanMode = 'LEND' | 'BORROW'
 const EQUIPMENT_PARTNERS_QUERY_KEY = ['equipmentPartners'] as const

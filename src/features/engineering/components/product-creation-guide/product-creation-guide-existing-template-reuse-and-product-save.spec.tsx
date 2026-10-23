@@ -456,7 +456,7 @@ describe('existing configuration reuse in the product creation wizard', () => {
     const { onCompleted } =
       renderExistingProductCreationConfiguration('template')
     expect(
-      await screen.findByRole('combobox', { name: '选择产品模板' })
+      await screen.findByRole('combobox', { name: '选择物理规格模板' })
     ).toBeInTheDocument()
     await waitFor(() =>
       expect(
@@ -465,7 +465,7 @@ describe('existing configuration reuse in the product creation wizard', () => {
     )
     expect(screen.getByRole('combobox')).toHaveTextContent('已有模板')
     expect(
-      screen.queryByRole('button', { name: '新建产品模板' })
+      screen.queryByRole('button', { name: '新建物理规格模板' })
     ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '确认使用并继续' }))
     await waitFor(() =>
@@ -492,7 +492,7 @@ describe('existing configuration reuse in the product creation wizard', () => {
       screen.getByRole('button', { name: '确认使用并继续' })
     ).toBeDisabled()
     expect(
-      screen.queryByRole('button', { name: '新建产品模板' })
+      screen.queryByRole('button', { name: '新建物理规格模板' })
     ).not.toBeInTheDocument()
     expect(onCompleted).not.toHaveBeenCalled()
   })

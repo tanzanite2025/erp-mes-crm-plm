@@ -34,6 +34,7 @@ export const common = {
     goToPage: 'Go to page {{page}}',
   },
   actions: {
+    confirm: 'Confirm',
     reset: 'Reset',
     retry: 'Retry',
     loading: 'Loading...',
@@ -49,6 +50,11 @@ export const common = {
     refresh: 'Refresh',
     search: 'Search',
     signOut: 'Sign Out',
+  },
+  dialogs: {
+    confirmTitle: 'Confirm action',
+    promptTitle: 'Enter information',
+    alertTitle: 'Notice',
   },
   audit: {
     trigger: 'Change Log',

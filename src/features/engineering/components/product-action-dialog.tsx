@@ -4,6 +4,7 @@ import React from 'react'
 import { type FieldErrors, useWatch } from 'react-hook-form'
 import { Box, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -33,6 +34,7 @@ import {
 } from './product-creation-dialog-layout.styles'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductBasicInfo } from './product/product-basic-info'
+import { productFormTypographyClassNames } from './product/product-form-typography.styles'
 import { ProductLinkedBomRecordsReadOnlySection } from './product/product-linked-bom-records-read-only-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { getLocalizedSpecComponents } from './specs'
@@ -187,7 +189,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   const handleDelete = async () => {
     if (!currentRow) return
 
-    const confirmed = window.confirm(
+    const confirmed = await requestApplicationConfirmation(
       t('engineering.productArchive.toasts.deleteConfirm')
     )
     if (!confirmed) return
@@ -222,7 +224,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
       >
         {wizardHeader}
         <DialogHeader className='shrink-0 border-b border-dashed border-muted/50 bg-muted/5 px-8 py-3 text-start'>
-          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter text-slate-800'>
+          <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter text-foreground'>
             <div className='size-2 animate-pulse rounded-full bg-blue-600' />
             {wizardHeader
               ? t('engineering.productCreationGuide.steps.product.title')
@@ -277,10 +279,15 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
               {baseModelError ? (
                 <div className='rounded-[20px] border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-amber-900'>
-                  <div className='text-[10px] font-black tracking-widest uppercase'>
+                  <div className={productFormTypographyClassNames.helper}>
                     {t('engineering.productMgmt.form.category')}
                   </div>
-                  <p className='mt-1 text-[11px] leading-relaxed font-bold'>
+                  <p
+                    className={cn(
+                      'mt-1',
+                      productFormTypographyClassNames.helper
+                    )}
+                  >
                     {baseModelError}
                   </p>
                 </div>
@@ -290,10 +297,15 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 <div className='rounded-2xl border border-dashed border-red-300 bg-red-50/90 px-4 py-2 text-red-900'>
                   <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='min-w-0'>
-                      <div className='text-[9px] font-black tracking-widest text-red-700 uppercase'>
+                      <div
+                        className={cn(
+                          'text-red-700',
+                          productFormTypographyClassNames.helper
+                        )}
+                      >
                         Template Binding Broken
                       </div>
-                      <p className='text-[10px] leading-tight font-black'>
+                      <p className={productFormTypographyClassNames.helper}>
                         {templateResolveError}
                       </p>
                     </div>
@@ -311,10 +323,20 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 <div className='rounded-2xl border border-dashed border-blue-300 bg-blue-50/90 px-3 py-1.5 text-blue-900'>
                   <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='min-w-0'>
-                      <div className='text-[9px] font-black tracking-widest text-blue-700 uppercase'>
+                      <div
+                        className={cn(
+                          'text-blue-700',
+                          productFormTypographyClassNames.helper
+                        )}
+                      >
                         Template Status
                       </div>
-                      <p className='truncate text-[10px] leading-tight font-black'>
+                      <p
+                        className={cn(
+                          'truncate',
+                          productFormTypographyClassNames.helper
+                        )}
+                      >
                         {t(
                           'engineering.productMgmt.dialog.attributeBindingTemplateLabel',
                           {
@@ -348,13 +370,23 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
               {metadataInitError ? (
                 <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900'>
-                  <div className='text-[10px] font-black tracking-widest uppercase'>
+                  <div className={productFormTypographyClassNames.helper}>
                     {t('engineering.productMgmt.metadata.errorTitle')}
                   </div>
-                  <p className='mt-1 text-[11px] leading-relaxed font-bold'>
+                  <p
+                    className={cn(
+                      'mt-1',
+                      productFormTypographyClassNames.helper
+                    )}
+                  >
                     {metadataInitError}
                   </p>
-                  <p className='mt-1 text-[10px] font-medium opacity-80'>
+                  <p
+                    className={cn(
+                      'mt-1',
+                      productFormTypographyClassNames.helper
+                    )}
+                  >
                     {t('engineering.productMgmt.metadata.errorHint')}
                   </p>
                 </div>
@@ -362,13 +394,23 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
 
               {nextCodeDeriveError ? (
                 <div className='rounded-[24px] border border-dashed border-orange-300 bg-orange-50 px-4 py-3 text-orange-900'>
-                  <div className='text-[10px] font-black tracking-widest uppercase'>
+                  <div className={productFormTypographyClassNames.helper}>
                     Code Issuance Failed
                   </div>
-                  <p className='mt-1 text-[11px] leading-relaxed font-bold'>
+                  <p
+                    className={cn(
+                      'mt-1',
+                      productFormTypographyClassNames.helper
+                    )}
+                  >
                     {nextCodeDeriveError}
                   </p>
-                  <p className='mt-1 text-[10px] font-medium opacity-80'>
+                  <p
+                    className={cn(
+                      'mt-1',
+                      productFormTypographyClassNames.helper
+                    )}
+                  >
                     {!isEdit && (!watchedModelCode || watchedModelCode === '01')
                       ? 'Authority code issuance is unavailable. Resolve the backend issuance error or fill a valid model code before saving.'
                       : 'Authority code issuance failed. Verify the backend issuer before continuing.'}
@@ -393,10 +435,20 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     <Box className='size-5 animate-pulse text-blue-600/30' />
                   </div>
                   <div className='space-y-1'>
-                    <p className='text-[10px] font-black text-slate-800'>
+                    <p
+                      className={cn(
+                        'text-foreground',
+                        productFormTypographyClassNames.helper
+                      )}
+                    >
                       {t('engineering.productMgmt.dialog.templatePending')}
                     </p>
-                    <p className='max-w-[280px] text-[9px] font-black text-muted-foreground/30'>
+                    <p
+                      className={cn(
+                        'max-w-[280px] text-muted-foreground',
+                        productFormTypographyClassNames.helper
+                      )}
+                    >
                       {t('engineering.productMgmt.dialog.templateHint')}
                     </p>
                   </div>
@@ -414,20 +466,33 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             </form>
           </Form>
         </div>
-        <DialogFooter className='flex shrink-0 flex-col gap-2 border-t border-dashed border-muted/50 bg-white px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
+        <DialogFooter className='flex shrink-0 flex-col gap-2 border-t border-dashed border-muted/50 bg-background px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
           <div className='min-w-0 flex-1 rounded-[20px] border border-dashed border-blue-600/30 bg-blue-600/5 px-3 py-2'>
             <div className='flex items-center justify-between gap-3 border-b border-dashed border-blue-600/30 pb-1'>
-              <span className='text-[10px] font-black text-blue-800'>
+              <span
+                className={cn(
+                  'text-blue-800 dark:text-blue-300',
+                  productFormTypographyClassNames.helper
+                )}
+              >
                 {t('engineering.productMgmt.dialog.previewTitle')}
               </span>
               <Badge
                 variant='outline'
-                className='h-4 border-blue-300 bg-white px-1 text-[8px] font-black text-blue-700'
+                className={cn(
+                  'min-h-5 border-blue-300 bg-background px-1 text-blue-700 dark:border-blue-800 dark:text-blue-300',
+                  productFormTypographyClassNames.badge
+                )}
               >
                 {t('engineering.productArchive.states.live')}
               </Badge>
             </div>
-            <p className='mt-1 text-[11px] leading-tight font-black tracking-tighter break-all text-blue-900 dark:text-blue-200'>
+            <p
+              className={cn(
+                'mt-1 break-all text-blue-900 dark:text-blue-200',
+                productFormTypographyClassNames.preview
+              )}
+            >
               {specPreviewAggregateLabel ||
                 (specPreviewV2
                   ? specPreviewTitle || specPreviewV2.title
@@ -441,10 +506,11 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     key={item.key}
                     variant='outline'
                     className={cn(
-                      'h-5 rounded-full border-dashed px-2 font-maple-ui text-[8px] tracking-wide uppercase',
+                      'min-h-5 rounded-full border-dashed px-2 font-maple-ui',
+                      productFormTypographyClassNames.badge,
                       item.empty
-                        ? 'border-slate-200 bg-white text-slate-400'
-                        : 'border-blue-300 bg-white text-blue-700'
+                        ? 'border-slate-200 bg-background text-muted-foreground dark:border-slate-700'
+                        : 'border-blue-300 bg-background text-blue-700 dark:border-blue-800 dark:text-blue-300'
                     )}
                   >
                     {item.label}: {item.value}
@@ -468,7 +534,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 variant='outline'
                 disabled={isDeletingProduct}
                 onClick={() => void handleDelete()}
-                className='h-11 rounded-full border-destructive/20 bg-white px-10 text-[11px] font-black text-destructive shadow-xl shadow-destructive/10 transition-all hover:scale-105 hover:bg-destructive/5 hover:text-destructive active:scale-95 sm:h-9'
+                className={cn(
+                  'h-11 rounded-full border-destructive/20 bg-background px-10 text-destructive shadow-xl shadow-destructive/10 transition-all hover:scale-105 hover:bg-destructive/5 hover:text-destructive active:scale-95 sm:h-9',
+                  productFormTypographyClassNames.button
+                )}
               >
                 <Trash2 className='mr-2 size-4' />
                 {isDeletingProduct
@@ -480,7 +549,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               type='submit'
               form='product-form'
               disabled={submissionBlocked || isDeletingProduct}
-              className='h-11 rounded-full bg-blue-600 px-10 text-[11px] font-black shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:h-9'
+              className={cn(
+                'h-11 rounded-full bg-blue-600 px-10 text-white shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:h-9',
+                productFormTypographyClassNames.button
+              )}
             >
               {t(
                 wizardHeader

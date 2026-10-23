@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { technicalSpecSchema } from '@/features/engineering-db/data/schema'
 
 const optionalControlDateSchema = z.string().trim().nullable().optional()
 const nullableOptionalBucketSchema = z
@@ -20,7 +19,8 @@ const engineeringSpecInputBaseSchema = z.object({
   changeOrderNo: z.string().optional(),
   siteCode: z.string().optional(),
   isDefaultSite: z.boolean().optional(),
-  specData: technicalSpecSchema.partial().passthrough().optional(),
+  // Each engineering domain validates its own bucket before using this transport.
+  specData: z.record(z.string(), z.unknown()).optional(),
   drillingData: z.record(z.string(), z.unknown()).optional(),
   cuttingData: z.record(z.string(), z.unknown()).optional(),
   labelingData: z.record(z.string(), z.unknown()).optional(),

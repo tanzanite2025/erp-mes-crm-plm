@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ import (
 func createTemplateOwnedAttributeServiceTestDatabase(t *testing.T) *gorm.DB {
 	t.Helper()
 	database, _ := createIsolatedProductAttributeCatalogReferenceConcurrencyFixture(t)
-	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}, &models.ProductType{}))
+	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}, &models.ProductType{}, &models.AuditLog{}))
 	require.NoError(t, database.Exec("ALTER TABLE products ADD COLUMN type_id uuid").Error)
 	return database
 }
@@ -87,7 +88,7 @@ func TestTemplateAttributeEditsAndConcurrentProductWritesCannotLeaveBrokenRefere
 
 func createTemplateWithIndependentBrakeOptionsForTest(t *testing.T, code, label, value string) models.ProductTemplate {
 	t.Helper()
-	template, err := SaveProductTemplate(SaveProductTemplateInput(models.ProductTemplate{
+	template, err := SaveProductTemplate(context.Background(), SaveProductTemplateInput(models.ProductTemplate{
 		Name: code, Code: code, ComponentKey: "RIM", Active: true,
 		AttributeBindings: []models.ProductTemplateAttributeBinding{{
 			CategoryKey: "brakeType", NameZh: "制动类型", NameEn: "Brake Type", Active: true,
@@ -105,7 +106,7 @@ func TestTemplateOwnedAttributesSaveAndReadSameNamesWithoutSharing(t *testing.T)
 	first.AttributeBindings[0].NameZh = "车圈制动"
 	first.AttributeBindings[0].Options[0].LabelZh = "车圈修改后"
 	first.Description = ""
-	first, err := SaveProductTemplate(SaveProductTemplateInput(first))
+	first, err := SaveProductTemplate(context.Background(), SaveProductTemplateInput(first))
 	require.NoError(t, err)
 	var secondReloaded models.ProductTemplate
 	require.NoError(t, database.Preload("AttributeBindings").First(&secondReloaded, "id = ?", second.ID).Error)
@@ -122,7 +123,7 @@ func TestTemplateOwnedAttributesSaveAndReadSameNamesWithoutSharing(t *testing.T)
 	require.Equal(t, "车圈修改后", labels[first.ID])
 	require.Equal(t, "前叉碟刹", labels[second.ID])
 	first.Version--
-	_, err = SaveProductTemplate(SaveProductTemplateInput(first))
+	_, err = SaveProductTemplate(context.Background(), SaveProductTemplateInput(first))
 	require.ErrorContains(t, err, "version conflict")
 }
 
@@ -163,18 +164,18 @@ func TestTemplateAttributeRemovalPreservesUsedValuesAndAllowsIndependentUnusedRe
 	}))
 	first.AttributeBindings[0].Options = nil
 	first.Name = "不应保存"
-	_, err := SaveProductTemplate(SaveProductTemplateInput(first))
+	_, err := SaveProductTemplate(context.Background(), SaveProductTemplateInput(first))
 	require.ErrorContains(t, err, "已有产品使用")
 	var persisted models.ProductTemplate
 	require.NoError(t, database.Preload("AttributeBindings").First(&persisted, "id = ?", first.ID).Error)
 	require.Equal(t, "rim", persisted.Name)
 	require.Len(t, persisted.AttributeBindings[0].Options, 1)
 	second.AttributeBindings = nil
-	second, err = SaveProductTemplate(SaveProductTemplateInput(second))
+	second, err = SaveProductTemplate(context.Background(), SaveProductTemplateInput(second))
 	require.NoError(t, err)
 	require.Empty(t, second.AttributeBindings)
 	persisted.AttributeBindings[0].Options[0].Active = false
-	_, err = SaveProductTemplate(SaveProductTemplateInput(persisted))
+	_, err = SaveProductTemplate(context.Background(), SaveProductTemplateInput(persisted))
 	require.NoError(t, err)
 	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
 		return replaceProductAttributeValues(tx, productID, []models.ProductAttributeValue{{CategoryKey: "brakeType", OptionValue: "disc"}})
@@ -188,20 +189,20 @@ func TestTemplateAttributeRemovalPreservesUsedValuesAndAllowsIndependentUnusedRe
 
 func TestInvalidTemplateAttributeDefinitionsRollBackTheWholeSave(t *testing.T) {
 	database := createTemplateOwnedAttributeServiceTestDatabase(t)
-	_, err := SaveProductTemplate(SaveProductTemplateInput(models.ProductTemplate{Name: "不能落库", Code: "invalid", AttributeBindings: []models.ProductTemplateAttributeBinding{{CategoryKey: "color"}}}))
+	_, err := SaveProductTemplate(context.Background(), SaveProductTemplateInput(models.ProductTemplate{Name: "不能落库", Code: "invalid", AttributeBindings: []models.ProductTemplateAttributeBinding{{CategoryKey: "color"}}}))
 	require.ErrorContains(t, err, "属性名称不能为空")
 	var count int64
 	require.NoError(t, database.Model(&models.ProductTemplate{}).Count(&count).Error)
 	require.Zero(t, count)
 	first := createTemplateWithIndependentBrakeOptionsForTest(t, "rim", "碟刹", "disc")
 	first.AttributeBindings = append(first.AttributeBindings, first.AttributeBindings[0])
-	_, err = SaveProductTemplate(SaveProductTemplateInput(first))
+	_, err = SaveProductTemplate(context.Background(), SaveProductTemplateInput(first))
 	require.ErrorContains(t, err, "重复")
 }
 
 func TestTemplateOwnedAttributeDisabledStateSurvivesCreateAndUpdate(t *testing.T) {
 	createTemplateOwnedAttributeServiceTestDatabase(t)
-	template, err := SaveProductTemplate(SaveProductTemplateInput(models.ProductTemplate{
+	template, err := SaveProductTemplate(context.Background(), SaveProductTemplateInput(models.ProductTemplate{
 		Name: "独立停用属性", Code: "disabled_attribute", Active: true,
 		AttributeBindings: []models.ProductTemplateAttributeBinding{{
 			CategoryKey: "color", NameZh: "颜色", Active: false,
@@ -212,11 +213,11 @@ func TestTemplateOwnedAttributeDisabledStateSurvivesCreateAndUpdate(t *testing.T
 	require.False(t, template.AttributeBindings[0].Active, "creating an explicitly disabled definition must preserve false")
 	require.False(t, template.AttributeBindings[0].Options[0].Active)
 	template.AttributeBindings[0].Active = true
-	template, err = SaveProductTemplate(SaveProductTemplateInput(template))
+	template, err = SaveProductTemplate(context.Background(), SaveProductTemplateInput(template))
 	require.NoError(t, err)
 	require.True(t, template.AttributeBindings[0].Active)
 	template.AttributeBindings[0].Active = false
-	template, err = SaveProductTemplate(SaveProductTemplateInput(template))
+	template, err = SaveProductTemplate(context.Background(), SaveProductTemplateInput(template))
 	require.NoError(t, err)
 	require.False(t, template.AttributeBindings[0].Active, "editing a definition must not restore its database default")
 }
@@ -245,7 +246,7 @@ func TestTemplatePatchRejectsAnOutdatedVersionAfterWaitingForAnotherTemplateSave
 	require.NoError(t, firstSave.Clauses(clause.Locking{Strength: "UPDATE"}).First(&lockedTemplate, "id = ?", template.ID).Error)
 	patchResult := make(chan error, 1)
 	go func() {
-		_, err := PatchProductTemplate(template.ID, template.Version, map[string]interface{}{"name": "不应覆盖"})
+		_, err := PatchProductTemplate(context.Background(), template.ID, template.Version, map[string]interface{}{"name": "不应覆盖"})
 		patchResult <- err
 	}()
 	var applicationName string
@@ -264,12 +265,12 @@ func TestTemplateDeletionPreservesCategoryBindingsAndRemovesOnlyUnusedDefinition
 	boundTemplate := createTemplateWithIndependentBrakeOptionsForTest(t, "rim", "碟刹", "disc")
 	productType := models.ProductType{Name: "R50", Code: "r50", TemplateID: &boundTemplate.ID}
 	require.NoError(t, database.Create(&productType).Error)
-	require.ErrorContains(t, DeleteProductTemplate(boundTemplate.ID), "分类")
+	require.ErrorContains(t, DeleteProductTemplate(context.Background(), boundTemplate.ID), "分类")
 	var retained models.ProductTemplate
 	require.NoError(t, database.Preload("AttributeBindings").First(&retained, "id = ?", boundTemplate.ID).Error)
 	require.Len(t, retained.AttributeBindings, 1)
 	unusedTemplate := createTemplateWithIndependentBrakeOptionsForTest(t, "fork", "前叉碟刹", "disc")
-	require.NoError(t, DeleteProductTemplate(unusedTemplate.ID))
+	require.NoError(t, DeleteProductTemplate(context.Background(), unusedTemplate.ID))
 	var definitionCount int64
 	require.NoError(t, database.Model(&models.ProductTemplateAttributeBinding{}).Where("template_id = ?", unusedTemplate.ID).Count(&definitionCount).Error)
 	require.Zero(t, definitionCount)

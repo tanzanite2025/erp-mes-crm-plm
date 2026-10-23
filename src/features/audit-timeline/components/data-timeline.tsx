@@ -10,6 +10,7 @@ import {
   Plus,
   Hash,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -42,6 +43,7 @@ import { useAuditTimeline } from '../hooks/use-audit-timeline'
 import { buildPermissionLabelMap } from '../utils/permission-audit'
 import { BomAuditEntry } from './bom-audit-entry'
 import { ProductAuditEntry } from './product-audit-entry'
+import { ProductPhysicalSpecificationTemplateAuditEntry } from './product-physical-specification-template-audit-entry'
 import { UserPermissionAuditEntry } from './user-permission-audit-entry'
 
 interface DataTimelineProps {
@@ -218,7 +220,11 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side='bottom'
-        className='h-[72vh] w-full gap-0 rounded-t-[32px] border-t border-dashed border-primary/20 bg-background/95 p-0 pt-0 shadow-2xl backdrop-blur-sm'
+        className={cn(
+          'h-[72vh] w-full gap-0 rounded-t-[32px] border-t border-dashed border-primary/20 bg-background/95 p-0 pt-0 shadow-2xl backdrop-blur-sm',
+          module === AUDIT_MODULES.productTemplate &&
+            'product-physical-specification-template-floating-surface'
+        )}
       >
         {/* Header - UDS 1.0 Style */}
         <SheetHeader className='border-b border-dashed bg-muted/5 p-6 pb-4'>
@@ -286,6 +292,11 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                         productTemplates={productTemplatesQuery.data ?? []}
                         productTypes={productTypesQuery.data ?? []}
                         products={resolvedProducts}
+                      />
+                    ) : module === AUDIT_MODULES.productTemplate ? (
+                      <ProductPhysicalSpecificationTemplateAuditEntry
+                        log={log}
+                        actionLabel={formatAuditActionLabel(log.action, t)}
                       />
                     ) : module === AUDIT_MODULES.userPermission ? (
                       <UserPermissionAuditEntry

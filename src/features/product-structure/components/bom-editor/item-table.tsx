@@ -47,6 +47,7 @@ export function ItemTable({
 
   const virtualizer = useVirtualizer({
     count,
+    getItemKey: (index) => nodes[index].key,
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const node = nodes[index]
@@ -59,7 +60,7 @@ export function ItemTable({
       }
 
       if (node.nodeType === 'synthetic') {
-        return node.syntheticKind === 'group-empty' ? 156 : 60
+        return 56
       }
 
       return 136
@@ -121,6 +122,8 @@ export function ItemTable({
                   <TableCell colSpan={7} className='px-0 py-0'>
                     <button
                       type='button'
+                      aria-label={node.label}
+                      aria-expanded={node.isExpanded}
                       className='flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-primary/5 sm:px-4'
                       style={{ paddingLeft: `${20 + node.depth * 20}px` }}
                       onClick={() => onBranchToggle?.(node.sourceNodeId)}
@@ -134,11 +137,16 @@ export function ItemTable({
                         />
                       </div>
 
-                      <div className='min-w-0 flex-1'>
-                        <div className='text-sm font-black tracking-tight text-slate-900 uppercase'>
+                      <div className='max-w-36 min-w-0'>
+                        <div className='truncate text-sm font-bold text-foreground'>
                           {node.label}
                         </div>
                       </div>
+                      {!node.isSectionActive && (
+                        <span className='shrink-0 text-[10px] text-muted-foreground'>
+                          {t('engineering.bomSectionConfig.inactiveLabel')}
+                        </span>
+                      )}
 
                       <div className='flex items-center gap-1.5'>
                         <div className='flex h-5 items-center rounded-full border border-dashed border-blue-300 bg-blue-500/10 px-2 font-maple-ui text-[8px] tracking-widest text-blue-700 uppercase'>
@@ -156,86 +164,32 @@ export function ItemTable({
             }
 
             if (node.nodeType === 'synthetic') {
-              const isEmptyState = node.syntheticKind === 'group-empty'
-
               return (
                 <TableRow
                   key={node.key}
                   data-index={virtualRow.index}
                   ref={virtualizer.measureElement}
-                  className={cn(
-                    'group/add-row h-[52px] border-t-2 border-dashed border-muted transition-all',
-                    canEdit
-                      ? 'cursor-pointer hover:bg-blue-600'
-                      : 'cursor-not-allowed opacity-50'
-                  )}
-                  onClick={() => canEdit && onAdd(node.sectionCode)}
+                  className='border-dashed hover:bg-primary/5'
                 >
-                  <TableCell
-                    colSpan={7}
-                    className='px-6 py-3'
-                    style={{ paddingLeft: `${28 + node.depth * 20}px` }}
-                  >
-                    {isEmptyState ? (
-                      <div className='flex flex-col items-center justify-center gap-3 py-10 transition-transform group-hover/add-row:scale-[1.01]'>
-                        <div
-                          className={cn(
-                            'flex size-12 rotate-3 items-center justify-center rounded-[18px] border-[3px] border-white shadow-xl transition-all',
-                            canEdit
-                              ? 'bg-blue-600 text-white group-hover/add-row:rotate-0'
-                              : 'bg-muted text-muted-foreground'
-                          )}
-                        >
-                          <Plus className='size-7 stroke-3' />
-                        </div>
-                        <div className='text-center'>
-                          <p
-                            className={cn(
-                              'text-[11px] font-black tracking-widest uppercase transition-colors',
-                              canEdit
-                                ? 'text-slate-800 group-hover/add-row:text-white'
-                                : 'text-muted-foreground'
-                            )}
-                          >
-                            {canEdit
-                              ? t('engineering.bomArchive.itemTable.initialize')
-                              : 'Read Only'}
-                          </p>
-                          <p className='mt-1 text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase transition-colors group-hover/add-row:text-blue-100'>
-                            {canEdit
-                              ? t(
-                                  'engineering.bomArchive.itemTable.initializeHint'
-                                )
-                              : 'BOM is locked'}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={cn(
-                          'flex items-center gap-3 transition-all',
-                          canEdit
-                            ? 'text-blue-600 group-hover/add-row:text-white'
-                            : 'text-muted-foreground'
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            'flex size-5 items-center justify-center rounded-full border-2 border-white shadow-md',
-                            canEdit
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-muted text-muted-foreground'
-                          )}
-                        >
-                          <Plus className='size-4 stroke-3' />
-                        </div>
-                        <span className='text-[9px] font-black tracking-widest uppercase'>
-                          {canEdit
-                            ? t('engineering.bomArchive.itemTable.append')
-                            : 'Read Only'}
-                        </span>
-                      </div>
-                    )}
+                  <TableCell colSpan={7} className='px-0 py-1'>
+                    <button
+                      type='button'
+                      aria-label={t(
+                        'engineering.bomArchive.recipe.addSectionItem',
+                        { section: node.sectionName }
+                      )}
+                      disabled={!canEdit}
+                      onClick={() => onAdd(node.sectionCode)}
+                      className='flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-xs font-semibold text-blue-600 disabled:cursor-not-allowed disabled:text-muted-foreground dark:text-blue-400'
+                      style={{ paddingLeft: 28 + node.depth * 20 }}
+                    >
+                      <Plus className='size-4 shrink-0' />
+                      {t(
+                        node.syntheticKind === 'group-empty'
+                          ? 'engineering.bomArchive.itemTable.initialize'
+                          : 'engineering.bomArchive.itemTable.append'
+                      )}
+                    </button>
                   </TableCell>
                 </TableRow>
               )

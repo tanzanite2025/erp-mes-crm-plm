@@ -31,22 +31,28 @@ export function PDFViewerDialog({
 }: PDFViewerDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex h-[85vh] w-[95vw] flex-col overflow-hidden border-none bg-card p-0 sm:max-w-[95vw]'>
+      <DialogContent
+        data-mobile-floating-surface-layout='column'
+        className='flex h-[85vh] w-[95vw] flex-col overflow-hidden border-none bg-card p-0 sm:max-w-[95vw]'
+      >
         {/* 装饰性页头 */}
         <DialogHeader className='border-b bg-muted/30 p-6'>
-          <div className='flex items-center justify-between pr-8'>
-            <div className='flex items-center gap-4'>
-              <div className='flex size-12 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 shadow-inner'>
+          <div className='flex min-w-0 items-center justify-between pr-8'>
+            <div className='flex min-w-0 flex-1 items-center gap-4'>
+              <div className='flex size-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 shadow-inner'>
                 <FileText className='size-6' />
               </div>
-              <div className='min-w-0 space-y-0.5'>
-                <DialogTitle className='truncate text-lg font-black tracking-tight uppercase'>
+              <div className='min-w-0 flex-1 space-y-0.5'>
+                <DialogTitle
+                  title={fileName}
+                  className='truncate text-lg font-black tracking-tight uppercase'
+                >
                   {fileName}
                 </DialogTitle>
-                <DialogDescription className='flex items-center gap-2 truncate text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
-                  <ShieldCheck className='size-3 text-indigo-600' />
+                <DialogDescription className='flex flex-wrap items-center gap-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase'>
+                  <ShieldCheck className='size-3 shrink-0 text-indigo-600' />
                   技术文档预览 · 归档型号:{' '}
-                  <span className='font-maple-ui text-indigo-600'>
+                  <span className='min-w-0 font-maple-ui break-all text-indigo-600'>
                     {sku || 'N/A'}
                   </span>
                 </DialogDescription>
@@ -56,10 +62,13 @@ export function PDFViewerDialog({
         </DialogHeader>
 
         {/* 预览区 */}
-        <div className='min-h-0 flex-1 overflow-hidden bg-muted/5 p-6'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='min-h-0 flex-1 overflow-auto bg-muted/5 p-4 sm:p-6'
+        >
           <PDFViewer
             fileUrl={fileUrl}
-            className='h-full shadow-2xl shadow-indigo-500/5'
+            className='h-full min-h-48 shadow-2xl shadow-indigo-500/5'
           />
         </div>
 

@@ -27,7 +27,10 @@ export function MindmapNodeEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='w-[calc(100vw-24px)] max-w-[1100px] rounded-[32px] border-none bg-background p-0 shadow-2xl'>
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-        <div className='relative flex max-h-[min(92vh,980px)] flex-col overflow-hidden'>
+        <div
+          data-mobile-floating-surface-layout='column'
+          className='relative flex max-h-[min(92vh,980px)] flex-col overflow-hidden'
+        >
           <DialogHeader className='border-b border-dashed border-muted/40 px-5 py-4 text-left md:px-6'>
             <div className='flex items-start gap-3'>
               <div className='flex size-10 shrink-0 items-center justify-center rounded-full border border-dashed border-primary/30 bg-primary/10'>
@@ -46,7 +49,10 @@ export function MindmapNodeEditDialog({
             </div>
           </DialogHeader>
 
-          <div className='flex-1 overflow-y-auto p-5 md:p-6'>
+          <div
+            data-mobile-floating-surface-scroll-body
+            className='min-h-0 flex-1 overflow-y-auto p-5 md:p-6'
+          >
             <MindmapDetailPanel
               key={selectedNode?.id ?? 'mindmap-detail-dialog-empty'}
               selectedNode={selectedNode}

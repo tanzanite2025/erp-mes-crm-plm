@@ -15,7 +15,10 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { ProductPhysicalSpecificationTemplateDeleteConfirmationDialog } from '../components/template-mgmt/product-physical-specification-template-delete-confirmation-dialog'
 import { TemplateEditorDialog } from '../components/template-mgmt/template-editor-dialog'
 import { type ProductTemplate } from '../data/schema'
 import {
@@ -38,11 +41,14 @@ export function TemplateMgmt() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] =
     useState<ProductTemplate | null>(null)
+  const [templatePendingDeletion, setTemplatePendingDeletion] =
+    useState<ProductTemplate | null>(null)
+  const templateDeletionInProgressRef = useRef(false)
   const editingTemplateBaselineRef = useRef<ProductTemplate | undefined>(
     undefined
   )
   const templateSaveInProgressRef = useRef(false)
-  const { saveTemplate, deleteTemplate, isSavingTemplate } =
+  const { saveTemplate, deleteTemplate, isSavingTemplate, isDeletingTemplate } =
     useProductTemplateWriteActions()
   const templatesQuery = useQuery({
     queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
@@ -89,11 +95,13 @@ export function TemplateMgmt() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('engineering.templateMgmt.confirms.delete'))) return
-
+  const confirmPhysicalSpecificationTemplateDeletion = async () => {
+    if (!templatePendingDeletion || templateDeletionInProgressRef.current)
+      return
+    templateDeletionInProgressRef.current = true
     try {
-      await deleteTemplate(id)
+      await deleteTemplate(templatePendingDeletion.id)
+      setTemplatePendingDeletion(null)
       toast.success(t('engineering.templateMgmt.toasts.deleteSuccess'))
     } catch (error) {
       toast.error(
@@ -101,6 +109,8 @@ export function TemplateMgmt() {
           message: getErrorMessage(error),
         })
       )
+    } finally {
+      templateDeletionInProgressRef.current = false
     }
   }
 
@@ -165,6 +175,11 @@ export function TemplateMgmt() {
           </span>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.productTemplate}
+            targetName={t('engineering.templateMgmt.header.title')}
+            className='h-11'
+          />
           <Button
             onClick={handleAdd}
             className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
@@ -211,6 +226,14 @@ export function TemplateMgmt() {
                       <Settings2 className='size-4' />
                     </div>
                     <div className='flex gap-1'>
+                      <AuditTimelineTriggerButton
+                        module={AUDIT_MODULES.productTemplate}
+                        targetId={template.id}
+                        targetName={template.name}
+                        label={`${t('common.audit.trigger')} · ${template.name}`}
+                        iconOnly
+                        className='size-7'
+                      />
                       <Button
                         variant='ghost'
                         size='icon'
@@ -230,14 +253,16 @@ export function TemplateMgmt() {
                         }`}
                         onClick={() => {
                           if (isPresetTemplate) return
-                          void handleDelete(template.id)
+                          setTemplatePendingDeletion(template)
                         }}
                         disabled={isPresetTemplate}
                         title={
                           isPresetTemplate ? '系统预置模板不可删除' : undefined
                         }
                         aria-label={
-                          isPresetTemplate ? '系统预置模板不可删除' : undefined
+                          isPresetTemplate
+                            ? '系统预置模板不可删除'
+                            : `${locale.startsWith('zh') ? '删除物理规格模板' : 'Delete specification template'} · ${template.name}`
                         }
                       >
                         <Trash2 className='size-3.5' />
@@ -295,6 +320,19 @@ export function TemplateMgmt() {
         locale={locale}
         t={t}
       />
+      {templatePendingDeletion && (
+        <ProductPhysicalSpecificationTemplateDeleteConfirmationDialog
+          locale={locale}
+          targetName={templatePendingDeletion.name}
+          targetKind='template'
+          isDeleting={isDeletingTemplate}
+          onOpenChange={(open) => {
+            if (!open && !templateDeletionInProgressRef.current)
+              setTemplatePendingDeletion(null)
+          }}
+          onConfirm={() => void confirmPhysicalSpecificationTemplateDeletion()}
+        />
+      )}
     </div>
   )
 }

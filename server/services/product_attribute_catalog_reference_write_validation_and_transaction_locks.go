@@ -14,6 +14,14 @@ func lockProductAttributeCatalogCategoriesWithinTransaction(tx *gorm.DB, categor
 	if len(categoryKeys) == 0 {
 		return nil, nil
 	}
+	for _, key := range categoryKeys {
+		if sameProductAttributeCategoryKey(key, "versionLevel") {
+			if err := ensureBOMPerformanceVersionCatalogCategoryWithinTransaction(tx); err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
 	var categories []models.ProductAttributeCategory
 	if err := tx.Select("id", "key").Find(&categories).Error; err != nil {
 		return nil, err

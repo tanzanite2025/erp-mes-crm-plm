@@ -2,11 +2,9 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { isNotFoundError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
-import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
-import { SpecsService } from '@/features/engineering-db/services/specs-service'
-import { AssetService } from '@/features/equipment-tooling/services/asset-service'
+import { createTechnicalSpecificationDocumentMasterLibraryListQueryOptions } from '@/features/engineering-db/queries/technical-specification-document-master-library-query-options'
+import { createMoldMasterLibraryGroupNamesQueryOptions } from '@/features/equipment-tooling/queries/mold-master-library-query-options'
 import {
-  ENGINEERING_PRODUCT_FORM_MOLD_GROUPS_QUERY_KEY,
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
   PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
 } from '../query-keys'
@@ -38,14 +36,12 @@ export function useProductFormInit({ open }: UseProductFormInitParams) {
   })
 
   const moldGroupsQuery = useQuery({
-    queryKey: ENGINEERING_PRODUCT_FORM_MOLD_GROUPS_QUERY_KEY,
-    queryFn: () => AssetService.getGroupNames(),
+    ...createMoldMasterLibraryGroupNamesQueryOptions(),
     enabled: open,
   })
 
   const specsQuery = useQuery({
-    queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
-    queryFn: () => SpecsService.getSpecs(),
+    ...createTechnicalSpecificationDocumentMasterLibraryListQueryOptions(),
     enabled: open,
   })
 
@@ -68,7 +64,7 @@ export function useProductFormInit({ open }: UseProductFormInitParams) {
   const specOptions = useMemo(() => {
     if (!specsQuery.data) return []
     return specsQuery.data.map((spec) => ({
-      label: `${spec.name} (${spec.version})`,
+      label: spec.revisionNo ? `${spec.name} (${spec.revisionNo})` : spec.name,
       value: spec.id,
     }))
   }, [specsQuery.data])

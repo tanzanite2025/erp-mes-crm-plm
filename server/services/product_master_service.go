@@ -247,11 +247,8 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 		if err := validateAndLockProductLegacyAttributeFieldReferences(tx, &modelInput); err != nil {
 			return err
 		}
-		if modelInput.EngineeringSpecID != "" {
-			var spec models.EngineeringSpec
-			if err := tx.Where("id = ?", modelInput.EngineeringSpecID).First(&spec).Error; err != nil {
-				return err
-			}
+		if err := validateAndLockProductEngineeringTechnicalSpecificationReference(tx, modelInput.EngineeringSpecID); err != nil {
+			return err
 		}
 
 		if modelInput.ID != "" {
@@ -276,8 +273,16 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 			if err := replaceProductAttributeValues(tx, existing.ID, modelInput.AttributeValues); err != nil {
 				return err
 			}
+			// Struct updates skip empty strings; cleared master-library references must persist.
+			emptyMasterLibraryReferenceUpdates := make(map[string]any)
+			if modelInput.MoldGroup == "" {
+				emptyMasterLibraryReferenceUpdates["mold_group"] = ""
+			}
 			if modelInput.EngineeringSpecID == "" {
-				if err := tx.Model(&existing).Update("engineering_spec_id", nil).Error; err != nil {
+				emptyMasterLibraryReferenceUpdates["engineering_spec_id"] = nil
+			}
+			if len(emptyMasterLibraryReferenceUpdates) > 0 {
+				if err := tx.Model(&existing).Updates(emptyMasterLibraryReferenceUpdates).Error; err != nil {
 					return err
 				}
 			}

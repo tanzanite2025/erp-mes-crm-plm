@@ -256,7 +256,8 @@ export function useReport(
   })
 
   const handleReconcile = async () => {
-    if (!ui.confirm(t('warehouse.reports.reconcileConfirm'))) return false
+    if (!(await ui.confirm(t('warehouse.reports.reconcileConfirm'))))
+      return false
 
     try {
       await reconcileMutation.mutateAsync()

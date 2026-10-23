@@ -48,15 +48,18 @@ export function RequirementDrawer({
         side='right'
         className='w-full overflow-hidden rounded-l-[32px] border-l-2 border-dashed border-primary/20 bg-[#F8FAFC] p-0 shadow-[-20px_0_50px_rgba(0,0,0,0.1)] sm:max-w-[1050px]'
       >
-        <div className='flex h-full flex-col'>
+        <div
+          data-mobile-floating-surface-layout='column'
+          className='flex h-full flex-col'
+        >
           <div className='relative overflow-hidden border-b border-dashed bg-white/80 px-8 py-7 backdrop-blur-md'>
             <div className='pointer-events-none absolute top-0 right-0 p-10 opacity-[0.05]'>
               <Download className='size-40 rotate-12 text-primary' />
             </div>
 
-            <div className='relative z-10 flex items-center justify-between'>
-              <div className='space-y-1'>
-                <div className='flex items-center gap-4'>
+            <div className='relative z-10 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center'>
+              <div className='min-w-0 space-y-1'>
+                <div className='flex flex-wrap items-center gap-4'>
                   <div className='rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-primary uppercase'>
                     {t('mrp.requirements.drawer.badge')}
                   </div>
@@ -71,7 +74,7 @@ export function RequirementDrawer({
                 </SheetDescription>
               </div>
 
-              <div className='flex items-center gap-2 pr-6'>
+              <div className='flex flex-wrap items-center gap-2 lg:pr-6'>
                 <Button
                   variant='outline'
                   size='sm'
@@ -107,7 +110,10 @@ export function RequirementDrawer({
             </div>
           </div>
 
-          <div className='custom-scrollbar flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]'>
+          <div
+            data-mobile-floating-surface-scroll-body
+            className='custom-scrollbar min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]'
+          >
             {errorMessage ? (
               <RequirementStageAlert
                 tone='error'
@@ -131,7 +137,7 @@ export function RequirementDrawer({
             )}
           </div>
 
-          <div className='flex items-center justify-between border-t bg-white px-6 py-4 text-[10px] font-bold text-muted-foreground/40'>
+          <div className='flex flex-wrap items-center justify-between gap-3 border-t bg-white px-6 py-4 text-[10px] font-bold text-muted-foreground/40'>
             <div className='flex items-center gap-4'>
               <span className='flex items-center gap-1.5 uppercase'>
                 <div className='size-1.5 rounded-full bg-primary' />

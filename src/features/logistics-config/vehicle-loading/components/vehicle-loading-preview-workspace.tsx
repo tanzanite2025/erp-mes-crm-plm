@@ -27,8 +27,8 @@ export function VehicleLoadingPreviewWorkspace({ scene }: Props) {
   })
 
   return (
-    <div className='grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_440px]'>
-      <div className='flex h-full min-h-0 flex-col'>
+    <div className='grid min-h-0 gap-3 lg:h-full lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_440px]'>
+      <div className='flex min-h-[420px] flex-col lg:h-full lg:min-h-0'>
         <VehicleLoadingPreviewRenderer
           scene={scene}
           layerCount={layerCount}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
@@ -137,7 +138,7 @@ export function LineMindmap() {
       return
     }
 
-    const confirmed = window.confirm('确认删除当前 L1？')
+    const confirmed = await requestApplicationConfirmation('确认删除当前 L1？')
     if (!confirmed) {
       return
     }

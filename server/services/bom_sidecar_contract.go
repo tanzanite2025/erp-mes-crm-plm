@@ -57,7 +57,7 @@ type BOMDetailResponse struct {
 	// 归属语义在 BOM 维度（方案 B + 1:1）：服务于内部 / 某客户。
 	OwnerType         string                    `json:"ownerType"`
 	OwnerCustomerID   string                    `json:"ownerCustomerId,omitempty"`
-	// VersionLevel 是 BOM 档次标签（思路 3 重构，来源产品属性主数据 versionLevel category）。
+	// VersionLevel 是 BOM 性能版本标签（思路 3 重构，来源产品属性主数据 versionLevel category）。
 	VersionLevel      string                    `json:"versionLevel,omitempty"`
 	// MeasuredWeight 是该 BOM 对应最终产品的实测/目标重量(方案 B 端到端权威源)。
 	MeasuredWeight     float64                   `json:"measuredWeight"`

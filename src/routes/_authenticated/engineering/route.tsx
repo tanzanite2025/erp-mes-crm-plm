@@ -6,6 +6,7 @@ import {
   getEngineeringTabs,
   getProductCreationGuideTabs,
 } from '@/features/engineering/tab-config'
+import { getBOMCreationOperationGuideTabs } from '@/features/product-structure/bom-creation-operation-guide-tab-config'
 
 export const Route = createFileRoute('/_authenticated/engineering')({
   beforeLoad: async ({ location }) => {
@@ -17,13 +18,22 @@ export const Route = createFileRoute('/_authenticated/engineering')({
 function EngineeringLayout() {
   const { t } = useLanguage()
   const { pathname } = useLocation()
+  const isBOMCreationGuide = pathname === '/engineering/bom-creation-guide'
   const tabs =
     pathname === '/engineering/product-creation-guide'
       ? getProductCreationGuideTabs(t)
-      : getEngineeringTabs(t)
+      : isBOMCreationGuide
+        ? getBOMCreationOperationGuideTabs(t)
+        : getEngineeringTabs(t)
 
   return (
-    <ModuleTabbedLayout tabs={tabs}>
+    <ModuleTabbedLayout
+      tabs={tabs}
+      mainClassName={isBOMCreationGuide ? 'overflow-hidden pb-0' : undefined}
+      contentClassName={
+        isBOMCreationGuide ? 'h-full flex-1 overflow-hidden' : undefined
+      }
+    >
       <Outlet />
     </ModuleTabbedLayout>
   )

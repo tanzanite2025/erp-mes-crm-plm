@@ -8,6 +8,7 @@ const (
 	AuditModulePurchaseOrder         = "purchase-order"
 	AuditModuleCustomer              = "customer"
 	AuditModuleProduct               = "product"
+	AuditModuleProductTemplate       = "product-template"
 	AuditModuleSupplier              = "supplier"
 	AuditModuleDrilling              = "drilling"
 	AuditModuleEngineeringSpec       = "engineering-spec"

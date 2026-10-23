@@ -183,8 +183,11 @@ export function useBOMSubmitOrchestrator(
 
       let bomToPromote = currentRow
 
-      // 若 form dirty 或者还没保存过，先走 save
-      if (!bomToPromote?.id || form.formState.isDirty) {
+      // Locked approved content is published as saved, without resubmitting its read-only form.
+      if (
+        permissionGuard.canSave &&
+        (!bomToPromote?.id || form.formState.isDirty)
+      ) {
         if (!onSubmit) return
 
         const fullSidecar = buildBOMRelationSidecar(effectiveProtocolDraft)

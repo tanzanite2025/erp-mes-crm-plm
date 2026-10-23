@@ -16,6 +16,8 @@ const logger = createLogger('useBOMPermissionGuard')
 export interface BOMPermissionContext {
   /** Whether the BOM is locked (read-only) */
   isLocked: boolean
+  /** Current lifecycle status; approved content can be published while locked. */
+  status?: BOM['status']
   /** Whether the BOM is in edit mode */
   isEdit: boolean
   /** Current BOM version (for audit trail) */
@@ -33,7 +35,7 @@ export interface BOMPermissionGuard {
   canModifyFields: boolean
   /** Whether user can save changes */
   canSave: boolean
-  /** Whether user can promote BOM status */
+  /** Whether lifecycle operations are available; server checks transition permissions. */
   canPromote: boolean
 
   /** Guard wrapper for append operations */
@@ -77,7 +79,7 @@ export function useBOMPermissionGuard({
   form,
   onPermissionDenied,
 }: UseBOMPermissionGuardParams): BOMPermissionGuard {
-  const { isLocked, isEdit, version } = context
+  const { isLocked, status, isEdit, version } = context
 
   // Calculate permission flags
   const canEdit = useMemo(() => !isLocked, [isLocked])
@@ -85,7 +87,7 @@ export function useBOMPermissionGuard({
   const canRemove = useMemo(() => !isLocked, [isLocked])
   const canModifyFields = useMemo(() => !isLocked, [isLocked])
   const canSave = useMemo(() => !isLocked, [isLocked])
-  const canPromote = useMemo(() => !isLocked, [isLocked])
+  const canPromote = !isLocked || status === 'APPROVED'
 
   // Get human-readable denial reason
   const getDenialReason = useCallback((): string | null => {
@@ -208,6 +210,7 @@ export function createBOMPermissionContext(
 ): BOMPermissionContext {
   return {
     isLocked: bom?.isLocked ?? false,
+    status: bom?.status ?? 'DRAFT',
     isEdit: isEdit ?? false,
     version: bom?.version,
   }

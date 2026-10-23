@@ -12,6 +12,7 @@ import (
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -179,7 +180,10 @@ func setEngineeringNestedValue(target map[string]any, parts []string, value any)
 }
 
 func validateAndNormalizeEngineeringSpec(tx *gorm.DB, input *models.EngineeringSpec) error {
+	input.Type = strings.TrimSpace(input.Type)
 	switch strings.TrimSpace(input.Type) {
+	case engineeringTechnicalSpecificationDocumentType:
+		return validateAndNormalizeEngineeringTechnicalSpecificationDocument(input)
 	case cuttingPlanSpecType:
 		return validateAndNormalizeCuttingPlanSpec(tx, input)
 	default:
@@ -245,15 +249,30 @@ func SaveEngineeringSpec(ctx context.Context, input SaveEngineeringSpecInput) (m
 
 		if input.ID != "" {
 			var existing models.EngineeringSpec
-			if err := tx.Where("id = ?", input.ID).First(&existing).Error; err == nil {
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", input.ID).First(&existing).Error; err == nil {
 				before := engineeringSpecAuditSnapshot(existing)
 				if input.Version != existing.Version {
 					return ErrEngineeringSpecVersionConflict
 				}
+				if (existing.Type == engineeringTechnicalSpecificationDocumentType || input.Type == engineeringTechnicalSpecificationDocumentType) && input.Type != existing.Type {
+					return domainValidationError("技术规范主库文档不能更改为其他工程数据类型")
+				}
+				if input.Type == engineeringTechnicalSpecificationDocumentType {
+					input.Code = existing.Code
+				}
 
 				input.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
 				input.Version = existing.Version + 1
-				if err := tx.Model(&existing).Updates(input).Error; err != nil {
+				updateQuery := tx.Model(&existing)
+				if input.Type == engineeringTechnicalSpecificationDocumentType {
+					// A full document save must persist empty strings and false values.
+					// Identity, creation time and other engineering buckets stay outside this write boundary.
+					updateQuery = updateQuery.Select(
+						"Name", "Description", "Active", "SpecData", "Version",
+						"RevisionNo", "EffectiveFrom", "EffectiveTo", "ChangeType", "ChangeOrderNo", "SiteCode", "IsDefaultSite",
+					)
+				}
+				if err := updateQuery.Updates(input).Error; err != nil {
 					return err
 				}
 				if err := tx.First(&saved, "id = ?", existing.ID).Error; err != nil {
@@ -264,9 +283,14 @@ func SaveEngineeringSpec(ctx context.Context, input SaveEngineeringSpecInput) (m
 				return writeEngineeringSpecAuditEntryWithContext(ctx, tx, saved.Type, saved.ID, "SAVE", before, payload)
 			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
+			} else if input.Type == engineeringTechnicalSpecificationDocumentType {
+				return gorm.ErrRecordNotFound
 			}
 		}
 
+		if input.Type == engineeringTechnicalSpecificationDocumentType {
+			assignNewEngineeringTechnicalSpecificationDocumentIdentity(&input)
+		}
 		input.MasterDataControl.Normalize("R1")
 		input.Version = 1
 		if err := tx.Create(&input).Error; err != nil {
@@ -288,7 +312,7 @@ func PatchEngineeringSpec(ctx context.Context, input PatchEngineeringSpecRequest
 
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var current models.EngineeringSpec
-		if err := tx.Where("id = ?", strings.TrimSpace(input.ID)).First(&current).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", strings.TrimSpace(input.ID)).First(&current).Error; err != nil {
 			return err
 		}
 		before := engineeringSpecAuditSnapshot(current)
@@ -296,6 +320,8 @@ func PatchEngineeringSpec(ctx context.Context, input PatchEngineeringSpecRequest
 		if input.ExpectedVersion != current.Version {
 			return ErrEngineeringSpecPatchVersionConflict
 		}
+		originalType := current.Type
+		originalCode := current.Code
 
 		for key, valueRaw := range input.Values {
 			switch key {
@@ -391,6 +417,12 @@ func PatchEngineeringSpec(ctx context.Context, input PatchEngineeringSpecRequest
 			}
 		}
 
+		if (originalType == engineeringTechnicalSpecificationDocumentType || current.Type == engineeringTechnicalSpecificationDocumentType) && current.Type != originalType {
+			return domainValidationError("技术规范主库文档不能更改为其他工程数据类型")
+		}
+		if current.Type == engineeringTechnicalSpecificationDocumentType && current.Code != originalCode {
+			return domainValidationError("技术规范文档编码由服务器分配，不可修改")
+		}
 		if err := ensureWeavingModeNormalizedKeyUnique(tx, current); err != nil {
 			return err
 		}
@@ -421,6 +453,19 @@ func BulkSyncEngineeringSpecs(inputs []BulkSyncEngineeringSpecInput) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, in := range inputs {
 			spec := in
+			spec.Type = strings.TrimSpace(spec.Type)
+			if spec.Type == engineeringTechnicalSpecificationDocumentType {
+				return domainValidationError("技术规范文档请通过主库保存接口维护，不能通过批量同步绕过校验和变更记录")
+			}
+			if spec.ID != "" {
+				var existing models.EngineeringSpec
+				if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, "id = ?", spec.ID).Error; err != nil {
+					return err
+				}
+				if existing.Type == engineeringTechnicalSpecificationDocumentType {
+					return domainValidationError("技术规范文档不能通过批量同步修改")
+				}
+			}
 			if strings.TrimSpace(spec.Name) == "" || strings.TrimSpace(spec.Code) == "" {
 				return errors.New("name/code is required")
 			}
@@ -447,7 +492,7 @@ func BulkSyncEngineeringSpecs(inputs []BulkSyncEngineeringSpecInput) error {
 func DeleteEngineeringSpec(ctx context.Context, id string) error {
 	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var target models.EngineeringSpec
-		if err := tx.First(&target, "id = ?", id).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&target, "id = ?", id).Error; err != nil {
 			return err
 		}
 

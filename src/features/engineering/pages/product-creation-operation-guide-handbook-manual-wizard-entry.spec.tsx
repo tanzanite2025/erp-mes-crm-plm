@@ -53,7 +53,7 @@ describe('product creation handbook and deliberate wizard entry', () => {
       screen.getByRole('heading', { name: '一个产品包含哪些资料' })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: '产品模板 · 定义填写内容' })
+      screen.getByRole('heading', { name: '物理规格模板 · 定义填写内容' })
     ).toBeInTheDocument()
     expect(
       screen.getByText('可上传纹理、涂装等外观参考图片，列表中显示图片缩略图。')
@@ -88,7 +88,7 @@ describe('product creation handbook and deliberate wizard entry', () => {
       '/engineering/product-appearance'
     )
     expect(
-      screen.queryByRole('link', { name: '查看产品模板' })
+      screen.queryByRole('link', { name: '查看物理规格模板' })
     ).not.toBeInTheDocument()
   })
 })

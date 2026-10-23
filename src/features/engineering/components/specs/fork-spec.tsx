@@ -2,6 +2,7 @@
 
 import type { UseFormReturn } from 'react-hook-form'
 import { Settings2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -12,19 +13,28 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { type Product } from '../../data/schema'
+import { productFormTypographyClassNames } from '../product/product-form-typography.styles'
 
 export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
   const { t } = useLanguage()
 
   return (
-    <div className='space-y-2 rounded-[20px] border border-dashed border-green-200/60 bg-green-50/35 p-2.5'>
+    <div className='space-y-2 rounded-[20px] border border-dashed border-green-200/60 bg-green-50/35 p-2.5 dark:border-green-900/60 dark:bg-green-950/20'>
       <div className='flex flex-col gap-1 border-b border-dashed border-green-200/60 pb-1.5 sm:flex-row sm:items-center sm:justify-between'>
-        <h4 className='text-[10px] font-black tracking-widest text-green-700 uppercase'>
+        <h4
+          className={cn(
+            'text-green-700 dark:text-green-400',
+            productFormTypographyClassNames.sectionTitle
+          )}
+        >
           {t('engineering.specForms.fork.title')}
         </h4>
         <Badge
           variant='outline'
-          className='h-4 rounded-full border-green-200 bg-white px-1.5 font-maple-ui text-[8px] tracking-wide text-green-700 uppercase'
+          className={cn(
+            'min-h-5 rounded-full border-green-200 bg-background px-1.5 font-maple-ui text-green-700 dark:border-green-800 dark:text-green-400',
+            productFormTypographyClassNames.badge
+          )}
         >
           {t('engineering.specForms.fork.subtitle')}
         </Badge>
@@ -35,7 +45,12 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
           name='offset'
           render={({ field }) => (
             <FormItem className='min-w-0 content-start gap-0.5 self-start'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.fork.offset')}
               </FormLabel>
               <FormControl>
@@ -51,7 +66,10 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-[38px] w-full rounded-xl border-none bg-background/80 px-3 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -62,7 +80,12 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
           name='axleCrown'
           render={({ field }) => (
             <FormItem className='min-w-0 content-start gap-0.5 self-start'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.fork.axleCrown')}
               </FormLabel>
               <FormControl>
@@ -78,7 +101,10 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-[38px] w-full rounded-xl border-none bg-background/80 px-3 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -89,21 +115,34 @@ export function ForkSpecForm({ form }: { form: UseFormReturn<Product> }) {
           name='steerer'
           render={({ field }) => (
             <FormItem className='min-w-0 content-start gap-0.5 self-start'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.fork.steerer')}
               </FormLabel>
               <FormControl>
                 <Input
                   placeholder='1-1/8 to 1.5'
                   {...field}
-                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-[38px] w-full rounded-xl border-none bg-background/80 px-3 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
           )}
         />
       </div>
-      <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase opacity-70'>
+      <p
+        className={cn(
+          'text-muted-foreground',
+          productFormTypographyClassNames.helper
+        )}
+      >
         {t('engineering.specForms.fork.helper')}
       </p>
     </div>

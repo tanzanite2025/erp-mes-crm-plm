@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 export const technicalSpecSchema = z.object({
   id: z.string(),
+  code: z.string().optional(),
+  active: z.boolean().optional(),
   name: z.string().min(1, 'Spec name is required'),
   category: z.string().default('SOP'),
   revisionNo: z.string().optional(),

@@ -46,10 +46,17 @@ const homeBusinessCategoryDescriptionKeys: Record<string, TranslationKey> = {
 // Promote the product and BOM starting points; URLs still come from module tabs.
 const productStartingPointUrls = [
   '/engineering/product-creation-guide',
+  '/engineering/bom-creation-guide',
   '/engineering/products',
   '/product-structure/bom',
   '/engineering/templates',
 ]
+
+const homeBusinessShortcutDescriptionKeys: Record<string, TranslationKey> = {
+  '/engineering/product-creation-guide':
+    'home.productCreationGuideShortcutDescription',
+  '/engineering/bom-creation-guide': 'home.bomCreationGuideShortcutDescription',
+}
 
 export function buildHomeBusinessShortcutCategories(
   user: AuthSessionUserLike | null | undefined,
@@ -82,15 +89,16 @@ export function buildHomeBusinessShortcutCategories(
             !shortcutsByUrl.has(entry.url) &&
             matchesPathPermissionProjection(user, entry.url)
           ) {
+            const shortcutDescriptionKey =
+              homeBusinessShortcutDescriptionKeys[entry.url]
             shortcutsByUrl.set(entry.url, {
               id: `${domain.id}-${entry.id}`,
               title: entry.title,
               url: entry.url,
               domainTitle: domain.title,
-              description:
-                entry.url === '/engineering/product-creation-guide'
-                  ? t('home.productCreationGuideShortcutDescription')
-                  : undefined,
+              description: shortcutDescriptionKey
+                ? t(shortcutDescriptionKey)
+                : undefined,
               icon: domain.icon,
             })
           }

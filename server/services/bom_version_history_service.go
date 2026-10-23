@@ -127,12 +127,18 @@ func writeBOMVersionSnapshotTx(ctx context.Context, tx *gorm.DB, bom models.BOM,
 
 func nextBOMVersionSequence(tx *gorm.DB, bomID string) (int, error) {
 	var currentMax int
-	
-	// ✅ 使用 FOR UPDATE 锁定相关行，防止并发竞态
+
+	// Serialize writers on the parent BOM, including when it has no snapshots yet.
+	// PostgreSQL does not allow FOR UPDATE on an aggregate such as MAX().
+	var lockedBOM models.BOM
+	if err := tx.Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+		First(&lockedBOM, "id = ?", strings.TrimSpace(bomID)).Error; err != nil {
+		return 0, err
+	}
+
 	if err := tx.Model(&models.BOMVersionSnapshot{}).
 		Where("bom_id = ?", strings.TrimSpace(bomID)).
 		Select("COALESCE(MAX(version_sequence), 0)").
-		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Scan(&currentMax).Error; err != nil {
 		return 0, err
 	}

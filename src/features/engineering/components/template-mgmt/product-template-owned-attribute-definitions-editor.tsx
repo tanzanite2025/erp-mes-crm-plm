@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -10,6 +11,8 @@ import {
   generateProductAttributeCategoryMachineKey,
   generateProductAttributeOptionMachineValue,
 } from '../../utils/product-attribute-machine-value'
+import { ProductPhysicalSpecificationTemplateDeleteConfirmationDialog } from './product-physical-specification-template-delete-confirmation-dialog'
+import { productPhysicalSpecificationTemplateAttributeEditorStyles as editorStyles } from './product-physical-specification-template-editor-dialog-and-attribute-layout.styles'
 
 interface ProductTemplateOwnedAttributeDefinitionsEditorProps {
   locale: string
@@ -23,6 +26,33 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
   onDefinitionsChange,
 }: ProductTemplateOwnedAttributeDefinitionsEditorProps) {
   const isZh = locale.startsWith('zh')
+  const [pendingDefinitionDeletion, setPendingDefinitionDeletion] = useState<{
+    categoryKey: string
+    optionValue?: string
+    name: string
+  } | null>(null)
+
+  function confirmTemplateOwnedAttributeOrOptionDeletion() {
+    if (!pendingDefinitionDeletion) return
+    const { categoryKey, optionValue } = pendingDefinitionDeletion
+    onDefinitionsChange(
+      optionValue === undefined
+        ? definitions.filter(
+            (definition) => definition.categoryKey !== categoryKey
+          )
+        : definitions.map((definition) =>
+            definition.categoryKey === categoryKey
+              ? {
+                  ...definition,
+                  options: definition.options.filter(
+                    (option) => option.value !== optionValue
+                  ),
+                }
+              : definition
+          )
+    )
+    setPendingDefinitionDeletion(null)
+  }
 
   function updateTemplateOwnedAttributeDefinition(
     index: number,
@@ -62,18 +92,44 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
 
   return (
     <section
-      className='min-w-0 space-y-4'
+      className={editorStyles.section}
       aria-label={isZh ? '当前模板属性' : 'Attributes of this template'}
     >
-      <div className='space-y-1'>
-        <h3 className='text-sm font-bold text-foreground'>
-          {isZh ? '模板属性与选项' : 'Template attributes and options'}
-        </h3>
-        <p className='text-xs leading-6 text-muted-foreground'>
-          {isZh
-            ? '属性和选项仅属于当前模板。使用此模板建档时，产品分别填写自己的选项；所有修改随模板一起保存。'
-            : 'Attributes and options belong to this template. Each product records its own selections. All changes are saved with the template.'}
-        </p>
+      <div className={editorStyles.heading}>
+        <div className='min-w-0'>
+          <h3 className='text-sm font-black text-foreground'>
+            {isZh ? '规格属性与选项' : 'Specification attributes and options'}
+          </h3>
+          <p className={editorStyles.description}>
+            {isZh
+              ? '在当前模板内直接维护，各模板独立保存。'
+              : 'Edit definitions directly. Each template is maintained independently.'}
+          </p>
+        </div>
+        <Button
+          type='button'
+          variant='outline'
+          className={editorStyles.addAttributeButton}
+          onClick={() =>
+            onDefinitionsChange([
+              ...definitions,
+              {
+                categoryKey: generateProductAttributeCategoryMachineKey(),
+                nameZh: '',
+                nameEn: '',
+                description: '',
+                options: [],
+                sortOrder: definitions.length + 1,
+                required: false,
+                active: true,
+                version: 1,
+              },
+            ])
+          }
+        >
+          <Plus className='size-3.5' />
+          {isZh ? '添加属性' : 'Add attribute'}
+        </Button>
       </div>
       {definitions.length === 0 && (
         <p className='rounded-2xl border border-dashed p-4 text-sm text-muted-foreground'>
@@ -82,19 +138,83 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
             : 'No attributes yet. Add the fields this template needs.'}
         </p>
       )}
-      {definitions.map((definition, attributeIndex) => {
-        const attributeLabel =
-          definition.nameZh ||
-          `${isZh ? '属性' : 'Attribute'} ${attributeIndex + 1}`
-        return (
-          <article
-            key={definition.categoryKey}
-            className='min-w-0 space-y-3 rounded-2xl border p-4'
-            aria-label={attributeLabel}
-          >
-            <div className='flex flex-wrap items-center gap-2'>
-              <div className='grid min-w-0 flex-1 gap-2 sm:grid-cols-2'>
+      <div className={editorStyles.grid}>
+        {definitions.map((definition, attributeIndex) => {
+          const attributeLabel =
+            definition.nameZh ||
+            `${isZh ? '属性' : 'Attribute'} ${attributeIndex + 1}`
+          return (
+            <article
+              key={definition.categoryKey}
+              className={editorStyles.card}
+              aria-label={attributeLabel}
+            >
+              <div className={editorStyles.cardToolbar}>
+                <span
+                  className={editorStyles.attributeNumber}
+                  aria-hidden='true'
+                >
+                  {String(attributeIndex + 1).padStart(2, '0')}
+                </span>
+                <div className='flex items-center gap-1'>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className={editorStyles.iconButton}
+                    disabled={attributeIndex === 0}
+                    aria-label={
+                      isZh
+                        ? `上移${attributeLabel}`
+                        : `Move ${attributeLabel} up`
+                    }
+                    onClick={() =>
+                      moveTemplateOwnedAttributeDefinition(attributeIndex, -1)
+                    }
+                  >
+                    <ArrowUp className='size-3.5' />
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className={editorStyles.iconButton}
+                    disabled={attributeIndex === definitions.length - 1}
+                    aria-label={
+                      isZh
+                        ? `下移${attributeLabel}`
+                        : `Move ${attributeLabel} down`
+                    }
+                    onClick={() =>
+                      moveTemplateOwnedAttributeDefinition(attributeIndex, 1)
+                    }
+                  >
+                    <ArrowDown className='size-3.5' />
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className={editorStyles.deleteButton}
+                    aria-label={
+                      isZh
+                        ? `移除${attributeLabel}`
+                        : `Remove ${attributeLabel}`
+                    }
+                    onClick={() =>
+                      setPendingDefinitionDeletion({
+                        categoryKey: definition.categoryKey,
+                        name: attributeLabel,
+                      })
+                    }
+                  >
+                    <Trash2 className='size-3.5' />
+                  </Button>
+                </div>
+              </div>
+              <div className={editorStyles.attributeNames}>
                 <Input
+                  className={editorStyles.input}
                   aria-label={
                     isZh
                       ? `属性 ${attributeIndex + 1} 名称`
@@ -111,6 +231,7 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
                   }
                 />
                 <Input
+                  className={editorStyles.input}
                   aria-label={
                     isZh
                       ? `${attributeLabel}英文名称`
@@ -128,58 +249,10 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
                   }
                 />
               </div>
-              <div className='flex items-center gap-1'>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  disabled={attributeIndex === 0}
-                  aria-label={
-                    isZh ? `上移${attributeLabel}` : `Move ${attributeLabel} up`
-                  }
-                  onClick={() =>
-                    moveTemplateOwnedAttributeDefinition(attributeIndex, -1)
-                  }
-                >
-                  <ArrowUp className='size-4' />
-                </Button>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  disabled={attributeIndex === definitions.length - 1}
-                  aria-label={
-                    isZh
-                      ? `下移${attributeLabel}`
-                      : `Move ${attributeLabel} down`
-                  }
-                  onClick={() =>
-                    moveTemplateOwnedAttributeDefinition(attributeIndex, 1)
-                  }
-                >
-                  <ArrowDown className='size-4' />
-                </Button>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  aria-label={
-                    isZh ? `移除${attributeLabel}` : `Remove ${attributeLabel}`
-                  }
-                  onClick={() =>
-                    onDefinitionsChange(
-                      definitions.filter((_, index) => index !== attributeIndex)
-                    )
-                  }
-                >
-                  <Trash2 className='size-4' />
-                </Button>
-              </div>
-            </div>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
-              <div className='flex items-center gap-4 text-xs'>
-                <label className='flex items-center gap-2'>
+              <div className={editorStyles.flags}>
+                <label className={editorStyles.flagLabel}>
                   <Checkbox
+                    className={editorStyles.checkbox}
                     checked={definition.required}
                     onCheckedChange={(checked) =>
                       updateTemplateOwnedAttributeDefinition(attributeIndex, {
@@ -189,8 +262,9 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
                   />
                   {isZh ? '必填' : 'Required'}
                 </label>
-                <label className='flex items-center gap-2'>
+                <label className={editorStyles.flagLabel}>
                   <Checkbox
+                    className={editorStyles.checkbox}
                     checked={definition.active}
                     onCheckedChange={(checked) =>
                       updateTemplateOwnedAttributeDefinition(attributeIndex, {
@@ -201,45 +275,30 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
                   {isZh ? '启用属性' : 'Attribute enabled'}
                 </label>
               </div>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={() =>
-                  updateTemplateOwnedAttributeDefinition(attributeIndex, {
-                    options: [
-                      ...definition.options,
-                      {
-                        value: generateProductAttributeOptionMachineValue(),
-                        labelZh: '',
-                        labelEn: '',
-                        description: '',
-                        sortOrder: definition.options.length + 1,
-                        active: true,
-                      },
-                    ],
-                  })
-                }
-              >
-                <Plus className='size-3.5' />
-                {isZh ? '添加选项' : 'Add option'}
-              </Button>
-            </div>
-            <div className='space-y-2'>
-              {definition.options.length === 0 && (
-                <p className='py-1 text-xs text-muted-foreground'>
-                  {isZh
-                    ? '暂无选项，请添加产品可以选择的内容。'
-                    : 'Add the values products can select.'}
-                </p>
-              )}
-              {definition.options.map((option, optionIndex) => (
-                <div
-                  key={option.value}
-                  className='flex flex-wrap items-center gap-2'
-                >
-                  <div className='grid min-w-0 flex-1 gap-2 sm:grid-cols-2'>
+              <div className='space-y-2'>
+                {definition.options.length > 0 && (
+                  <div
+                    className={`${editorStyles.optionRow} text-[10px] font-semibold text-muted-foreground`}
+                    aria-hidden='true'
+                  >
+                    <span>{isZh ? '选项名称' : 'Option name'}</span>
+                    <span>
+                      {isZh ? '英文名称（选填）' : 'English (optional)'}
+                    </span>
+                    <span className='text-center'>{isZh ? '启用' : 'On'}</span>
+                  </div>
+                )}
+                {definition.options.length === 0 && (
+                  <p className='py-1 text-xs text-muted-foreground'>
+                    {isZh
+                      ? '暂无选项，请添加产品可以选择的内容。'
+                      : 'Add the values products can select.'}
+                  </p>
+                )}
+                {definition.options.map((option, optionIndex) => (
+                  <div key={option.value} className={editorStyles.optionRow}>
                     <Input
+                      className={editorStyles.input}
                       aria-label={
                         isZh
                           ? `${attributeLabel}选项 ${optionIndex + 1}`
@@ -260,6 +319,7 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
                       }
                     />
                     <Input
+                      className={editorStyles.input}
                       aria-label={
                         isZh
                           ? `${attributeLabel}选项 ${optionIndex + 1} 英文名称`
@@ -278,73 +338,93 @@ export function ProductTemplateOwnedAttributeDefinitionsEditor({
                         )
                       }
                     />
-                  </div>
-                  <label className='flex items-center gap-2 px-1 text-xs'>
-                    <Checkbox
-                      checked={option.active}
-                      onCheckedChange={(checked) =>
-                        updateTemplateOwnedAttributeOption(
-                          attributeIndex,
-                          optionIndex,
-                          { active: checked === true }
-                        )
+                    <label className='flex h-9 items-center justify-center'>
+                      <Checkbox
+                        className={editorStyles.checkbox}
+                        checked={option.active}
+                        onCheckedChange={(checked) =>
+                          updateTemplateOwnedAttributeOption(
+                            attributeIndex,
+                            optionIndex,
+                            { active: checked === true }
+                          )
+                        }
+                      />
+                      <span className='sr-only'>
+                        {isZh ? '启用' : 'Enabled'}
+                      </span>
+                    </label>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      className={editorStyles.deleteButton}
+                      aria-label={
+                        isZh
+                          ? `删除${attributeLabel}选项 ${optionIndex + 1}`
+                          : `Delete ${attributeLabel} option ${optionIndex + 1}`
                       }
-                    />
-                    {isZh ? '启用' : 'Enabled'}
-                  </label>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    aria-label={
-                      isZh
-                        ? `删除${attributeLabel}选项 ${optionIndex + 1}`
-                        : `Delete ${attributeLabel} option ${optionIndex + 1}`
-                    }
-                    onClick={() =>
-                      updateTemplateOwnedAttributeDefinition(attributeIndex, {
-                        options: definition.options.filter(
-                          (_, index) => index !== optionIndex
-                        ),
-                      })
-                    }
-                  >
-                    <Trash2 className='size-4' />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </article>
-        )
-      })}
-      <Button
-        type='button'
-        variant='outline'
-        onClick={() =>
-          onDefinitionsChange([
-            ...definitions,
-            {
-              categoryKey: generateProductAttributeCategoryMachineKey(),
-              nameZh: '',
-              nameEn: '',
-              description: '',
-              options: [],
-              sortOrder: definitions.length + 1,
-              required: false,
-              active: true,
-              version: 1,
-            },
-          ])
-        }
-      >
-        <Plus className='size-4' />
-        {isZh ? '添加属性' : 'Add attribute'}
-      </Button>
-      <p className='text-xs leading-6 text-muted-foreground'>
+                      onClick={() =>
+                        setPendingDefinitionDeletion({
+                          categoryKey: definition.categoryKey,
+                          optionValue: option.value,
+                          name: `${attributeLabel} / ${option.labelZh || option.labelEn || (isZh ? `选项 ${optionIndex + 1}` : `Option ${optionIndex + 1}`)}`,
+                        })
+                      }
+                    >
+                      <Trash2 className='size-4' />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className={editorStyles.addOptionButton}
+                onClick={() =>
+                  updateTemplateOwnedAttributeDefinition(attributeIndex, {
+                    options: [
+                      ...definition.options,
+                      {
+                        value: generateProductAttributeOptionMachineValue(),
+                        labelZh: '',
+                        labelEn: '',
+                        description: '',
+                        sortOrder: definition.options.length + 1,
+                        active: true,
+                      },
+                    ],
+                  })
+                }
+              >
+                <Plus className='size-3.5' />
+                {isZh ? '添加选项' : 'Add option'}
+              </Button>
+            </article>
+          )
+        })}
+      </div>
+      <p className='text-[11px] leading-relaxed text-muted-foreground'>
         {isZh
           ? '已有产品使用的属性或选项可停用，保留已有产品记录；未使用的内容可删除。'
           : 'Disable attributes or options already used by products to preserve their records. Unused definitions can be deleted.'}
       </p>
+      {pendingDefinitionDeletion && (
+        <ProductPhysicalSpecificationTemplateDeleteConfirmationDialog
+          locale={locale}
+          targetName={pendingDefinitionDeletion.name}
+          targetKind={
+            pendingDefinitionDeletion.optionValue === undefined
+              ? 'attribute'
+              : 'option'
+          }
+          onOpenChange={(open) => {
+            if (!open) setPendingDefinitionDeletion(null)
+          }}
+          onConfirm={confirmTemplateOwnedAttributeOrOptionDeletion}
+        />
+      )}
     </section>
   )
 }

@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import type { SalesOrder } from '../data/schema'
 
 interface UseSalesOrderDetailActivityParams {
@@ -18,9 +19,9 @@ export function useSalesOrderDetailActivity({
     order.status === 'Canceled' && canHardDelete && onHardDelete
   )
 
-  const handleHardDelete = useCallback(() => {
+  const handleHardDelete = useCallback(async () => {
     if (!onHardDelete) return
-    if (!confirm(confirmText)) return
+    if (!(await requestApplicationConfirmation(confirmText))) return
     onHardDelete(order)
   }, [confirmText, onHardDelete, order])
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Route } from '@/routes/_authenticated/purchase/orders'
 import { Loader2 } from 'lucide-react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import {
@@ -133,12 +134,14 @@ export function PurchaseOrderList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleDeleteOrder = (id: string) => {
+  const handleDeleteOrder = async (id: string) => {
     if (!allowsAction('action_trading_purchase_order_delete')) return
     const order = orders.find((item) => item.id === id)
     if (
       order?.status !== 'Canceled' &&
-      !confirm(t('purchase.orders.deleteConfirm'))
+      !(await requestApplicationConfirmation(
+        t('purchase.orders.deleteConfirm')
+      ))
     )
       return
     deleteMutation.mutate(id)

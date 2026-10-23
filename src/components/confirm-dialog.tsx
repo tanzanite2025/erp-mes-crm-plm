@@ -22,6 +22,7 @@ type ConfirmDialogProps = {
   handleConfirm: () => void
   isLoading?: boolean
   className?: string
+  overlayClassName?: string
   bodyClassName?: string
   children?: React.ReactNode
 }
@@ -32,6 +33,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
     desc,
     children,
     className,
+    overlayClassName,
     bodyClassName,
     confirmText,
     cancelBtnText,
@@ -44,6 +46,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
   return (
     <AlertDialog {...actions}>
       <AlertDialogContent
+        overlayClassName={overlayClassName}
         className={cn(
           'w-[95vw] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[520px]',
           className

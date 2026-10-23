@@ -13,17 +13,19 @@
 > `src/features/product-structure/components/bom-editor/bom-workspace.tsx` ->
 > `src/features/product-structure/hooks/use-bom-workspace.ts`.
 
+For the current component and persistence boundaries, see [BOM editor responsibilities](../bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md) (verified 2026-10-23). This archive concerns rendering performance; it does not define the business performance-version catalog (“性能版本”).
+
 ## Table of Contents
 
 1. [Core Interfaces](#core-interfaces)
-2. [Dirty Marking API](#dirty-marking-api)
-3. [Lazy Proxy Management API](#lazy-proxy-management-api)
-4. [Performance Monitoring API](#performance-monitoring-api)
-5. [Feature Flags API](#feature-flags-api)
+2. [Dirty Marking API (Removed)](#dirty-marking-api-removed)
+3. [Lazy Proxy Management API (Removed)](#lazy-proxy-management-api-removed)
+4. [Performance Monitoring API (Removed)](#performance-monitoring-api-removed)
+5. [Feature Flags API (Removed)](#feature-flags-api-removed)
 6. [React Hooks API](#react-hooks-api)
-7. [React Components API](#react-components-api)
-8. [Error Handling API](#error-handling-api)
-9. [Configuration API](#configuration-api)
+7. [React Components API (Removed)](#react-components-api-removed)
+8. [Error Handling API (Removed)](#error-handling-api-removed)
+9. [Configuration API (Removed)](#configuration-api-removed)
 
 ---
 

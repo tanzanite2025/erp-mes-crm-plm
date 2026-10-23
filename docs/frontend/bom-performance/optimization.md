@@ -12,15 +12,17 @@
 > `src/features/product-structure/components/bom-action-dialog.tsx` and renders
 > through `src/features/product-structure/components/bom-editor/bom-workspace.tsx`.
 
+Current editor structure verified on 2026-10-23: see [BOM editor responsibilities](../bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md). “Performance” in this archive means rendering performance; the business concept “性能版本” is described in the [BOM operation guide](../bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md).
+
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Dirty Marking System](#dirty-marking-system)
-4. [Lazy Proxy Lifecycle](#lazy-proxy-lifecycle)
-5. [Virtual Scrolling Configuration](#virtual-scrolling-configuration)
+2. [Historical Architecture](#historical-architecture)
+3. [Dirty Marking System (Retired)](#dirty-marking-system-retired)
+4. [Lazy Proxy Lifecycle (Retired)](#lazy-proxy-lifecycle-retired)
+5. [Virtual Scrolling Configuration (Retired)](#virtual-scrolling-configuration-retired)
 6. [React Rendering Optimizations](#react-rendering-optimizations)
-7. [Performance Monitoring](#performance-monitoring)
+7. [Performance Monitoring (Retired)](#performance-monitoring-retired)
 8. [Best Practices](#best-practices)
 9. [Code Examples](#code-examples)
 
@@ -593,7 +595,7 @@ or import path for the example that previously appeared here.
 
 ### Current BOM Editor Organization
 
-The active editor uses the following paths:
+The active editor uses the following paths (verified 2026-10-23). It combines a recipe summary with independently collapsible material groups; the former flat/tree workspace components have been removed.
 
 ```
 src/features/product-structure/
@@ -601,9 +603,13 @@ src/features/product-structure/
 ├── components/
 │   ├── bom-action-dialog.tsx
 │   └── bom-editor/
+│       ├── bom-editor-product-information-and-recipe-layout.tsx
+│       ├── bom-product-configuration-information-panel.tsx
 │       ├── bom-workspace.tsx
-│       ├── bom-flat-workspace-view.tsx
-│       └── bom-tree-workspace-view.tsx
+│       ├── bom-recipe-summary-and-section-accordion-editor.tsx
+│       ├── bom-recipe-draft-summary-strip.tsx
+│       ├── item-table.tsx
+│       └── bom-item-row.tsx
 └── hooks/
     ├── use-bom-data.ts
     ├── use-bom-workspace.ts

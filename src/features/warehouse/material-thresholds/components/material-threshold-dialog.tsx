@@ -353,7 +353,7 @@ export function MaterialThresholdDialog({
                   </p>
                 </div>
 
-                <div className='min-w-[220px] rounded-2xl bg-background/80 px-4 py-3 shadow-inner'>
+                <div className='min-w-0 rounded-2xl bg-background/80 px-4 py-3 [overflow-wrap:anywhere] shadow-inner md:min-w-[220px]'>
                   <div className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                     {t(
                       'warehouseConfig.materialThresholds.dialog.currentTargetLabel'

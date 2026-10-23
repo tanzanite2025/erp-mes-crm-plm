@@ -34,6 +34,12 @@ export function CommandMenuKnowledgeDetailDrawer({
   const drawerContent = (
     <div
       data-slot='command-menu-knowledge-detail-drawer'
+      data-mobile-floating-surface={
+        usePortal && entry ? 'knowledge-detail' : undefined
+      }
+      data-mobile-floating-surface-within-parent={
+        !usePortal && entry ? '' : undefined
+      }
       className={cn(
         usePortal
           ? 'fixed inset-x-0 bottom-0 z-120 mx-auto w-[100vw]! max-w-[100vw]! overflow-hidden rounded-[28px] border border-amber-500/35 bg-background shadow-[0_24px_80px_rgba(245,158,11,0.16)] ring-1 ring-amber-500/20 transition-all duration-300 md:bottom-3 md:w-[85vw]! md:max-w-[85vw]!'
@@ -45,6 +51,7 @@ export function CommandMenuKnowledgeDetailDrawer({
     >
       {entry ? (
         <div
+          data-slot='command-menu-knowledge-detail-content'
           className={cn(
             'flex h-[90dvh] max-h-[90dvh] flex-col',
             usePortal

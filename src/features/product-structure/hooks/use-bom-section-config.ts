@@ -34,26 +34,47 @@ export function useBOMSectionConfig() {
   const createMutation = useMutation({
     mutationFn: (payload: BOMSectionCreatePayload) =>
       BOMSectionService.createSection(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.list() })
-      queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.options() })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: bomSectionQueryKeys.list(),
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: bomSectionQueryKeys.options(),
+        }),
+      ])
     },
   })
 
   const patchMutation = useMutation({
     mutationFn: (params: { id: string; delta: DeltaSet; version: number }) =>
       BOMSectionService.patchSection(params.id, params.delta, params.version),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.list() })
-      queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.options() })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: bomSectionQueryKeys.list(),
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: bomSectionQueryKeys.options(),
+        }),
+      ])
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => BOMSectionService.deleteSection(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.list() })
-      queryClient.invalidateQueries({ queryKey: bomSectionQueryKeys.options() })
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: bomSectionQueryKeys.list(),
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: bomSectionQueryKeys.options(),
+        }),
+      ])
     },
   })
 

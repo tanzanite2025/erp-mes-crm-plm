@@ -79,6 +79,9 @@ export function PersonalWorkbenchBottomDrawer() {
     (event: PointerEvent<HTMLElement>) => {
       if (
         event.button !== 0 ||
+        window.matchMedia(
+          '(max-width: 767px), (max-width: 1023px) and (pointer: coarse)'
+        ).matches ||
         isPersonalWorkbenchBottomDrawerInteractiveElement(event.target)
       ) {
         return
@@ -157,6 +160,7 @@ export function PersonalWorkbenchBottomDrawer() {
     <section
       aria-labelledby='personal-workbench-bottom-drawer-title'
       aria-modal='false'
+      data-mobile-floating-surface='personal-workbench'
       className={cn(
         'fixed inset-x-0 bottom-0 z-[70] flex min-h-[20dvh] flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-border/70 bg-background/98 shadow-[0_-24px_80px_rgba(15,23,42,0.24)] backdrop-blur-xl',
         isPersonalWorkbenchBottomDrawerHeightBeingDragged && 'select-none'

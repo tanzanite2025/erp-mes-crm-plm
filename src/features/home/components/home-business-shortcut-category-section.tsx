@@ -26,50 +26,49 @@ export function HomeBusinessShortcutCategorySection({
   return (
     <section
       aria-labelledby={`home-${category.id}-title`}
-      className='space-y-3'
+      className='min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground'
     >
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <div className='flex min-w-0 items-center gap-3'>
-          <span className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary'>
-            <CategoryIcon aria-hidden='true' className='size-4' />
-          </span>
-          <div className='min-w-0'>
+      <div className='border-b border-border/60 bg-muted/30 p-4'>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <div className='flex min-w-0 items-center gap-2.5'>
+            <span className='flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary'>
+              <CategoryIcon aria-hidden='true' className='size-4' />
+            </span>
             <h2
               id={`home-${category.id}-title`}
-              className='text-base font-semibold'
+              className='min-w-0 text-base font-semibold break-words'
             >
               {category.title}
             </h2>
-            <p className='mt-0.5 text-xs leading-relaxed text-muted-foreground'>
-              {category.description}
-            </p>
           </div>
+          {hasMoreShortcuts && (
+            <Button
+              variant='ghost'
+              size='sm'
+              className='h-7 shrink-0 gap-1 text-xs text-muted-foreground'
+              aria-expanded={isExpanded}
+              aria-controls={shortcutsListId}
+              onClick={() => setIsExpanded((expanded) => !expanded)}
+            >
+              {t(isExpanded ? 'home.showLess' : 'home.showMore')}
+              <span className='text-muted-foreground/70'>
+                {t('home.entryCount', { count: category.shortcuts.length })}
+              </span>
+              {isExpanded ? (
+                <ChevronUp aria-hidden='true' className='size-3.5' />
+              ) : (
+                <ChevronDown aria-hidden='true' className='size-3.5' />
+              )}
+            </Button>
+          )}
         </div>
-        {hasMoreShortcuts && (
-          <Button
-            variant='ghost'
-            size='sm'
-            className='h-8 shrink-0 gap-1.5 text-xs text-muted-foreground'
-            aria-expanded={isExpanded}
-            aria-controls={shortcutsListId}
-            onClick={() => setIsExpanded((expanded) => !expanded)}
-          >
-            {t(isExpanded ? 'home.showLess' : 'home.showMore')}
-            <span className='text-muted-foreground/70'>
-              {t('home.entryCount', { count: category.shortcuts.length })}
-            </span>
-            {isExpanded ? (
-              <ChevronUp aria-hidden='true' className='size-3.5' />
-            ) : (
-              <ChevronDown aria-hidden='true' className='size-3.5' />
-            )}
-          </Button>
+        {category.description && (
+          <p className='mt-2 text-xs leading-relaxed text-muted-foreground'>
+            {category.description}
+          </p>
         )}
       </div>
-      <ul
-        id={shortcutsListId}
-        className='grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4'
-      >
+      <ul id={shortcutsListId} className='space-y-0.5 p-2'>
         {visibleShortcuts.map((shortcut) => {
           const ShortcutIcon = shortcut.icon ?? LayoutGrid
           const ShortcutLink =
@@ -80,17 +79,17 @@ export function HomeBusinessShortcutCategorySection({
             <li key={shortcut.url}>
               <ShortcutLink
                 to={shortcut.url}
-                className='group flex h-full w-full items-center gap-3 rounded-2xl border border-border/70 bg-card p-3.5 text-start transition-colors hover:border-primary/30 hover:bg-primary/4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
+                className='group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-start transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
               >
                 <ShortcutIcon
                   aria-hidden='true'
                   className='size-4 shrink-0 text-muted-foreground group-hover:text-primary'
                 />
                 <span className='min-w-0 flex-1'>
-                  <span className='block text-sm leading-snug font-medium'>
+                  <span className='block text-sm leading-snug font-medium break-words'>
                     {shortcut.title}
                   </span>
-                  <span className='mt-1 block text-xs leading-snug text-muted-foreground'>
+                  <span className='mt-0.5 block text-xs leading-relaxed break-words text-muted-foreground'>
                     {shortcut.description ?? shortcut.domainTitle}
                   </span>
                 </span>

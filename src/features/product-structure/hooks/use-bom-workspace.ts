@@ -3,6 +3,10 @@ import type { UseFormReturn } from 'react-hook-form'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import { createEmptyBOMItem } from '../utils/bom-form-defaults'
+import {
+  getDefaultBOMSectionCode,
+  resolveBOMSection,
+} from '../utils/bom-section-utils'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation'
 import { type BOMPermissionGuard } from './use-bom-permission-guard'
 import { useBOMWorkspaceProjection } from './use-bom-workspace-projection'
@@ -24,97 +28,41 @@ export function useBOMWorkspace({
   protocolDraft,
   permissionGuard,
 }: UseBOMWorkspaceParams) {
-  const [activeGroupKey, setActiveGroupKey] = useState<string>('all')
-  const [expandedBranchKeys, setExpandedBranchKeys] = useState<string[]>([])
+  const [branchExpansionOverrides, setBranchExpansionOverrides] = useState(
+    () => new Map<string, boolean>()
+  )
   const projection = useBOMWorkspaceProjection({
     form,
     fields,
     sections,
-    activeGroupKey,
-    expandedBranchKeys,
+    branchExpansionOverrides,
     protocolDraft,
   })
 
   // Wrap append with permission guard if provided
   const guardedAppend = permissionGuard?.guardedAppend(append) ?? append
 
-  const collectDescendantBranchNodeIds = (
-    sourceBranchNodeId: string
-  ): string[] => {
-    const sourceNode = projection.sourceModel.nodeById.get(sourceBranchNodeId)
-    if (!sourceNode || sourceNode.nodeKind !== 'branch') {
-      return []
-    }
-
-    return sourceNode.childNodeIds.flatMap((childNodeId) => {
-      const childNode = projection.sourceModel.nodeById.get(childNodeId)
-      if (!childNode || childNode.nodeKind !== 'branch') {
-        return []
-      }
-
-      return [
-        childNode.nodeId,
-        ...collectDescendantBranchNodeIds(childNode.nodeId),
-      ]
-    })
-  }
-
-  const handleActiveGroupChange = (nextGroupKey: string) => {
-    setActiveGroupKey(nextGroupKey)
-
-    if (nextGroupKey === 'all') {
-      return
-    }
-
-    const nextGroup = projection.groups.find(
-      (group) => group.key === nextGroupKey
+  function toggleBOMRecipeBranchExpansion(sourceBranchNodeId: string) {
+    const branch = projection.branchNodes.find(
+      (node) => node.sourceNodeId === sourceBranchNodeId
     )
-    if (!nextGroup) {
-      return
-    }
-
-    const nextExpandedBranchNodeIds = [
-      nextGroup.sourceNodeId,
-      ...collectDescendantBranchNodeIds(nextGroup.sourceNodeId),
-    ]
-
-    setExpandedBranchKeys((current) =>
-      Array.from(new Set([...current, ...nextExpandedBranchNodeIds]))
+    if (!branch) return
+    setBranchExpansionOverrides((current) =>
+      new Map(current).set(sourceBranchNodeId, !branch.isExpanded)
     )
   }
 
-  const toggleBranchExpanded = (sourceBranchNodeId: string) => {
-    setExpandedBranchKeys((current) =>
-      current.includes(sourceBranchNodeId)
-        ? current.filter((key) => key !== sourceBranchNodeId)
-        : [...current, sourceBranchNodeId]
-    )
-  }
-
-  const appendItem = (sectionCode?: string) => {
-    // Permission check enforced through guardedAppend
-    const resolvedSectionCode =
-      sectionCode || projection.appendContext.sectionCode
-
-    guardedAppend(createEmptyBOMItem(resolvedSectionCode))
+  function appendBOMRecipeItemToSelectedSection(sectionCode?: string) {
+    const targetSectionCode = sectionCode || getDefaultBOMSectionCode(sections)
+    if (!resolveBOMSection(sections, targetSectionCode)?.active) return
+    guardedAppend(createEmptyBOMItem(targetSectionCode))
   }
 
   return {
-    activeSections: projection.activeSections,
-    sourceModel: projection.sourceModel,
     groups: projection.groups,
-    groupNodes: projection.groupNodes,
-    activeGroupKey: projection.resolvedActiveGroupKey,
-    setActiveGroupKey: handleActiveGroupChange,
-    expandedBranchKeys,
-    toggleBranchExpanded,
-    activeGroup: projection.activeGroup,
-    viewMode: projection.viewMode,
-    visibleNodes: projection.visibleNodes,
+    toggleBranchExpanded: toggleBOMRecipeBranchExpansion,
     visibleTreeNodes: projection.visibleTreeNodes,
-    visibleLeafRows: projection.visibleLeafRows,
-    appendContext: projection.appendContext,
-    appendItem,
+    appendItem: appendBOMRecipeItemToSelectedSection,
     canEdit: permissionGuard?.canEdit ?? true,
   }
 }

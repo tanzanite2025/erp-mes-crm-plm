@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import type { DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
 import {
@@ -219,7 +220,11 @@ export function useSpokeLengthMgmt() {
     nipplesQuery.isFetching
 
   const handleDelete = async (item: SpokeLength) => {
-    if (!window.confirm(t('engineering.spokeLength.toasts.deleteConfirm')))
+    if (
+      !(await requestApplicationConfirmation(
+        t('engineering.spokeLength.toasts.deleteConfirm')
+      ))
+    )
       return
 
     try {

@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Layers } from 'lucide-react'
+import {
+  requestApplicationConfirmation,
+  requestApplicationTextInput,
+} from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
@@ -177,7 +181,11 @@ export function BOMMgmt() {
   }
 
   const handleDerive = async (bom: BOM) => {
-    if (window.confirm(t('engineering.bomArchive.table.confirmDerive'))) {
+    if (
+      await requestApplicationConfirmation(
+        t('engineering.bomArchive.table.confirmDerive')
+      )
+    ) {
       await deriveMBOM(bom.id, {
         description: `Derived from ${bom.bomNo}`,
         revisionNo: 'R1',
@@ -186,7 +194,7 @@ export function BOMMgmt() {
   }
 
   const handleRevise = async (bom: BOM) => {
-    const reason = window.prompt(
+    const reason = await requestApplicationTextInput(
       `请填写修订原因（将记入审计与通知）\n\n当前 MBOM：${bom.bomNo} ${bom.bomVersion}`,
       ''
     )

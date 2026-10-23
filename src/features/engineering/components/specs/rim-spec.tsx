@@ -1,6 +1,7 @@
 'use client'
 
 import type { UseFormReturn } from 'react-hook-form'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import {
   FormControl,
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { type Product } from '../../data/schema'
+import { productFormTypographyClassNames } from '../product/product-form-typography.styles'
 
 interface RimSpecFormProps {
   form: UseFormReturn<Product>
@@ -19,14 +21,19 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
   const { t } = useLanguage()
 
   return (
-    <div className='rounded-[18px] border border-dashed border-blue-200/60 bg-blue-50/30 p-2'>
+    <div className='rounded-[18px] border border-dashed border-blue-200/60 bg-blue-50/30 p-2 dark:border-blue-900/60 dark:bg-blue-950/20'>
       <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4'>
         <FormField
           control={form.control}
           name='depth'
           render={({ field }) => (
             <FormItem className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0'>
-              <FormLabel className='text-[10px] font-black tracking-widest whitespace-nowrap text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'whitespace-nowrap text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.rim.depth')}
               </FormLabel>
               <FormControl>
@@ -42,7 +49,10 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-8 w-full rounded-lg border-none bg-background/90 px-2.5 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-8 w-full rounded-lg border-none bg-background/90 px-2.5 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -53,7 +63,12 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
           name='widthInternal'
           render={({ field }) => (
             <FormItem className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0'>
-              <FormLabel className='text-[10px] font-black tracking-widest whitespace-nowrap text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'whitespace-nowrap text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.rim.internalWidth')}
               </FormLabel>
               <FormControl>
@@ -71,7 +86,10 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-8 w-full rounded-lg border-none bg-background/90 px-2.5 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-8 w-full rounded-lg border-none bg-background/90 px-2.5 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -82,7 +100,12 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
           name='widthExternal'
           render={({ field }) => (
             <FormItem className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0'>
-              <FormLabel className='text-[10px] font-black tracking-widest whitespace-nowrap text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'whitespace-nowrap text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.rim.externalWidth')}
               </FormLabel>
               <FormControl>
@@ -100,7 +123,10 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-8 w-full rounded-lg border-none bg-background/90 px-2.5 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-8 w-full rounded-lg border-none bg-background/90 px-2.5 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -111,7 +137,12 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
           name='maxTirePressure'
           render={({ field }) => (
             <FormItem className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0'>
-              <FormLabel className='text-[10px] font-black tracking-widest whitespace-nowrap text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'whitespace-nowrap text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.rim.maxTirePressure')}
               </FormLabel>
               <FormControl>
@@ -129,7 +160,10 @@ export function RimSpecForm({ form }: RimSpecFormProps) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-8 w-full rounded-lg border-none bg-background/90 px-2.5 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-8 w-full rounded-lg border-none bg-background/90 px-2.5 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation } from '@tanstack/react-router'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { useLayout } from '@/context/layout-provider'
@@ -23,6 +23,7 @@ import { useSidebarCategorySelection } from './use-sidebar-category-selection'
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const { t } = useLanguage()
+  const navigate = useNavigate()
   const pathname = useLocation({ select: (location) => location.pathname })
   const { isMobile, openMobile, state, secondaryOpen, setSecondaryOpen } =
     useSidebar()
@@ -93,6 +94,10 @@ export function AppSidebar() {
   function activateDesktopSidebarCategory(categoryId: string) {
     selectSidebarCategory(categoryId)
     setSecondaryOpen(true)
+
+    if (categoryId === 'home') {
+      void navigate({ to: '/home' })
+    }
   }
 
   useSidebarActiveCenter({

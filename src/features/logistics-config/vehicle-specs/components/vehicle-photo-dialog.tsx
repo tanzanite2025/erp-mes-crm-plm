@@ -64,7 +64,10 @@ export function VehiclePhotoDialog({
       <DialogContent className='flex max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] flex-col gap-0 rounded-[24px] border border-dashed border-border/60 bg-background/95 p-0 shadow-xl sm:max-w-[1240px]'>
         <VehiclePhotoDialogHeader vehicle={vehicle} photoEntry={photoEntry} />
 
-        <div className='min-h-0 flex-1 overflow-hidden px-3 py-3 sm:px-4 sm:py-4'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4'
+        >
           <div className='grid min-h-0 gap-3 lg:grid-cols-[1.65fr_1fr]'>
             <VehiclePhotoDialogPreview
               photoEntry={photoEntry}

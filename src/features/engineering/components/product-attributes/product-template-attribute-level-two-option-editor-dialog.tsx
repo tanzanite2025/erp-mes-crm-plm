@@ -133,8 +133,8 @@ function ProductTemplateAttributeLevelTwoOptionEditorDialogSession({
     toast.success(
       isBOMGradeOption
         ? isZh
-          ? '产品档次选项已保存'
-          : 'Product grade option saved'
+          ? '性能版本选项已保存'
+          : 'Performance version option saved'
         : isZh
           ? '二级属性分类已保存'
           : 'Level 2 attribute option saved'

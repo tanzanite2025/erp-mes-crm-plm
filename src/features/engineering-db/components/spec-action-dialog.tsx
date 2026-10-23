@@ -1,31 +1,37 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { FileText, Hash, Tag, Info, Save, FileType } from 'lucide-react'
+import { useId, useMemo, useRef, useState } from 'react'
+import { FileText, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { FileUploader } from '@/components/file-uploader'
-import { SelectDropdown } from '@/components/select-dropdown'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type TechnicalSpec } from '../data/schema'
+import type { TechnicalSpecificationDocumentSaveParameters } from '../hooks/use-technical-specification-document-write-actions'
+import { uploadTechnicalSpecificationDocumentSourceFile } from '../services/technical-specification-document-source-file-upload-service'
 
 interface SpecActionDialogProps {
   currentRow?: TechnicalSpec | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (params: {
-    data: TechnicalSpec
-    isPatch: boolean
-    delta?: DeltaSet
-    version?: number
-  }) => void
+  onSave: (
+    params: TechnicalSpecificationDocumentSaveParameters
+  ) => Promise<void>
   isLoading?: boolean
 }
 
@@ -38,6 +44,9 @@ const DEFAULT_SPEC: Partial<TechnicalSpec> = {
   description: '',
   version: 1,
 }
+
+const technicalSpecificationDocumentInputClassName =
+  'h-10 rounded-xl text-[13px] placeholder:text-[13px] placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground placeholder:normal-case placeholder:opacity-100 md:text-[13px]'
 
 function buildSpecDelta(before: TechnicalSpec, after: TechnicalSpec): DeltaSet {
   const delta: DeltaSet = {}
@@ -67,15 +76,19 @@ export function SpecActionDialog({
   onSave,
   isLoading,
 }: SpecActionDialogProps) {
+  const fieldId = useId()
+  const { locale } = useLanguage()
+  const isChineseLocale = locale.startsWith('zh')
   const shellClasses = buildActionDialogShellClasses({
-    content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
-    header: 'p-8 pb-4 border-none bg-muted/5',
-    title:
-      'text-xl font-black uppercase tracking-tighter flex items-center gap-2',
-    description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
-    body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
-    footer:
-      'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+    content:
+      'engineering-technical-specification-document-floating-surface flex h-[85vh] w-[95vw] max-w-[95vw] flex-col gap-0 rounded-2xl sm:max-w-4xl',
+    header:
+      'shrink-0 border-b border-solid bg-background px-6 py-4 pr-12 text-start',
+    title: 'text-base font-semibold normal-case tracking-normal',
+    description:
+      'text-xs font-normal normal-case tracking-normal leading-5 opacity-100',
+    body: 'min-h-0 flex-1 overflow-y-auto p-6',
+    footer: 'shrink-0 border-t border-solid bg-background px-6 py-4',
   })
 
   const isEdit = !!currentRow
@@ -89,6 +102,12 @@ export function SpecActionDialog({
   }, [currentRow])
 
   const [formData, setFormData] = useState<TechnicalSpec>(initialFormData)
+  const [isUploadingSourceFile, setIsUploadingSourceFile] = useState(false)
+  const [isSubmittingDocument, setIsSubmittingDocument] = useState(false)
+  const documentSubmissionLock = useRef(false)
+  const isBusy = Boolean(
+    isLoading || isUploadingSourceFile || isSubmittingDocument
+  )
 
   const currentDelta = useMemo(() => {
     if (!isEdit || !currentRow) {
@@ -109,41 +128,70 @@ export function SpecActionDialog({
     }))
   }
 
-  const handleSave = () => {
-    if (!formData.name) {
-      toast.error('请填写规范名称')
+  const handleSave = async () => {
+    if (isBusy || documentSubmissionLock.current) return
+    if (!formData.name.trim()) {
+      toast.error(
+        isChineseLocale ? '请填写规范名称' : 'Enter a specification name'
+      )
       return
     }
 
-    if (isEdit && currentRow) {
-      const delta = currentDelta
-      if (Object.keys(delta).length === 0) {
-        onOpenChange(false)
-        return
+    documentSubmissionLock.current = true
+    setIsSubmittingDocument(true)
+    try {
+      if (isEdit && currentRow) {
+        const delta = currentDelta
+        if (Object.keys(delta).length === 0) {
+          onOpenChange(false)
+          return
+        }
+        await onSave({
+          data: formData,
+          isPatch: true,
+          delta,
+          version: currentRow.version,
+        })
+      } else {
+        await onSave({
+          data: { ...formData, name: formData.name.trim() },
+          isPatch: false,
+        })
       }
-      onSave({
-        data: formData,
-        isPatch: true,
-        delta,
-        version: currentRow.version,
-      })
-    } else {
-      onSave({ data: formData, isPatch: false })
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : isChineseLocale
+            ? '技术规范保存失败，请重试'
+            : 'Cannot save specification. Please retry.'
+      )
+    } finally {
+      documentSubmissionLock.current = false
+      setIsSubmittingDocument(false)
     }
   }
 
   return (
     <ActionDialogShell
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(nextOpen) => {
+        if (!isBusy) onOpenChange(nextOpen)
+      }}
       title={
         <div className='flex w-full items-center justify-between gap-3'>
           <div className='flex min-w-0 items-center gap-2'>
-            <div className='rounded-xl bg-indigo-500/10 p-2'>
-              <FileText className='size-5 text-indigo-500' />
+            <div className='rounded-xl bg-muted p-2'>
+              <FileText className='size-5 text-foreground' />
             </div>
             <span className='truncate'>
-              {isEdit ? '编辑技术规范' : '发布技术基准'}
+              {isChineseLocale
+                ? isEdit
+                  ? '编辑技术规范文档'
+                  : '新增技术规范文档'
+                : isEdit
+                  ? 'Edit technical specification'
+                  : 'New technical specification'}
             </span>
           </div>
           {isEdit && currentRow?.id ? (
@@ -156,7 +204,11 @@ export function SpecActionDialog({
           ) : null}
         </div>
       }
-      description='DOCUMENT_MASTER_SPEC / 定义工艺标准、质量规范或 SOP 指引，确保生产流程合规性。'
+      description={
+        isChineseLocale
+          ? '文档统一保存在工程管理的技术规范主库。新增文档后可以选用于产品，产品关联随产品保存。'
+          : 'Documents are saved in the Engineering Management specification master library. After creation, select the document for a product and save the product to persist the link.'
+      }
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}
       bodyClassName={shellClasses.body}
@@ -165,86 +217,124 @@ export function SpecActionDialog({
       descriptionClassName={shellClasses.description}
       footer={
         <>
-          <p className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
-            <span className='inline-block size-1.5 animate-pulse rounded-full bg-indigo-500' />
-            Sync_to_Knowledge_Base
+          <p className='mr-auto text-xs leading-5 text-muted-foreground'>
+            {isChineseLocale
+              ? '保存位置：工程管理 → 技术规范主库'
+              : 'Saved in Engineering Management → Technical Specifications'}
           </p>
           <div className='flex items-center gap-3'>
             <Button
-              variant='ghost'
+              type='button'
+              variant='outline'
+              disabled={isBusy}
               onClick={() => onOpenChange(false)}
-              className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='rounded-full px-6 text-[13px]'
             >
-              取消 / CANCEL
+              {isChineseLocale ? '取消' : 'Cancel'}
             </Button>
             <Button
-              disabled={isLoading || (isEdit && !isDirty)}
+              type='button'
+              disabled={isBusy || (isEdit && !isDirty)}
               onClick={handleSave}
-              className='h-11 gap-2 rounded-full bg-indigo-600 px-10 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95'
+              className='gap-2 rounded-full bg-blue-600 px-6 text-[13px] text-white hover:bg-blue-700'
             >
-              {isLoading ? (
+              {isBusy ? (
                 <span className='size-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
               ) : (
                 <Save className='size-4' />
               )}
-              同步存档 / SYNC_ARCHIVE
+              {isUploadingSourceFile
+                ? isChineseLocale
+                  ? '正在上传文档…'
+                  : 'Uploading…'
+                : isChineseLocale
+                  ? '保存到技术规范主库'
+                  : 'Save to master library'}
             </Button>
           </div>
         </>
       }
     >
-      <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent' />
-
-      <div className='relative grid gap-8'>
+      <fieldset
+        disabled={isBusy}
+        className='grid min-w-0 gap-5 [&_label]:text-xs [&_label]:font-medium'
+      >
         {/* 核心标识组 */}
-        <div className='grid grid-cols-2 gap-6'>
+        <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-              <Tag className='size-3' /> 规范名称 / SPEC_NAME
+            <Label htmlFor={`${fieldId}-name`}>
+              {isChineseLocale ? '规范名称' : 'Specification name'}
             </Label>
             <Input
-              placeholder='例如: 轮组张力校正标准 SOP'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-indigo-500/20'
+              id={`${fieldId}-name`}
+              maxLength={100}
+              placeholder={
+                isChineseLocale
+                  ? '例如：轮组张力校正标准 SOP'
+                  : 'e.g. Wheel tension calibration SOP'
+              }
+              className={technicalSpecificationDocumentInputClassName}
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
-            <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-              <Hash className='size-3' /> 文档编码 / DOC_ID
+            <Label htmlFor={`${fieldId}-code`}>
+              {isChineseLocale ? '文档编码' : 'Document code'}
             </Label>
             <Input
               readOnly
-              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-bold opacity-60'
-              value={formData.id}
+              id={`${fieldId}-code`}
+              className={`${technicalSpecificationDocumentInputClassName} bg-muted/30`}
+              value={formData.code || ''}
+              placeholder={
+                isChineseLocale
+                  ? '保存后由服务器分配'
+                  : 'Assigned by the server after saving'
+              }
             />
           </div>
         </div>
 
         {/* 分类与版本 */}
-        <div className='grid grid-cols-2 gap-6'>
+        <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-              规范分类 / CATEGORY
+            <Label htmlFor={`${fieldId}-category`}>
+              {isChineseLocale ? '规范分类' : 'Category'}
             </Label>
-            <SelectDropdown
-              defaultValue={formData.category}
+            <Select
+              value={formData.category}
               onValueChange={(val) => updateField('category', val)}
-              items={[
-                { label: '标准作业程序 / SOP', value: 'SOP' },
-                { label: '技术标准 / STANDARD', value: 'Standard' },
-                { label: '质量规范 / QUALITY', value: 'Quality' },
-              ]}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
-            />
+            >
+              <SelectTrigger
+                id={`${fieldId}-category`}
+                className='h-10 w-full rounded-xl text-[13px]'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='engineering-technical-specification-document-floating-surface'>
+                <SelectItem value='SOP'>
+                  {isChineseLocale
+                    ? '标准作业程序 / SOP'
+                    : 'Standard operating procedure / SOP'}
+                </SelectItem>
+                <SelectItem value='Standard'>
+                  {isChineseLocale ? '技术标准' : 'Technical standard'}
+                </SelectItem>
+                <SelectItem value='Quality'>
+                  {isChineseLocale ? '质量规范' : 'Quality specification'}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-              修订版本 / REVISION
+            <Label htmlFor={`${fieldId}-revision`}>
+              {isChineseLocale ? '修订版本' : 'Revision'}
             </Label>
             <Input
               placeholder='V1.0'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black uppercase shadow-inner'
+              id={`${fieldId}-revision`}
+              className={technicalSpecificationDocumentInputClassName}
               value={formData.revisionNo || ''}
               onChange={(e) => updateField('revisionNo', e.target.value)}
             />
@@ -252,13 +342,24 @@ export function SpecActionDialog({
         </div>
 
         {/* 附件上传 */}
-        <div className='space-y-3 rounded-[32px] border border-dashed border-indigo-500/20 bg-indigo-500/5 p-6'>
-          <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-indigo-600/60 uppercase'>
-            <FileType className='size-3' /> 文件原始档 / SOURCE_FILE
-          </Label>
+        <div className='space-y-3'>
+          <p className='text-xs font-medium'>
+            {isChineseLocale ? '原始文档附件' : 'Source document attachment'}
+          </p>
           <FileUploader
             value={formData.fileUrl}
-            accept='.pdf,.xlsx,.docx,.csv'
+            accept='.pdf,.xlsx,.docx'
+            disabled={isBusy}
+            uploadFile={async (file) => {
+              setIsUploadingSourceFile(true)
+              try {
+                return await uploadTechnicalSpecificationDocumentSourceFile(
+                  file
+                )
+              } finally {
+                setIsUploadingSourceFile(false)
+              }
+            }}
             onChange={(url, ext) => {
               setFormData((prev) => ({
                 ...prev,
@@ -267,21 +368,33 @@ export function SpecActionDialog({
               }))
             }}
           />
+          <p className='text-xs leading-5 text-muted-foreground'>
+            {isChineseLocale
+              ? '支持 PDF、Excel（.xlsx）、Word（.docx），附件上传到服务器，其他电脑也可以读取。'
+              : 'Supports PDF, Excel (.xlsx), and Word (.docx). Attachments are uploaded to the server for access from other computers.'}
+          </p>
         </div>
 
         {/* 说明文本 */}
         <div className='space-y-2'>
-          <Label className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-            <Info className='size-3' /> 修订概要 / REVISION_SUMMARY
+          <Label htmlFor={`${fieldId}-description`}>
+            {isChineseLocale
+              ? '文档说明 / 修订概要'
+              : 'Description / revision summary'}
           </Label>
           <Textarea
-            placeholder='记录本次发布的主要变更点...'
-            className='min-h-[120px] resize-none rounded-[24px] border-none bg-muted/40 p-5 text-sm font-bold shadow-inner'
+            id={`${fieldId}-description`}
+            placeholder={
+              isChineseLocale
+                ? '说明适用工艺、技术要求或本次主要变更…'
+                : 'Describe applicable processes, requirements or revision changes…'
+            }
+            className={`${technicalSpecificationDocumentInputClassName} h-auto min-h-24 resize-y`}
             value={formData.description}
             onChange={(e) => updateField('description', e.target.value)}
           />
         </div>
-      </div>
+      </fieldset>
     </ActionDialogShell>
   )
 }

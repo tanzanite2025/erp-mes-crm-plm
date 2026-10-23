@@ -106,10 +106,10 @@ func defaultProductAttributeOptions() []models.ProductAttributeOption {
 		{CategoryKey: "tireType", Value: "hookless", LabelZh: "无钩", LabelEn: "Hookless", Description: "无钩车圈类型", SortOrder: 20, Active: true},
 		{CategoryKey: "tireType", Value: "tubular", LabelZh: "管胎", LabelEn: "Tubular", Description: "管胎车圈类型", SortOrder: 30, Active: true},
 		{CategoryKey: "brakeType", Value: "disc", LabelZh: "碟刹", LabelEn: "Disc", Description: "碟刹制动类型", SortOrder: 10, Active: true},
-		{CategoryKey: "versionLevel", Value: "std", LabelZh: "标准版", LabelEn: "Standard", Description: "标准版本等级", SortOrder: 10, Active: true},
-		{CategoryKey: "versionLevel", Value: "lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化版本等级", SortOrder: 20, Active: true},
-		{CategoryKey: "versionLevel", Value: "ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻版本等级", SortOrder: 30, Active: true},
-		{CategoryKey: "versionLevel", Value: "reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型版本等级", SortOrder: 40, Active: true},
+		{CategoryKey: "versionLevel", Value: "std", LabelZh: "标准版", LabelEn: "Standard", Description: "标准性能版本", SortOrder: 10, Active: true},
+		{CategoryKey: "versionLevel", Value: "lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化性能版本", SortOrder: 20, Active: true},
+		{CategoryKey: "versionLevel", Value: "ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻性能版本", SortOrder: 30, Active: true},
+		{CategoryKey: "versionLevel", Value: "reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型性能版本", SortOrder: 40, Active: true},
 	}
 }
 
@@ -152,6 +152,11 @@ func resolveCanonicalProductAttributeCategoryKeyFromList(categories []models.Pro
 }
 
 func resolveCanonicalProductAttributeCategoryKeyTx(tx *gorm.DB, rawKey string) (string, error) {
+	if sameProductAttributeCategoryKey(rawKey, "versionLevel") {
+		if err := ensureBOMPerformanceVersionCatalogCategoryWithinTransaction(tx); err != nil {
+			return "", err
+		}
+	}
 	categories, err := listProductAttributeCategoriesTx(tx)
 	if err != nil {
 		return "", err
@@ -364,6 +369,9 @@ func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]model
 		return nil, err
 	}
 	canonicalizeProductAttributeOptionCategoryKeys(categories, items)
+	if sameProductAttributeCategoryKey(query.CategoryKey, "versionLevel") {
+		return items, nil
+	}
 	_, ownedOptions, err := loadTemplateOwnedAttributeCatalog(db.DB)
 	if err != nil {
 		return nil, err

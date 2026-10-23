@@ -375,10 +375,10 @@ export function NipplesTab() {
 
       <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
         <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-3xl'>
-          <DialogHeader className='relative flex h-20 shrink-0 flex-col justify-center border-b border-dashed border-muted-foreground/10 bg-muted/5 p-6 pb-0 md:p-8'>
+          <DialogHeader className='relative flex min-h-20 shrink-0 flex-col justify-center border-b border-dashed border-muted-foreground/10 bg-muted/5 p-6 md:p-8'>
             <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
-              <ImageIcon className='size-4 text-orange-600' />
-              {previewFile?.name}
+              <ImageIcon className='size-4 shrink-0 text-orange-600' />
+              <span className='min-w-0 break-all'>{previewFile?.name}</span>
             </DialogTitle>
           </DialogHeader>
           <div className='flex min-h-[300px] items-center justify-center bg-muted/10 p-4'>

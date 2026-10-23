@@ -49,7 +49,7 @@ func SaveProductTemplateHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.SaveProductTemplate(input)
+	saved, err := services.SaveProductTemplate(auditContextFromGin(c), input)
 
 	if err != nil {
 		respondDomainError(c, err, "[SERVER] failed to save product template: ")
@@ -73,7 +73,7 @@ func PatchProductTemplateHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.PatchProductTemplate(id, int(req.Metadata.Version), updates)
+	saved, err := services.PatchProductTemplate(auditContextFromGin(c), id, int(req.Metadata.Version), updates)
 	if err != nil {
 		respondDomainError(c, err, "[SERVER] failed to patch product template: ")
 		return
@@ -84,7 +84,7 @@ func PatchProductTemplateHandler(c *gin.Context) {
 
 func DeleteProductTemplateHandler(c *gin.Context) {
 	id := c.Param("id")
-	if err := services.DeleteProductTemplate(id); err != nil {
+	if err := services.DeleteProductTemplate(auditContextFromGin(c), id); err != nil {
 		respondDomainError(c, err, "[SERVER] failed to delete product template: ")
 		return
 	}
@@ -98,7 +98,7 @@ func SyncProductTemplatesHandler(c *gin.Context) {
 		return
 	}
 
-	if err := services.SyncProductTemplates(input); err != nil {
+	if err := services.SyncProductTemplates(auditContextFromGin(c), input); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] bulk template sync failed: " + err.Error()})
 		return
 	}

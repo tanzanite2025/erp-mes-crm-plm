@@ -120,6 +120,7 @@ export function SettlementLedgerDetailDialog<
       <Dialog open={open} onOpenChange={vm.handleOpenChange}>
         <DialogContent
           size='6xl'
+          data-mobile-floating-surface-layout='column'
           className='gap-0 overflow-hidden rounded-[28px] border-dashed p-0 shadow-2xl'
         >
           <DialogHeader className='border-b border-dashed border-muted/60 bg-muted/20 px-5 py-3.5'>
@@ -131,7 +132,10 @@ export function SettlementLedgerDetailDialog<
             </DialogDescription>
           </DialogHeader>
 
-          <div className='max-h-[calc(100dvh-9.5rem)] overflow-y-auto px-5 py-4'>
+          <div
+            data-mobile-floating-surface-scroll-body
+            className='max-h-[calc(100dvh-9.5rem)] overflow-y-auto px-5 py-4'
+          >
             {detailResourceStatus === 'error' ? (
               <div className='flex min-h-[420px] items-center justify-center px-2 py-6'>
                 <div className='flex max-w-md flex-col items-center gap-3 rounded-[24px] border border-dashed border-rose-300/60 bg-rose-50/60 px-6 py-8 text-center'>

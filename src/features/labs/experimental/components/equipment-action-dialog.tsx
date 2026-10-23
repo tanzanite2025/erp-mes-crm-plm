@@ -374,7 +374,10 @@ export function EquipmentActionDialog({
       {/* 删除确认对话框（内置） */}
       {isDeleteConfirmOpen && (
         <div className='fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-300 fade-in'>
-          <div className='scale-in-95 w-full max-w-md rounded-[40px] border border-dashed bg-background p-10 shadow-2xl duration-300'>
+          <div
+            data-mobile-floating-surface='equipment-delete'
+            className='scale-in-95 w-full max-w-md rounded-[40px] border border-dashed bg-background p-10 shadow-2xl duration-300'
+          >
             <h3 className='mb-4 text-xl font-black tracking-tighter text-destructive uppercase'>
               确认永久下线受控资产？
             </h3>

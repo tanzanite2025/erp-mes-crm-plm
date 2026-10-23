@@ -16,6 +16,7 @@ import {
   within,
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApplicationConfirmPromptAndAlertDialogHost } from '@/components/application-confirm-prompt-and-alert-dialog-host'
 import { type ProductAppearance } from '../../data/product-appearance'
 import { PRODUCT_APPEARANCES_QUERY_KEY } from '../../query-keys'
 import { productAppearanceService } from '../../services/product-appearance-service'
@@ -75,7 +76,10 @@ function renderProductAppearanceBusinessComponent(element: ReactElement) {
   return {
     queryClient,
     ...render(
-      <QueryClientProvider client={queryClient}>{element}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {element}
+        <ApplicationConfirmPromptAndAlertDialogHost />
+      </QueryClientProvider>
     ),
   }
 }
@@ -475,11 +479,12 @@ describe('reusable product appearance business dialog HTTP and caller data flow'
       'Conflicting draft'
     )
     fireEvent.click(screen.getByRole('button', { name: '取消' }))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     appearanceApi.get.mockImplementation(async () =>
       Response.json({ error: 'Refresh unavailable' }, { status: 500 })
     )
     fireEvent.click(screen.getByRole('button', { name: '删除 · UD' }))
+    expect(appearanceApi.write).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: '确认' }))
     await waitFor(() =>
       expect(
         screen.queryByRole('article', { name: 'UD' })
@@ -487,6 +492,5 @@ describe('reusable product appearance business dialog HTTP and caller data flow'
     )
     expect(screen.getByRole('alert')).toBeInTheDocument()
     expect(appearanceApi.write.mock.calls[1][0]).toBe('DELETE')
-    vi.mocked(window.confirm).mockRestore()
   })
 })

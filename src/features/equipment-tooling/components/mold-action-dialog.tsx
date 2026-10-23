@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
-import { Plus, RotateCcw, Save, FileText, ExternalLink } from 'lucide-react'
+import { Save, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { auditUtils } from '@/lib/audit-utils'
@@ -24,13 +24,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { UdsHealthProgress } from '@/components/uds/uds-health-progress'
@@ -45,33 +38,48 @@ import {
   type MoldFormOutput,
 } from '../data/schema'
 import { useMoldDrawingsQuery } from '../hooks/use-mold-drawings-query'
-import { useMoldGroupsQuery } from '../hooks/use-mold-groups-query'
 import { AssetService } from '../services/asset-service'
 import { MoldCoreService } from '../services/mold-core-service'
 import { ImageUpload } from './image-upload'
+import { MoldMasterLibraryGroupNameFormField } from './mold-master-library-group-name-form-field'
 
 interface MoldActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (data: Mold, isPatch?: boolean, delta?: DeltaSet) => void
+  onConfirm: (
+    data: Mold,
+    isPatch?: boolean,
+    delta?: DeltaSet
+  ) => void | Promise<void>
   editData?: Mold | null
+  initialGroupName?: string
+  requireGroupName?: boolean
 }
+
+const moldMasterLibraryInputClassName =
+  'h-10 w-full rounded-xl bg-muted/40 text-[13px] font-normal placeholder:text-[13px] placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground placeholder:normal-case placeholder:opacity-100 md:text-[13px]'
 
 export function MoldActionDialog({
   open,
   onOpenChange,
   onConfirm,
   editData,
+  initialGroupName,
+  requireGroupName = false,
 }: MoldActionDialogProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
+  const isChineseLocale = locale.startsWith('zh')
   const { allowsAction } = usePermissionActions()
   const user = useAuthStore((state) => state.user)
   const canOpenDrawings = canOpenRouteEntry(user, '/equipment-tooling/drawings')
-  const [isAddingNewGroup, setIsAddingNewGroup] = useState(false)
+  const [isSavingMold, setIsSavingMold] = useState(false)
+  const [isUploadingMoldImage, setIsUploadingMoldImage] = useState(false)
+  const moldSubmissionLock = useRef(false)
+  const isBusy = isSavingMold || isUploadingMoldImage
   const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
   const defaultDraft = useMemo(
-    () => createMoldDraft(editData ?? {}),
-    [editData]
+    () => createMoldDraft(editData ?? { groupName: initialGroupName ?? '' }),
+    [editData, initialGroupName]
   )
 
   const { commit, deltaProxy, reset } = useDeltaTracker<Mold>(
@@ -84,9 +92,7 @@ export function MoldActionDialog({
     resolver: zodResolver(moldFormSchema),
     defaultValues: defaultDraft,
   })
-  const moldGroupsQuery = useMoldGroupsQuery(open)
   const moldDrawingsQuery = useMoldDrawingsQuery(open, editData?.sn)
-  const groupNames = moldGroupsQuery.data ?? []
   const linkedDrawings: MoldDrawing[] = moldDrawingsQuery.data ?? []
 
   const watchedMax = useWatch({ control: form.control, name: 'maxCycles' }) ?? 0
@@ -98,9 +104,7 @@ export function MoldActionDialog({
   )
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setIsAddingNewGroup(false)
-    }
+    if (isBusy || moldSubmissionLock.current) return
     onOpenChange(nextOpen)
   }
 
@@ -118,49 +122,79 @@ export function MoldActionDialog({
       return
     }
 
-    const draft = createMoldDraft()
+    const draft = createMoldDraft({ groupName: initialGroupName ?? '' })
     form.reset(draft)
     reset(draft)
-  }, [editData, form, open, reset])
+  }, [editData, form, open, reset, initialGroupName])
 
   const onSubmit = async (data: MoldFormOutput) => {
-    if (!allowsAction('action_equipment_mold_manage')) return
-
-    const isDuplicate = await MoldCoreService.isSnDuplicate(
-      data.sn,
-      editData?.id
+    if (
+      !allowsAction('action_equipment_mold_manage') ||
+      isBusy ||
+      moldSubmissionLock.current
     )
-    if (isDuplicate) {
+      return
+
+    data = { ...data, groupName: data.groupName?.trim() ?? '' }
+    if (requireGroupName && !data.groupName) {
+      form.setError('groupName', {
+        message: isChineseLocale
+          ? '请填写或选择分组名称，才能从产品中选用。'
+          : 'Enter or choose a group name to use this mold group for a product.',
+      })
+      return
+    }
+
+    moldSubmissionLock.current = true
+    setIsSavingMold(true)
+    try {
+      const isDuplicate = await MoldCoreService.isSnDuplicate(
+        data.sn,
+        editData?.id
+      )
+      if (isDuplicate) {
+        toast.error(
+          t('equipmentTooling.molds.dialog.validation.duplicateSn', {
+            sn: data.sn,
+          })
+        )
+        return
+      }
+
+      const delta = collectTrackedDelta(data)
+      const isDirty = Object.keys(delta).length > 0
+
+      if (isEdit && !isDirty) {
+        onOpenChange(false)
+        return
+      }
+
+      if (isEdit && editData?.version === undefined) {
+        throw new Error(
+          '[CRITICAL] 模具编辑模式下版本号(version)缺失，无法执行 SDRTS 安全 Patch。'
+        )
+      }
+
+      const stampedData = auditUtils.stamp(
+        data,
+        editData ? 'update' : 'create'
+      ) as Mold
+
+      // SDRTS: 发送 Patch 意图或全量数据
+      await onConfirm(stampedData, isEdit, isEdit ? delta : undefined)
+      onOpenChange(false)
+    } catch (error) {
       toast.error(
-        t('equipmentTooling.molds.dialog.validation.duplicateSn', {
-          sn: data.sn,
-        })
+        error instanceof Error
+          ? error.message
+          : isChineseLocale
+            ? '模具保存失败，请重试'
+            : 'Cannot save mold. Please retry.'
       )
-      return
+    } finally {
+      moldSubmissionLock.current = false
+      setIsSavingMold(false)
     }
-
-    const delta = collectTrackedDelta(data)
-    const isDirty = Object.keys(delta).length > 0
-
-    if (isEdit && !isDirty) {
-      handleOpenChange(false)
-      return
-    }
-
-    if (isEdit && editData?.version === undefined) {
-      throw new Error(
-        '[CRITICAL] 模具编辑模式下版本号(version)缺失，无法执行 SDRTS 安全 Patch。'
-      )
-    }
-
-    const stampedData = auditUtils.stamp(
-      data,
-      editData ? 'update' : 'create'
-    ) as Mold
-
-    // SDRTS: 发送 Patch 意图或全量数据
-    onConfirm(stampedData, isEdit, isEdit ? delta : undefined)
-    handleOpenChange(false)
   }
 
   return (
@@ -184,28 +218,35 @@ export function MoldActionDialog({
       contentDecoration={
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
       }
-      contentClassName='w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden bg-background'
-      headerClassName='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0 text-left'
-      bodyClassName='flex-1 overflow-y-auto px-6 sm:px-8 pb-8 custom-scrollbar'
-      footerClassName='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'
-      titleClassName='text-lg sm:text-xl font-black tracking-tight uppercase'
-      descriptionClassName='text-[10px] sm:text-xs font-bold text-muted-foreground/60 leading-relaxed mt-2'
+      contentClassName='mold-master-library-floating-surface flex h-[85vh] w-[95vw] max-w-[95vw] flex-col gap-0 overflow-hidden rounded-2xl p-0 bg-background sm:max-w-4xl'
+      headerClassName='shrink-0 border-b px-6 py-4 pr-12 text-start'
+      bodyClassName='min-h-0 flex-1 overflow-y-auto p-6'
+      footerClassName='shrink-0 border-t px-6 py-4'
+      titleClassName='text-base font-semibold normal-case tracking-normal'
+      descriptionClassName='text-xs leading-5 font-normal opacity-100 normal-case tracking-normal'
       footer={
         <>
           <Button
             type='button'
             variant='ghost'
-            className='h-11 flex-1 rounded-full px-8 text-[10px] font-black tracking-widest uppercase sm:flex-none'
+            disabled={isBusy}
+            className='h-10 rounded-full px-6 text-[13px]'
             onClick={() => handleOpenChange(false)}
           >
             {t('equipmentTooling.molds.dialog.actions.cancel')}
           </Button>
           <Button
+            type='button'
+            disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
-            className='h-11 flex-1 gap-2 rounded-full bg-primary px-10 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 hover:bg-primary/90 sm:flex-none'
+            className='h-10 gap-2 rounded-full bg-blue-600 px-6 text-[13px] text-white hover:bg-blue-700'
           >
             <Save className='size-3.5' />{' '}
-            {t('equipmentTooling.molds.dialog.actions.save')}
+            {isBusy
+              ? isChineseLocale
+                ? '正在处理…'
+                : 'Saving…'
+              : t('equipmentTooling.molds.dialog.actions.save')}
           </Button>
         </>
       }
@@ -239,321 +280,256 @@ export function MoldActionDialog({
       />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
-          <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='sn'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                    {t('equipmentTooling.molds.dialog.fields.sn')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
-                      placeholder={t(
-                        'equipmentTooling.molds.dialog.placeholders.sn'
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                    {t('equipmentTooling.molds.dialog.fields.name')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-bold transition-all focus:ring-2 focus:ring-primary/20'
-                      placeholder={t(
-                        'equipmentTooling.molds.dialog.placeholders.name'
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+        <form
+          onSubmit={(event) => {
+            event.stopPropagation()
+            void form.handleSubmit(onSubmit)(event)
+          }}
+        >
+          <fieldset disabled={isBusy} className='min-w-0 space-y-5'>
+            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='sn'
+                render={({ field }) => (
+                  <FormItem className='space-y-3'>
+                    <FormLabel className='text-xs font-medium text-foreground'>
+                      {t('equipmentTooling.molds.dialog.fields.sn')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className={moldMasterLibraryInputClassName}
+                        placeholder={t(
+                          'equipmentTooling.molds.dialog.placeholders.sn'
+                        )}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem className='space-y-3'>
+                    <FormLabel className='text-xs font-medium text-foreground'>
+                      {t('equipmentTooling.molds.dialog.fields.name')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className={moldMasterLibraryInputClassName}
+                        placeholder={t(
+                          'equipmentTooling.molds.dialog.placeholders.name'
+                        )}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name='groupName'
-            render={({ field }) => (
-              <FormItem className='space-y-3'>
+            <MoldMasterLibraryGroupNameFormField
+              key={editData?.id ?? 'new-mold'}
+              control={form.control}
+              open={open}
+              inputClassName={moldMasterLibraryInputClassName}
+            />
+
+            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='location'
+                render={({ field }) => (
+                  <FormItem className='space-y-3'>
+                    <FormLabel className='text-xs font-medium text-foreground'>
+                      {t('equipmentTooling.molds.dialog.fields.location')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        className={moldMasterLibraryInputClassName}
+                        placeholder={t(
+                          'equipmentTooling.molds.dialog.placeholders.location'
+                        )}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='currentCycles'
+                render={({ field }) => (
+                  <FormItem className='space-y-3'>
+                    <FormLabel className='text-xs font-medium text-foreground'>
+                      {t('equipmentTooling.molds.dialog.fields.currentCycles')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        className={moldMasterLibraryInputClassName}
+                        placeholder={t(
+                          'equipmentTooling.molds.dialog.placeholders.currentCycles'
+                        )}
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='maxCycles'
+                render={({ field }) => (
+                  <FormItem className='space-y-3'>
+                    <FormLabel className='text-xs font-medium text-foreground'>
+                      {t('equipmentTooling.molds.dialog.fields.maxCycles')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        className={moldMasterLibraryInputClassName}
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='maintenanceThreshold'
+                render={({ field }) => (
+                  <FormItem className='space-y-3'>
+                    <FormLabel className='text-xs font-medium text-foreground'>
+                      {t(
+                        'equipmentTooling.molds.dialog.fields.maintenanceThreshold'
+                      )}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        className={moldMasterLibraryInputClassName}
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value, 10) || 0)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name='imageUrl'
+              render={({ field }) => (
+                <FormItem className='space-y-3'>
+                  <Label className='text-xs font-medium text-foreground'>
+                    {t('equipmentTooling.molds.dialog.fields.image')}
+                  </Label>
+                  <FormControl>
+                    <ImageUpload
+                      value={field.value}
+                      onChange={field.onChange}
+                      onUploadingChange={setIsUploadingMoldImage}
+                      label={t('equipmentTooling.molds.dialog.labels.image')}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {editData && (
+              <div className='space-y-3 rounded-[24px] border border-dashed bg-primary/2 p-4'>
                 <div className='flex flex-wrap items-center justify-between gap-2 px-1'>
-                  <FormLabel className='text-[10px] font-black tracking-widest text-primary/80 uppercase'>
-                    {t('equipmentTooling.molds.dialog.fields.group')}
-                  </FormLabel>
-                  {groupNames.length > 0 && (
+                  <span className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
+                    <FileText className='size-3' />{' '}
+                    {t('equipmentTooling.molds.dialog.labels.linkedDrawings', {
+                      count: linkedDrawings.length,
+                    })}
+                  </span>
+                  {canOpenDrawings ? (
                     <Button
-                      type='button'
                       variant='ghost'
                       size='sm'
-                      className='h-5 gap-1 px-2 text-[9px] font-black tracking-widest uppercase hover:bg-primary/5'
-                      onClick={() => {
-                        setIsAddingNewGroup(!isAddingNewGroup)
-                        if (!isAddingNewGroup) field.onChange('')
-                      }}
+                      className='h-5 gap-1 px-2 text-[9px] font-black tracking-widest text-primary uppercase'
+                      asChild
                     >
-                      {isAddingNewGroup ? (
-                        <>
-                          <RotateCcw className='size-2.5' />{' '}
-                          {t(
-                            'equipmentTooling.molds.dialog.actions.useChooser'
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Plus className='size-2.5' />{' '}
-                          {t('equipmentTooling.molds.dialog.actions.newGroup')}
-                        </>
-                      )}
+                      <Link to='/equipment-tooling/drawings'>
+                        {t('equipmentTooling.molds.dialog.actions.archive')}{' '}
+                        <ExternalLink className='size-2.5' />
+                      </Link>
                     </Button>
+                  ) : null}
+                </div>
+                <div className='flex flex-wrap gap-2 px-1'>
+                  {linkedDrawings.length > 0 ? (
+                    linkedDrawings.slice(0, 4).map((d) => (
+                      <Badge
+                        key={d.id}
+                        variant='outline'
+                        className='h-5 rounded-md border-muted/50 bg-white px-2 text-[9px] font-black uppercase'
+                      >
+                        {d.name.length > 12
+                          ? `${d.name.substring(0, 12)}..`
+                          : d.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className='text-[9px] font-black tracking-widest text-muted-foreground/20 uppercase'>
+                      {t('equipmentTooling.molds.dialog.emptyLinkedDrawings')}
+                    </span>
+                  )}
+                  {linkedDrawings.length > 4 && (
+                    <span className='text-[9px] font-black text-muted-foreground/30'>
+                      +{linkedDrawings.length - 4}
+                    </span>
                   )}
                 </div>
-                <FormControl>
-                  {isAddingNewGroup || groupNames.length === 0 ? (
-                    <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
-                      placeholder={t(
-                        'equipmentTooling.molds.dialog.placeholders.newGroup'
-                      )}
-                      {...field}
-                      autoFocus={isAddingNewGroup}
-                    />
-                  ) : (
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'>
-                          <SelectValue
-                            placeholder={t(
-                              'equipmentTooling.molds.dialog.placeholders.selectRegistry'
-                            )}
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                        {groupNames.map((g) => (
-                          <SelectItem
-                            key={g}
-                            value={g}
-                            className='py-3 text-[11px] font-black uppercase'
-                          >
-                            {g}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='location'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                    {t('equipmentTooling.molds.dialog.fields.location')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'
-                      placeholder={t(
-                        'equipmentTooling.molds.dialog.placeholders.location'
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='currentCycles'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-primary/80 uppercase'>
-                    {t('equipmentTooling.molds.dialog.fields.currentCycles')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      className='h-12 rounded-2xl border-none bg-primary/5 text-sm font-black text-primary tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
-                      placeholder={t(
-                        'equipmentTooling.molds.dialog.placeholders.currentCycles'
-                      )}
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value, 10) || 0)
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='maxCycles'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                    {t('equipmentTooling.molds.dialog.fields.maxCycles')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black tabular-nums'
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value, 10) || 0)
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='maintenanceThreshold'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-rose-500/60 uppercase'>
-                    {t(
-                      'equipmentTooling.molds.dialog.fields.maintenanceThreshold'
-                    )}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      className='h-12 rounded-2xl border-none bg-rose-500/5 text-sm font-black text-rose-600 tabular-nums focus:ring-rose-200'
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value, 10) || 0)
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name='imageUrl'
-            render={({ field }) => (
-              <FormItem className='space-y-3'>
-                <Label className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                  {t('equipmentTooling.molds.dialog.fields.image')}
-                </Label>
-                <FormControl>
-                  <ImageUpload
-                    value={field.value}
-                    onChange={field.onChange}
-                    label={t('equipmentTooling.molds.dialog.labels.image')}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {editData && (
-            <div className='space-y-3 rounded-[24px] border border-dashed bg-primary/2 p-4'>
-              <div className='flex flex-wrap items-center justify-between gap-2 px-1'>
-                <span className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-                  <FileText className='size-3' />{' '}
-                  {t('equipmentTooling.molds.dialog.labels.linkedDrawings', {
-                    count: linkedDrawings.length,
-                  })}
-                </span>
-                {canOpenDrawings ? (
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className='h-5 gap-1 px-2 text-[9px] font-black tracking-widest text-primary uppercase'
-                    asChild
-                  >
-                    <Link to='/equipment-tooling/drawings'>
-                      {t('equipmentTooling.molds.dialog.actions.archive')}{' '}
-                      <ExternalLink className='size-2.5' />
-                    </Link>
-                  </Button>
-                ) : null}
               </div>
-              <div className='flex flex-wrap gap-2 px-1'>
-                {linkedDrawings.length > 0 ? (
-                  linkedDrawings.slice(0, 4).map((d) => (
-                    <Badge
-                      key={d.id}
-                      variant='outline'
-                      className='h-5 rounded-md border-muted/50 bg-white px-2 text-[9px] font-black uppercase'
-                    >
-                      {d.name.length > 12
-                        ? `${d.name.substring(0, 12)}..`
-                        : d.name}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className='text-[9px] font-black tracking-widest text-muted-foreground/20 uppercase'>
-                    {t('equipmentTooling.molds.dialog.emptyLinkedDrawings')}
-                  </span>
-                )}
-                {linkedDrawings.length > 4 && (
-                  <span className='text-[9px] font-black text-muted-foreground/30'>
-                    +{linkedDrawings.length - 4}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          <FormField
-            control={form.control}
-            name='description'
-            render={({ field }) => (
-              <FormItem className='space-y-3'>
-                <FormLabel className='pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                  {t('equipmentTooling.molds.dialog.fields.description')}
-                </FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder={t(
-                      'equipmentTooling.molds.dialog.placeholders.description'
-                    )}
-                    className='h-20 resize-none rounded-2xl border-none bg-muted/50 p-4 text-sm font-bold transition-all focus:ring-2 focus:ring-primary/20'
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
             )}
-          />
+
+            <FormField
+              control={form.control}
+              name='description'
+              render={({ field }) => (
+                <FormItem className='space-y-3'>
+                  <FormLabel className='text-xs font-medium text-foreground'>
+                    {t('equipmentTooling.molds.dialog.fields.description')}
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t(
+                        'equipmentTooling.molds.dialog.placeholders.description'
+                      )}
+                      className={`${moldMasterLibraryInputClassName} h-24 resize-none`}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </fieldset>
         </form>
       </Form>
     </ActionDialogShell>

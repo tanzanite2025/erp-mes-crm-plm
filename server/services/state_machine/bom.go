@@ -29,17 +29,15 @@ const (
 
 // BOM 状态转换规则
 //
-// EBOM (研发 BOM):
+// EBOM (研发 BOM) 与 MBOM (生产 BOM) 共用以下转换表：
 // DRAFT -> REVIEWING, APPROVED (快速通道)
 // REVIEWING -> DRAFT (退回修改), APPROVED
-// APPROVED -> RELEASED (设计审批通过即发布)
+// APPROVED -> RELEASED (独立发布转换)
 // RELEASED -> OBSOLETE
 // OBSOLETE -> 终态
 //
-// MBOM (生产 BOM):
-// 数据层只用 RELEASED / OBSOLETE（派生即生效，无草稿/审批中间态）
-// RELEASED -> OBSOLETE
-// OBSOLETE -> 终态
+// 派生 MBOM 在 service 层创建为 DRAFT、未锁定；修订已发布 MBOM 时，
+// 新版本直接为 RELEASED，旧版作废。初始状态由各写入入口决定。
 var bomTransitions = map[BOMStatus][]BOMStatus{
 	BOMStatusDraft: {
 		BOMStatusReviewing,
@@ -121,9 +119,9 @@ func NormalizeBOMType(raw string) BOMType {
 
 // CanTransitionBOMStatusWithType 检查 BOM 状态转换是否允许（考虑 BOM 类型）
 //
-// EBOM 与 MBOM 当前共用同一组通用转换规则。
-// MBOM 在数据层应只出现 RELEASED / OBSOLETE，但本函数仍接受 EBOM 全部 5 个状态以
-// 兼容存量数据。MBOM 不允许进入 DRAFT/REVIEWING/APPROVED 由 service 层（写入入口）保证。
+// 验证 BOM 类型后，EBOM 与 MBOM 共用同一组通用转换规则。
+// 本函数不限制 MBOM 的状态子集；派生和修订的初始状态、来源及发布校验
+// 分别由 service 层的对应写入入口处理。
 func CanTransitionBOMStatusWithType(currentRaw string, targetRaw string, bomTypeRaw string) GuardResult {
 	current := NormalizeBOMStatus(currentRaw)
 	target := NormalizeBOMStatus(targetRaw)

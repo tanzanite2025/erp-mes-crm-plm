@@ -142,6 +142,7 @@ export function LedgerSearchDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         size='6xl'
+        data-mobile-floating-surface-layout='column'
         className='gap-0 overflow-hidden rounded-[28px] border-dashed p-0 shadow-2xl'
       >
         <DialogHeader className='border-b border-dashed border-muted/60 bg-muted/20 px-6 py-5'>
@@ -153,7 +154,10 @@ export function LedgerSearchDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='grid max-h-[calc(100dvh-13rem)] gap-4 overflow-y-auto px-6 py-5'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='grid max-h-[calc(100dvh-13rem)] auto-rows-max content-start gap-4 overflow-y-auto px-6 py-5'
+        >
           <div className='grid gap-2'>
             <Label
               htmlFor='ledger-search-dialog-keyword'

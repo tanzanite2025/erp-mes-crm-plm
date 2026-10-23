@@ -300,6 +300,7 @@ export function ControlledProtocolDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        data-mobile-floating-surface-layout='column'
         size='6xl'
         showCloseButton={false}
         className='h-[820px] max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl'
@@ -318,18 +319,21 @@ export function ControlledProtocolDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='relative min-h-0 overflow-y-auto px-6 pt-3 pb-7'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='relative min-h-0 overflow-y-auto px-6 pt-3 pb-7'
+        >
           <div className='flex flex-col gap-2.5'>
             <div className='rounded-[24px] border border-dashed border-muted/40 bg-muted/5 p-3'>
               <div className='flex flex-wrap items-center gap-2 border-b border-dashed border-muted/30 pb-1.5'>
-                <div className='inline-flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-[8px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-                  <Box className='size-3.5 text-primary' />
+                <div className='inline-flex max-w-full min-w-0 items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-[8px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+                  <Box className='size-3.5 shrink-0 text-primary' />
                   <span>
                     {t(
                       'quality.standards.dialog.controlledProtocol.fields.product'
                     )}
                   </span>
-                  <span className='font-maple-ui text-foreground'>
+                  <span className='min-w-0 font-maple-ui break-all text-foreground'>
                     {selectedProductLabel}
                   </span>
                 </div>
@@ -535,11 +539,11 @@ export function ControlledProtocolDialog({
         </div>
 
         <DialogFooter className='relative border-t border-dashed border-muted/40 bg-muted/5 px-6 py-5 sm:justify-between'>
-          <div className='flex items-center gap-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-            <Box className='size-3.5' />
-            {selectedProductLabel}
+          <div className='flex min-w-0 items-center gap-2 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+            <Box className='size-3.5 shrink-0' />
+            <span className='min-w-0 break-all'>{selectedProductLabel}</span>
           </div>
-          <div className='flex items-center gap-3'>
+          <div className='flex shrink-0 flex-wrap items-center gap-3'>
             <Button
               type='button'
               variant='outline'

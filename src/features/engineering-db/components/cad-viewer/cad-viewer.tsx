@@ -68,7 +68,9 @@ export function CADViewer({ fileUrl, className }: CADViewerProps) {
 
   if (error) {
     return (
-      <div className='flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-destructive/20 bg-destructive/5 p-12 text-destructive'>
+      <div
+        className={`flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-destructive/20 bg-destructive/5 p-6 text-destructive sm:p-12 ${className ?? ''}`}
+      >
         <Box className='mb-4 size-12 opacity-20' />
         <p className='text-sm font-bold'>{error}</p>
         <Button
@@ -116,7 +118,7 @@ export function CADViewer({ fileUrl, className }: CADViewerProps) {
           </div>
 
           {/* HUD 控制栏 */}
-          <div className='absolute bottom-6 left-1/2 flex -translate-x-1/2 translate-y-2 transform items-center gap-2 rounded-full border border-white/10 bg-[#2a2a2a]/80 p-1.5 opacity-0 shadow-2xl backdrop-blur-xl transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100'>
+          <div className='absolute bottom-6 left-1/2 flex max-w-[calc(100%-2rem)] -translate-x-1/2 translate-y-2 transform items-center gap-2 rounded-full border border-white/10 bg-[#2a2a2a]/80 p-1.5 opacity-0 shadow-2xl backdrop-blur-xl transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100'>
             <Button
               variant='ghost'
               size='icon'
@@ -138,17 +140,17 @@ export function CADViewer({ fileUrl, className }: CADViewerProps) {
             >
               <Maximize2 className='size-4' />
             </Button>
-            <div className='mx-1 h-6 w-px bg-white/10' />
-            <span className='px-4 text-[10px] font-black tracking-widest text-white/40 uppercase'>
+            <div className='mx-1 hidden h-6 w-px bg-white/10 sm:block' />
+            <span className='hidden px-4 text-[10px] font-black tracking-widest text-white/40 uppercase sm:block'>
               APS Engine 2.1
             </span>
           </div>
 
           {/* 图层与视角提示 */}
-          <div className='absolute top-6 left-6 rounded-2xl border border-blue-600/20 bg-blue-600/10 p-4 backdrop-blur-sm'>
+          <div className='absolute top-6 left-6 max-w-[calc(100%-3rem)] rounded-2xl border border-blue-600/20 bg-blue-600/10 p-4 backdrop-blur-sm'>
             <div className='mb-2 flex items-center gap-2'>
               <div className='size-2 animate-pulse rounded-full bg-emerald-500' />
-              <span className='text-[10px] font-black tracking-tighter text-white uppercase'>
+              <span className='min-w-0 text-[10px] font-black tracking-tighter break-all text-white uppercase'>
                 Live Projection: {fileUrl.split('/').pop()}
               </span>
             </div>

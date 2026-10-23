@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
 import { createLogger } from '@/lib/logger'
 import { type BOMSectionOption } from '../data/bom-section-schema'
@@ -16,6 +16,7 @@ interface UseBOMFormInitializationParams {
   sections: BOMSectionOption[]
   open: boolean
   isEdit: boolean
+  isReferenceDataReady: boolean
 }
 
 export function useBOMFormInitialization({
@@ -26,26 +27,41 @@ export function useBOMFormInitialization({
   sections,
   open,
   isEdit,
+  isReferenceDataReady,
 }: UseBOMFormInitializationParams) {
+  const initializedEditingSessionRef = useRef<string | null>(null)
   useEffect(() => {
-    const loadInitData = async () => {
-      if (!open) return
-      if (isEdit && !currentRow) return
-
-      try {
-        const data = createBOMFormValue({
-          currentRow,
-          initialItems,
-          initialProductId,
-          sections,
-          isEdit,
-        })
-        form.reset(data)
-      } catch (error) {
-        logger.error('BOM form load data failed', error)
-      }
+    if (!open) {
+      initializedEditingSessionRef.current = null
+      return
     }
-
-    void loadInitData()
-  }, [currentRow, form, initialItems, initialProductId, isEdit, open, sections])
+    if (!isReferenceDataReady || (isEdit && !currentRow)) return
+    const editingSessionKey = isEdit
+      ? `edit:${currentRow!.id}`
+      : `create:${initialProductId ?? ''}`
+    // Reference catalog refreshes must not replace an in-progress BOM draft.
+    if (initializedEditingSessionRef.current === editingSessionKey) return
+    try {
+      const data = createBOMFormValue({
+        currentRow,
+        initialItems,
+        initialProductId,
+        sections,
+        isEdit,
+      })
+      form.reset(data)
+      initializedEditingSessionRef.current = editingSessionKey
+    } catch (error) {
+      logger.error('BOM form load data failed', error)
+    }
+  }, [
+    currentRow,
+    form,
+    initialItems,
+    initialProductId,
+    isEdit,
+    open,
+    sections,
+    isReferenceDataReady,
+  ])
 }

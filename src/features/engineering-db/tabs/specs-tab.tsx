@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'
 import { flexRender, type ColumnDef } from '@tanstack/react-table'
@@ -16,7 +16,6 @@ import {
   Calendar,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { type DeltaSet } from '@/lib/delta/types'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
@@ -37,18 +36,18 @@ import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-t
 import { DataTablePagination } from '@/components/data-table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import { CADViewerDialog } from '../components/cad-viewer'
-import { ExcelViewerDialog } from '../components/excel-viewer'
-import { PDFViewerDialog } from '../components/pdf-viewer'
 import { SpecActionDialog } from '../components/spec-action-dialog'
+import { TechnicalSpecificationDocumentPreviewDialog } from '../components/technical-specification-document-preview-dialog'
 import { type TechnicalSpec } from '../data/schema'
+import {
+  useTechnicalSpecificationDocumentWriteActions,
+  type TechnicalSpecificationDocumentSaveParameters,
+} from '../hooks/use-technical-specification-document-write-actions'
+import { createTechnicalSpecificationDocumentMasterLibraryListQueryOptions } from '../queries/technical-specification-document-master-library-query-options'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '../query-keys'
 import { FileResolverService } from '../services/file-resolver-service'
 import { SpecsService } from '../services/specs-service'
-import {
-  getEngineeringDbFileVisual,
-  getEngineeringDbPreviewKind,
-} from '../view-helpers'
+import { getEngineeringDbFileVisual } from '../view-helpers'
 
 type SpecsRowViewModel = {
   item: TechnicalSpec
@@ -56,7 +55,7 @@ type SpecsRowViewModel = {
 }
 
 export function SpecsTab() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const queryClient = useQueryClient()
   const { runConfirmedAction } = useConfirmedActionFlow()
   const { highlightId } = useSearch({
@@ -68,57 +67,21 @@ export function SpecsTab() {
     undefined
   )
 
-  const [previewFile, setPreviewFile] = useState<{
-    url: string
-    name: string
-    sku?: string
-  } | null>(null)
-  const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
-  const [excelPreviewOpen, setExcelPreviewOpen] = useState(false)
+  const [previewId, setPreviewId] = useState<string | null>(null)
 
-  useEffect(() => {
-    return () => {
-      if (previewFile?.url.startsWith('blob:')) {
-        URL.revokeObjectURL(previewFile.url)
-      }
-    }
-  }, [previewFile?.url])
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery(
+    createTechnicalSpecificationDocumentMasterLibraryListQueryOptions()
+  )
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
-    queryFn: () => SpecsService.getSpecs(),
-  })
-
-  const saveMutation = useMutation({
-    mutationFn: async (params: {
-      data: TechnicalSpec
-      isPatch: boolean
-      delta?: DeltaSet
-      version?: number
-    }) => {
-      const { data: formData, isPatch, delta, version } = params
-
-      if (isPatch && delta) {
-        await SpecsService.patchSpec(formData.id, delta, version!)
-        return
-      }
-
-      await SpecsService.saveSpec(formData)
-    },
-    onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
-      })
-      setOpen(false)
-      setCurrentRow(undefined)
-      toast.success(
-        variables.isPatch
-          ? t('engineering.specs.toasts.updateSuccess')
-          : t('engineering.specs.toasts.saveSuccess')
-      )
-    },
-  })
+  const {
+    saveTechnicalSpecificationDocument,
+    isSavingTechnicalSpecificationDocument,
+  } = useTechnicalSpecificationDocumentWriteActions()
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => SpecsService.deleteSpec(id),
@@ -154,29 +117,14 @@ export function SpecsTab() {
   const handleDownload = async (item: TechnicalSpec) => {
     if (item.fileUrl) {
       const url = await FileResolverService.resolveFileUrl(item.fileUrl)
-      if (url) window.open(url, '_blank')
+      if (url) window.open(url, '_blank', 'noopener,noreferrer')
+      else toast.error(t('engineering.specs.toasts.unResolved'))
     } else {
       toast.error(t('engineering.specs.toasts.noAttachment'))
     }
   }
 
-  const handlePreview = async (item: TechnicalSpec) => {
-    if (item.fileUrl) {
-      const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
-      if (!resolvedUrl) {
-        toast.error(t('engineering.specs.toasts.unResolved'))
-        return
-      }
-      setPreviewFile({ url: resolvedUrl, name: item.name })
-      if (getEngineeringDbPreviewKind(item.fileExtension) === 'excel') {
-        setExcelPreviewOpen(true)
-      } else {
-        setPdfPreviewOpen(true)
-      }
-    } else {
-      toast.error(t('engineering.specs.toasts.noFile'))
-    }
-  }
+  const handlePreview = (item: TechnicalSpec) => setPreviewId(item.id)
 
   const columns: ColumnDef<SpecsRowViewModel>[] = [
     {
@@ -208,7 +156,7 @@ export function SpecsTab() {
                 </Badge>
                 <span className='text-[10px] font-medium tracking-tight text-muted-foreground uppercase'>
                   {t('engineering.specs.table.version')}:{' '}
-                  {row.original.item.version} |
+                  {row.original.item.revisionNo || '—'} |
                   {row.original.item.createdAt
                     ? new Date(row.original.item.createdAt).toLocaleDateString()
                     : 'N/A'}
@@ -320,15 +268,19 @@ export function SpecsTab() {
     columns,
   })
 
-  const handleSave = async (params: {
-    data: TechnicalSpec
-    isPatch: boolean
-    delta?: DeltaSet
-    version?: number
-  }) => {
-    const { data: formData, isPatch, delta, version } = params
-
-    await saveMutation.mutateAsync({ data: formData, isPatch, delta, version })
+  const handleSave = async (
+    params: TechnicalSpecificationDocumentSaveParameters
+  ) => {
+    await saveTechnicalSpecificationDocument(params)
+    setOpen(false)
+    setCurrentRow(undefined)
+    toast.success(
+      t(
+        params.isPatch
+          ? 'engineering.specs.toasts.updateSuccess'
+          : 'engineering.specs.toasts.saveSuccess'
+      )
+    )
   }
 
   return (
@@ -381,6 +333,26 @@ export function SpecsTab() {
       </div>
 
       {/* Desktop Table View */}
+      {isError && (
+        <div
+          role='alert'
+          className='flex flex-wrap items-center gap-3 rounded-xl border border-destructive/30 p-4 text-sm'
+        >
+          <p>
+            {locale.startsWith('zh')
+              ? '技术规范主库读取失败，请重试；当前不能据此判断主库没有文档。'
+              : 'Cannot read the specification master library. Retry to load its documents.'}
+          </p>
+          <Button
+            type='button'
+            variant='outline'
+            className='rounded-full'
+            onClick={() => void refetch()}
+          >
+            {locale.startsWith('zh') ? '重新读取' : 'Retry'}
+          </Button>
+        </div>
+      )}
       <Card className='hidden overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none md:block'>
         <CardContent className='p-0'>
           <Table>
@@ -500,7 +472,8 @@ export function SpecsTab() {
                       variant='outline'
                       className='h-5 rounded-full border-none bg-muted/50 px-3 font-maple-ui text-[10px] font-black text-muted-foreground'
                     >
-                      {t('engineering.specs.table.rev')}: {item.version}
+                      {t('engineering.specs.table.rev')}:{' '}
+                      {item.revisionNo || '—'}
                     </Badge>
                   </div>
 
@@ -612,27 +585,14 @@ export function SpecsTab() {
         onOpenChange={setOpen}
         currentRow={currentRow}
         onSave={handleSave}
-        isLoading={saveMutation.isPending}
+        isLoading={isSavingTechnicalSpecificationDocument}
       />
-      <CADViewerDialog
-        open={cadPreviewOpen}
-        onOpenChange={setCadPreviewOpen}
-        fileUrl={previewFile?.url || ''}
-        fileName={previewFile?.name || ''}
-        sku={previewFile?.sku}
-      />
-      <PDFViewerDialog
-        open={pdfPreviewOpen}
-        onOpenChange={setPdfPreviewOpen}
-        fileUrl={previewFile?.url || ''}
-        fileName={previewFile?.name || ''}
-      />
-      <ExcelViewerDialog
-        open={excelPreviewOpen}
-        onOpenChange={setExcelPreviewOpen}
-        fileUrl={previewFile?.url || ''}
-        fileName={previewFile?.name || ''}
-      />
+      {previewId && (
+        <TechnicalSpecificationDocumentPreviewDialog
+          specificationId={previewId}
+          onClose={() => setPreviewId(null)}
+        />
+      )}
     </div>
   )
 }

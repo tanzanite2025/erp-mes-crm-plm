@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { ImageIcon, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -17,6 +18,9 @@ import { SelectDropdown } from '@/components/select-dropdown'
 import { type Product, type ProductType } from '../../data/schema'
 import { normalizeProductModelCodeValue } from '../../utils/product-code-normalization'
 import { buildProductTypeHierarchyMetaMap } from '../../utils/product-type-tree'
+import { ProductEngineeringTechnicalSpecificationSelectionField } from './product-engineering-technical-specification-selection-field'
+import { productFormTypographyClassNames } from './product-form-typography.styles'
+import { ProductMoldMasterLibraryGroupSelectionField } from './product-mold-master-library-group-selection-field'
 
 interface ProductBasicInfoProps {
   form: UseFormReturn<Product>
@@ -30,7 +34,13 @@ interface ProductBasicInfoProps {
 }
 
 function RequiredMark() {
-  return <span className='text-[11px] leading-none text-destructive'>*</span>
+  return (
+    <span
+      className={cn('text-destructive', productFormTypographyClassNames.helper)}
+    >
+      *
+    </span>
+  )
 }
 
 export function ProductBasicInfo({
@@ -74,7 +84,12 @@ export function ProductBasicInfo({
           name='image'
           render={({ field }) => (
             <FormItem className='flex shrink-0 flex-col'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.productMgmt.form.thumbnail')}
               </FormLabel>
               <FormControl>
@@ -98,7 +113,12 @@ export function ProductBasicInfo({
                     ) : (
                       <label className='flex size-full cursor-pointer flex-col items-center justify-center'>
                         <ImageIcon className='mb-1 size-7 text-muted-foreground/30 sm:size-8' />
-                        <span className='px-2 text-center text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase sm:text-[10px]'>
+                        <span
+                          className={cn(
+                            'px-2 text-center text-muted-foreground',
+                            productFormTypographyClassNames.helper
+                          )}
+                        >
                           {t('engineering.productMgmt.form.uploadImg')}
                         </span>
                         <input
@@ -122,7 +142,12 @@ export function ProductBasicInfo({
               name='typeId'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 flex items-center gap-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
+                  <FormLabel
+                    className={cn(
+                      'ml-1 flex items-center gap-1 text-foreground',
+                      productFormTypographyClassNames.fieldLabel
+                    )}
+                  >
                     <RequiredMark />
                     <span>
                       {t('engineering.categoryArchive.labels.baseModel')}
@@ -146,7 +171,10 @@ export function ProductBasicInfo({
                     placeholder={t(
                       'engineering.productMgmt.form.categoryPlaceholder'
                     )}
-                    className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
+                    className={cn(
+                      'h-[38px] w-full rounded-xl border-none bg-muted/40 px-3',
+                      productFormTypographyClassNames.control
+                    )}
                   />
                 </FormItem>
               )}
@@ -156,21 +184,35 @@ export function ProductBasicInfo({
               name='modelCode'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 flex items-center justify-between pr-1 text-[10px] font-black tracking-widest text-blue-600 uppercase'>
+                  <FormLabel
+                    className={cn(
+                      'ml-1 flex flex-wrap items-center justify-between gap-x-1 pr-1 text-blue-600 dark:text-blue-400',
+                      productFormTypographyClassNames.fieldLabel
+                    )}
+                  >
                     <span className='flex items-center gap-1'>
                       <RequiredMark />
                       <span>{t('engineering.productMgmt.form.modelCode')}</span>
                     </span>
                     <Badge
                       variant='outline'
-                      className='h-3.5 border-blue-200 bg-white px-0.5 text-[8px] text-blue-500'
+                      className={cn(
+                        'min-h-5 border-blue-200 bg-background px-0.5 text-blue-600 dark:border-blue-800 dark:text-blue-400',
+                        productFormTypographyClassNames.badge
+                      )}
                     >
                       {t('engineering.productMgmt.form.modelCodeLinked')}
                     </Badge>
                   </FormLabel>
                   <FormControl>
                     <Input
-                      className={`h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 font-maple-ui text-[13px] font-black ${isEdit ? 'opacity-50' : 'transition-all focus:bg-background focus-visible:ring-blue-400'}`}
+                      className={cn(
+                        'h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 font-maple-ui',
+                        productFormTypographyClassNames.control,
+                        isEdit
+                          ? 'opacity-50'
+                          : 'transition-all focus:bg-background focus-visible:ring-blue-400'
+                      )}
                       {...field}
                       value={field.value || '01'}
                       placeholder={t(
@@ -185,7 +227,9 @@ export function ProductBasicInfo({
                       }}
                     />
                   </FormControl>
-                  <FormMessage className='text-[10px] font-bold' />
+                  <FormMessage
+                    className={productFormTypographyClassNames.helper}
+                  />
                 </FormItem>
               )}
             />
@@ -194,20 +238,22 @@ export function ProductBasicInfo({
               name='engineeringSpecId'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
+                  <FormLabel
+                    className={cn(
+                      'ml-1 text-foreground',
+                      productFormTypographyClassNames.fieldLabel
+                    )}
+                  >
                     {t('engineering.productMgmt.form.spec')}
                   </FormLabel>
-                  <SelectDropdown
+                  <ProductEngineeringTechnicalSpecificationSelectionField
                     value={field.value}
                     onValueChange={field.onChange}
-                    isControlled={true}
-                    items={specOptions}
-                    placeholder={t(
-                      'engineering.productMgmt.form.specPlaceholder'
-                    )}
-                    className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
+                    options={specOptions}
                   />
-                  <FormMessage className='text-[10px] font-bold' />
+                  <FormMessage
+                    className={productFormTypographyClassNames.helper}
+                  />
                 </FormItem>
               )}
             />
@@ -216,20 +262,22 @@ export function ProductBasicInfo({
               name='moldGroup'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-blue-800 uppercase'>
+                  <FormLabel
+                    className={cn(
+                      'ml-1 text-blue-800 dark:text-blue-300',
+                      productFormTypographyClassNames.fieldLabel
+                    )}
+                  >
                     {t('engineering.productMgmt.form.mold')}
                   </FormLabel>
-                  <SelectDropdown
-                    placeholder={t(
-                      'engineering.productMgmt.form.moldPlaceholder'
-                    )}
-                    items={moldOptions}
+                  <ProductMoldMasterLibraryGroupSelectionField
+                    options={moldOptions}
                     value={field.value}
                     onValueChange={field.onChange}
-                    isControlled={true}
-                    className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
                   />
-                  <FormMessage className='text-[8px] font-bold uppercase' />
+                  <FormMessage
+                    className={productFormTypographyClassNames.helper}
+                  />
                 </FormItem>
               )}
             />
@@ -238,7 +286,12 @@ export function ProductBasicInfo({
               name='status'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
-                  <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
+                  <FormLabel
+                    className={cn(
+                      'ml-1 text-foreground',
+                      productFormTypographyClassNames.fieldLabel
+                    )}
+                  >
                     {t('engineering.productMgmt.form.status')}
                   </FormLabel>
                   <SelectDropdown
@@ -246,14 +299,22 @@ export function ProductBasicInfo({
                     onValueChange={field.onChange}
                     isControlled={true}
                     items={productStatusOptions}
-                    className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold text-slate-700'
+                    className={cn(
+                      'h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-foreground',
+                      productFormTypographyClassNames.control
+                    )}
                   />
                 </FormItem>
               )}
             />
           </div>
 
-          <p className='text-xs leading-relaxed text-muted-foreground'>
+          <p
+            className={cn(
+              'text-muted-foreground',
+              productFormTypographyClassNames.helper
+            )}
+          >
             {t('engineering.productMgmt.form.baseModelSourceHelp', {
               manageCategories: t(
                 'engineering.productMgmt.sidebar.editCategory'
@@ -264,10 +325,20 @@ export function ProductBasicInfo({
 
           <div className='grid grid-cols-1 gap-2.5'>
             <div className='min-w-0 space-y-0.5'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-blue-800 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-blue-800 dark:text-blue-300',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.productMgmt.form.template')}
               </FormLabel>
-              <div className='flex h-[38px] w-full items-center rounded-xl bg-muted/40 px-3 text-[11px] font-bold text-slate-700'>
+              <div
+                className={cn(
+                  'flex h-[38px] w-full items-center rounded-xl bg-muted/40 px-3 text-foreground',
+                  productFormTypographyClassNames.control
+                )}
+              >
                 <span className='min-w-0 truncate'>
                   {templateLabel ||
                     t('engineering.productMgmt.form.templatePlaceholder')}

@@ -14,6 +14,7 @@ import {
   Truck,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationTextInput } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError, isNotFoundError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -191,8 +192,8 @@ export function LogisticsMgmt() {
     setIsDetailOpen(true)
   }
 
-  const handleQuickUpdate = (id: string) => {
-    const description = prompt(
+  const handleQuickUpdate = async (id: string) => {
+    const description = await requestApplicationTextInput(
       t('trading.logistics.quickUpdatePrompt'),
       t('trading.logistics.quickUpdateDefault')
     )

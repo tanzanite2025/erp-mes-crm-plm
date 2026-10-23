@@ -11,7 +11,7 @@ import (
 
 func TestTemplateOwnedAttributeHTTPRoundTripKeepsDefinitionsAndCatalogLabelsScoped(t *testing.T) {
 	database, router := createIsolatedProductAttributeCatalogPostgresHTTPFixture(t)
-	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}, &models.ProductType{}))
+	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}, &models.ProductType{}, &models.AuditLog{}))
 	router.POST("/templates", SaveProductTemplateHandler)
 	router.GET("/templates", GetProductTemplatesHandler)
 	for _, fixture := range []struct{ code, label string }{{"rim", "车圈碟刹"}, {"fork", "前叉碟刹"}} {
@@ -41,7 +41,7 @@ func TestTemplateOwnedAttributeHTTPRoundTripKeepsDefinitionsAndCatalogLabelsScop
 
 func TestTemplateDeletionReturnsAConflictWhileAProductCategoryStillUsesIt(t *testing.T) {
 	database, router := createIsolatedProductAttributeCatalogPostgresHTTPFixture(t)
-	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}, &models.ProductType{}))
+	require.NoError(t, database.AutoMigrate(&models.ProductTemplate{}, &models.ProductType{}, &models.AuditLog{}))
 	router.POST("/templates", SaveProductTemplateHandler)
 	router.DELETE("/templates/:id", DeleteProductTemplateHandler)
 	response := submitProductAttributeCatalogHTTPRequest(t, router, http.MethodPost, "/templates", map[string]any{

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { requireCommandActor } from '@/lib/command-actor'
 import { type DeltaSet } from '@/lib/delta/types'
 import { isForbiddenError } from '@/lib/error-status'
@@ -143,9 +144,13 @@ export function SupplierList() {
     }
   }
 
-  const handleDeleteSupplier = (id: string) => {
+  const handleDeleteSupplier = async (id: string) => {
     if (!allowsAction('action_trading_supplier_delete')) return
-    if (confirm(t('purchase.suppliers.deleteConfirm'))) {
+    if (
+      await requestApplicationConfirmation(
+        t('purchase.suppliers.deleteConfirm')
+      )
+    ) {
       deleteMutation.mutate(id)
     }
   }

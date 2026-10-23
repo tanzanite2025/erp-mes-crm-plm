@@ -2,6 +2,7 @@
 
 import type { UseFormReturn } from 'react-hook-form'
 import { Settings2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -12,19 +13,28 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { type Product } from '../../data/schema'
+import { productFormTypographyClassNames } from '../product/product-form-typography.styles'
 
 export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
   const { t } = useLanguage()
 
   return (
-    <div className='space-y-2 rounded-[20px] border border-dashed border-purple-200/60 bg-purple-50/35 p-2.5'>
+    <div className='space-y-2 rounded-[20px] border border-dashed border-purple-200/60 bg-purple-50/35 p-2.5 dark:border-purple-900/60 dark:bg-purple-950/20'>
       <div className='flex flex-col gap-1 border-b border-dashed border-purple-200/60 pb-1.5 sm:flex-row sm:items-center sm:justify-between'>
-        <h4 className='text-[10px] font-black tracking-widest text-purple-700 uppercase'>
+        <h4
+          className={cn(
+            'text-purple-700 dark:text-purple-400',
+            productFormTypographyClassNames.sectionTitle
+          )}
+        >
           {t('engineering.specForms.stem.title')}
         </h4>
         <Badge
           variant='outline'
-          className='h-4 rounded-full border-purple-200 bg-white px-1.5 font-maple-ui text-[8px] tracking-wide text-purple-700 uppercase'
+          className={cn(
+            'min-h-5 rounded-full border-purple-200 bg-background px-1.5 font-maple-ui text-purple-700 dark:border-purple-800 dark:text-purple-400',
+            productFormTypographyClassNames.badge
+          )}
         >
           {t('engineering.specForms.stem.subtitle')}
         </Badge>
@@ -35,7 +45,12 @@ export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
           name='length'
           render={({ field }) => (
             <FormItem className='min-w-0 content-start gap-0.5 self-start'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.stem.length')}
               </FormLabel>
               <FormControl>
@@ -51,7 +66,10 @@ export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-[38px] w-full rounded-xl border-none bg-background/80 px-3 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -62,7 +80,12 @@ export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
           name='angle'
           render={({ field }) => (
             <FormItem className='min-w-0 content-start gap-0.5 self-start'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.stem.angle')}
               </FormLabel>
               <FormControl>
@@ -78,7 +101,10 @@ export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
                         : parseFloat(event.target.value)
                     )
                   }
-                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-[38px] w-full rounded-xl border-none bg-background/80 px-3 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
@@ -89,21 +115,34 @@ export function StemSpecForm({ form }: { form: UseFormReturn<Product> }) {
           name='clamp'
           render={({ field }) => (
             <FormItem className='min-w-0 content-start gap-0.5 self-start'>
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-muted-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {t('engineering.specForms.stem.clamp')}
               </FormLabel>
               <FormControl>
                 <Input
                   placeholder='31.8 / 35'
                   {...field}
-                  className='h-[38px] w-full rounded-xl border-none bg-background/80 px-3 text-[11px] font-bold shadow-none'
+                  className={cn(
+                    'h-[38px] w-full rounded-xl border-none bg-background/80 px-3 shadow-none',
+                    productFormTypographyClassNames.control
+                  )}
                 />
               </FormControl>
             </FormItem>
           )}
         />
       </div>
-      <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase opacity-70'>
+      <p
+        className={cn(
+          'text-muted-foreground',
+          productFormTypographyClassNames.helper
+        )}
+      >
         {t('engineering.specForms.stem.helper')}
       </p>
     </div>

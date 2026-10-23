@@ -336,10 +336,10 @@ func defaultProductAttributeOptions() []models.ProductAttributeOption {
 		{CategoryKey: "tireType", Value: "hookless", LabelZh: "无钩", LabelEn: "Hookless", Description: "无钩车圈类型", SortOrder: 20, Active: true},
 		{CategoryKey: "tireType", Value: "tubular", LabelZh: "管胎", LabelEn: "Tubular", Description: "管胎车圈类型", SortOrder: 30, Active: true},
 		{CategoryKey: "brakeType", Value: "disc", LabelZh: "碟刹", LabelEn: "Disc", Description: "碟刹制动类型", SortOrder: 10, Active: true},
-		{CategoryKey: "versionLevel", Value: "std", LabelZh: "标准版", LabelEn: "Standard", Description: "标准版本等级", SortOrder: 10, Active: true},
-		{CategoryKey: "versionLevel", Value: "lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化版本等级", SortOrder: 20, Active: true},
-		{CategoryKey: "versionLevel", Value: "ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻版本等级", SortOrder: 30, Active: true},
-		{CategoryKey: "versionLevel", Value: "reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型版本等级", SortOrder: 40, Active: true},
+		{CategoryKey: "versionLevel", Value: "std", LabelZh: "标准版", LabelEn: "Standard", Description: "标准性能版本", SortOrder: 10, Active: true},
+		{CategoryKey: "versionLevel", Value: "lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化性能版本", SortOrder: 20, Active: true},
+		{CategoryKey: "versionLevel", Value: "ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻性能版本", SortOrder: 30, Active: true},
+		{CategoryKey: "versionLevel", Value: "reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型性能版本", SortOrder: 40, Active: true},
 	}
 }
 
@@ -348,7 +348,7 @@ func defaultProductAttributeCategories() []models.ProductAttributeCategory {
 		{Key: "techSeries", NameZh: "工艺系列", NameEn: "Technical Series", Description: "产品工艺系列分类", SortOrder: 10, Active: true},
 		{Key: "tireType", NameZh: "轮圈类型", NameEn: "Rim Type", Description: "产品轮圈类型分类", SortOrder: 20, Active: true},
 		{Key: "brakeType", NameZh: "制动类型", NameEn: "Brake Type", Description: "产品制动类型分类", SortOrder: 30, Active: true},
-		{Key: "versionLevel", NameZh: "版本等级", NameEn: "Version Level", Description: "产品版本等级分类", SortOrder: 40, Active: true},
+		{Key: "versionLevel", NameZh: "性能版本", NameEn: "Performance Version", Description: "BOM 性能版本分类", SortOrder: 40, Active: true},
 	}
 }
 

@@ -9,13 +9,14 @@ import { type Furnace } from '@/features/tooling-furnaces/data/furnace-schema'
 import { FURNACES_QUERY_KEY } from '@/features/tooling-furnaces/hooks/use-furnaces'
 import { FurnaceService } from '@/features/tooling-furnaces/services/furnace-service'
 import { type Mold } from '../data/schema'
+import { MOLDS_QUERY_KEY } from '../mold-master-library-query-keys'
+import { invalidateMoldMasterLibraryQueriesAfterWrite } from '../queries/invalidate-mold-master-library-queries-after-write'
 import { AssetService } from '../services/asset-service'
 import { MoldMaintenanceService } from '../services/mold-maintenance-service'
 import { MoldTransactionService } from '../services/mold-transaction-service'
 
 const logger = createLogger('useAssets')
 
-export const MOLDS_QUERY_KEY = ['molds'] as const
 export const MOLD_LOANS_QUERY_KEY = ['moldLoans'] as const
 
 export function useAssets() {
@@ -114,7 +115,7 @@ export function useAssets() {
       logger.error('Update mold failed, rolled back', error)
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: MOLDS_QUERY_KEY })
+      await invalidateMoldMasterLibraryQueriesAfterWrite(queryClient)
     },
   })
 

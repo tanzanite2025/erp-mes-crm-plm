@@ -1,5 +1,6 @@
 'use client'
 
+import { z } from 'zod'
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
@@ -15,7 +16,8 @@ import {
 
 export const MoldCoreService = {
   async getMoldsWithVersion() {
-    const res = await apiFetch<MoldListPageApiDTO>('/molds')
+    // These array consumers filter and group locally, so a default page is incomplete.
+    const res = await apiFetch<MoldListPageApiDTO>('/molds?options=true')
     const page = toMoldListPageContract(
       ensureObjectResponse<MoldListPageApiDTO & Record<string, unknown>>(
         res,
@@ -31,6 +33,10 @@ export const MoldCoreService = {
     return molds
   },
 
+  async getMoldMasterLibrarySelectionOptions() {
+    return this.getMolds()
+  },
+
   async getMoldById(id: string) {
     const res = await apiFetch<MoldApiDTO>(`/molds/${id}`)
     return toMoldContract(
@@ -43,7 +49,9 @@ export const MoldCoreService = {
 
   async getGroupNames(): Promise<string[]> {
     const res = await apiFetch<string[]>('/molds/group-names')
-    return ensureArrayResponse<string>(res, 'MoldCoreService.getGroupNames')
+    return z
+      .array(z.string().trim().min(1))
+      .parse(ensureArrayResponse<string>(res, 'MoldCoreService.getGroupNames'))
   },
 
   async isSnDuplicate(sn: string, excludeId?: string): Promise<boolean> {

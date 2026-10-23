@@ -4,6 +4,10 @@
 @import './chrome109-sidebar-menu-color-fallbacks.css';
 @import './chrome109-bottom-dock-color-fallbacks.css';
 @import './sidebar-navigation-workspace-layout.css';
+@import './mobile-floating-surface-full-height-three-pixel-gutter-and-safe-area.css';
+@import './product-physical-specification-template-floating-surface-chrome109-viewport-compatibility.css';
+@import './engineering-technical-specification-document-floating-surface-chrome109-viewport-compatibility.css';
+@import './mold-master-library-floating-surface-chrome109-viewport-compatibility.css';
 
 @custom-variant dark (&:is(.dark *));
 

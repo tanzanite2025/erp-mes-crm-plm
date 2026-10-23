@@ -131,7 +131,7 @@ func SaveEngineeringSpecHandler(c *gin.Context) {
 		case errors.Is(err, services.ErrEngineeringSpecDuplicateKey):
 			c.JSON(http.StatusConflict, gin.H{"error": "[BUSINESS_RULE_VIOLATION] engineering spec duplicate normalized ratio key"})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to save engineering spec: " + err.Error()})
+			respondDomainError(c, err, "failed to save engineering spec")
 		}
 		return
 	}
@@ -206,7 +206,7 @@ func BulkSyncEngineeringSpecsHandler(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "[BUSINESS_RULE_VIOLATION] engineering spec duplicate normalized ratio key"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] bulk engineering sync failed: " + err.Error()})
+		respondDomainError(c, err, "bulk engineering sync failed")
 		return
 	}
 
@@ -218,6 +218,8 @@ func DeleteEngineeringSpecHandler(c *gin.Context) {
 	err := services.DeleteEngineeringSpec(auditContextFromGin(c), id)
 	if err != nil {
 		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] engineering spec not found"})
 		case errors.Is(err, services.ErrEngineeringSpecLinkedProducts), errors.Is(err, services.ErrEngineeringSpecLinkedBOM):
 			c.JSON(http.StatusForbidden, gin.H{"error": "[BUSINESS_RULE_VIOLATION] engineering spec is still referenced"})
 		case errors.Is(err, services.ErrEngineeringSpecLinkedDrilling):

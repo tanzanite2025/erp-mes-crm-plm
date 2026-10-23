@@ -18,7 +18,10 @@ export function EngineeringWorkspaceEmptyState({
     <div className='flex h-full flex-1 items-center justify-center rounded-r-[32px] bg-background p-3 sm:p-4'>
       <div className='relative w-full max-w-xl'>
         {/* 背景装饰：增强 UDS 深度感 */}
-        <div className='absolute -inset-4 rounded-full bg-linear-to-b from-blue-600/5 to-transparent opacity-50 blur-3xl' />
+        <div
+          aria-hidden='true'
+          className='pointer-events-none absolute -inset-4 rounded-full bg-linear-to-b from-blue-600/5 to-transparent opacity-50 blur-3xl'
+        />
 
         <EmptyState
           icon={Box}

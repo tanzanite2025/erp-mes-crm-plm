@@ -12,7 +12,7 @@ export const PRODUCT_ATTRIBUTE_CATEGORY_KEYS = {
   version: 'versionLevel',
 } as const
 
-// Product grade is owned by BOM; retain it only in BOM-derived display previews.
+// Performance version is owned by BOM; retain it only in BOM-derived display previews.
 export function filterProductSpecificationOwnedAttributeValues<
   T extends { categoryKey: string },
 >(items: readonly T[]): T[] {
@@ -81,6 +81,15 @@ export function getProductTemplateAttributeLevelOneCategoryName(
     | undefined
 ): string {
   if (!category) return ''
+  // Keep the field name consistent when existing catalogs still contain legacy labels.
+  if (
+    areSameProductAttributeCategoryKey(
+      category.key,
+      PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version
+    )
+  ) {
+    return locale === 'en-US' ? 'Performance Version' : '性能版本'
+  }
   if (locale === 'en-US')
     return category.nameEn?.trim() || category.nameZh || category.key
   return category.nameZh || category.nameEn || category.key

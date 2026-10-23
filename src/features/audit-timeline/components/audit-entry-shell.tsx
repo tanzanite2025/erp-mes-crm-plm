@@ -89,11 +89,11 @@ export function AuditEntryShell({
             </span>
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2.5 py-1'>
               <User className='size-3 opacity-50' />
-              <span className='text-[10px] font-black tracking-tight text-slate-800'>
+              <span className='text-[10px] font-black tracking-tight text-foreground'>
                 {operatorDisplay}
               </span>
             </div>
-            <div className='rounded-full border border-dashed border-muted/40 bg-background px-2.5 py-1 text-[10px] font-black tracking-tight text-slate-800'>
+            <div className='rounded-full border border-dashed border-muted/40 bg-background px-2.5 py-1 text-[10px] font-black tracking-tight text-foreground'>
               {targetLabel}: {targetValue}
             </div>
           </div>
@@ -102,7 +102,7 @@ export function AuditEntryShell({
             {headerBadges}
             <div className='flex items-center gap-1.5 rounded-full border border-dashed border-muted/40 bg-background px-2.5 py-1'>
               <Clock className='size-3 opacity-50' />
-              <span className='text-[10px] font-black tracking-tight text-slate-800'>
+              <span className='text-[10px] font-black tracking-tight text-foreground'>
                 {formatAuditTimestamp(createdAt)}
               </span>
             </div>

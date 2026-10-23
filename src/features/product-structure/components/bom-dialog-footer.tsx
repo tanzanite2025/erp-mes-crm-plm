@@ -1,23 +1,18 @@
 'use client'
 
-import type { UseFormReturn } from 'react-hook-form'
 import { Lock } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { FormControl, FormField, FormItem } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { type BOM } from '../data/schema'
 import { isMBOM } from '../utils/bom-identity'
 
 interface BOMDialogFooterProps {
-  form: UseFormReturn<BOM>
   currentRow?: BOM
   onPromote: (status: string) => Promise<void>
   isSubmitDisabled: boolean
 }
 
 export function BOMDialogFooter({
-  form,
   currentRow,
   onPromote,
   isSubmitDisabled,
@@ -27,26 +22,7 @@ export function BOMDialogFooter({
   const isLocked = currentRow?.isLocked || false
 
   return (
-    <div className='flex h-auto shrink-0 flex-col items-stretch gap-1.5 border-t border-dashed border-muted/50 pt-1 sm:h-11 sm:flex-row sm:gap-2'>
-      <FormField
-        control={form.control}
-        name='description'
-        render={({ field }) => (
-          <FormItem className='flex-1 space-y-0'>
-            <FormControl>
-              <Input
-                placeholder={t(
-                  'engineering.bomArchive.dialog.remarkPlaceholder'
-                )}
-                disabled={isLocked}
-                {...field}
-                className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-bold tracking-widest uppercase shadow-inner placeholder:text-[9px] placeholder:text-muted-foreground/40 sm:h-full'
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-
+    <div className='flex h-auto shrink-0 items-stretch justify-end border-t border-dashed border-muted/50 pt-2 sm:min-h-12'>
       <div className='flex items-center gap-2'>
         {isLocked ? (
           <div className='flex items-center gap-2 px-6 text-muted-foreground/40'>
@@ -76,17 +52,20 @@ export function BOMDialogFooter({
                 {t('engineering.bomArchive.dialog.submitReview')}
               </Button>
             )}
-
-            {status === 'APPROVED' && isMBOM(currentRow) && (
-              <Button
-                type='button'
-                onClick={() => onPromote('RELEASED')}
-                className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-emerald-600 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-emerald-600/10 transition-all hover:bg-emerald-700 sm:h-full sm:w-48'
-              >
-                {t('engineering.bomArchive.dialog.release')}
-              </Button>
-            )}
           </>
+        )}
+        {status === 'APPROVED' && (
+          <Button
+            type='button'
+            onClick={() => onPromote('RELEASED')}
+            className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-emerald-600 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-emerald-600/10 transition-all hover:bg-emerald-700 sm:h-full sm:w-48'
+          >
+            {t(
+              isMBOM(currentRow)
+                ? 'engineering.bomArchive.dialog.release'
+                : 'engineering.bomArchive.dialog.releaseEngineering'
+            )}
+          </Button>
         )}
       </div>
     </div>

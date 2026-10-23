@@ -5,6 +5,8 @@ import { getRouteDerivedPermissions } from '@/features/authz/data/route-permissi
 import { getAccessibleNavGroups } from '@/features/authz/guards/navigation-access'
 import { getProjectedTabsFromPermissionSnapshot } from '@/features/authz/guards/route-access'
 import { engineeringPermissionTabs } from '@/features/engineering/tab-config'
+import { getBOMCreationOperationGuideTabs } from '@/features/product-structure/bom-creation-operation-guide-tab-config'
+import { resolveRecentVisitLabelKey } from '@/features/recent-visits/recent-visit-labels'
 import { getSidebarData } from './data/sidebar-data'
 import { resolveActiveSidebarPath } from './sidebar-active-path'
 import { createSidebarCategoryPreviews } from './sidebar-category-scrubber-utils'
@@ -14,6 +16,7 @@ import { resolveSidebarNodeTabPreviews } from './sidebar-tab-preview-registry'
 const translateProductHandbookNavigationLabel = (key: TranslationKey) =>
   translate('zh-CN', key)
 const productHandbookRoute = '/engineering/product-creation-guide'
+const bomHandbookRoute = '/engineering/bom-creation-guide'
 
 function createProductHandbookNavigationForPermissions(permissions: string[]) {
   const user = { permissions }
@@ -34,7 +37,7 @@ function createProductHandbookNavigationForPermissions(permissions: string[]) {
 }
 
 describe('product handbook category and existing route permissions', () => {
-  it('provides one handbook entry in its own product category and selects only that branch', () => {
+  it('provides sibling product and BOM handbooks and selects only the relevant handbook branch', () => {
     const { groups, directories } =
       createProductHandbookNavigationForPermissions(['menu_engineering'])
     const productDirectory = directories.find(
@@ -44,10 +47,15 @@ describe('product handbook category and existing route permissions', () => {
       (section) => section.id === 'product-handbook-group'
     )!
     expect(handbookSection.title).toBe('产品操作手册')
-    expect(handbookSection.links).toHaveLength(1)
+    expect(handbookSection.links).toHaveLength(2)
     expect(handbookSection.links[0]).toMatchObject({
       title: '如何建立产品',
       url: productHandbookRoute,
+      tabs: [],
+    })
+    expect(handbookSection.links[1]).toMatchObject({
+      title: '如何建立 BOM',
+      url: bomHandbookRoute,
       tabs: [],
     })
     const allEntries = productDirectory.sections.flatMap((section) =>
@@ -55,6 +63,9 @@ describe('product handbook category and existing route permissions', () => {
     )
     expect(
       allEntries.filter((entry) => entry.url === productHandbookRoute)
+    ).toHaveLength(1)
+    expect(
+      allEntries.filter((entry) => entry.url === bomHandbookRoute)
     ).toHaveLength(1)
     expect(
       allEntries.some(
@@ -80,10 +91,14 @@ describe('product handbook category and existing route permissions', () => {
     expect(
       resolveActiveSidebarPath(groups, productHandbookRoute)?.nodeIds
     ).toEqual(['product-handbook-group', 'product-creation-handbook'])
+    expect(resolveActiveSidebarPath(groups, bomHandbookRoute)?.nodeIds).toEqual(
+      ['product-handbook-group', 'bom-creation-handbook']
+    )
     const configurationGroup = groups
       .find((group) => group.id === 'product-management')!
       .children.find((node) => node.id === 'product-config-group')!
     expect(checkIsActive(productHandbookRoute, configurationGroup)).toBe(false)
+    expect(checkIsActive(bomHandbookRoute, configurationGroup)).toBe(false)
     expect(checkIsActive('/engineering/templates', configurationGroup)).toBe(
       true
     )
@@ -100,6 +115,37 @@ describe('product handbook category and existing route permissions', () => {
       'product-handbook-group',
     ])
     expect(productDirectory.sections[0].links[0].url).toBe(productHandbookRoute)
+    expect(productDirectory.sections[0].links).toHaveLength(1)
+  })
+
+  it('keeps the BOM guide reachable on its own permission, with a dedicated tab and recent visit label', () => {
+    const { directories } = createProductHandbookNavigationForPermissions([
+      'tab_engineering_bom_creation_guide',
+    ])
+    const productDirectory = directories.find(
+      (directory) => directory.id === 'product-management'
+    )!
+    expect(productDirectory.sections.map((section) => section.id)).toEqual([
+      'product-handbook-group',
+    ])
+    expect(productDirectory.sections[0].links).toHaveLength(1)
+    expect(productDirectory.sections[0].links[0].url).toBe(bomHandbookRoute)
+    expect(getAuthenticatedRoutePaths()).toContain(bomHandbookRoute)
+    expect(getRouteDerivedPermissions()).toContainEqual(
+      expect.objectContaining({ id: 'tab_engineering_bom_creation_guide' })
+    )
+    expect(
+      getBOMCreationOperationGuideTabs(translateProductHandbookNavigationLabel)
+    ).toEqual([
+      {
+        key: 'bom-creation-guide',
+        label: '如何建立 BOM',
+        href: bomHandbookRoute,
+      },
+    ])
+    expect(resolveRecentVisitLabelKey(bomHandbookRoute)).toBe(
+      'engineering.tabs.bomCreationGuide'
+    )
   })
 
   it('does not expose the handbook to accounts with unrelated page permissions', () => {

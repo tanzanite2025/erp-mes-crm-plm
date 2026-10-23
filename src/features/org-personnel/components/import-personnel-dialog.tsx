@@ -189,13 +189,16 @@ export function ImportPersonnelDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent className='gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-2xl'>
+      <DialogContent
+        data-mobile-floating-surface-layout='column'
+        className='flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-2xl'
+      >
         <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/5 p-8 text-start'>
           <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tighter uppercase'>
             <FileSpreadsheet className='size-5 text-blue-600' />
             {t('orgPersonnel.importDialog.title')}
           </DialogTitle>
-          <DialogDescription className='flex items-center justify-between text-[9px] font-black tracking-widest uppercase opacity-60'>
+          <DialogDescription className='flex flex-wrap items-center justify-between gap-2 text-[9px] font-black tracking-widest uppercase opacity-60'>
             <span>{t('orgPersonnel.importDialog.description')}</span>
             <Button
               variant='link'
@@ -209,7 +212,10 @@ export function ImportPersonnelDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-6 p-8'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='min-h-0 flex-1 space-y-6 overflow-y-auto p-8'
+        >
           {!file ? (
             <label className='group flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/20 transition-all hover:bg-muted/30'>
               <div className='flex flex-col items-center justify-center pt-5 pb-6'>
@@ -255,11 +261,11 @@ export function ImportPersonnelDialog({
                   </Button>
                 </div>
               ) : (
-                <div className='flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4'>
-                  <div className='flex items-center gap-3'>
-                    <CheckCircle2 className='size-5 text-emerald-500' />
-                    <div>
-                      <p className='text-xs font-bold text-emerald-950 uppercase'>
+                <div className='flex flex-col items-start justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:flex-row sm:items-center'>
+                  <div className='flex min-w-0 flex-1 items-center gap-3'>
+                    <CheckCircle2 className='size-5 shrink-0 text-emerald-500' />
+                    <div className='min-w-0'>
+                      <p className='text-xs font-bold break-all text-emerald-950 uppercase'>
                         {preview?.fileName || file.name}
                       </p>
                       <p className='text-[10px] font-black tracking-widest text-emerald-600/60 uppercase'>
@@ -273,7 +279,7 @@ export function ImportPersonnelDialog({
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='text-[10px] font-black uppercase'
+                    className='shrink-0 text-[10px] font-black uppercase'
                     onClick={reset}
                   >
                     {t('orgPersonnel.importDialog.changeFile')}
@@ -474,18 +480,18 @@ export function ImportPersonnelDialog({
                         {preview.previewRows.map((row, index) => (
                           <div
                             key={`${row.staffId}-${index}`}
-                            className='flex gap-4 border-b border-muted/20 pb-1 font-maple-ui text-[10px] text-muted-foreground/80 last:border-0'
+                            className='grid grid-cols-2 gap-2 border-b border-muted/20 pb-1 font-maple-ui text-[10px] text-muted-foreground/80 last:border-0 sm:flex sm:gap-4'
                           >
-                            <span className='w-[100px] shrink-0 font-bold text-primary'>
+                            <span className='min-w-0 shrink-0 font-bold break-all text-primary sm:w-[100px]'>
                               {row.staffId || '-'}
                             </span>
-                            <span className='w-[80px] shrink-0 font-bold text-slate-700'>
+                            <span className='min-w-0 shrink-0 font-bold break-all text-slate-700 sm:w-[80px]'>
                               {row.name || '-'}
                             </span>
-                            <span className='w-[80px] shrink-0'>
+                            <span className='min-w-0 shrink-0 break-all sm:w-[80px]'>
                               {row.gender || '-'}
                             </span>
-                            <span className='truncate'>
+                            <span className='col-span-2 min-w-0 break-words sm:truncate'>
                               {[row.deptName, row.positionName, row.phone]
                                 .filter(Boolean)
                                 .join(' / ') || '-'}

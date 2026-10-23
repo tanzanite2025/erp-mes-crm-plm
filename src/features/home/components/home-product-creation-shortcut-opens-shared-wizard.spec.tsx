@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react'
+import { translate, type TranslationKey } from '@/locales'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LanguageProvider } from '@/context/language-provider'
+import { getSidebarData } from '@/components/layout/data/sidebar-data'
+import { buildHomeBusinessShortcutCategories } from '../data/build-home-business-shortcut-categories'
 import { HomeBusinessShortcutCategorySection } from './home-business-shortcut-category-section'
 
 vi.mock('@tanstack/react-router', () => ({
@@ -37,6 +40,41 @@ vi.mock(
 afterEach(cleanup)
 
 describe('HOME product creation shortcut', () => {
+  it('shows the BOM handbook beside the product guide before expanding and links directly to its explanation page', () => {
+    const translateHomeShortcutLabel = (key: TranslationKey) =>
+      translate('zh-CN', key)
+    const categories = buildHomeBusinessShortcutCategories(
+      { permissions: ['menu_engineering'] },
+      getSidebarData(translateHomeShortcutLabel).navGroups,
+      translateHomeShortcutLabel
+    )
+    const productCategory = categories.find(
+      (category) => category.id === 'product-management'
+    )!
+    render(
+      <LanguageProvider defaultLocale='zh-CN'>
+        <HomeBusinessShortcutCategorySection category={productCategory} />
+      </LanguageProvider>
+    )
+
+    expect(screen.getByRole('button', { name: /查看更多/ })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+    expect(screen.getByRole('button', { name: /如何建立产品/ })).toBeVisible()
+    expect(screen.getByRole('link', { name: /如何建立 BOM/ })).toHaveAttribute(
+      'href',
+      '/engineering/bom-creation-guide'
+    )
+    expect(
+      screen.getByText(
+        translateHomeShortcutLabel('home.bomCreationGuideShortcutDescription')
+      )
+    ).toBeVisible()
+    expect(screen.queryByRole('button', { name: /如何建立 BOM/ })).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
   it('opens the shared modal in place and keeps ordinary shortcuts as page links', async () => {
     render(
       <LanguageProvider defaultLocale='zh-CN'>

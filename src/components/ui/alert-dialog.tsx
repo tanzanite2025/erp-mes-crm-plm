@@ -43,11 +43,14 @@ function AlertDialogOverlay({
 
 function AlertDialogContent({
   className,
+  overlayClassName,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
+  overlayClassName?: string
+}) {
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay />
+      <AlertDialogOverlay className={overlayClassName} />
       <AlertDialogPrimitive.Content
         data-slot='alert-dialog-content'
         className={cn(
@@ -55,6 +58,7 @@ function AlertDialogContent({
           className
         )}
         {...props}
+        data-mobile-floating-surface='alert-dialog'
       />
     </AlertDialogPortal>
   )

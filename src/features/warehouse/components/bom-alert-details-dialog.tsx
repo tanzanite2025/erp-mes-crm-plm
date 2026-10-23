@@ -66,7 +66,10 @@ export function BOMAlertDetailsDialog({
         className='w-[96vw] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[1120px]'
       >
         <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-        <div className='relative flex max-h-[90vh] flex-col'>
+        <div
+          data-mobile-floating-surface-layout='column'
+          className='relative flex max-h-[90vh] flex-col'
+        >
           <div className='shrink-0 px-6 pt-6 md:px-8 md:pt-8'>
             <DialogHeader className='text-left'>
               <DialogTitle className='text-lg font-black tracking-tighter uppercase md:text-xl'>
@@ -97,7 +100,10 @@ export function BOMAlertDetailsDialog({
             </div>
           </div>
 
-          <div className='min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8'>
+          <div
+            data-mobile-floating-surface-scroll-body
+            className='min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8'
+          >
             {bomAlertDetailsQuery.isPending ? (
               <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
                 <Loader2 className='size-8 animate-spin text-primary/40' />

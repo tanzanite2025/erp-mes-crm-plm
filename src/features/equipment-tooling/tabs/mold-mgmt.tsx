@@ -40,7 +40,7 @@ export function MoldMgmt() {
   )
 
   const saveMold = (mold: Mold, isPatch?: boolean, delta?: DeltaSet) => {
-    updateMolds(mold, isPatch, delta)
+    return updateMolds(mold, isPatch, delta)
   }
 
   const handleAddMold = () => {
@@ -64,7 +64,7 @@ export function MoldMgmt() {
   }
 
   const handleConfirm = (data: Mold, isPatch?: boolean, delta?: DeltaSet) => {
-    runConfirmedAction({
+    return runConfirmedAction({
       permission: 'action_equipment_mold_manage',
       onAction: async () => {
         await saveMold(data, isPatch, delta)

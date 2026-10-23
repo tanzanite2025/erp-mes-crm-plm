@@ -21,6 +21,7 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModulePurchaseOrder:         {authz.MenuTrading, authz.MenuPurchase},
 	services.AuditModuleCustomer:              {authz.MenuTrading},
 	services.AuditModuleProduct:               {authz.MenuEngineering},
+	services.AuditModuleProductTemplate:       {authz.MenuEngineering, "tab_engineering_templates"},
 	services.AuditModuleSupplier:              {authz.MenuTrading, authz.MenuPurchase},
 	services.AuditModuleDrilling:              {authz.MenuEngineering},
 	services.AuditModuleEngineeringSpec:       {authz.MenuEngineering},

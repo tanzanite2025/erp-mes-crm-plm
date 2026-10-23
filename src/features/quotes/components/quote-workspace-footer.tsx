@@ -35,7 +35,10 @@ export function QuoteWorkspaceFooter({
     isCreateMode || detail?.status === 'draft' || detail?.status === 'pending'
 
   return (
-    <div className='border-t border-dashed border-border/60 px-6 py-4'>
+    <div
+      data-slot='dialog-footer'
+      className='shrink-0 border-t border-dashed border-border/60 px-6 py-4'
+    >
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <p className='text-[11px] leading-5 text-muted-foreground'>
           {isCreateMode

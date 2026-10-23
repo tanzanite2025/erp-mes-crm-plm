@@ -320,7 +320,9 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 			return permCheck.Err()
 		}
 
-		if existing.IsLocked && input.Status != models.BOMStatusObsolete {
+		// Content locking must not block the approved -> released lifecycle transition.
+		isPublishingApprovedBOM := existing.Status == models.BOMStatusApproved && input.Status == models.BOMStatusReleased
+		if existing.IsLocked && !isPublishingApprovedBOM && input.Status != models.BOMStatusObsolete {
 			return fmt.Errorf("[CRITICAL] Cannot promote a locked BOM (Status: %s) to %s", existing.Status, input.Status)
 		}
 

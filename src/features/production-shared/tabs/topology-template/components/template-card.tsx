@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { requestApplicationTextInput } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import {
   AlertDialog,
@@ -61,8 +62,10 @@ export function TemplateCard({
   const { level1Name, level2Name, level3Name } = useProductionTopologyLabels()
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const handleAddSegment = () => {
-    const nextName = window.prompt(`请输入${level2Name}名称`)
+  const handleAddSegment = async () => {
+    const nextName = await requestApplicationTextInput(
+      `请输入${level2Name}名称`
+    )
     if (!nextName?.trim()) {
       return
     }

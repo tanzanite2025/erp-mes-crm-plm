@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { type Currency } from '../data/schema'
@@ -110,7 +111,12 @@ export function useCurrencies() {
   })
 
   const handleSetBase = async (id: number) => {
-    if (!window.confirm(t('finance.currencyRates.confirm.setBase'))) return
+    if (
+      !(await requestApplicationConfirmation(
+        t('finance.currencyRates.confirm.setBase')
+      ))
+    )
+      return
     await setBaseMutation.mutateAsync(id)
   }
 

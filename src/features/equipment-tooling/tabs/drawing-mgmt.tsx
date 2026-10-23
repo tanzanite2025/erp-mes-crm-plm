@@ -39,7 +39,7 @@ import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { DrawingActionDialog } from '../components/drawing-action-dialog'
 import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
-import { MOLDS_QUERY_KEY } from '../hooks/use-assets'
+import { MOLDS_QUERY_KEY } from '../mold-master-library-query-keys'
 import { DrawingService } from '../services/drawing-service'
 import { MoldCoreService } from '../services/mold-core-service'
 

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isConflictError } from '@/lib/handle-server-error'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
@@ -254,9 +255,9 @@ export function useMaterialAssemblyManager() {
   const handleDelete = useCallback(
     async (id: string) => {
       if (
-        !window.confirm(
+        !(await requestApplicationConfirmation(
           t('materialArchive.assemblyManager.toasts.deleteConfirm')
-        )
+        ))
       )
         return
 

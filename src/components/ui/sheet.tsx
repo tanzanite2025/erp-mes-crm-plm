@@ -67,6 +67,7 @@ function SheetContent({
           className
         )}
         {...props}
+        data-mobile-floating-surface='sheet'
       >
         {children}
         <SheetPrimitive.Close className='absolute end-4 top-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary'>

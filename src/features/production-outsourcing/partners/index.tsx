@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -91,12 +92,12 @@ export function OutsourcePartnerManagement() {
     createMutation.mutate(values, { onSuccess: () => setDialogOpen(false) })
   }
 
-  const handleDelete = (partner: OutsourcePartner) => {
+  const handleDelete = async (partner: OutsourcePartner) => {
     if (!canManage) {
       return
     }
     if (
-      window.confirm(
+      await requestApplicationConfirmation(
         t('productionOutsourcing.partners.deleteConfirm', {
           name: partner.name,
         })

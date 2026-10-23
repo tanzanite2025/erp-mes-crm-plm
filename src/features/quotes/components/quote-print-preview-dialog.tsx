@@ -43,9 +43,12 @@ export function QuotePrintPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[92vh] max-w-6xl overflow-hidden rounded-3xl border border-primary/20 p-0'>
+      <DialogContent
+        data-mobile-floating-surface-layout='column'
+        className='max-h-[92vh] max-w-6xl overflow-hidden rounded-3xl border border-primary/20 p-0'
+      >
         <DialogHeader className='border-b border-dashed border-border/60 px-6 py-5'>
-          <div className='flex items-start justify-between gap-4'>
+          <div className='flex flex-col items-start justify-between gap-4 sm:flex-row'>
             <div>
               <DialogTitle className='text-xl font-black tracking-tight'>
                 报价打印预览
@@ -54,7 +57,7 @@ export function QuotePrintPreviewDialog({
                 请确认版式后，通过浏览器打印面板选择“保存为 PDF”。
               </DialogDescription>
             </div>
-            <div className='flex gap-2'>
+            <div className='flex flex-wrap gap-2'>
               <Button variant='outline' onClick={() => onOpenChange(false)}>
                 <X className='size-4' />
                 关闭
@@ -66,7 +69,10 @@ export function QuotePrintPreviewDialog({
             </div>
           </div>
         </DialogHeader>
-        <div className='overflow-auto bg-muted/20 p-6'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='overflow-auto bg-muted/20 p-6'
+        >
           {detail ? (
             <div ref={printRef}>
               <QuotePrintDocument detail={detail} />

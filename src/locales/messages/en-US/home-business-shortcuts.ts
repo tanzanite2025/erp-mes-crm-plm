@@ -12,6 +12,8 @@ export const home = {
     'Shortcuts will appear here when you are granted access to business modules.',
   productCreationGuideShortcutDescription:
     'Open the step-by-step wizard to reuse a template and base model, then save the product.',
+  bomCreationGuideShortcutDescription:
+    'Read five steps covering BOMs, performance versions and weight, material groups, and lifecycle.',
   categories: {
     product:
       'Create product records and maintain templates, attributes and BOM structures.',

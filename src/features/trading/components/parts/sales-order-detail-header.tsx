@@ -7,6 +7,7 @@ import {
   Settings2,
   XCircle,
 } from 'lucide-react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { type SalesOrder } from '../../data/schema'
@@ -115,8 +116,9 @@ export function SalesOrderDetailHeader({
             size='sm'
             variant='ghost'
             className='h-7 gap-1.5 rounded-lg px-2 text-[10px] font-black text-destructive uppercase hover:bg-destructive/10'
-            onClick={() => {
-              if (!confirm(cancelConfirmText)) return
+            onClick={async () => {
+              if (!(await requestApplicationConfirmation(cancelConfirmText)))
+                return
               onMutateStatus(cancelPayload)
             }}
           >

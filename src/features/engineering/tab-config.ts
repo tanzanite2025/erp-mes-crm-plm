@@ -1,5 +1,6 @@
 import type { TranslationKey } from '@/locales'
 import type { TabItem } from '@/components/module-tabs'
+import { getBOMCreationOperationGuideTabs } from '@/features/product-structure/bom-creation-operation-guide-tab-config'
 
 type TranslateFn = (
   key: TranslationKey,
@@ -13,7 +14,7 @@ export const engineeringTabs: TabItem[] = [
     label: '产品外观',
     href: '/engineering/product-appearance',
   },
-  { key: 'templates', label: '产品模板', href: '/engineering/templates' },
+  { key: 'templates', label: '物理规格模板', href: '/engineering/templates' },
 ]
 
 export function getEngineeringTabs(t: TranslateFn): TabItem[] {
@@ -49,6 +50,7 @@ export function getProductCreationGuideTabs(t: TranslateFn): TabItem[] {
 export const engineeringPermissionTabs = (t: TranslateFn): TabItem[] => [
   ...getEngineeringTabs(t),
   ...getProductCreationGuideTabs(t),
+  ...getBOMCreationOperationGuideTabs(t),
   {
     key: 'types',
     label: t('engineering.tabs.types'),

@@ -21,6 +21,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -629,9 +630,11 @@ export default function AttendanceDevices() {
     })
   }
 
-  const handleDelete = (device: AttendanceDevice) => {
+  const handleDelete = async (device: AttendanceDevice) => {
     if (!canManage) return
-    const confirmed = window.confirm(`确定删除考勤设备 [${device.name}] 吗？`)
+    const confirmed = await requestApplicationConfirmation(
+      `确定删除考勤设备 [${device.name}] 吗？`
+    )
     if (!confirmed) return
     deleteMutation.mutate(device.id)
   }

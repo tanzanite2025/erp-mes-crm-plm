@@ -1,4 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { auditTimelineQueryKeys } from '@/features/audit-timeline/query-keys'
 import { type ProductTemplate } from '../data/schema'
 import { type SaveProductTemplateInput } from '../mutation-types'
 import {
@@ -29,6 +31,7 @@ export function useProductTemplateWriteActions() {
           PRODUCT_TEMPLATES_QUERY_KEY,
           PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
           PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+          [...auditTimelineQueryKeys.all, AUDIT_MODULES.productTemplate],
         ].map((queryKey) => queryClient.invalidateQueries({ queryKey }))
       )
     },
@@ -42,6 +45,7 @@ export function useProductTemplateWriteActions() {
           PRODUCT_TEMPLATES_QUERY_KEY,
           PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
           PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+          [...auditTimelineQueryKeys.all, AUDIT_MODULES.productTemplate],
         ].map((queryKey) => queryClient.invalidateQueries({ queryKey }))
       )
     },

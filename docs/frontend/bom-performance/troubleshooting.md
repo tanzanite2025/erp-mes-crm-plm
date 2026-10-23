@@ -12,13 +12,15 @@
 > `src/features/product-structure/components/bom-editor/bom-workspace.tsx` and
 > `src/features/product-structure/hooks/use-bom-workspace.ts`.
 
+Current editor structure verified on 2026-10-23: see [BOM editor responsibilities](../bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md). This archive concerns rendering performance; for “性能版本”, see the [BOM operation guide](../bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md).
+
 ## Table of Contents
 
 1. [Common Issues](#common-issues)
-2. [Error Messages](#error-messages)
+2. [Error Messages (Historical)](#error-messages-historical)
 3. [Performance Debugging](#performance-debugging)
 4. [Recovery Procedures](#recovery-procedures)
-5. [Monitoring Dashboard Usage](#monitoring-dashboard-usage)
+5. [Monitoring Dashboard Usage (Removed)](#monitoring-dashboard-usage-removed)
 6. [Diagnostic Tools](#diagnostic-tools)
 7. [FAQ](#faq)
 
@@ -43,7 +45,7 @@
 
 1. Capture a React Profiler trace around `BOMWorkspace`.
 2. Inspect the projection work in `hooks/use-bom-workspace-projection.ts`.
-3. Confirm whether the summary or tree view is rendering the unexpected node set.
+3. Inspect the recipe summary, group expansion state and projected nodes passed to the virtual list in `components/bom-editor/item-table.tsx`; there is one recipe workspace, with no summary/tree view switch.
 4. Measure before changing the active workspace behavior.
 
 **Prevention**:

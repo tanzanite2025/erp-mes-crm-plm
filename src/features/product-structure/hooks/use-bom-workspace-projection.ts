@@ -4,7 +4,7 @@ import { failLoudly } from '@/lib/safe-catch'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type BOM } from '../data/schema'
 import {
-  getActiveBOMSections,
+  getSortedBOMSections,
   getDefaultBOMSectionCode,
 } from '../utils/bom-section-utils'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from './bom-workspace-branch-relation-builder'
@@ -15,7 +15,6 @@ import {
   type BOMWorkspaceSourceNode,
 } from './bom-workspace-source'
 
-export type BOMWorkspaceViewMode = 'summary' | 'group'
 export type BOMWorkspaceSyntheticKind = 'group-empty' | 'append-row'
 
 export interface BOMWorkspaceBranchNode {
@@ -32,6 +31,7 @@ export interface BOMWorkspaceBranchNode {
   sectionCost: number
   sectionCode: string
   sectionName: string
+  isSectionActive: boolean
 }
 
 export interface BOMWorkspaceLeafNode {
@@ -229,6 +229,7 @@ function buildAppendableBranchChildNodes(
   branchNode: BOMWorkspaceBranchNode,
   childNodes: BOMWorkspaceNode[]
 ): BOMWorkspaceNode[] {
+  if (!branchNode.isSectionActive) return childNodes
   if (branchNode.isEmpty) {
     return [
       {
@@ -263,25 +264,18 @@ function buildBranchChildNodes(
   branchNode: BOMWorkspaceBranchNode,
   childNodes: BOMWorkspaceNode[]
 ): BOMWorkspaceNode[] {
-  if (branchNode.branchRole !== 'collection') {
+  if (branchNode.branchRole !== 'collection' && childNodes.length > 0) {
     return childNodes
   }
 
   return buildAppendableBranchChildNodes(branchNode, childNodes)
 }
 
-export interface BOMWorkspaceAppendContext {
-  groupKey: string
-  sectionCode: string
-  sectionName: string
-}
-
 interface UseBOMWorkspaceProjectionParams {
   form: UseFormReturn<BOM>
   fields: Array<{ id: string }>
   sections: BOMSectionOption[]
-  activeGroupKey: string
-  expandedBranchKeys: string[]
+  branchExpansionOverrides: ReadonlyMap<string, boolean>
   protocolDraft?: BOMWorkspaceParentChildrenProtocolDraft
 }
 
@@ -289,8 +283,7 @@ export function useBOMWorkspaceProjection({
   form,
   fields,
   sections,
-  activeGroupKey,
-  expandedBranchKeys,
+  branchExpansionOverrides,
   protocolDraft,
 }: UseBOMWorkspaceProjectionParams) {
   const watchedItems = form.watch('items')
@@ -311,21 +304,22 @@ export function useBOMWorkspaceProjection({
     return value
   }
 
-  const activeSections = useMemo(
-    () => getActiveBOMSections(sections),
+  // The protocol includes inactive catalog entries so historical rows remain resolvable.
+  const catalogSections = useMemo(
+    () => getSortedBOMSections(sections),
     [sections]
   )
 
   const sourceModel = useMemo(
     () =>
       buildBOMWorkspaceSourceModel({
-        activeSections,
+        activeSections: catalogSections,
         fields,
         watchedItems,
         protocolDraft,
         resolveNumericField,
       }),
-    [activeSections, fields, protocolDraft, watchedItems]
+    [catalogSections, fields, protocolDraft, watchedItems]
   )
 
   const leafNodesBySourceNodeId = useMemo(
@@ -341,42 +335,50 @@ export function useBOMWorkspaceProjection({
 
   const groups = useMemo<BOMWorkspaceGroupNode[]>(
     () =>
-      sourceModel.sectionBranchNodes.map((sourceBranchNode) => {
-        const leafRows = resolveDescendantSourceLeafNodes(
-          sourceBranchNode.nodeId,
-          sourceModel.nodeById
-        ).flatMap((sourceLeafNode) => {
-          const leafNode = leafNodesBySourceNodeId.get(sourceLeafNode.nodeId)
-          return leafNode ? [leafNode] : []
-        })
-
-        const sectionCost = leafRows.reduce(
-          (acc, leafRow) => acc + leafRow.standardUsage * leafRow.unitPrice,
-          0
-        )
-
-        return {
-          key: sourceBranchNode.sectionCode,
-          sourceNodeId: sourceBranchNode.nodeId,
-          branchRole: sourceBranchNode.branchRole,
-          label: sourceBranchNode.label,
-          nodeType: 'branch' as const,
-          depth: resolveSourceNodeDepth(
+      sourceModel.sectionBranchNodes
+        .map((sourceBranchNode) => {
+          const leafRows = resolveDescendantSourceLeafNodes(
             sourceBranchNode.nodeId,
             sourceModel.nodeById
-          ),
-          parentKey: null,
-          childCount: leafRows.length,
-          isEmpty: leafRows.length === 0,
-          isExpanded: expandedBranchKeys.includes(sourceBranchNode.nodeId),
-          sectionCost,
-          sectionCode: sourceBranchNode.sectionCode,
-          sectionName: sourceBranchNode.sectionName,
-          section: sourceBranchNode.section,
-          leafRows,
-        }
-      }),
-    [expandedBranchKeys, leafNodesBySourceNodeId, sourceModel]
+          ).flatMap((sourceLeafNode) => {
+            const leafNode = leafNodesBySourceNodeId.get(sourceLeafNode.nodeId)
+            return leafNode ? [leafNode] : []
+          })
+
+          const sectionCost = leafRows.reduce(
+            (acc, leafRow) => acc + leafRow.standardUsage * leafRow.unitPrice,
+            0
+          )
+
+          return {
+            key: sourceBranchNode.sectionCode,
+            sourceNodeId: sourceBranchNode.nodeId,
+            branchRole: sourceBranchNode.branchRole,
+            label: sourceBranchNode.label,
+            nodeType: 'branch' as const,
+            depth: resolveSourceNodeDepth(
+              sourceBranchNode.nodeId,
+              sourceModel.nodeById
+            ),
+            parentKey: null,
+            childCount: leafRows.length,
+            isEmpty: leafRows.length === 0,
+            isExpanded:
+              branchExpansionOverrides.get(sourceBranchNode.nodeId) ??
+              (leafRows.length > 0 ||
+                (sourceModel.leafNodes.length === 0 &&
+                  sourceBranchNode.sectionCode ===
+                    getDefaultBOMSectionCode(sections))),
+            sectionCost,
+            sectionCode: sourceBranchNode.sectionCode,
+            sectionName: sourceBranchNode.sectionName,
+            isSectionActive: sourceBranchNode.section.active,
+            section: sourceBranchNode.section,
+            leafRows,
+          }
+        })
+        .filter((group) => group.isSectionActive || !group.isEmpty),
+    [branchExpansionOverrides, leafNodesBySourceNodeId, sourceModel, sections]
   )
 
   const nestedBranchNodes = useMemo<BOMWorkspaceBranchNode[]>(
@@ -422,38 +424,21 @@ export function useBOMWorkspaceProjection({
               : null,
             childCount: leafRows.length,
             isEmpty: leafRows.length === 0,
-            isExpanded: expandedBranchKeys.includes(sourceBranchNode.nodeId),
+            isExpanded:
+              branchExpansionOverrides.get(sourceBranchNode.nodeId) ??
+              leafRows.length > 0,
             sectionCost,
             sectionCode: sourceBranchNode.sectionCode,
             sectionName: sourceBranchNode.sectionName,
+            isSectionActive: sourceBranchNode.section.active,
           }
         }),
-    [expandedBranchKeys, leafNodesBySourceNodeId, sourceModel]
+    [branchExpansionOverrides, leafNodesBySourceNodeId, sourceModel]
   )
 
   const allBranchNodes = useMemo(
     () => [...groups, ...nestedBranchNodes],
     [groups, nestedBranchNodes]
-  )
-
-  const groupNodes = useMemo<BOMWorkspaceBranchNode[]>(
-    () =>
-      groups.map((group) => ({
-        key: group.key,
-        sourceNodeId: group.sourceNodeId,
-        branchRole: group.branchRole,
-        label: group.label,
-        nodeType: 'branch',
-        depth: group.depth,
-        parentKey: group.parentKey,
-        childCount: group.childCount,
-        isEmpty: group.isEmpty,
-        isExpanded: group.isExpanded,
-        sectionCost: group.sectionCost,
-        sectionCode: group.sectionCode,
-        sectionName: group.sectionName,
-      })),
-    [groups]
   )
 
   const branchNodeBySourceNodeId = useMemo(
@@ -553,64 +538,7 @@ export function useBOMWorkspaceProjection({
     ]
   )
 
-  const resolvedActiveGroupKey = useMemo(() => {
-    if (activeGroupKey === 'all') {
-      return 'all'
-    }
-
-    return groups.some((group) => group.key === activeGroupKey)
-      ? activeGroupKey
-      : 'all'
-  }, [activeGroupKey, groups])
-
-  const activeGroup = useMemo(
-    () => groups.find((group) => group.key === resolvedActiveGroupKey),
-    [groups, resolvedActiveGroupKey]
-  )
-
-  const viewMode: BOMWorkspaceViewMode =
-    resolvedActiveGroupKey === 'all' ? 'summary' : 'group'
-
-  const visibleNodes = useMemo<BOMWorkspaceVisibleNode[]>(() => {
-    if (viewMode !== 'group' || !activeGroup) {
-      return []
-    }
-
-    const collectVisibleNodes = (
-      branchNode: BOMWorkspaceBranchNode
-    ): BOMWorkspaceVisibleNode[] => {
-      if (!branchNode.isExpanded) {
-        return []
-      }
-
-      const childNodes =
-        branchChildrenBySourceNodeId.get(branchNode.sourceNodeId) ?? []
-
-      return childNodes.flatMap((childNode) => {
-        if (childNode.nodeType === 'branch') {
-          return collectVisibleNodes(childNode)
-        }
-
-        return [childNode]
-      })
-    }
-
-    return collectVisibleNodes(activeGroup)
-  }, [activeGroup, branchChildrenBySourceNodeId, viewMode])
-
-  const visibleLeafRows = useMemo(
-    () =>
-      visibleNodes.filter(
-        (node): node is BOMWorkspaceLeafNode => node.nodeType === 'leaf'
-      ),
-    [visibleNodes]
-  )
-
   const visibleTreeNodes = useMemo<BOMWorkspaceNode[]>(() => {
-    if (viewMode !== 'group') {
-      return []
-    }
-
     const flattenNode = (node: BOMWorkspaceNode): BOMWorkspaceNode[] => {
       if (node.nodeType !== 'branch') {
         return [node]
@@ -627,45 +555,12 @@ export function useBOMWorkspaceProjection({
       const rootBranchNode = branchNodeBySourceNodeId.get(childNodeId)
       return rootBranchNode ? flattenNode(rootBranchNode) : []
     })
-  }, [
-    branchChildrenBySourceNodeId,
-    branchNodeBySourceNodeId,
-    sourceModel,
-    viewMode,
-  ])
-
-  const appendContext = useMemo<BOMWorkspaceAppendContext>(() => {
-    if (viewMode === 'group' && activeGroup) {
-      return {
-        groupKey: activeGroup.key,
-        sectionCode: activeGroup.sectionCode,
-        sectionName: activeGroup.sectionName,
-      }
-    }
-
-    const defaultSectionCode = getDefaultBOMSectionCode(sections)
-    const defaultSection = activeSections.find(
-      (section) => section.code === defaultSectionCode
-    )
-
-    return {
-      groupKey: defaultSection?.code || 'all',
-      sectionCode: defaultSection?.code || '',
-      sectionName: defaultSection?.name || '',
-    }
-  }, [activeGroup, activeSections, sections, viewMode])
+  }, [branchChildrenBySourceNodeId, branchNodeBySourceNodeId, sourceModel])
 
   return {
-    activeSections,
     sourceModel,
     groups,
-    groupNodes,
-    resolvedActiveGroupKey,
-    activeGroup,
-    viewMode,
-    visibleNodes,
+    branchNodes: allBranchNodes,
     visibleTreeNodes,
-    visibleLeafRows,
-    appendContext,
   }
 }

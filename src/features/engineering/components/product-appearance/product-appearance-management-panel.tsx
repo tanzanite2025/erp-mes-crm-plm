@@ -12,6 +12,7 @@ import {
   Check,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -79,11 +80,11 @@ export function ProductAppearanceManagementPanel({
   ) {
     if (
       actionInProgressRef.current ||
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         t('engineering.productAppearance.actions.deleteConfirm', {
           name: appearance.name,
         })
-      )
+      ))
     )
       return
     actionInProgressRef.current = true

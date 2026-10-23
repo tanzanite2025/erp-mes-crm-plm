@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import {
   applyLogisticsTemplate,
@@ -157,11 +158,13 @@ export function useLogisticsPlatformAdmin() {
     })
   }
 
-  const handleDelete = (id?: number) => {
+  const handleDelete = async (id?: number) => {
     if (!id) return
     if (
       typeof window !== 'undefined' &&
-      !window.confirm(t('logisticsConfig.platforms.prompts.deleteConfirm'))
+      !(await requestApplicationConfirmation(
+        t('logisticsConfig.platforms.prompts.deleteConfirm')
+      ))
     ) {
       return
     }

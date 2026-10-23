@@ -13,6 +13,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { router } from '@/lib/router'
 import { setAppRouter } from '@/lib/router-reference'
+import { ApplicationConfirmPromptAndAlertDialogHost } from '@/components/application-confirm-prompt-and-alert-dialog-host'
 import { registerProductionResourceQueryClient } from '@/features/production-shared/services/production-resource-invalidation'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -215,6 +216,7 @@ if (!rootElement.innerHTML) {
             <FontProvider>
               <DirectionProvider>
                 <RouterProvider router={router} />
+                <ApplicationConfirmPromptAndAlertDialogHost />
               </DirectionProvider>
             </FontProvider>
           </ThemeProvider>

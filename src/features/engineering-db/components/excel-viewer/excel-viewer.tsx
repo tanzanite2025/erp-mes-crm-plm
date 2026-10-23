@@ -20,6 +20,7 @@ const logger = createLogger('ExcelViewer')
 interface ExcelViewerProps {
   fileUrl: string
   className?: string
+  credentials?: RequestCredentials
 }
 
 interface StyleInfo {
@@ -92,7 +93,11 @@ interface SheetData {
  * ExcelViewer 组件
  * 解析并展示 Excel 文件内容 (xlsx, xls, csv)
  */
-export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
+export function ExcelViewer({
+  fileUrl,
+  className,
+  credentials = 'same-origin',
+}: ExcelViewerProps) {
   const [sheets, setSheets] = useState<SheetData[]>([])
   const [currentSheetIndex, setCurrentSheetIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -105,7 +110,9 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await fetch(fileUrl)
+        const response = await fetch(fileUrl, { credentials })
+        if (!response.ok)
+          throw new Error(`文档读取失败（HTTP ${response.status}）`)
         const arrayBuffer = await response.arrayBuffer()
 
         const { default: ExcelJS } = await loadExcelJS()
@@ -238,11 +245,13 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
     return () => {
       cancelled = true
     }
-  }, [fileUrl])
+  }, [fileUrl, credentials])
 
   if (isLoading) {
     return (
-      <div className='flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/5'>
+      <div
+        className={`flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/5 ${className}`}
+      >
         <Loader2 className='mb-3 size-8 animate-spin text-emerald-500' />
         <p className='text-xs font-black tracking-widest text-muted-foreground uppercase'>
           分析表格数据结构中...
@@ -253,7 +262,9 @@ export function ExcelViewer({ fileUrl, className }: ExcelViewerProps) {
 
   if (error) {
     return (
-      <div className='flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-red-200 bg-red-500/5 text-red-600'>
+      <div
+        className={`flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-red-200 bg-red-500/5 p-4 text-center text-red-600 ${className}`}
+      >
         <AlertCircle className='mb-2 size-8 opacity-40' />
         <p className='text-xs font-bold'>{error}</p>
       </div>

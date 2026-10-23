@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import {
   type ProductTemplateAttributeLevelOneCategory,
@@ -218,11 +219,11 @@ export function ProductTemplateAttributeClassificationManagementPanel({
 
   const deleteLevelOneAttributeCategory = async (id: string) => {
     if (
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         locale === 'zh-CN'
           ? '确认删除该一级属性分类及其全部二级属性分类吗？'
           : 'Delete this level 1 attribute category and all its level 2 options?'
-      )
+      ))
     ) {
       return
     }
@@ -247,11 +248,11 @@ export function ProductTemplateAttributeClassificationManagementPanel({
 
   const deleteLevelTwoAttributeOption = async (id: string) => {
     if (
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         locale === 'zh-CN'
           ? '确认删除该二级属性分类吗？'
           : 'Delete this level 2 attribute option?'
-      )
+      ))
     ) {
       return
     }

@@ -59,7 +59,10 @@ export function QuoteWorkspaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[95vh] w-[96vw] max-w-[96vw] overflow-hidden rounded-3xl border border-primary/20 p-0 sm:max-w-[96vw] xl:w-[1480px] xl:max-w-[1480px]'>
+      <DialogContent
+        data-mobile-floating-surface-layout='column'
+        className='flex max-h-[95vh] w-[96vw] max-w-[96vw] flex-col overflow-hidden rounded-3xl border border-primary/20 p-0 sm:max-w-[96vw] xl:w-[1480px] xl:max-w-[1480px]'
+      >
         <QuoteWorkspaceHeader
           detail={detail}
           isCreateMode={isCreateMode}
@@ -67,7 +70,10 @@ export function QuoteWorkspaceDialog({
           detailError={detailError}
         />
 
-        <div className='max-h-[calc(95vh-150px)] min-h-0 overflow-hidden'>
+        <div
+          data-mobile-floating-surface-scroll-body
+          className='min-h-0 flex-1 overflow-y-auto'
+        >
           {isCreateMode ? (
             <div className='min-w-0 overflow-y-auto px-6 py-5'>
               {createEditor ?? null}

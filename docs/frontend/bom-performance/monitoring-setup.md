@@ -10,15 +10,17 @@
 > deployment steps below are archived design material and must not be treated as
 > current production setup instructions.
 
+For the active editor, see [BOM editor responsibilities](../bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md) (verified 2026-10-23). This archive concerns rendering performance and monitoring; it does not describe the business performance-version catalog (“性能版本”).
+
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Metrics Collection](#metrics-collection)
+2. [Metrics Collection (Historical)](#metrics-collection-historical)
 3. [Alert Thresholds](#alert-thresholds)
-4. [Monitoring Dashboard](#monitoring-dashboard)
+4. [Monitoring Dashboard (Historical)](#monitoring-dashboard-historical)
 5. [Log Aggregation](#log-aggregation)
 6. [Monitoring Procedures](#monitoring-procedures)
-7. [Incident Response](#incident-response)
+7. [Incident Response (Historical)](#incident-response-historical)
 
 ---
 

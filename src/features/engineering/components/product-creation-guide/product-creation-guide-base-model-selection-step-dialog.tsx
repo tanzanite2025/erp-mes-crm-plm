@@ -1,17 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { ProductType } from '../../data/schema'
 import { localizeTemplateDefinitions } from '../../data/template-defaults'
 import { useProductCreationGuideSubmissionLock } from '../../hooks/use-product-creation-guide-submission-lock'
@@ -27,6 +17,7 @@ import { resolveEffectiveTemplate } from '../../utils/product-template-resolutio
 import { buildProductTypeHierarchyMetaMap } from '../../utils/product-type-tree'
 import { ProductTypeActionDialog } from '../product-type-action-dialog'
 import { ProductCreationGuideBaseModelSelectionAvailabilityNotice } from './product-creation-guide-base-model-selection-availability-notice'
+import { ProductCreationGuideBaseModelSelectionStepContent } from './product-creation-guide-base-model-selection-step-content'
 import { ProductCreationGuideConfigurationDialog } from './product-creation-guide-configuration-dialog-shell'
 import { ProductCreationGuideConfigurationRequestState } from './product-creation-guide-configuration-request-state'
 import type { ProductCreationGuideOperationDialogProps } from './product-creation-guide-step-dialog-contracts'
@@ -230,95 +221,47 @@ export function ProductCreationGuideBaseModelSelectionDialog(
           {savedCategoryConfirmationMessage}
         </p>
       )}
-      <div className='space-y-2'>
-        <Label htmlFor='product-creation-guide-base-model-selection'>
-          {t('engineering.productCreationGuide.selectBaseModel')}
-        </Label>
-        <Select
-          value={selectedBaseModelId}
-          onValueChange={(value) => {
-            setSelectedBaseModelId(value)
-            setSavedCategoryConfirmationMessage(null)
-          }}
-        >
-          <SelectTrigger
-            id='product-creation-guide-base-model-selection'
-            aria-describedby='product-creation-guide-base-model-selection-help'
-            className='w-full'
-          >
-            <SelectValue
-              placeholder={t(
-                'engineering.productCreationGuide.selectPlaceholder'
-              )}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {baseModels.map((type) => (
-              <SelectItem key={type.id} value={type.id}>
-                {hierarchy.get(type.id)?.pathLabel ?? type.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {typesQuery.isSuccess && templatesQuery.isSuccess && (
-          <ProductCreationGuideBaseModelSelectionAvailabilityNotice
-            types={types}
-            templates={templatesQuery.data}
-            availableBaseModels={baseModels}
-            selectedTemplateId={
-              props.progress.completedSteps.template?.id ?? ''
-            }
-            selectedTemplateLabel={selectedTemplateLabel}
-            selectedBaseModelId={selectedBaseModelId}
-            isRefreshing={typesQuery.isFetching || templatesQuery.isFetching}
-            onReload={() => {
-              void typesQuery.refetch()
-              void templatesQuery.refetch()
-            }}
-          />
-        )}
-        <p
-          id='product-creation-guide-base-model-selection-help'
-          className='text-xs leading-relaxed text-muted-foreground'
-        >
-          {t('engineering.productCreationGuide.baseModelSelectionRule')}
-        </p>
-      </div>
-      <p className='rounded-lg bg-muted/50 p-3 text-xs'>
-        {t('engineering.productCreationGuide.selectTemplate')}：
-        {selectedTemplateLabel}
-      </p>
       {props.progress.completedSteps.product && (
         <p className='text-xs text-muted-foreground'>
           {t('engineering.productCreationGuide.upstreamChangeHint')}
         </p>
       )}
-      <Button
-        variant='outline'
-        className='h-auto min-h-9 max-w-full rounded-full py-2 whitespace-normal'
-        onClick={() => {
+      <ProductCreationGuideBaseModelSelectionStepContent
+        baseModels={baseModels.map((type) => ({
+          id: type.id,
+          name: type.name,
+          pathLabel: hierarchy.get(type.id)?.pathLabel ?? type.name,
+        }))}
+        selectedBaseModelId={selectedBaseModelId}
+        selectedTemplateLabel={selectedTemplateLabel}
+        onSelectedBaseModelChange={(value) => {
+          setSelectedBaseModelId(value)
+          setSavedCategoryConfirmationMessage(null)
+        }}
+        onCreateBaseModel={() => {
           setSavedCategoryConfirmationMessage(null)
           setIsEditorOpen(true)
         }}
-      >
-        <Plus aria-hidden='true' className='size-4' />
-        {t('engineering.productCreationGuide.createBaseModel')}
-      </Button>
-      <p className='text-xs leading-relaxed text-muted-foreground'>
-        {t('engineering.productCreationGuide.baseModelCreateHelp')}
-      </p>
-      <div className='space-y-2 rounded-xl border bg-muted/20 p-4 text-xs leading-relaxed text-muted-foreground'>
-        <h3 className='text-sm font-medium text-foreground'>
-          {t('engineering.productCreationGuide.baseModelMeaningTitle')}
-        </h3>
-        <p>{t('engineering.productCreationGuide.baseModelMeaning')}</p>
-        <p>
-          {t('engineering.productCreationGuide.baseModelProductCardExample')}
-        </p>
-        <p>
-          {t('engineering.productCreationGuide.baseModelProductAndBomTiming')}
-        </p>
-      </div>
+        availabilityNotice={
+          typesQuery.isSuccess && templatesQuery.isSuccess ? (
+            <ProductCreationGuideBaseModelSelectionAvailabilityNotice
+              types={types}
+              templates={templatesQuery.data}
+              availableBaseModels={baseModels}
+              selectedTemplateId={
+                props.progress.completedSteps.template?.id ?? ''
+              }
+              selectedTemplateLabel={selectedTemplateLabel}
+              selectedBaseModelId={selectedBaseModelId}
+              isRefreshing={typesQuery.isFetching || templatesQuery.isFetching}
+              onReload={() => {
+                void typesQuery.refetch()
+                void templatesQuery.refetch()
+              }}
+            />
+          ) : null
+        }
+      />
     </ProductCreationGuideConfigurationDialog>
   )
 }

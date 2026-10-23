@@ -26,7 +26,7 @@ export function HomeBusinessShortcutsPage() {
 
   return (
     <ModuleTabbedLayout tabs={getHomeShortcutTabs(t)}>
-      <div className='flex flex-col gap-7 px-2 pb-12 md:gap-8 md:px-4'>
+      <div className='flex w-full flex-col gap-5 px-2 pb-16 md:gap-6 md:px-4'>
         <header className='space-y-2 pt-2'>
           <div className='flex items-center gap-2 text-xs font-medium tracking-widest text-muted-foreground'>
             <House aria-hidden='true' className='size-3.5' />
@@ -39,12 +39,14 @@ export function HomeBusinessShortcutsPage() {
             {t('home.description')}
           </p>
         </header>
-        {categories.map((category) => (
-          <HomeBusinessShortcutCategorySection
-            key={category.id}
-            category={category}
-          />
-        ))}
+        <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,max(22rem,calc((100%_-_2rem)/3))),1fr))] items-start gap-4'>
+          {categories.map((category) => (
+            <HomeBusinessShortcutCategorySection
+              key={category.id}
+              category={category}
+            />
+          ))}
+        </div>
         {isIdentitySynced && categories.length === 0 && (
           <div
             role='status'

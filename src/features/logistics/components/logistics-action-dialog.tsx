@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Truck, X } from 'lucide-react'
+import { showApplicationAlert } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
@@ -146,11 +147,17 @@ export function LogisticsActionDialog({
 
   const handleSave = async () => {
     if (!formData.orderNo)
-      return alert(t('trading.logistics.dialog.validationOrder'))
+      return await showApplicationAlert(
+        t('trading.logistics.dialog.validationOrder')
+      )
     if (!formData.carrier)
-      return alert(t('trading.logistics.dialog.validationCarrier'))
+      return await showApplicationAlert(
+        t('trading.logistics.dialog.validationCarrier')
+      )
     if (!formData.trackingNo)
-      return alert(t('trading.logistics.dialog.validationTracking'))
+      return await showApplicationAlert(
+        t('trading.logistics.dialog.validationTracking')
+      )
 
     const delta = tracker.commit()
     const isEdit = !!record

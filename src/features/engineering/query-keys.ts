@@ -41,9 +41,4 @@ export const PRODUCT_ATTRIBUTE_OPTION_MANAGEMENT_QUERY_KEY = [
   ...PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
   'management',
 ] as const
-export const ENGINEERING_PRODUCT_FORM_MOLD_GROUPS_QUERY_KEY = [
-  'engineering',
-  'productForm',
-  'moldGroups',
-] as const
 export const BOMS_QUERY_KEY = ['engineering', 'boms'] as const

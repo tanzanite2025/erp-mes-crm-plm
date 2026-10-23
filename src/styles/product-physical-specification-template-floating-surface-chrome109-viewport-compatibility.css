@@ -1,0 +1,9 @@
+/* Chrome 109 offsets fixed portals and their hit areas when the root reserves
+   gutters on both sides. Limit this fallback to specification template surfaces. */
+@supports not (color: color-mix(in oklab, black, white)) {
+  html:has(
+    .product-physical-specification-template-floating-surface[data-state='open']
+  ) {
+    scrollbar-gutter: auto;
+  }
+}

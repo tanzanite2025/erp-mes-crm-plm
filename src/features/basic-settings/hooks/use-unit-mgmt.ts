@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import {
@@ -50,9 +51,9 @@ export function useUnitMgmt() {
 
   const handleDelete = async (unit: Unit) => {
     if (
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         t('basicSettings.units.confirmDelete', { name: unit.name })
-      )
+      ))
     )
       return
     try {

@@ -52,6 +52,17 @@ export const productCreationOperationGuide = {
   selectExisting: 'Use existing configuration',
   manageAttributes: 'Create or manage attributes',
   createBaseModel: 'Create category or base model',
+  baseModelSelectionTitle: 'Choose an existing base model',
+  baseModelSelectionHint:
+    'Open the selection below and choose the base model for this product.',
+  baseModelSelectionPlaceholder: 'Click to select a base model',
+  baseModelCurrentTemplate: 'Current physical specification template:',
+  baseModelCurrentSelection: 'Base model for this product',
+  baseModelNextAction:
+    'Check the model, then click “{{action}}” to enter product details.',
+  baseModelCreateTitle: 'Need a different base model?',
+  baseModelCreateDescription:
+    'Reuse an existing model when suitable. Create a new one here when needed.',
   baseModelMeaningTitle: 'Shared base models and specific product cards',
   baseModelMeaning:
     'A base model, such as R50, is a shared model identifier used to group similar products. Create separate products under the same model when different customer requirements or BOM configurations need to be managed separately. Each saved product has its own card and can be linked to its corresponding BOM.',
@@ -64,18 +75,18 @@ export const productCreationOperationGuide = {
   selectAttributes: 'Select the level 1 attribute categories for this product',
   attributeCategory: 'Attribute category',
   noAttributes: 'No additional attributes are needed',
-  selectTemplate: 'Select product template',
+  selectTemplate: 'Select physical specification template',
   selectBaseModel: 'Select a level 3 base model',
   baseModelSelectionRule:
     'Product categories follow Level 1 → Level 2 → Level 3 base model (such as R50). This list includes only active level 3 models that resolve to the template selected in the previous step. Level 1 and 2 categories organize the hierarchy and do not appear here.',
   baseModelCatalogSummary:
     'Loaded: {{levelOneCount}} level 1 categories, {{levelTwoCount}} level 2 categories, {{baseModelCount}} level 3 base models; {{availableCount}} available in this step.',
   baseModelCatalogEmpty:
-    'The product category list returned no records. Use Create category or base model below to build the hierarchy. If categories were created on another computer, reload to check first.',
+    'The product category list returned no records. Use Create category or base model to build the hierarchy. If categories were created on another computer, reload to check first.',
   baseModelMissingSecondLevel:
-    'Only level 1 categories exist; level 2 categories and level 3 base models are missing. Use Create category or base model below, select an existing level 1 parent, and save a level 2 category. Open it again, select the level 2 parent, enter a model name and code, and link the template selected in the previous step.',
+    'Only level 1 categories exist; level 2 categories and level 3 base models are missing. Use Create category or base model, select an existing level 1 parent, and save a level 2 category. Open it again, select the level 2 parent, enter a model name and code, and link the template selected in the previous step.',
   baseModelMissingThirdLevel:
-    'Level 1 and 2 categories exist, but no level 3 base model has been created. Use Create category or base model below, select a level 2 parent, enter the model name and code, and link the template selected in the previous step.',
+    'Level 1 and 2 categories exist, but no level 3 base model has been created. Use Create category or base model, select a level 2 parent, enter the model name and code, and link the template selected in the previous step.',
   baseModelInactiveCount:
     '{{count}} level 3 base models are inactive and are not listed. Review them under Product Management → Edit Category and activate them when appropriate.',
   baseModelUnresolvedTemplateCount:
@@ -240,9 +251,10 @@ export const productCreationOperationGuide = {
             'Fill in the selected template’s fields when creating or editing a product. Maintain attributes and choices directly in that template. Each template owns its configuration, and each product stores its own selections.',
         },
         bomAttributes: {
-          display: 'BOM type, ownership, customer, grade and finished weight',
+          display:
+            'BOM type, ownership, customer, performance version and finished weight',
           meaning:
-            'These values come from BOMs linked to the specific product. Customer ownership applies to customer-specific BOMs. Grade, finished weight, material composition, versions and upgrades are maintained in the BOM.',
+            'These values come from BOMs linked to the specific product. Customer ownership applies to customer-specific BOMs. Performance version, finished weight, material composition, versions and upgrades are maintained in the BOM.',
           location:
             'BOM Formulas → Find or create a BOM for the specific product, check the linked product and maintain its details. Save the product first and link its BOM after preparation and validation.',
         },
@@ -252,11 +264,11 @@ export const productCreationOperationGuide = {
     },
     topics: {
       template: {
-        title: 'Templates · Define what to fill in',
+        title: 'Physical specification templates · Define what to fill in',
         description:
-          'A template maintains shared form rules for a product family. Select an existing one during setup.',
+          'A template defines specification fields and options for rims, stems, forks and other products. Select an existing one during setup.',
         first:
-          'Add existing level 1 attribute categories, mark required attributes and review their level 2 options.',
+          'Maintain specification attributes and options within the template, including required status, availability and order.',
         second:
           'Products in the same family reuse existing templates, maintained by the person responsible for configuration.',
       },
@@ -282,12 +294,12 @@ export const productCreationOperationGuide = {
     workflowTitle: 'Create the product, then link its BOM separately',
     workflowSteps: {
       template:
-        'Select an existing product template and review its specifications, attributes and required fields.',
+        'Select an existing physical specification template and review its specifications, attributes and required fields.',
       baseModel:
         'Select an existing level 3 base model, such as R50. To create one, open Edit Category → Add Category, select a level 2 parent, enter the model name and category code, then link its template.',
       product:
         'Open Generate Product, select the base model, fill in the two-digit model code and specifications, review Final Model Preview at the bottom, then save a separate product card.',
-      bom: 'After saving the product, prepare and validate the BOM separately. Once confirmed, link the specific product represented by the card in BOM Formulas and maintain materials, grade, weight and other details.',
+      bom: 'After saving the product, prepare and validate the BOM separately. Once confirmed, link the specific product represented by the card in BOM Formulas and maintain materials, performance version, weight and other details.',
     },
     workflowHint:
       'Reuse existing categories, base models and templates. To create another product under the same model, select that level 3 model again, enter the specifications and save a separate record. Each product card has its own details and BOM links.',
@@ -303,18 +315,18 @@ export const productCreationOperationGuide = {
         'Level 1 attribute dimensions and their level 2 selectable options are available. Next, add the level 1 categories to a product template.',
     },
     template: {
-      title: 'Select a product template',
+      title: 'Select a physical specification template',
       action:
-        'Select an existing product template, review its attributes and required settings, then continue.',
+        'Select an existing physical specification template, review its attributes and required settings, then continue.',
       fields:
-        'The template to use, its included attributes and required settings.',
+        'The physical specification template to use, its included attributes and required settings.',
       result:
         'The template defines the specifications and attributes shown when creating a product. Next, associate it with a base model.',
     },
     baseModel: {
       title: 'Confirm the base model',
       action:
-        'Base models come from level 3 of the product category tree. This list shows active models using the template selected in the previous step. To add one, click Create category or base model below and enter its details.',
+        'Choose the base model for this product, then confirm to enter product details. If no model is suitable, create one in this step.',
       fields:
         'Select an existing level 3 base model. To add one, select a level 2 parent, enter the model name in Category Name and the base model code in Category Code, then link its template.',
       result:
@@ -334,7 +346,7 @@ export const productCreationOperationGuide = {
       action:
         'Once the BOM has been validated and confirmed, link the existing product in this step, review materials, categories, quantities and loss, then save. Product creation, BOM preparation and validation, and BOM linking can be separate operations.',
       fields:
-        'Linked product, BOM version, ownership, grade, material lines and finished weight/unit. Select a customer for customer ownership.',
+        'Linked product, BOM version, ownership, performance version, material lines and finished weight/unit. Select a customer for customer ownership.',
       result:
         'An EBOM draft is linked to the product. Continue review, release and manufacturing BOM derivation in the BOM module.',
     },

@@ -159,7 +159,7 @@ export function CategoryActionDialog({
                 永久删除 / PURGE
               </Button>
             )}
-            <div className='ms-auto flex items-center gap-3'>
+            <div className='ms-auto flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center'>
               <Button
                 variant='ghost'
                 onClick={() => onOpenChange(false)}
@@ -190,13 +190,13 @@ export function CategoryActionDialog({
             className={
               isTopLevel
                 ? 'grid gap-6'
-                : 'grid grid-cols-[160px_1fr] items-start gap-8'
+                : 'grid min-w-0 grid-cols-1 items-start gap-6 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-8'
             }
           >
             {!isTopLevel && (
               <div
                 onClick={handleUploadClick}
-                className='group relative flex aspect-square cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[24px] border-2 border-dashed bg-muted/30 p-0 text-center shadow-inner transition-all hover:border-primary/50 hover:bg-muted/50'
+                className='group relative flex aspect-square w-full max-w-[160px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[24px] border-2 border-dashed bg-muted/30 p-0 text-center shadow-inner transition-all hover:border-primary/50 hover:bg-muted/50'
               >
                 {formData.imageUrl ? (
                   <>
@@ -233,7 +233,7 @@ export function CategoryActionDialog({
                 />
               </div>
             )}
-            <div className='space-y-6'>
+            <div className='min-w-0 space-y-6'>
               <div className='grid gap-2'>
                 <Label
                   htmlFor='name'
@@ -257,8 +257,8 @@ export function CategoryActionDialog({
                 <Label className='text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                   层级归属 / HIERARCHY
                 </Label>
-                <div className='flex h-12 items-center gap-3 rounded-2xl border-none bg-muted/20 px-5 text-[10px] font-black text-muted-foreground'>
-                  <div className='size-2 animate-pulse rounded-full bg-primary/40' />
+                <div className='flex min-h-12 min-w-0 items-center gap-3 rounded-2xl border-none bg-muted/20 px-5 py-3 text-[10px] font-black break-all text-muted-foreground'>
+                  <div className='size-2 shrink-0 animate-pulse rounded-full bg-primary/40' />
                   {parentId || category?.parentId
                     ? `子分类_SUB (PARENT_ID: ${parentId || category?.parentId})`
                     : '顶级业务领域_CORE'}

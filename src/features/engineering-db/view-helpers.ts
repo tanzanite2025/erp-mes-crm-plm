@@ -35,6 +35,25 @@ const EXCEL_EXTENSIONS = new Set(['xlsx', 'xls', 'csv'])
 const CAD_EXTENSIONS = new Set(['dwg', 'dxf', 'stp', 'step', 'rvt'])
 const WORD_EXTENSIONS = new Set(['docx', 'doc'])
 
+export function getTechnicalSpecificationDocumentCategoryLabel(
+  category: string,
+  locale: string
+) {
+  const isChineseLocale = locale.startsWith('zh')
+  switch (category) {
+    case 'SOP':
+      return isChineseLocale
+        ? '标准作业程序 / SOP'
+        : 'Standard operating procedure / SOP'
+    case 'Standard':
+      return isChineseLocale ? '技术标准' : 'Technical standard'
+    case 'Quality':
+      return isChineseLocale ? '质量规范' : 'Quality specification'
+    default:
+      return category
+  }
+}
+
 export function normalizeEngineeringDbFileExtension(extension?: string) {
   return extension?.toLowerCase()
 }

@@ -11,6 +11,7 @@ import {
   User,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { requireCommandActor } from '@/lib/command-actor'
 import { type DeltaSet } from '@/lib/delta/types'
 import { isForbiddenError } from '@/lib/error-status'
@@ -268,9 +269,11 @@ export function CustomerList() {
     return createMutation.mutateAsync(payload.data as CustomerFormValues)
   }
 
-  const handleDeleteCustomer = (id: string) => {
+  const handleDeleteCustomer = async (id: string) => {
     if (!allowsAction('action_trading_customer_delete')) return
-    if (confirm(t('trading.customers.deleteConfirm'))) {
+    if (
+      await requestApplicationConfirmation(t('trading.customers.deleteConfirm'))
+    ) {
       deleteMutation.mutate(id)
     }
   }

@@ -117,3 +117,33 @@ These were organization changes only; content was not rewritten during the move.
 
 1. Review historical migration/checklist docs only with domain-owner confirmation.
 2. Review `server/security/**` CVE guides only with ops/security confirmation.
+
+## 2026-10-23 BOM And Product Handbook Follow-up
+
+本次核对 BOM 及直接关联的产品手册、HOME 导航和主数据归属文档，并搜索 `docs/**` 中的相关旧术语与已删除组件引用。核对依据为当前工作区源码，不代表已逐一审查整个仓库的所有业务文档。明确过期的说明已修正，历史实验保留归档。
+
+| 文档 | 发现与处理 |
+| --- | --- |
+| [BOM 渲染优化归档](../frontend/bom-performance/optimization.md)、[故障排查归档](../frontend/bom-performance/troubleshooting.md) | “当前结构／当前检查”仍描述已删除的 flat/tree 双视图，已改为汇总、分组手风琴与虚拟明细表，并链接当前职责文档。 |
+| [历史 API](../frontend/bom-performance/api-reference.md)、[历史监控部署](../frontend/bom-performance/monitoring-setup.md) | 原有 Historical 标记有效；补充当前文档入口，区分渲染性能实验与“性能版本”业务概念，不恢复已退休 API 或部署步骤。四份归档的目录锚点也同步修正，避免标题加上归档标记后无法定位。 |
+| [HOME 与手册导航](../architecture/HOME快捷入口与全厂概览独立导航及权限约定.md) | 补齐同级 BOM 手册、独立权限及 HOME 普通路由入口；明确产品指南仍为锚点阅读加操作向导，BOM 指南为固定标题、章节 Tabs 与独立正文滚动。 |
+| [主数据归属](../architecture/master-data-ownership-table.md) | 修复不存在的 `server/db/seeds.go` 引用；区分 `product-structure` 的性能版本业务归属和复用的 `engineering` 存储契约；补充成品重量与共用物料分组的读写归属。 |
+| [模板属性复用](../frontend/product-template-attribute-classification-business-components-reuse-guide.md)、[BOM 编辑弹窗](../frontend/bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md) | 统一按具体产品 `productId` 而非基础型号 `typeId` 解释重量范围，说明界面“本型号”的实际含义，补齐与独立说明指南的职责关系。 |
+| [BOM 说明指南](../frontend/bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md)、[产品向导架构](../frontend/product-creation-guide-architecture-and-file-responsibility-review.md) | 明确两份手册独立承接；修正“其他重量都是会话草稿”的泛化描述，区分已保存 BOM 来源与本次暂存，补充可核验的源码及当前文档入口。 |
+| [BOM 状态机注释](../../server/services/state_machine/bom.go) | “MBOM 只存在发布／作废、派生即生效”与实现不符。注释已改为两类型共用状态表，派生初始为草稿，修订新版本直接发布；状态规则未改。 |
+
+### 初次核对时发现的实现条件差异
+
+初次核对时，列表派生按钮在“研发 BOM 且未锁定”时出现，后端却要求源研发 BOM 已发布且锁定。发布按钮仅对 MBOM 定义，且被锁定分支遮住。文档核对阶段只记录，随后按用户要求修复了派生与发布链路（见下节）。“提交评审”直接请求批准的既有行为继续保留。依据、组件入口和当前边界见 [BOM 生命周期说明](../frontend/bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md#文档核对发现的生命周期差异2026-10-23)。
+
+APS 文档关于“BOM 分组不是工序”的定义，以及消息／领域拓扑文档关于“派生 MBOM 实际为草稿”的描述，与当前实现一致，继续保留。原有带日期的历史核查结果不作为本轮未实施需求，也不因当前测试数量或文件行数变化而改写历史验证记录。
+
+本次验证：11 份文档中的 122 个本地链接（含章节锚点）与当前结构列出的 10 个编辑器源码文件均有效；`git diff --check` 通过。状态机去除注释和空白后的源码与原版本一致。本轮只改说明与注释，未重跑业务测试；前文的业务测试数量均为对应改造时的历史验证结果。
+
+## 2026-10-23 BOM Release And Derivation Fix
+
+派生按钮现与服务端一致，只有已发布且锁定的研发 BOM 才能作为源。修复同时补通前置的发布路径：已批准 EBOM／MBOM 保持内容锁定，但可分别执行研发／生产发布；提交编排直接使用已保存记录与版本，不尝试重存锁定配方。后端仅放行原状态机已有的锁定记录 `APPROVED → RELEASED` 转换，原有权限、版本和物料／重量完整性校验继续执行。
+
+该修复不新增审批流；“提交评审”沿用原有直接批准目标。派生仍创建 MBOM 草稿，修订已发布 MBOM 时新版本仍直接发布，二者的初始状态规则分别保留。
+
+真实 PostgreSQL 测试同时发现版本快照对聚合函数使用 `FOR UPDATE` 会导致发布／派生回滚，已改为锁定父 BOM 行后分配快照序号。前端 19 项测试与后端 4 组、10 个真实 PostgreSQL 场景通过，覆盖可派生条件、锁定内容发布、拒绝路径及并发快照编号。集成测试使用独立临时 schema，不操作已有业务记录。

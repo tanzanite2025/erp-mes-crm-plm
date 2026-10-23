@@ -101,11 +101,11 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
             {isBOMGradeOption
               ? option.id
                 ? isZh
-                  ? '编辑产品档次选项'
-                  : 'Edit product grade option'
+                  ? '编辑性能版本选项'
+                  : 'Edit performance version option'
                 : isZh
-                  ? '新增产品档次选项'
-                  : 'Add product grade option'
+                  ? '新增性能版本选项'
+                  : 'Add performance version option'
               : option.id
                 ? isZh
                   ? '编辑二级属性分类'
@@ -119,8 +119,8 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
           >
             {isBOMGradeOption
               ? isZh
-                ? '维护 BOM 中可选择的产品档次。具体产品的档次在 BOM 中填写。'
-                : 'Maintain product grade choices for BOMs. Select the product’s grade in its BOM.'
+                ? '维护 BOM 中可选择的性能版本。具体产品的性能版本在 BOM 中选择。'
+                : 'Maintain performance version choices for BOMs. Select the product’s performance version in its BOM.'
               : isZh
                 ? '为所属一级属性分类维护可选项，例如“材质”下的“碳纤维”，供产品模板对应的属性字段选择。'
                 : 'Define an option under a level 1 attribute category, such as Carbon Fiber under Material, for the corresponding product template field.'}
@@ -144,8 +144,8 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
               <Label htmlFor={categoryFieldId} className='text-sm font-medium'>
                 {isBOMGradeOption
                   ? isZh
-                    ? '所属档次分类'
-                    : 'Grade category'
+                    ? '所属性能版本分类'
+                    : 'Performance version category'
                   : isZh
                     ? '所属一级属性分类'
                     : 'Parent Level 1 Attribute Category'}
@@ -261,7 +261,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
                 >
                   {isBOMGradeOption
                     ? isZh
-                      ? '启用后可在 BOM 的产品档次中选择；停用后保留已有记录，后续不再提供选择。'
+                      ? '启用后可在 BOM 的性能版本中选择；停用后保留已有记录，后续不再提供选择。'
                       : 'Active options can be selected in BOMs. Disabling an option preserves existing records and prevents new selections.'
                     : isZh
                       ? '启用后可在产品模板对应的属性字段中选择，停用后隐藏。'

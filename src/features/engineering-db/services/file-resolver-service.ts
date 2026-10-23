@@ -13,18 +13,29 @@ export const FileResolverService = {
   resolveFileUrl: async (url?: string): Promise<string | null> => {
     if (!url) return null
 
-    // 安全检查
-    const isSafeProtocol = /^(https?:|blob:)/i.test(url)
-    if (!isSafeProtocol) {
-      logger.warn('Blocked suspicious URL', { url })
+    const normalized = url.trim()
+    try {
+      if (normalized.includes('\\')) return null
+      if (normalized.startsWith('/uploads/')) {
+        const resolved = new URL(
+          normalized,
+          import.meta.env.VITE_API_BASE_URL || window.location.origin
+        )
+        return resolved.pathname.startsWith('/uploads/') ? resolved.href : null
+      }
+      const resolved = new URL(normalized)
+      if (
+        ['http:', 'https:', 'blob:'].includes(resolved.protocol) &&
+        !resolved.username &&
+        !resolved.password
+      ) {
+        return resolved.href
+      }
+    } catch {
       return null
     }
-
-    if (url.startsWith('file-')) {
-      logger.warn('本地存储已切断，file- 协议附件需重新上传至云端。')
-      return null
-    }
-    return url
+    logger.warn('Blocked unsupported engineering attachment URL')
+    return null
   },
 
   /**

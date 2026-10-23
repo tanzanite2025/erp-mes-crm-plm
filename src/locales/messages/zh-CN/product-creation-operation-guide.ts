@@ -49,6 +49,14 @@ export const productCreationOperationGuide = {
   selectExisting: '选用已有配置',
   manageAttributes: '新增或维护属性分类',
   createBaseModel: '新增分类或基础型号',
+  baseModelSelectionTitle: '选择已有基础型号',
+  baseModelSelectionHint: '点击下方选择框，选用本次产品所属的基础型号。',
+  baseModelSelectionPlaceholder: '点击选择基础型号',
+  baseModelCurrentTemplate: '当前物理规格模板：',
+  baseModelCurrentSelection: '本次使用的基础型号',
+  baseModelNextAction: '确认型号后，点击“{{action}}”进入产品填写。',
+  baseModelCreateTitle: '没有合适的基础型号？',
+  baseModelCreateDescription: '已有型号直接选用；需要新型号时，从这里新增。',
   baseModelMeaningTitle: '通用基础型号与具体产品卡片',
   baseModelMeaning:
     '基础型号（如 R50）是同类产品共用的型号标识，用于归类。同一型号下，可以针对不同客户需求或 BOM 方案，分别建立具体产品；每个具体产品保存后形成一张独立卡片，并分别关联对应的 BOM。',
@@ -61,18 +69,18 @@ export const productCreationOperationGuide = {
   selectAttributes: '选择本次需要的一级属性分类',
   attributeCategory: '属性分类',
   noAttributes: '本次不需要附加属性',
-  selectTemplate: '选择产品模板',
+  selectTemplate: '选择物理规格模板',
   selectBaseModel: '选择三级基础型号',
   baseModelSelectionRule:
     '产品分类按“一级分类 → 二级分类 → 三级基础型号（如 R50）”组织。这里只列出已启用、且对应上一步所选模板的三级基础型号；一级、二级分类用于归类，不会出现在此下拉列表中。',
   baseModelCatalogSummary:
     '已读取：一级分类 {{levelOneCount}} 个，二级分类 {{levelTwoCount}} 个，三级基础型号 {{baseModelCount}} 个；本步可选 {{availableCount}} 个。',
   baseModelCatalogEmpty:
-    '当前读取的产品分类为空。可点击下方“新增分类或基础型号”逐级建立；如已在其他电脑建立，请先重新加载核对。',
+    '当前读取的产品分类为空。可点击“新增分类或基础型号”逐级建立；如已在其他电脑建立，请先重新加载核对。',
   baseModelMissingSecondLevel:
-    '目前只有一级分类，尚无二级分类和三级基础型号。点击下方“新增分类或基础型号”，先选择已有一级分类作为父级，保存二级分类；再新增一次，选择二级父分类，手填三级型号名称、编码并关联上一步的模板。',
+    '目前只有一级分类，尚无二级分类和三级基础型号。点击“新增分类或基础型号”，先选择已有一级分类作为父级，保存二级分类；再新增一次，选择二级父分类，手填三级型号名称、编码并关联上一步的模板。',
   baseModelMissingThirdLevel:
-    '已有一级、二级分类，尚无三级基础型号。点击下方“新增分类或基础型号”，父级选择已有二级分类，手填型号名称、编码并关联上一步的模板，保存后即可选用。',
+    '已有一级、二级分类，尚无三级基础型号。点击“新增分类或基础型号”，父级选择已有二级分类，手填型号名称、编码并关联上一步的模板，保存后即可选用。',
   baseModelInactiveCount:
     '{{count}} 个三级基础型号已停用，因此未列出。请在“产品管理 → 编辑分类”中核对，按实际需要启用。',
   baseModelUnresolvedTemplateCount:
@@ -227,9 +235,9 @@ export const productCreationOperationGuide = {
             '新增或编辑产品时按所用模板填写。属性和可选内容直接在该模板中维护，各模板独立配置，具体产品分别保存自己的选择。',
         },
         bomAttributes: {
-          display: 'BOM 类型、归属、归属客户、产品档次、成品重量',
+          display: 'BOM 类型、归属、归属客户、性能版本、成品重量',
           meaning:
-            '来自该具体产品关联的 BOM；归属客户在客户专供时适用，档次和成品重量也由 BOM 维护。BOM 承载物料组成、版本和升级记录。',
+            '来自该具体产品关联的 BOM；归属客户在客户专供时适用，性能版本和成品重量也由 BOM 维护。BOM 承载物料组成、版本和升级记录。',
           location:
             'BOM 配方 → 找到或建立该具体产品对应的 BOM，核对关联产品并维护相关资料。产品可先保存，BOM 准备和验证确认后再绑定。',
         },
@@ -239,9 +247,10 @@ export const productCreationOperationGuide = {
     },
     topics: {
       template: {
-        title: '产品模板 · 定义填写内容',
-        description: '模板维护一类产品共用的填写规则，建档时直接选用已有模板。',
-        first: '装配已有一级属性分类，设置是否必填，并查看其下的二级可选项。',
+        title: '物理规格模板 · 定义填写内容',
+        description:
+          '模板定义车圈、把立、前叉等产品的规格字段和选项，建档时直接选用已有模板。',
+        first: '在对应模板内维护规格属性及选项，并设置是否必填、启用和排序。',
         second: '同类产品复用已有模板，模板由负责配置的人员统一维护。',
       },
       attributes: {
@@ -263,12 +272,12 @@ export const productCreationOperationGuide = {
     },
     workflowTitle: '产品建立与后续 BOM 绑定',
     workflowSteps: {
-      template: '选用已有产品模板，核对要填写的规格、属性及必填要求。',
+      template: '选用已有物理规格模板，核对要填写的规格、属性及必填要求。',
       baseModel:
         '选用已有三级基础型号（如 R50）。需要新增时，在“编辑分类 → 新增分类”中选择二级父分类，填写型号名称和分类编码，并关联模板。',
       product:
         '在“生成产品”中选定基础型号，填写两位数字的型号编码及规格属性，核对底部“最终型号显示预览”后保存，形成一张具体产品卡片。',
-      bom: '产品保存后，BOM 可独立准备和验证。确认可用时，在 BOM 配方中关联这张卡片对应的具体产品，并维护物料、档次、重量等资料。',
+      bom: '产品保存后，BOM 可独立准备和验证。确认可用时，在 BOM 配方中关联这张卡片对应的具体产品，并维护物料、性能版本、重量等资料。',
     },
     workflowHint:
       '已有分类、基础型号和模板可直接复用。建立同型号的另一种产品时，继续选用该三级型号，填写本次规格并另行保存；各张产品卡片分别维护自己的资料及 BOM 关联。',
@@ -284,17 +293,17 @@ export const productCreationOperationGuide = {
         '得到一级属性维度及其二级可选项。下一步将一级属性分类装配到产品模板。',
     },
     template: {
-      title: '选择产品模板',
+      title: '选择物理规格模板',
       action:
-        '从已维护的产品模板中选择本次使用的模板，核对属性和必填规则后继续。',
-      fields: '本次使用的产品模板，以及模板包含的属性和必填要求。',
+        '从已维护的物理规格模板中选择本次使用的模板，核对属性和必填规则后继续。',
+      fields: '本次使用的物理规格模板，以及模板包含的属性和必填要求。',
       result:
         '确定创建产品时会出现哪些规格和属性。下一步把模板关联到基础型号。',
     },
     baseModel: {
       title: '确认基础型号',
       action:
-        '基础型号来自产品分类的第三级，这里只显示已启用且使用上一步模板的型号。没有合适型号时，点击下方“新增分类或基础型号”手工建立。',
+        '选择本次产品使用的基础型号，再确认进入产品填写；没有合适型号时，可在本步新增。',
       fields:
         '选用已有三级基础型号；新增时，父级选择二级分类，手填分类名称（型号名称）、分类编码（基础型号编码），并关联模板。',
       result:
@@ -314,7 +323,7 @@ export const productCreationOperationGuide = {
       action:
         'BOM 经验证确认可用后，再在本步关联已建立的产品，并核对物料、分类、用量和损耗后保存。产品建立、BOM 准备与验证、BOM 绑定可以分开操作。',
       fields:
-        '关联产品、BOM 版本、归属、档次、物料明细及成品重量/单位；客户归属时还需选择客户。',
+        '关联产品、BOM 版本、归属、性能版本、物料明细及成品重量/单位；客户归属时还需选择客户。',
       result:
         '得到关联该产品的 EBOM 草稿。后续评审、发布和派生生产 BOM 在 BOM 模块中继续处理。',
     },

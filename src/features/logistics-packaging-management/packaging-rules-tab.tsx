@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Package2, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -61,9 +62,9 @@ export function LogisticsPackagingRulesTab() {
 
   const handleDelete = async (id: string) => {
     if (
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         t('logisticsPackagingManagement.packagingRules.deleteConfirm')
-      )
+      ))
     )
       return
     try {

@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { productFormTypographyClassNames } from './product-form-typography.styles'
 
 interface ProductionRestrictionsProps {
   restrictions: string[]
@@ -31,11 +33,21 @@ export function ProductionRestrictions({
 
   return (
     <div className='group space-y-1 rounded-[18px] border border-dashed border-muted bg-muted/5 p-1.5 transition-all hover:bg-muted/10'>
-      <div className='flex items-center justify-between border-b border-dashed border-muted pb-1'>
-        <h4 className='text-[10px] font-black tracking-widest text-rose-700 uppercase dark:text-rose-400'>
+      <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-dashed border-muted pb-1'>
+        <h4
+          className={cn(
+            'text-rose-700 dark:text-rose-400',
+            productFormTypographyClassNames.sectionTitle
+          )}
+        >
           {t('engineering.productMgmt.restrictions.title')}
         </h4>
-        <p className='text-[8px] font-black tracking-tighter text-slate-500 uppercase'>
+        <p
+          className={cn(
+            'text-muted-foreground',
+            productFormTypographyClassNames.helper
+          )}
+        >
           {t('engineering.productMgmt.restrictions.separator')}
         </p>
       </div>
@@ -46,7 +58,10 @@ export function ProductionRestrictions({
               <Badge
                 key={tag}
                 variant='outline'
-                className='h-6 gap-1.5 rounded-full border-none bg-rose-500 px-2 text-[10px] font-black text-white uppercase shadow-md shadow-rose-500/10'
+                className={cn(
+                  'h-6 gap-1.5 rounded-full border-none bg-rose-500 px-2 text-white shadow-md shadow-rose-500/10',
+                  productFormTypographyClassNames.badge
+                )}
               >
                 {tag}
                 <button
@@ -63,7 +78,12 @@ export function ProductionRestrictions({
               </Badge>
             ))
           ) : (
-            <div className='flex items-center gap-2 px-1 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
+            <div
+              className={cn(
+                'flex items-center gap-2 px-1 text-muted-foreground',
+                productFormTypographyClassNames.helper
+              )}
+            >
               <span>{t('engineering.productMgmt.restrictions.null')}</span>
             </div>
           )}
@@ -79,13 +99,19 @@ export function ProductionRestrictions({
               }
             }}
             placeholder={t('engineering.productMgmt.restrictions.placeholder')}
-            className='h-8 flex-1 rounded-xl border-none bg-muted/40 text-[11px] font-black tracking-widest uppercase focus-visible:ring-rose-400'
+            className={cn(
+              'h-8 flex-1 rounded-xl border-none bg-muted/40 focus-visible:ring-rose-400',
+              productFormTypographyClassNames.control
+            )}
           />
           <Button
             type='button'
             size='sm'
             onClick={handleAddTag}
-            className='h-8 shrink-0 rounded-full bg-rose-600 px-3 text-[11px] font-black tracking-widest text-white uppercase shadow-md shadow-rose-600/10 transition-all hover:bg-rose-700 active:scale-95 sm:px-4'
+            className={cn(
+              'h-8 shrink-0 rounded-full bg-rose-600 px-3 text-white shadow-md shadow-rose-600/10 transition-all hover:bg-rose-700 active:scale-95 sm:px-4',
+              productFormTypographyClassNames.button
+            )}
           >
             <span className='hidden sm:inline'>
               {t('engineering.productMgmt.restrictions.addButton')}

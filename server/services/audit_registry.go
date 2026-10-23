@@ -37,6 +37,7 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleMoldLoan, EngineModule: AuditEngineModuleEquipment, Integrated: true, DisplayName: "MoldLoan"},
 
 	{EntityKey: AuditModuleProduct, EngineModule: AuditEngineModuleEngineering, Integrated: true, AllowModuleTimeline: true, DisplayName: "Product"},
+	{EntityKey: AuditModuleProductTemplate, EngineModule: AuditEngineModuleEngineering, Integrated: true, AllowModuleTimeline: true, DisplayName: "ProductTemplate"},
 	{EntityKey: AuditModuleDrilling, EngineModule: AuditEngineModuleEngineering, Integrated: true, AllowModuleTimeline: true, DisplayName: "Drilling"},
 	{EntityKey: AuditModuleEngineeringSpec, EngineModule: AuditEngineModuleEngineering, Integrated: true, AllowModuleTimeline: true, DisplayName: "EngineeringSpec"},
 	{EntityKey: AuditModuleChangeOrder, EngineModule: AuditEngineModuleEngineering, Integrated: false, DisplayName: "ChangeOrder"},

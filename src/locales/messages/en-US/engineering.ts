@@ -1,8 +1,11 @@
+import { bomCreationOperationGuide } from './bom-creation-operation-guide'
 import { productCreationOperationGuide } from './product-creation-operation-guide'
 
 export const engineering = {
+  bomCreationGuide: bomCreationOperationGuide,
   productCreationGuide: productCreationOperationGuide,
   tabs: {
+    bomCreationGuide: 'How to Create a BOM',
     productCreationGuide: 'How to Create a Product',
     products: 'Product Management',
     productAppearance: 'Product Appearance',
@@ -10,7 +13,7 @@ export const engineering = {
     bomRecords: 'BOM Trace',
     sectionConfig: 'Section Config',
     changes: 'ECO / ECN',
-    templates: 'Product Templates',
+    templates: 'Physical Specification Templates',
     types: 'Product Categories',
   },
   productAppearance: {
@@ -1085,16 +1088,16 @@ export const engineering = {
   },
   templateMgmt: {
     header: {
-      title: 'Product Templates',
+      title: 'Physical Specification Templates',
       description:
-        'Maintain reusable product templates and their attribute categories.',
+        'Maintain specification fields and options used to create rim, stem and fork products.',
     },
     status: {
       synced: 'Template Library Synced',
     },
     actions: {
       repair: 'Restore Built-ins',
-      create: 'Create Template',
+      create: 'Create Specification Template',
     },
     empty: {
       title: 'No templates found',
@@ -1111,10 +1114,11 @@ export const engineering = {
       inactive: 'Disabled',
     },
     dialog: {
-      createTitle: 'Create Product Template',
-      editTitle: 'Edit Product Template',
+      createTitle: 'Create Physical Specification Template',
+      editTitle: 'Edit Physical Specification Template',
+      editNamedTitle: 'Edit · {{name}}',
       description:
-        'Enter template details, add level 1 attribute categories and view their level 2 options.',
+        'Define specification fields and options for product creation. Each product records its own specification values using this template.',
     },
     fields: {
       basicInformation: 'Template Details',
@@ -1430,6 +1434,7 @@ export const engineering = {
       saveDraft: 'Save Draft',
       submitReview: 'Submit Review',
       release: 'Release to Production',
+      releaseEngineering: 'Release Engineering BOM',
       locked: 'Current version is locked',
     },
     actions: {
@@ -1468,13 +1473,15 @@ export const engineering = {
       ownerTypeCustomer: 'Customer Specific',
       ownerCustomer: 'Owner Customer',
       ownerCustomerPlaceholder: 'Pick a customer…',
-      versionLevel: 'Product Tier',
-      versionLevelPlaceholder: 'Pick a tier…',
+      versionLevel: 'Performance Version',
+      versionLevelPlaceholder: 'Select a performance version…',
     },
     recipe: {
       title: 'BOM Recipe Details',
       all: 'Overview',
-      summaryHint: 'Tip: click a hierarchy tab to edit BOM lines.',
+      summaryHint: 'Expand a group to edit materials, usage and loss directly.',
+      draftSummary: 'Current recipe summary',
+      addSectionItem: 'Add a line to {{section}}',
     },
     itemTable: {
       primaryMaterial: 'Primary Material',
@@ -1484,8 +1491,8 @@ export const engineering = {
       stdUsage: 'Std Usage',
       memoSource: 'Memo / Source',
       actions: 'Op',
-      initialize: 'Initialize this hierarchy section',
-      initializeHint: 'Click to add the first BOM line',
+      initialize: 'Add the first line in this group',
+      initializeHint: 'Materials and usage are saved with this BOM',
       append: 'Append new BOM line',
       searchMaterialPlaceholder: 'Search material...',
       specLabel: 'Spec',
@@ -1495,8 +1502,8 @@ export const engineering = {
       totalItems: 'BOM Total Items',
       itemsUnit: 'items',
       totalCost: 'Estimated Total Cost',
-      stageCoverage: 'Hierarchy Coverage',
-      sectionDistribution: 'Hierarchy Distribution Overview',
+      stageCoverage: 'Groups Used',
+      sectionDistribution: 'Recipe Groups',
     },
     toasts: {
       loadFailed: 'Failed to sync BOM data',
@@ -1534,7 +1541,15 @@ export const engineering = {
     },
   },
   bomSectionConfig: {
-    title: 'BOM Section Configuration',
+    managementTitle: 'Manage Shared Groups',
+    sharedScopeHint:
+      'The group catalog is shared by all BOMs; materials and usage are saved with the current BOM.',
+    readOnlyHint:
+      'You can view shared groups. Management permission is required to edit them.',
+    listLabel: 'Shared group list',
+    editorLabel: 'Shared group editor',
+    inactiveLabel: 'Inactive',
+    title: 'BOM Recipe Group Configuration',
     description:
       'Maintain BOM section codes, labels, default section rules, and active state as the single source of truth for BOM editing and Excel flows.',
     loading: 'Loading section configuration',
@@ -1569,6 +1584,7 @@ export const engineering = {
       save: 'Save Config',
       cancel: 'Cancel',
       delete: 'Delete',
+      confirmDelete: 'Confirm Delete',
       retry: 'Retry',
     },
     dialog: {

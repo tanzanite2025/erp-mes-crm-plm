@@ -18,6 +18,8 @@ import { TemplateMgmt } from '../../tabs/template-mgmt'
 
 const templateEditorApi = vi.hoisted(() => ({
   save: vi.fn(),
+  delete: vi.fn(),
+  auditRead: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
 }))
@@ -90,9 +92,9 @@ async function openProductTemplateOwnedAttributeEditorForVerification(
   id = '车圈模板'
 ) {
   fireEvent.click(
-    await screen.findByRole('button', { name: `编辑产品模板 · ${id}` })
+    await screen.findByRole('button', { name: `编辑物理规格模板 · ${id}` })
   )
-  return screen.getByRole('dialog', { name: '编辑产品模板' })
+  return screen.getByRole('dialog', { name: `编辑 · ${id}` })
 }
 
 describe('template-owned attribute editing and saving', () => {
@@ -127,7 +129,22 @@ describe('template-owned attribute editing and saving', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const pathname = new URL(String(input), 'http://localhost').pathname
+        const pathname = decodeURIComponent(
+          new URL(String(input), 'http://localhost').pathname
+        )
+        if (pathname.endsWith('/audit/timeline')) {
+          const parameters = new URL(String(input), 'http://localhost')
+            .searchParams
+          templateEditorApi.auditRead(Object.fromEntries(parameters))
+          return Response.json([])
+        }
+        if (init?.method === 'DELETE') {
+          templateEditorApi.delete(pathname)
+          templates = templates.filter(
+            (template) => !pathname.endsWith(`/${template.id}`)
+          )
+          return new Response(null, { status: 204 })
+        }
         if (!pathname.endsWith('/engineering/templates'))
           throw new Error(`Unexpected catalog request: ${pathname}`)
         if (init?.method === 'POST')
@@ -232,6 +249,18 @@ describe('template-owned attribute editing and saving', () => {
     fireEvent.click(
       within(dialog).getByRole('button', { name: '删除制动类型选项 1' })
     )
+    const confirmation = screen.getByRole('alertdialog', {
+      name: '删除规格选项',
+    })
+    fireEvent.change(within(confirmation).getByRole('textbox'), {
+      target: { value: 'DELETE' },
+    })
+    fireEvent.click(
+      within(confirmation).getByRole('button', { name: '确认删除' })
+    )
+    expect(
+      within(dialog).queryByRole('textbox', { name: '制动类型选项 1' })
+    ).not.toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: '取消' }))
     const reopened =
       await openProductTemplateOwnedAttributeEditorForVerification()
@@ -239,6 +268,133 @@ describe('template-owned attribute editing and saving', () => {
       within(reopened).getByRole('textbox', { name: '制动类型选项 1' })
     ).toHaveValue('车圈碟刹')
     expect(templateEditorApi.save).not.toHaveBeenCalled()
+  })
+
+  it('requires DELETE before removing an option, resets confirmation after cancellation and waits for template save', async () => {
+    renderProductTemplateOwnedAttributeEditorForVerification()
+    const dialog =
+      await openProductTemplateOwnedAttributeEditorForVerification()
+    const requestOptionDeletion = () =>
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: '删除制动类型选项 1' })
+      )
+    requestOptionDeletion()
+    let confirmation = screen.getByRole('alertdialog', { name: '删除规格选项' })
+    const confirmButton = within(confirmation).getByRole('button', {
+      name: '确认删除',
+    })
+    expect(confirmButton).toBeDisabled()
+    fireEvent.change(within(confirmation).getByRole('textbox'), {
+      target: { value: 'delete' },
+    })
+    expect(confirmButton).toBeDisabled()
+    fireEvent.change(within(confirmation).getByRole('textbox'), {
+      target: { value: 'DELETE' },
+    })
+    fireEvent.click(within(confirmation).getByRole('button', { name: '取消' }))
+    expect(
+      within(dialog).getByRole('textbox', { name: '制动类型选项 1' })
+    ).toHaveValue('车圈碟刹')
+    requestOptionDeletion()
+    confirmation = screen.getByRole('alertdialog', { name: '删除规格选项' })
+    expect(within(confirmation).getByRole('textbox')).toHaveValue('')
+    fireEvent.change(within(confirmation).getByRole('textbox'), {
+      target: { value: 'DELETE' },
+    })
+    fireEvent.click(
+      within(confirmation).getByRole('button', { name: '确认删除' })
+    )
+    expect(
+      within(dialog).queryByRole('textbox', { name: '制动类型选项 1' })
+    ).not.toBeInTheDocument()
+    expect(templateEditorApi.save).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: '保存模板' }))
+    await waitFor(() => expect(templateEditorApi.save).toHaveBeenCalledTimes(1))
+    expect(
+      templateEditorApi.save.mock.calls[0][0].attributeBindings[0].options
+    ).toEqual([])
+  })
+
+  it('requires DELETE before removing an attribute and all its options from the saved template', async () => {
+    renderProductTemplateOwnedAttributeEditorForVerification()
+    const dialog =
+      await openProductTemplateOwnedAttributeEditorForVerification()
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: '移除制动类型' })
+    )
+    const confirmation = screen.getByRole('alertdialog', {
+      name: '删除规格属性',
+    })
+    expect(
+      within(confirmation).getByText('该属性下的全部选项会同时移除。')
+    ).toBeInTheDocument()
+    expect(
+      within(confirmation).getByRole('button', { name: '确认删除' })
+    ).toBeDisabled()
+    fireEvent.change(within(confirmation).getByRole('textbox'), {
+      target: { value: 'DELETE' },
+    })
+    fireEvent.click(
+      within(confirmation).getByRole('button', { name: '确认删除' })
+    )
+    expect(
+      within(dialog).queryByRole('article', { name: '制动类型' })
+    ).not.toBeInTheDocument()
+    expect(templateEditorApi.save).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: '保存模板' }))
+    await waitFor(() => expect(templateEditorApi.save).toHaveBeenCalledTimes(1))
+    expect(templateEditorApi.save.mock.calls[0][0].attributeBindings).toEqual(
+      []
+    )
+  })
+
+  it('requires DELETE before deleting a template card', async () => {
+    renderProductTemplateOwnedAttributeEditorForVerification()
+    fireEvent.click(
+      await screen.findByRole('button', { name: '删除物理规格模板 · 车圈模板' })
+    )
+    const confirmation = screen.getByRole('alertdialog', {
+      name: '删除物理规格模板',
+    })
+    expect(
+      within(confirmation).getByRole('button', { name: '确认删除' })
+    ).toBeDisabled()
+    expect(templateEditorApi.delete).not.toHaveBeenCalled()
+    fireEvent.change(within(confirmation).getByRole('textbox'), {
+      target: { value: 'DELETE' },
+    })
+    fireEvent.click(
+      within(confirmation).getByRole('button', { name: '确认删除' })
+    )
+    await waitFor(() =>
+      expect(templateEditorApi.delete).toHaveBeenCalledTimes(1)
+    )
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: '编辑物理规格模板 · 车圈模板' })
+      ).not.toBeInTheDocument()
+    )
+    expect(
+      screen.getByRole('button', { name: '编辑物理规格模板 · 前叉模板' })
+    ).toBeInTheDocument()
+  })
+
+  it('opens the global audit timeline and scopes each card timeline to its template', async () => {
+    renderProductTemplateOwnedAttributeEditorForVerification()
+    fireEvent.click(await screen.findByRole('button', { name: '变更记录' }))
+    await waitFor(() =>
+      expect(templateEditorApi.auditRead).toHaveBeenCalledWith({
+        module: 'product-template',
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    fireEvent.click(screen.getByRole('button', { name: '变更记录 · 车圈模板' }))
+    await waitFor(() =>
+      expect(templateEditorApi.auditRead).toHaveBeenCalledWith({
+        module: 'product-template',
+        target_id: '车圈模板',
+      })
+    )
   })
 
   it('retains all entered values after a rejected save and allows correction and retry', async () => {

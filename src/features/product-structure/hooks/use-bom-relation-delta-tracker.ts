@@ -8,7 +8,7 @@
  *
  * @module use-bom-relation-delta-tracker
  */
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ProxyTracker } from '@/lib/delta/proxy-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type BOMRelationSidecar } from '../utils/bom-relation-sidecar'
@@ -99,7 +99,7 @@ export function useBOMRelationDeltaTracker(
     setIsDirty(false)
   }, [initialSidecar])
 
-  const resetBaseline = (newSidecar: BOMRelationSidecar | null) => {
+  const resetBaseline = useCallback((newSidecar: BOMRelationSidecar | null) => {
     if (!newSidecar) {
       trackerRef.current = null
       setTrackedSidecar(null)
@@ -119,18 +119,18 @@ export function useBOMRelationDeltaTracker(
     }
 
     setIsDirty(false)
-  }
+  }, [])
 
-  const updateSidecar = (newSidecar: BOMRelationSidecar | null) => {
+  const updateSidecar = useCallback((newSidecar: BOMRelationSidecar | null) => {
     if (!newSidecar || !trackerRef.current) {
       return
     }
 
     // Replace the tracked sidecar content with new data
     trackerRef.current.replace(newSidecar)
-  }
+  }, [])
 
-  const commitDelta = (): DeltaSet | null => {
+  const commitDelta = useCallback((): DeltaSet | null => {
     if (!trackerRef.current) {
       return null
     }
@@ -143,7 +143,7 @@ export function useBOMRelationDeltaTracker(
 
     setIsDirty(false)
     return delta
-  }
+  }, [])
 
   return {
     trackedSidecar,

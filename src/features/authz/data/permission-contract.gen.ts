@@ -265,6 +265,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "tab_dashboard_overview",
   "tab_dashboard_reports",
   "tab_engineering_bom",
+  "tab_engineering_bom_creation_guide",
   "tab_engineering_db_drilling",
   "tab_engineering_db_engineering_master",
   "tab_engineering_db_engineering_master_weaving_mode",

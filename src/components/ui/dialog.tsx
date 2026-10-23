@@ -91,6 +91,7 @@ function DialogContent({
           className
         )}
         {...props}
+        data-mobile-floating-surface='dialog'
       >
         {children}
         {showCloseButton && (

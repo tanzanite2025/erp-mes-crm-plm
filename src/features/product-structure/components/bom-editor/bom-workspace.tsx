@@ -5,7 +5,7 @@ import { type BOM } from '../../data/schema'
 import { type BOMWorkspaceParentChildrenProtocolDraft } from '../../hooks/bom-workspace-source-model'
 import { type BOMPermissionGuard } from '../../hooks/use-bom-permission-guard'
 import { useBOMWorkspace } from '../../hooks/use-bom-workspace'
-import { BOMFlatWorkspaceView } from './bom-flat-workspace-view'
+import { BOMRecipeSummaryAndSectionAccordionEditor } from './bom-recipe-summary-and-section-accordion-editor'
 
 interface BOMWorkspaceProps {
   form: UseFormReturn<BOM>
@@ -41,18 +41,14 @@ export function BOMWorkspace({
   const guardedRemove = permissionGuard?.guardedRemove(remove) ?? remove
 
   return (
-    <BOMFlatWorkspaceView
+    <BOMRecipeSummaryAndSectionAccordionEditor
       form={form}
       materials={materials}
-      remove={guardedRemove}
+      onRemove={guardedRemove}
       groups={workspace.groups}
-      groupNodes={workspace.groupNodes}
-      activeGroupKey={workspace.activeGroupKey}
-      onActiveGroupChange={workspace.setActiveGroupKey}
-      viewMode={workspace.viewMode}
-      visibleTreeNodes={workspace.visibleTreeNodes}
+      nodes={workspace.visibleTreeNodes}
       onBranchToggle={workspace.toggleBranchExpanded}
-      onAddItem={() => workspace.appendItem()}
+      onAddItem={workspace.appendItem}
       canEdit={workspace.canEdit}
     />
   )

@@ -107,8 +107,12 @@ func productPatchAuditDiff(before map[string]any, values map[string]json.RawMess
 
 	items := make([]audit.DiffItem, 0, len(keys))
 	for _, key := range keys {
+		nextValueRaw, err := extractDeltaNewValue(values[key])
+		if err != nil {
+			continue
+		}
 		var nextValue any
-		if err := json.Unmarshal(values[key], &nextValue); err != nil {
+		if err := json.Unmarshal(nextValueRaw, &nextValue); err != nil {
 			continue
 		}
 		items = append(items, audit.DiffItem{

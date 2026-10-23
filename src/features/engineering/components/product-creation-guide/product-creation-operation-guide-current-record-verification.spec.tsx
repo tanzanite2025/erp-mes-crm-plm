@@ -352,7 +352,7 @@ describe('product creation guide verifies current records', () => {
     fireEvent.click(screen.getByRole('button', { name: /^确认$/ }))
     await act(async () => completeBomRead([externallyLinkedBom]))
     expect(
-      screen.getByRole('dialog', { name: '选择产品模板' })
+      screen.getByRole('dialog', { name: '选择物理规格模板' })
     ).toBeInTheDocument()
     expect(screen.queryByText(/BOM 已保存/)).not.toBeInTheDocument()
     expect(

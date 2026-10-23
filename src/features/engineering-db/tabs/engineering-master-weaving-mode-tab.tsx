@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { WeavingModeActionDialog } from '../components/weaving-mode-action-dialog'
 import { WeavingModeListCard } from '../components/weaving-mode-list-card'
@@ -42,11 +43,11 @@ export function EngineeringMasterWeavingModeTab() {
 
   const handleDelete = async (item: WeavingMode) => {
     if (
-      !window.confirm(
+      !(await requestApplicationConfirmation(
         t('engineering.masterData.weavingMode.toasts.deleteConfirm', {
           name: item.label,
         })
-      )
+      ))
     ) {
       return
     }

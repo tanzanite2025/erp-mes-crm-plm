@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { type QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '@/features/basic-settings/query-keys'
@@ -39,8 +40,12 @@ export function useMaterialMgmtActions({
     setIsDialogOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm(t('materialArchive.actions.deleteConfirm'))) {
+  const handleDelete = async (id: string) => {
+    if (
+      await requestApplicationConfirmation(
+        t('materialArchive.actions.deleteConfirm')
+      )
+    ) {
       onDelete(id)
     }
   }

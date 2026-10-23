@@ -34,6 +34,7 @@ export const common = {
     goToPage: '跳转到第 {{page}} 页',
   },
   actions: {
+    confirm: '确认',
     signOut: '安全退出',
     reset: '重置',
     retry: '重试',
@@ -49,6 +50,11 @@ export const common = {
     preview: '预览',
     refresh: '刷新',
     search: '搜索',
+  },
+  dialogs: {
+    confirmTitle: '确认操作',
+    promptTitle: '填写信息',
+    alertTitle: '提示',
   },
   audit: {
     trigger: '变更记录',

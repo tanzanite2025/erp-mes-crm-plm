@@ -13,9 +13,15 @@ interface ImageUploadProps {
   value?: string
   onChange: (value: string) => void
   label: string
+  onUploadingChange?: (uploading: boolean) => void
 }
 
-export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
+export function ImageUpload({
+  value,
+  onChange,
+  label,
+  onUploadingChange,
+}: ImageUploadProps) {
   const { t } = useLanguage()
   const isMobile = useIsMobile()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -24,9 +30,11 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
 
     try {
       setIsUploading(true)
+      onUploadingChange?.(true)
       const res = await AssetService.uploadFile(file)
       onChange(res.url)
       toast.success(t('equipmentTooling.imageUpload.toast.uploaded'))
@@ -38,6 +46,7 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
       toast.error(t('equipmentTooling.imageUpload.toast.failed', { message }))
     } finally {
       setIsUploading(false)
+      onUploadingChange?.(false)
     }
   }
 
@@ -68,6 +77,7 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
             )}
           >
             <Button
+              type='button'
               variant='secondary'
               size='sm'
               className='h-10 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
@@ -76,6 +86,8 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
               {t('equipmentTooling.imageUpload.actions.replace')}
             </Button>
             <Button
+              type='button'
+              aria-label={t('common.actions.delete')}
               variant='destructive'
               size='icon'
               className='size-10 rounded-full'

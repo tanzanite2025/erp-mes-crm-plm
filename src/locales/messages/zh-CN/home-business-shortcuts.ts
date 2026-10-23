@@ -10,6 +10,8 @@ export const home = {
   emptyDescription: '开通业务权限后，相应的快捷入口会显示在这里。',
   productCreationGuideShortcutDescription:
     '打开分步向导，复用模板和基础型号，逐步确认并保存产品。',
+  bomCreationGuideShortcutDescription:
+    '按五个步骤了解 BOM、性能版本与重量、分组配方及生命周期。',
   categories: {
     product: '建立产品档案，维护产品模板、属性及 BOM 结构。',
     dashboard: '查看全厂运行情况、生产日历、交付进度和系统动态。',

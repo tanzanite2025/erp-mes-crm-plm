@@ -25,8 +25,10 @@ export function SpokeLengthPreviewDialog({
       <DialogContent className='overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl sm:max-w-3xl'>
         <DialogHeader className='border-b border-dashed border-muted-foreground/10 bg-muted/5 p-6'>
           <DialogTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
-            <ImageIcon className='size-4 text-indigo-600' />
-            {previewFile?.name} / {t('engineering.spokeLength.table.preview')}
+            <ImageIcon className='size-4 shrink-0 text-indigo-600' />
+            <span className='min-w-0 break-all'>
+              {previewFile?.name} / {t('engineering.spokeLength.table.preview')}
+            </span>
           </DialogTitle>
         </DialogHeader>
         <div className='flex min-h-[300px] items-center justify-center bg-muted/10 p-4'>

@@ -46,7 +46,7 @@ describe('HOME business shortcuts and independent navigation domains', () => {
     ])
   })
 
-  it('prioritizes the independent product guide shortcut, product records and BOM', () => {
+  it('prioritizes both handbook cards, product records and BOM in the four visible shortcuts', () => {
     const user = {
       permissions: [getMenuPermissionForPath('/engineering/products')],
     }
@@ -57,9 +57,10 @@ describe('HOME business shortcuts and independent navigation domains', () => {
     )
     expect(categories[0].id).toBe('product-management')
     expect(
-      categories[0].shortcuts.slice(0, 3).map((shortcut) => shortcut.url)
+      categories[0].shortcuts.slice(0, 4).map((shortcut) => shortcut.url)
     ).toEqual([
       '/engineering/product-creation-guide',
+      '/engineering/bom-creation-guide',
       '/engineering/products',
       '/product-structure/bom',
     ])
@@ -69,6 +70,17 @@ describe('HOME business shortcuts and independent navigation domains', () => {
         'home.productCreationGuideShortcutDescription'
       ),
     })
+    expect(categories[0].shortcuts[1]).toMatchObject({
+      title: '如何建立 BOM',
+      description: translateHomeShortcutLabel(
+        'home.bomCreationGuideShortcutDescription'
+      ),
+    })
+    expect(
+      categories[0].shortcuts.filter(
+        (shortcut) => shortcut.url === '/engineering/bom-creation-guide'
+      )
+    ).toHaveLength(1)
     expect(
       categories.some((category) => category.id === 'resource-management')
     ).toBe(false)
@@ -77,6 +89,18 @@ describe('HOME business shortcuts and independent navigation domains', () => {
         .flatMap((category) => category.shortcuts)
         .some((shortcut) => shortcut.url === '/home')
     ).toBe(false)
+  })
+
+  it('exposes only the BOM handbook to an account with its dedicated page permission', () => {
+    const categories = buildHomeBusinessShortcutCategories(
+      { permissions: ['tab_engineering_bom_creation_guide'] },
+      sidebarGroups,
+      translateHomeShortcutLabel
+    )
+    expect(categories).toHaveLength(1)
+    expect(categories[0].shortcuts.map((shortcut) => shortcut.url)).toEqual([
+      '/engineering/bom-creation-guide',
+    ])
   })
 
   it('deduplicates shared destinations and removes domains that the account cannot access', () => {

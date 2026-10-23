@@ -112,6 +112,7 @@ export function useBOMForm({
     sections,
     open,
     isEdit,
+    isReferenceDataReady: optionsResource.status === 'ready',
   })
 
   return {

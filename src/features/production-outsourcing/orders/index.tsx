@@ -10,6 +10,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -128,12 +129,12 @@ export function OutsourceOrderManagement() {
     createMutation.mutate(values, { onSuccess: () => setDialogOpen(false) })
   }
 
-  const handleDelete = (order: OutsourceOrder) => {
+  const handleDelete = async (order: OutsourceOrder) => {
     if (!canManage) {
       return
     }
     if (
-      window.confirm(
+      await requestApplicationConfirmation(
         t('productionOutsourcing.orders.deleteConfirm', {
           orderNo: order.orderNo,
         })
@@ -150,12 +151,12 @@ export function OutsourceOrderManagement() {
     releaseMutation.mutate(order)
   }
 
-  const handleCancel = (order: OutsourceOrder) => {
+  const handleCancel = async (order: OutsourceOrder) => {
     if (!canManage) {
       return
     }
     if (
-      window.confirm(
+      await requestApplicationConfirmation(
         t('productionOutsourcing.orders.cancelConfirm', {
           orderNo: order.orderNo,
         })

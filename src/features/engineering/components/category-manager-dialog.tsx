@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { flexRender, type ColumnDef } from '@tanstack/react-table'
 import { CornerDownRight, Edit, Plus, Settings2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -170,7 +171,7 @@ export function CategoryManagerDialog({
             size='icon'
             className='size-7 rounded-xl text-destructive/40 transition-all hover:bg-destructive/10 hover:text-destructive sm:size-8'
             onClick={async () => {
-              const confirmed = window.confirm(
+              const confirmed = await requestApplicationConfirmation(
                 t('engineering.categoryArchive.confirms.delete')
               )
               if (!confirmed) return

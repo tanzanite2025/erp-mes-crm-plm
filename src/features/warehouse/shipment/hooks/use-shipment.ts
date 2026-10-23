@@ -412,7 +412,11 @@ export function useShipment(feedback?: ShipmentUiFeedback) {
         return
       }
 
-      if (!ui.confirm(t('warehouse.shipment.toast.commitConfirm', { name }))) {
+      if (
+        !(await ui.confirm(
+          t('warehouse.shipment.toast.commitConfirm', { name })
+        ))
+      ) {
         return
       }
 
@@ -449,7 +453,7 @@ export function useShipment(feedback?: ShipmentUiFeedback) {
             })
           : t('warehouse.shipment.toast.voidConfirmDraft')
 
-      if (!approvalId && !ui.confirm(dialogMsg)) return
+      if (!approvalId && !(await ui.confirm(dialogMsg))) return
 
       try {
         await InventoryMaintenanceService.deleteShipmentRecord(id, approvalId)

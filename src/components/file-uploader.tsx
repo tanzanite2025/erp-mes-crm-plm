@@ -84,7 +84,9 @@ export function FileUploader({
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled) return
-    const file = e.target.files?.[0]
+    const file = e.currentTarget.files?.[0]
+    // Reset the native selection so the same file can be retried after failure.
+    e.currentTarget.value = ''
     if (file) handleFile(file)
   }
 

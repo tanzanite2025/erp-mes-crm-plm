@@ -20,7 +20,8 @@ import { buildBOMRelationSidecar } from '../utils/bom-relation-sidecar'
 import { BOMDialogFooter } from './bom-dialog-footer'
 import { BOMDialogResourceBoundary } from './bom-dialog-resource-boundary'
 import { BOMDialogShell } from './bom-dialog-shell'
-import { BOMFormHeader } from './bom-editor/bom-form-header'
+import { BOMEditorProductInformationAndRecipeLayout } from './bom-editor/bom-editor-product-information-and-recipe-layout'
+import { BOMProductConfigurationInformationPanel } from './bom-editor/bom-product-configuration-information-panel'
 import { BOMWorkspace } from './bom-editor/bom-workspace'
 import { BOMProtocolRecoveryDialog } from './bom-protocol-recovery-dialog'
 import { BOMReadOnlyBanner } from './bom-readonly-banner'
@@ -92,6 +93,7 @@ export function BOMActionDialog({
 
   // Sidecar delta tracker
   const deltaTracker = useBOMRelationDeltaTracker(currentRow?.relationSidecar)
+  const { updateSidecar } = deltaTracker
 
   // Optimistic lock
   const optimisticLock = useBOMOptimisticLock(currentRow)
@@ -126,20 +128,12 @@ export function BOMActionDialog({
   // 应用 recovery 后的 protocol draft
   const effectiveProtocolDraft = recoveredProtocol || protocolDraft
 
-  // 重置 baseline / 同步 sidecar 副作用
-  useEffect(() => {
-    if (isEdit && currentRow?.relationSidecar) {
-      deltaTracker.resetBaseline(currentRow.relationSidecar)
-    }
-  }, [isEdit, currentRow?.relationSidecar, deltaTracker])
-
+  // The tracker initializes its baseline from currentRow; only synchronize draft changes here.
   useEffect(() => {
     if (effectiveProtocolDraft) {
-      deltaTracker.updateSidecar(
-        buildBOMRelationSidecar(effectiveProtocolDraft)
-      )
+      updateSidecar(buildBOMRelationSidecar(effectiveProtocolDraft))
     }
-  }, [effectiveProtocolDraft, deltaTracker])
+  }, [effectiveProtocolDraft, updateSidecar])
 
   // 提交编排（submit + promote）
   const { submit: handleFormSubmit, promote: handlePromote } =
@@ -187,34 +181,36 @@ export function BOMActionDialog({
               detailResource={detailSourceResource}
             >
               <div className='flex min-h-0 flex-1 flex-col'>
-                <div className='custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-0 sm:px-4'>
-                  <div className='flex flex-col gap-2 pb-3 sm:pb-4 lg:min-h-0 lg:flex-1'>
+                {isLocked && (
+                  <div className='shrink-0 px-3 pb-2 sm:px-4'>
                     <BOMReadOnlyBanner
                       isLocked={isLocked}
                       version={currentRow?.version}
                     />
-
-                    <BOMFormHeader
+                  </div>
+                )}
+                <BOMEditorProductInformationAndRecipeLayout
+                  productInformation={
+                    <BOMProductConfigurationInformationPanel
                       form={typedForm}
                       products={products}
                       productDisplayLabelMap={productDisplayLabelMap}
                       isEdit={isEdit}
                     />
-
-                    <div className='min-h-80 lg:min-h-0 lg:flex-1'>
-                      <BOMWorkspace
-                        form={typedForm}
-                        fields={fields}
-                        materials={materials}
-                        sections={sections}
-                        append={append}
-                        remove={remove}
-                        protocolDraft={effectiveProtocolDraft}
-                        permissionGuard={permissionGuard}
-                      />
-                    </div>
-                  </div>
-                </div>
+                  }
+                  recipeDetails={
+                    <BOMWorkspace
+                      form={typedForm}
+                      fields={fields}
+                      materials={materials}
+                      sections={sections}
+                      append={append}
+                      remove={remove}
+                      protocolDraft={effectiveProtocolDraft}
+                      permissionGuard={permissionGuard}
+                    />
+                  }
+                />
 
                 <div
                   className={cn(
@@ -223,7 +219,6 @@ export function BOMActionDialog({
                   )}
                 >
                   <BOMDialogFooter
-                    form={typedForm}
                     currentRow={currentRow}
                     onPromote={handlePromote}
                     isSubmitDisabled={isLocked}

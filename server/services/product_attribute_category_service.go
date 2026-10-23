@@ -122,7 +122,7 @@ func defaultProductAttributeCategories() []models.ProductAttributeCategory {
 		{Key: "techSeries", NameZh: "工艺系列", NameEn: "Technical Series", Description: "产品工艺系列分类", SortOrder: 10, Active: true},
 		{Key: "tireType", NameZh: "轮圈类型", NameEn: "Rim Type", Description: "产品轮圈类型分类", SortOrder: 20, Active: true},
 		{Key: "brakeType", NameZh: "制动类型", NameEn: "Brake Type", Description: "产品制动类型分类", SortOrder: 30, Active: true},
-		{Key: "versionLevel", NameZh: "版本等级", NameEn: "Version Level", Description: "产品版本等级分类", SortOrder: 40, Active: true},
+		{Key: "versionLevel", NameZh: "性能版本", NameEn: "Performance Version", Description: "BOM 性能版本分类", SortOrder: 40, Active: true},
 	}
 }
 

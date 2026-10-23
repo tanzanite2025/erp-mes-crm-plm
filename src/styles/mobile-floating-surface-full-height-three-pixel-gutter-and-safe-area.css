@@ -1,0 +1,139 @@
+/* Keep this boundary aligned with the 768px mobile layout, including phones
+   rotated into the 768–1023px range. Desktop surface sizes remain component owned. */
+@layer components {
+  @media (max-width: 767px), (max-width: 1023px) and (pointer: coarse) {
+    :root {
+      --mobile-floating-surface-viewport-height: 100vh;
+      --mobile-floating-surface-gutter: 3px;
+      --mobile-floating-surface-safe-top: env(safe-area-inset-top, 0px);
+      --mobile-floating-surface-safe-right: env(safe-area-inset-right, 0px);
+      --mobile-floating-surface-safe-bottom: env(safe-area-inset-bottom, 0px);
+      --mobile-floating-surface-safe-left: env(safe-area-inset-left, 0px);
+      --mobile-floating-surface-top: calc(
+        var(--mobile-floating-surface-gutter) +
+          var(--mobile-floating-surface-safe-top)
+      );
+      --mobile-floating-surface-left: calc(
+        var(--mobile-floating-surface-gutter) +
+          var(--mobile-floating-surface-safe-left)
+      );
+      --mobile-floating-surface-width: calc(
+        100vw - var(--mobile-floating-surface-gutter) * 2 -
+          var(--mobile-floating-surface-safe-left) -
+          var(--mobile-floating-surface-safe-right)
+      );
+      --mobile-floating-surface-height: max(
+        0px,
+        calc(
+          var(--mobile-floating-surface-viewport-height) -
+            var(--mobile-floating-surface-gutter) * 2 -
+            var(--mobile-floating-surface-safe-top) -
+            var(--mobile-floating-surface-safe-bottom)
+        )
+      );
+    }
+
+    /* svh stays inside the visible area with the browser toolbar expanded,
+       avoiding the oversized vh layout and toolbar animation jumps on Pixel. */
+    @supports (height: 100svh) {
+      :root {
+        --mobile-floating-surface-viewport-height: 100svh;
+      }
+    }
+
+    /* Android's resizes-content keyboard mode can make dvh smaller than svh. */
+    @supports (height: 100svh) and (height: 100dvh) {
+      :root {
+        --mobile-floating-surface-viewport-height: min(100svh, 100dvh);
+      }
+    }
+
+    html:has([data-mobile-floating-surface]) {
+      scrollbar-gutter: auto;
+    }
+
+    /* Geometry is a shared contract. Components-layer !important declarations
+       also beat legacy Tailwind utilities marked !important in business dialogs.
+       Keep padding and display owned by each surface's existing content layout. */
+    [data-mobile-floating-surface] {
+      position: fixed !important;
+      inset: var(--mobile-floating-surface-top) auto auto
+        var(--mobile-floating-surface-left) !important;
+      box-sizing: border-box !important;
+      width: var(--mobile-floating-surface-width) !important;
+      min-width: 0 !important;
+      max-width: var(--mobile-floating-surface-width) !important;
+      height: var(--mobile-floating-surface-height) !important;
+      min-height: 0 !important;
+      max-height: var(--mobile-floating-surface-height) !important;
+      margin: 0 !important;
+      translate: none !important;
+      transform: none !important;
+      /* Even scale: 1 creates a containing block for nested fixed dialogs. */
+      scale: none !important;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+    }
+
+    [data-mobile-floating-surface] > [data-slot='dialog-header'],
+    [data-mobile-floating-surface] > [data-slot='dialog-footer'],
+    [data-mobile-floating-surface] > [data-slot='alert-dialog-header'],
+    [data-mobile-floating-surface] > [data-slot='alert-dialog-footer'],
+    [data-mobile-floating-surface] > [data-slot='sheet-header'],
+    [data-mobile-floating-surface] > [data-slot='sheet-footer'] {
+      flex-shrink: 0;
+    }
+
+    /* Opt in where a business dialog has its own header/body/footer layout.
+       The body keeps a usable minimum; short landscape/keyboard viewports can
+       then scroll the outer surface instead of collapsing the body to zero. */
+    [data-mobile-floating-surface-layout='column'] {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    [data-mobile-floating-surface]
+      > [data-mobile-floating-surface-layout='column'] {
+      height: 100%;
+      min-height: 0;
+      max-height: 100% !important;
+      overflow: visible !important;
+    }
+
+    [data-mobile-floating-surface-scroll-body] {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 8rem !important;
+      max-height: none !important;
+      overflow-y: auto !important;
+    }
+
+    [data-mobile-floating-surface-layout='column']
+      > :not([data-mobile-floating-surface-scroll-body]) {
+      flex-shrink: 0;
+    }
+
+    /* The inline knowledge drawer is already inside the search dialog's safe
+       rectangle. Fill that parent without subtracting the system insets twice. */
+    [data-mobile-floating-surface-within-parent] {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      margin: 0 !important;
+    }
+
+    [data-mobile-floating-surface='knowledge-detail']
+      > [data-slot='command-menu-knowledge-detail-content'],
+    [data-mobile-floating-surface-within-parent]
+      > [data-slot='command-menu-knowledge-detail-content'] {
+      height: 100%;
+      max-height: 100%;
+    }
+  }
+}

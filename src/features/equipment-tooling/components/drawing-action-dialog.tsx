@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { AssetService as GlobalAssetService } from '@/services/asset-service'
 import { FilePlus, Save, FileText, Upload } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -112,7 +113,7 @@ export function DrawingActionDialog({
     try {
       // 安全校验：资产解绑完整性检查
       if (isEdit && initialValues.moldSn && !values.moldSn) {
-        const confirmed = window.confirm(
+        const confirmed = await requestApplicationConfirmation(
           t('equipmentTooling.drawings.dialog.warnings.unbindConfirm')
         )
         if (!confirmed) return

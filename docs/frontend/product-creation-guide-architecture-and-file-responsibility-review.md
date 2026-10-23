@@ -1,8 +1,10 @@
 # 产品建档向导架构与文件职责梳理
 
-核查日期：2026-10-22。
+核查日期：2026-10-22；技术规范与模具主库架构回溯更新于 2026-10-23（第 12、13 节）。
 
 范围：`/engineering/product-creation-guide` 说明页、产品管理与手册之间的入口、HOME 共用建档入口、四步向导、第二步分类／基础型号弹窗，以及它们直接使用的表单、查询和保存模块。
+
+2026-10-23 补充：“如何建立 BOM”已作为同级独立手册，由 `product-structure` 承接五章说明，详见 [BOM 说明指南的内容、导航与职责边界](bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md)。它使用固定标题与章节 Tabs、正文独立滚动，不接入业务弹窗或向导进度。本文的产品说明页仍使用章节锚点并提供手动建档入口；产品向导第四步继续复用 [BOM 编辑弹窗](bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md)。
 
 本文记录当前实现、已完成的四轮整理及后续建议。第一轮已分离四个步骤、共用弹窗和提交锁；第二轮已分离分类弹窗的表单 Hook 和两个字段区；第三轮已分离向导会话 Hook 与完成面板；第四轮已统一步骤顺序、页面与阶段定义，并使导航列数适应步骤数量，操作规则保持原样。型号选择推导和目录查询职责的后续建议尚未实施。优先级表示后续增加交互前的整理顺序，不表示已确认的数据丢失或保存故障。
 
@@ -52,24 +54,24 @@ flowchart TD
 
 行数为本次核查时的快照，只辅助定位；是否拆分主要取决于是否承载多个独立变化的职责。
 
-| 文件 | 当前职责 | 判断 |
-| --- | --- | --- |
-| [product-creation-operation-guide-page.tsx](../../src/features/engineering/pages/product-creation-operation-guide-page.tsx)（464 行） | 手册内容、章节导航、示例、维护入口权限、打开向导和查看已有产品；复用共享步骤顺序 | 内容较长，但基本为展示；暂不优先拆分 |
-| [product-management-creation-guide-entry.tsx](../../src/features/engineering/components/product-creation-guide/product-management-creation-guide-entry.tsx) | 产品管理搜索区下方的建档指引、手册入口权限和打开共用向导 | 只负责入口展示，不承接产品搜索、保存或向导会话 |
-| [product-creation-operation-guide-launcher.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-operation-guide-launcher.tsx) | 打开／关闭向导与懒加载；HOME、手册和产品管理共用 | 职责清晰，保留 |
-| [product-creation-operation-guide-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-operation-guide-dialog.tsx)（拆分前 385 行，现 85 行） | 账号就绪检查、按账号重建会话、组合导航与当前步骤／完成面板 | 第三轮已完成拆分，具体模块见第 5 节 |
-| [product-creation-guide-business-operation-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-business-operation-dialog.tsx)（拆分前 901 行，现 24 行） | 按当前步骤分发至独立步骤组件，使用完整注册表检查遗漏 | 第一轮已完成拆分，第四轮补齐注册表类型检查，具体模块见第 3、6.1 节 |
-| [product-type-action-dialog.tsx](../../src/features/engineering/components/product-type-action-dialog.tsx)（拆分前 767 行，现 141 行） | 弹窗容器、组合表单 Hook 与字段区、显示提交状态和保存按钮 | 第二轮已完成拆分，具体模块见第 4 节 |
-| [product-action-dialog.tsx](../../src/features/engineering/components/product-action-dialog.tsx)（500 行） | 产品表单布局、规格及预览组合、图片选择、错误定位、删除入口 | 已使用独立表单 Hook 和子组件；后续按交互区域拆分即可 |
-| [use-product-form.ts](../../src/features/engineering/hooks/use-product-form.ts) | 组合初始化、模板解析、规格预览与提交 Hook | 可作为分类表单拆分的现有参考 |
-| [bom-action-dialog.tsx](../../src/features/product-structure/components/bom-action-dialog.tsx)（262 行） | 组合 BOM 表单、权限、并发冲突、协议恢复、提交和工作区 | 保持产品结构域职责，由向导复用 |
-| [product-creation-operation-guide-step-definitions.ts](../../src/features/engineering/data/product-creation-operation-guide-step-definitions.ts)（24 行） | 共享步骤顺序、步骤 key 类型、页面 TAB 与阶段元信息 | 第四轮新增的轻量定义模块，不依赖进度、组件或权限计算 |
-| [product-creation-operation-guide-progress.ts](../../src/features/engineering/data/product-creation-operation-guide-progress.ts) | 进度结构校验、前置确认与后续确认失效规则；读取共享步骤顺序 | 现有纯规则模块，保留；继续导出原步骤列表与类型以兼容调用方 |
-| [use-product-creation-guide-saved-record-verification.ts](../../src/features/engineering/hooks/use-product-creation-guide-saved-record-verification.ts) | 实际产品与关联 BOM 查询、缺失／失败／权限状态及重试 | 边界明确，继续独立 |
-| [product-creation-guide-step-navigation.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-step-navigation.tsx) | 步骤按钮、解锁与完成标记展示 | 第四轮已改为按传入步骤数量等宽分列，保留原导航规则 |
-| [product-creation-guide-base-model-selection-availability-notice.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-base-model-selection-availability-notice.tsx) | 目录数量、层级缺失、停用、模板不匹配等说明 | 展示已分出，但仍自行重复计算型号筛选相关数据 |
-| [use-product-type-write-actions.ts](../../src/features/engineering/hooks/use-product-type-write-actions.ts) 等保存 Hook | 调用领域保存服务并刷新关联查询 | 继续作为共用写入入口 |
-| [product-type-service.ts](../../src/features/engineering/services/product-type-service.ts)、适配器及请求契约 | HTTP、完整目录读取、保存协议、版本与字段转换、服务端模板解析 | 保持领域服务边界，不吸收向导展示逻辑 |
+| 文件                                                                                                                                                                                                        | 当前职责                                                                         | 判断                                                               |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [product-creation-operation-guide-page.tsx](../../src/features/engineering/pages/product-creation-operation-guide-page.tsx)（464 行）                                                                       | 手册内容、章节导航、示例、维护入口权限、打开向导和查看已有产品；复用共享步骤顺序 | 内容较长，但基本为展示；暂不优先拆分                               |
+| [product-management-creation-guide-entry.tsx](../../src/features/engineering/components/product-creation-guide/product-management-creation-guide-entry.tsx)                                                 | 产品管理搜索区下方的建档指引、手册入口权限和打开共用向导                         | 只负责入口展示，不承接产品搜索、保存或向导会话                     |
+| [product-creation-operation-guide-launcher.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-operation-guide-launcher.tsx)                                             | 打开／关闭向导与懒加载；HOME、手册和产品管理共用                                 | 职责清晰，保留                                                     |
+| [product-creation-operation-guide-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-operation-guide-dialog.tsx)（拆分前 385 行，现 85 行）                      | 账号就绪检查、按账号重建会话、组合导航与当前步骤／完成面板                       | 第三轮已完成拆分，具体模块见第 5 节                                |
+| [product-creation-guide-business-operation-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-business-operation-dialog.tsx)（拆分前 901 行，现 24 行）    | 按当前步骤分发至独立步骤组件，使用完整注册表检查遗漏                             | 第一轮已完成拆分，第四轮补齐注册表类型检查，具体模块见第 3、6.1 节 |
+| [product-type-action-dialog.tsx](../../src/features/engineering/components/product-type-action-dialog.tsx)（拆分前 767 行，现 141 行）                                                                      | 弹窗容器、组合表单 Hook 与字段区、显示提交状态和保存按钮                         | 第二轮已完成拆分，具体模块见第 4 节                                |
+| [product-action-dialog.tsx](../../src/features/engineering/components/product-action-dialog.tsx)（500 行）                                                                                                  | 产品表单布局、规格及预览组合、图片选择、错误定位、删除入口                       | 已使用独立表单 Hook 和子组件；后续按交互区域拆分即可               |
+| [use-product-form.ts](../../src/features/engineering/hooks/use-product-form.ts)                                                                                                                             | 组合初始化、模板解析、规格预览与提交 Hook                                        | 可作为分类表单拆分的现有参考                                       |
+| [bom-action-dialog.tsx](../../src/features/product-structure/components/bom-action-dialog.tsx)（262 行）                                                                                                    | 组合 BOM 表单、权限、并发冲突、协议恢复、提交和工作区                            | 保持产品结构域职责，由向导复用                                     |
+| [product-creation-operation-guide-step-definitions.ts](../../src/features/engineering/data/product-creation-operation-guide-step-definitions.ts)（24 行）                                                   | 共享步骤顺序、步骤 key 类型、页面 TAB 与阶段元信息                               | 第四轮新增的轻量定义模块，不依赖进度、组件或权限计算               |
+| [product-creation-operation-guide-progress.ts](../../src/features/engineering/data/product-creation-operation-guide-progress.ts)                                                                            | 进度结构校验、前置确认与后续确认失效规则；读取共享步骤顺序                       | 现有纯规则模块，保留；继续导出原步骤列表与类型以兼容调用方         |
+| [use-product-creation-guide-saved-record-verification.ts](../../src/features/engineering/hooks/use-product-creation-guide-saved-record-verification.ts)                                                     | 实际产品与关联 BOM 查询、缺失／失败／权限状态及重试                              | 边界明确，继续独立                                                 |
+| [product-creation-guide-step-navigation.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-step-navigation.tsx)                                                   | 步骤按钮、解锁与完成标记展示                                                     | 第四轮已改为按传入步骤数量等宽分列，保留原导航规则                 |
+| [product-creation-guide-base-model-selection-availability-notice.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-base-model-selection-availability-notice.tsx) | 目录数量、层级缺失、停用、模板不匹配等说明                                       | 展示已分出，但仍自行重复计算型号筛选相关数据                       |
+| [use-product-type-write-actions.ts](../../src/features/engineering/hooks/use-product-type-write-actions.ts) 等保存 Hook                                                                                     | 调用领域保存服务并刷新关联查询                                                   | 继续作为共用写入入口                                               |
+| [product-type-service.ts](../../src/features/engineering/services/product-type-service.ts)、适配器及请求契约                                                                                                | HTTP、完整目录读取、保存协议、版本与字段转换、服务端模板解析                     | 保持领域服务边界，不吸收向导展示逻辑                               |
 
 ## 3. 已完成：向导业务弹窗拆分
 
@@ -77,15 +79,16 @@ flowchart TD
 
 第一轮已按已有函数边界拆出，保留原有行为。下列模块均已落地：
 
-| 已实现文件，位于现有 `components/product-creation-guide/` | 单一职责 |
-| --- | --- |
-| `product-creation-guide-template-selection-step-dialog.tsx` | 选择已有模板、展示一级属性分类及二级选项、确认所选模板 |
-| `product-creation-guide-base-model-selection-step-dialog.tsx` | 选择基础型号、打开共用分类弹窗、接收保存结果、确认模板匹配 |
-| `product-creation-guide-product-save-step-dialog.tsx` | 为共用产品表单提供已确认型号，衔接产品保存结果 |
-| `product-creation-guide-bom-followup-step-dialog.tsx` | 为共用 BOM 表单提供本次产品，衔接后续 BOM 保存结果 |
-| `product-creation-guide-configuration-dialog-shell.tsx` | 前两步的弹窗标题、正文滚动区、底部操作区及尺寸 |
-| `product-creation-guide-configuration-request-state.tsx` | 配置加载、失败提示和重试展示 |
-| `product-creation-guide-step-dialog-contracts.ts` | 步骤弹窗共用输入与完成回调类型 |
+| 已实现文件，位于现有 `components/product-creation-guide/`      | 单一职责                                                                                                                     |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `product-creation-guide-template-selection-step-dialog.tsx`    | 选择已有模板、展示一级属性分类及二级选项、确认所选模板                                                                       |
+| `product-creation-guide-base-model-selection-step-dialog.tsx`  | 选择基础型号、打开共用分类弹窗、接收保存结果、确认模板匹配                                                                   |
+| `product-creation-guide-base-model-selection-step-content.tsx` | 第二步操作展示：突出已有型号选择、当前型号与下一步提示，单独呈现新增入口及说明；通过回调传递选择和新增操作，不请求或保存数据 |
+| `product-creation-guide-product-save-step-dialog.tsx`          | 为共用产品表单提供已确认型号，衔接产品保存结果                                                                               |
+| `product-creation-guide-bom-followup-step-dialog.tsx`          | 为共用 BOM 表单提供本次产品，衔接后续 BOM 保存结果                                                                           |
+| `product-creation-guide-configuration-dialog-shell.tsx`        | 前两步的弹窗标题、正文滚动区、底部操作区及尺寸                                                                               |
+| `product-creation-guide-configuration-request-state.tsx`       | 配置加载、失败提示和重试展示                                                                                                 |
+| `product-creation-guide-step-dialog-contracts.ts`              | 步骤弹窗共用输入与完成回调类型                                                                                               |
 
 原 `product-creation-guide-business-operation-dialog.tsx` 保留为薄分发入口，只根据步骤选择组件。步骤组件通过完成、关闭和忙碌回调与会话交互，彼此不直接调用。
 
@@ -95,16 +98,20 @@ flowchart TD
 
 第二步交互复杂度最高。完成组件拆分后，再视新增交互需要提取选择与确认 Hook，避免为了缩短文件把所有步骤的状态重新塞进一个总 Hook。
 
+第二步的操作展示已进一步独立到 `product-creation-guide-base-model-selection-step-content.tsx`。桌面采用“选择已有型号”和“需要时新增”的双区域布局，小屏纵向排列；选择框采用较高控件、蓝色边框，并单独显示当前型号和确认提示。原步骤组件继续负责目录筛选、选择状态、重新验证、保存与推进，新增分类仍复用共用表单。
+
+第三步继续复用普通产品表单，字号由 `components/product/product-form-typography.styles.ts` 集中定义：字段标签、说明与徽标为 12px，输入与操作按钮为 13px，区块标题与聚合预览为 14px。基础信息、动态属性、车圈／前叉／把立的规格表单、生产限制及底部操作区使用同一套层级；列表卡片的规格概览不在此范围。保留现有弹窗尺寸、控件高度及全部业务操作，后续新增表单内容应复用这些角色样式，避免再次散落 8–11px 小字。
+
 ## 4. 已完成：分类与基础型号弹窗拆分
 
 拆分前，`ProductTypeActionDialog` 同时承担表单会话、业务推导和展示。第二轮沿用产品表单已有的组织方式，分离为以下模块：
 
-| 已实现文件 | 负责内容 |
-| --- | --- |
-| [hooks/use-product-type-dialog-form.ts](../../src/features/engineering/hooks/use-product-type-dialog-form.ts)（421 行） | 表单初始化与草稿、目录加载和重试、手填编码保护、父分类与目标层级推导、提交转换及错误状态 |
-| [components/product-types/product-type-category-details-fields.tsx](../../src/features/engineering/components/product-types/product-type-category-details-fields.tsx)（218 行） | 父分类、名称、编码、说明及启用状态字段 |
-| [components/product-types/product-type-template-binding-fields.tsx](../../src/features/engineering/components/product-types/product-type-template-binding-fields.tsx)（114 行） | 模板选择、模板说明与绑定属性预览 |
-| 原 [components/product-type-action-dialog.tsx](../../src/features/engineering/components/product-type-action-dialog.tsx)（141 行） | 弹窗容器、组合字段区、显示提交状态及保存按钮 |
+| 已实现文件                                                                                                                                                                      | 负责内容                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [hooks/use-product-type-dialog-form.ts](../../src/features/engineering/hooks/use-product-type-dialog-form.ts)（421 行）                                                         | 表单初始化与草稿、目录加载和重试、手填编码保护、父分类与目标层级推导、提交转换及错误状态 |
+| [components/product-types/product-type-category-details-fields.tsx](../../src/features/engineering/components/product-types/product-type-category-details-fields.tsx)（218 行） | 父分类、名称、编码、说明及启用状态字段                                                   |
+| [components/product-types/product-type-template-binding-fields.tsx](../../src/features/engineering/components/product-types/product-type-template-binding-fields.tsx)（114 行） | 模板选择、模板说明与绑定属性预览                                                         |
+| 原 [components/product-type-action-dialog.tsx](../../src/features/engineering/components/product-type-action-dialog.tsx)（141 行）                                              | 弹窗容器、组合字段区、显示提交状态及保存按钮                                             |
 
 两个字段组件通过 `ProductTypeDialogFormState` 的 `Pick` 类型声明各自所需的数据与回调，不自行加载目录或提交表单。编码输入仍先标记人工编辑，再通过原规范化工具交给原字段 `onChange`；表单控制对象、校验器及保存协议保持原样。
 
@@ -118,11 +125,11 @@ flowchart TD
 
 拆分前，`product-creation-operation-guide-dialog.tsx` 的前半部分管理会话，后半部分绘制完成面板。第三轮已按以下边界分离：
 
-| 已实现文件 | 负责内容 |
-| --- | --- |
-| [hooks/use-product-creation-guide-session.ts](../../src/features/engineering/hooks/use-product-creation-guide-session.ts)（178 行） | 账号对应的进度读取与持久化、当前步骤、步骤切换与完成、忙碌状态、重新建档确认、打开 BOM 后续表单与完成操作；调用已有实际记录核对 Hook |
-| [components/product-creation-guide/product-creation-guide-completion-summary-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-completion-summary-dialog.tsx)（250 行） | 产品核对结果、BOM 状态、重试、查看产品、继续 BOM、重新建档确认和权限说明的展示，通过会话回调执行操作 |
-| 原 [components/product-creation-guide/product-creation-operation-guide-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-operation-guide-dialog.tsx)（85 行） | 账号就绪检查和会话边界，组合会话 Hook、导航、当前步骤与完成面板 |
+| 已实现文件                                                                                                                                                                                                                | 负责内容                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [hooks/use-product-creation-guide-session.ts](../../src/features/engineering/hooks/use-product-creation-guide-session.ts)（178 行）                                                                                       | 账号对应的进度读取与持久化、当前步骤、步骤切换与完成、忙碌状态、重新建档确认、打开 BOM 后续表单与完成操作；调用已有实际记录核对 Hook |
+| [components/product-creation-guide/product-creation-guide-completion-summary-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-completion-summary-dialog.tsx)（250 行） | 产品核对结果、BOM 状态、重试、查看产品、继续 BOM、重新建档确认和权限说明的展示，通过会话回调执行操作                                 |
+| 原 [components/product-creation-guide/product-creation-operation-guide-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-operation-guide-dialog.tsx)（85 行）                 | 账号就绪检查和会话边界，组合会话 Hook、导航、当前步骤与完成面板                                                                      |
 
 外层仍在账号信息同步完成后按 `user.id` 重建会话，保留现有本地存储 key 和进度版本。完成面板通过 `ProductCreationGuideSessionState` 的 `Pick` 类型声明所需显示数据与操作回调，不直接写本地进度或持有状态 setter。
 
@@ -134,14 +141,14 @@ flowchart TD
 
 第四轮已将原来分散在进度模型、步骤配置和手册页的顺序统一为以下职责：
 
-| 文件 | 负责内容 |
-| --- | --- |
-| [data/product-creation-operation-guide-step-definitions.ts](../../src/features/engineering/data/product-creation-operation-guide-step-definitions.ts) | 唯一的步骤顺序 tuple，由其推导步骤 key 类型；按 key 定义目标 TAB 与所属阶段，使用 `satisfies Record` 检查元信息遗漏 |
-| [data/build-product-creation-operation-guide-steps.ts](../../src/features/engineering/data/build-product-creation-operation-guide-steps.ts) | 按共享顺序组合编号、翻译、页面入口与现有权限投影；保留目标 TAB 缺失时跳过该项的处理 |
-| [data/product-creation-operation-guide-progress.ts](../../src/features/engineering/data/product-creation-operation-guide-progress.ts) | 读取共享顺序执行原进度规则；继续导出原步骤列表及类型，保留既有导入入口 |
-| [pages/product-creation-operation-guide-page.tsx](../../src/features/engineering/pages/product-creation-operation-guide-page.tsx) | 直接读取轻量定义模块的步骤顺序展示说明，不依赖进度校验或权限配置模块来取得顺序 |
-| [components/product-creation-guide/product-creation-guide-business-operation-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-business-operation-dialog.tsx) | 显式注册步骤组件，使用 `satisfies Record` 检查步骤遗漏和组件输入类型 |
-| [components/product-creation-guide/product-creation-guide-step-navigation.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-step-navigation.tsx) | 使用 Grid 隐式等宽列，根据传入步骤数量布局；不再固定四列 |
+| 文件                                                                                                                                                                                                            | 负责内容                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| [data/product-creation-operation-guide-step-definitions.ts](../../src/features/engineering/data/product-creation-operation-guide-step-definitions.ts)                                                           | 唯一的步骤顺序 tuple，由其推导步骤 key 类型；按 key 定义目标 TAB 与所属阶段，使用 `satisfies Record` 检查元信息遗漏 |
+| [data/build-product-creation-operation-guide-steps.ts](../../src/features/engineering/data/build-product-creation-operation-guide-steps.ts)                                                                     | 按共享顺序组合编号、翻译、页面入口与现有权限投影；保留目标 TAB 缺失时跳过该项的处理                                 |
+| [data/product-creation-operation-guide-progress.ts](../../src/features/engineering/data/product-creation-operation-guide-progress.ts)                                                                           | 读取共享顺序执行原进度规则；继续导出原步骤列表及类型，保留既有导入入口                                              |
+| [pages/product-creation-operation-guide-page.tsx](../../src/features/engineering/pages/product-creation-operation-guide-page.tsx)                                                                               | 直接读取轻量定义模块的步骤顺序展示说明，不依赖进度校验或权限配置模块来取得顺序                                      |
+| [components/product-creation-guide/product-creation-guide-business-operation-dialog.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-business-operation-dialog.tsx) | 显式注册步骤组件，使用 `satisfies Record` 检查步骤遗漏和组件输入类型                                                |
+| [components/product-creation-guide/product-creation-guide-step-navigation.tsx](../../src/features/engineering/components/product-creation-guide/product-creation-guide-step-navigation.tsx)                     | 使用 Grid 隐式等宽列，根据传入步骤数量布局；不再固定四列                                                            |
 
 当前仍为模板、基础型号、保存产品、BOM 后续四步，文案、保存、权限、回退及解锁规则保持现状。进度 schema 的字段和本地存储格式保持原样；共享定义不承担业务校验。后续真正新增步骤时，仍需补充对应表单、翻译和进度数据结构，不引入通用工作流引擎。
 
@@ -207,3 +214,81 @@ flowchart TD
 产品管理在搜索和新增区域下方展示简短指引：“步骤建档”在当前页打开共用向导，“操作手册”进入 `/engineering/product-creation-guide` 阅读说明；两者按手册页面权限显示。入口采用胶囊按钮和紧凑布局，保持原搜索、分类维护与生成产品入口。新组件只管理入口展示，共用 Launcher 继续管理弹窗开关，向导业务规则不变。
 
 验证：既有 10 个相关测试文件、62 项测试通过，改动模块 ESLint、全项目 `tsc -b` 和中英文词典结构校验通过。Playwright 通过真实 Router、手册页和产品列表组件隔离验证往返跳转、已有产品搜索、原页打开向导、关闭后保留搜索，以及入口权限过滤；中文／英文、1440／390 像素布局均无页面横向溢出。浏览器验证使用内存中的产品和目录数据，未创建业务记录。
+
+## 12. 第三步绑定工艺：复用工程管理技术规范主库
+
+普通产品表单和向导第三步共用同一个工艺字段。下拉可以直接选已有规范，也可以查看当前规范，或打开主库弹窗搜索、查看及新增。工程管理 `/engineering-db/specs` 始终是唯一文档主库，产品只存 `engineeringSpecId`；此入口不建立产品专属文档副本。
+
+| 文件 | 职责 |
+| --- | --- |
+| `engineering/components/product/product-engineering-technical-specification-selection-field.tsx` | 产品工艺下拉与弹窗开关；确认后只更新产品草稿字段 |
+| `engineering-db/components/technical-specification-document-library-selection-dialog.tsx` | 主库全量读取、搜索、选择、新增入口和选用前核对 |
+| `engineering-db/components/technical-specification-document-preview-dialog.tsx` | 按 ID 读取主库详情、显示修订号及附件；PDF/Excel 预览、Word 下载 |
+| `engineering-db/components/spec-action-dialog.tsx` | 主库及产品入口共用的规范编辑器；上传或保存期间防重复提交，失败保留草稿 |
+| `engineering-db/hooks/use-technical-specification-document-write-actions.ts` | 共用创建／修改、主库查询缓存刷新 |
+| `engineering-db/queries/technical-specification-document-master-library-query-options.ts` | 主库列表／详情的查询键与刷新策略；产品表单、主库页和选择弹窗共用 |
+| `engineering-db/services/specs-service.ts` | 技术规范主库 HTTP 契约，顶层名称、身份、修订号和保存版本的权威映射 |
+| `engineering-db/services/technical-specification-document-source-file-upload-service.ts` | 调用现有服务器附件服务，支持 PDF、xlsx、docx |
+| `server/services/engineering_technical_specification_document_validation_and_product_reference.go` | 主库校验、服务器身份分配及产品引用校验与事务锁 |
+
+新增文档、确认选用、保存产品分别生效：新增成功即入主库；取消选用不会删除已入库文档，也不改变产品原关联；确认选用后仍需保存产品。新增和上传失败都保留当前产品草稿。新增沿用管理权限，后端继续强制权限校验。列表读取失败显示重试提示，不能当作“暂无文档”；修订版本使用 `revisionNo`，保存次数 `version` 仅用于并发校验。所有主库入口共用现有变更记录，已被产品引用的文档禁止删除。历史浏览器本地附件无法跨电脑读取，需要重新上传至服务器。
+
+验证：8 个前端相关测试文件共 56 项通过；7 项真实 PostgreSQL HTTP／事务测试覆盖连续新增、产品关联往返及解除、无效附件、引用删除保护和并发修改冲突。现代 Chromium 与 Chrome 109 隔离验证新增入主库、取消选用、上传失败后同一文件重试、保存失败保留草稿、空主库／读取失败提示、权限，以及中英文和窄屏布局。浏览器验证使用内存主库和上传替身，未写入业务数据；数据库验证使用独立 schema。Chrome 109 的固定浮层偏移通过本功能局部兼容样式修复。
+
+### 12.1 长期架构回溯（2026-10-23）
+
+本轮按“入口展示 → 查询配置 → 主库契约 → 服务端事务 → 产品引用”核对。技术规范继续由 `engineering-db` 拥有，产品字段只是主库消费者；后续增加搜索、预览、新增或其他选用入口，继续复用主库组件和服务。编辑器只管理文档草稿与提交回调，写入 Hook 负责请求和缓存刷新，产品提交负责最终关联，不增加向导专用文档副本。
+
+已修复两处通过真实 PostgreSQL HTTP 测试复现的问题：
+
+1. 技术规范全量保存原先使用 GORM 默认结构体更新，空说明和布尔 `false` 被跳过。现明确指定允许写入的文档字段，保留身份、编码、创建时间和其他工程数据分区；读回结果与提交一致。顶层说明是权威值，前端不再从旧嵌套副本恢复已清空的说明，服务端同步的说明副本也以顶层为准。
+2. 服务端原先可能接受 `category`、`fileUrl`、`fileExtension` 的 `null` 或错误类型，导致写入成功后前端无法解析整个列表。现在新增和 PATCH 共用读取契约对应的校验；未填写可省略或使用空字符串。分类仍允许自定义字符串，不增加业务分类限制；变更类型按已有 `MANUAL/ECO/ECN` 契约校验。拒绝写入不改变文档、保存版本或审计记录。
+
+职责收拢：三个列表入口改用同一份 Query Options，详情查询也由该文件定义。通用工程 HTTP 契约仅校验通用字段与 JSON 对象，不再反向依赖技术规范的表单 schema；技术规范服务在发送请求前校验自己的完整文档。新建请求的 `specData` 只携带分类与附件信息，身份、修订和控制字段使用主记录字段，避免整份表单重复写入分区。共用编辑器和主库页面复用同一个保存参数类型，移除实际未向传输层发送的重复 PATCH 包装对象。
+
+本轮未按文件行数继续机械拆分：主库页面剩余体量主要来自桌面表格和窄屏卡片；选择弹窗负责一次完整选用交互；编辑器负责一次文档编辑。它们都没有接管产品提交或另建数据缓存。后续新增独立交互时再按实际职责提取组件，不把业务规则放回展示层。通用工程 HTTP 服务仍沿用现有 `engineering/services` 路径，本轮清除了其契约对技术规范 schema 的反向依赖；未搬迁无关工程服务。
+
+既有产品卡片、工程资料总览、销售文档及订单预览的技术规范读取也已核对：它们使用同一个主库服务和 `ENGINEERING_DB_SPECS_QUERY_KEY`，主库写入后可收到同一缓存失效通知。各自的启用条件与读取时机沿用原业务，不扩展本轮选用弹窗的操作范围。
+
+本轮验证：8 个前端测试文件共 59 项通过；10 项真实 PostgreSQL HTTP、并发引用与服务器附件测试通过，新增覆盖清空说明、保存 `false`、错误字段类型和拒绝写入后的事务一致性。全项目 TypeScript 构建、改动模块 ESLint 和格式检查通过。此前浏览器验证的范围保留于上一段，本轮未重复执行视觉验证。当前核查范围内未发现其他数据链路断点；不将此结论扩大为全项目不存在问题。
+
+
+## 13. 第三步关联模具分组：复用设备工装模具主库
+
+普通产品表单和建档第三步共用关联模具分组字段。下拉既能选择已有组名，也能查看当前组内模具，或打开主库弹窗搜索、查看、选用及新增；无需关闭产品草稿再前往其他页面查找。
+
+现有分组来自模具记录的 `groupName` 汇总，不是独立分组表。产品仍保存 `moldGroup` 组名，关联整个分组，组内记录各代表一副具体模具。新增入口复用设备工装的模具编辑器，填写已有或新组名并保存真实模具；不新建产品域专属模具库，不为创建组名生成虚假模具。产品入口的新增模具须填写组名才能供分组选用，设备工装中的普通模具建档仍允许不分组。
+
+新增模具、确认选用分组、保存产品分别生效：模具保存成功即进入设备工装主库；取消选用会保留该模具，产品原分组保持；确认选用只改产品草稿；产品保存时才持久化分组关联。确认前重新读取主库组名，已消失的分组或读取失败不能直接回写产品。
+
+| 文件 | 职责 |
+| --- | --- |
+| `engineering/components/product/product-mold-master-library-group-selection-field.tsx` | 产品字段与弹窗开关，确认后更新产品草稿 |
+| `equipment-tooling/components/mold-master-library-group-selection-dialog.tsx` | 全量读取、按分组或模具搜索、查看／新增入口与选用前核对 |
+| `equipment-tooling/components/mold-master-library-group-preview-dialog.tsx` | 查看组内具体模具编号、名称、状态、库位和寿命信息 |
+| `equipment-tooling/components/mold-master-library-group-name-form-field.tsx` | 模具组名目录的加载／失败重试、已有选择与手填切换、草稿展示；不提交模具或产品 |
+| `equipment-tooling/components/mold-action-dialog.tsx` | 设备工装与产品入口共用的真实模具编辑器；等保存成功后关闭，失败保留草稿 |
+| `equipment-tooling/hooks/use-mold-master-library-create-action.ts` | 新增模具到原主库、采用服务器返回记录并刷新共享目录 |
+| `equipment-tooling/mold-master-library-query-keys.ts`、`queries/mold-master-library-query-options.ts`、`queries/invalidate-mold-master-library-queries-after-write.ts` | 统一模具／全量选用目录／组名的缓存标识、查询配置与写后刷新 |
+| `equipment-tooling/services/mold-core-service.ts`、`services/mold-transaction-service.ts` | 复用既有 GET／POST /molds 与 /molds/group-names 接口，不另建保存路径 |
+
+主库选择与查看使用 `/molds?options=true` 读取全部记录，避免默认 50 条分页漏掉分组。产品表单和模具编辑器改用同一组名查询；从主库或产品入口保存模具后，共享缓存统一失效。读取失败与空主库分别提示，未填写组名的模具不出现在分组选项中。新增权限沿用 `action_equipment_mold_manage`，服务器仍使用现有设备工装读取及模具写入权限。
+
+复用前补齐了原模具弹窗的异步保存边界：调用方返回并等待真实保存 Promise；重复提交、上传或保存期间关闭均受保护；上传失败后同一文件可重试；子表单提交阻止事件冒泡，避免触发外层产品保存。弹窗采用统一 85vh 高度、桌面 896px 宽度和固定底部操作区；标签 12px、控件及占位文字 13px、胶囊按钮。窄屏搜索框单独占满一行；Chrome 109 使用模具域局部浮层兼容样式。
+
+验证：10 个前端相关测试文件共 69 项通过；1 项真实 PostgreSQL HTTP 测试覆盖超过默认分页数量的模具全量读取、新增模具后分组可选、产品关联保存读回及两侧审计。现代 Chromium 与 Chrome 109 均完成已有分组选用、组内查看、搜索、新增失败重试、取消选用保留主库记录、确认只更新产品草稿及最终保存流程，并检查上传失败后同一文件重试、上传期间防误操作及删除草稿图片不触发保存。中英文、1440／390 像素视口、空库／读取失败和只读权限均已核对，截图经视觉检查。浏览器验证使用内存主库、上传及产品保存替身，数据库验证使用独立 schema；全项目 TypeScript 构建、改动模块 ESLint、格式和差异检查通过。`drawing-mgmt.tsx` 仅调整查询键导入，保留该文件原有的两条 Hook 警告。
+
+### 13.1 模具主库关联的职责与数据链路回溯（2026-10-23）
+
+本轮按“产品字段 → 主库选用 → 模具建档 → 缓存刷新 → 产品创建／编辑 → 数据库读回 → 审计”核对，修复了以下问题：
+
+1. 产品选用弹窗读取全量模具，但模具管理、图纸关联和借还选择的共用数组读取只拿到默认 50 条。这些页面都在本地筛选和分组，没有消费服务器分页信息。现在数组读取统一使用 `/molds?options=true`，选用入口复用同一份请求和契约转换，保留服务端返回的列表版本。
+2. 模具编辑器原先用“组名数组为空”同时表示加载中、加载失败和真实空库。异步目录返回后可能把已经手填的组名切换为无法显示该值的下拉框。现提取 `mold-master-library-group-name-form-field.tsx`，独立管理读取状态、重试和输入方式；目录返回或重试成功后保留手填模式，目录中暂缺的当前组名也能直接显示。组名仍由共用模具编辑器提交，字段组件只编辑草稿。
+3. 产品 PATCH 允许提交空 `moldGroup`，原结构体更新却跳过空字符串，造成接口成功而数据库仍保留旧关联。现由 `product_master_service.go` 在原事务内显式写入清空的主库引用字段；技术规范原有的空引用写入与之合并，版本检查和审计继续在同一事务中完成。
+4. 产品 PATCH 的审计原先把 `{o,n}` 差分对象整体记录为新值。`product_audit.go` 现复用写入路径的差分取值函数，记录实际新字段值；关联变更和清空时，日志中的旧／新组名与数据库一致。
+
+职责边界保持清楚：产品字段负责展示和确认后的草稿回写；选择弹窗负责完整的一次选用会话；组内预览负责读取和展示；组名字段负责目录依赖和输入方式；模具编辑器负责整份模具表单、校验及异步保存保护；创建 Hook 负责主库写入与缓存刷新；HTTP 服务负责传输契约；产品服务负责持久化关联和事务审计。选择弹窗及模具编辑器剩余内容各属于同一个交互，不按行数继续拆成碎片。产品入口使用专用创建 Hook，避免引入 `useAssets` 附带的炉台和借还查询。
+
+缓存仍区分模具管理的乐观更新列表与选用弹窗的服务器记录列表，二者共用模具键前缀和写后刷新入口；这样主库选用不会混入尚未保存的管理页草稿。产品保存后统一刷新产品列表、选项和详情，模具管理的产品反查也消费这一产品选项缓存。分组继续按现有组名关联：修改某副模具的组名只改变该模具的归属；产品保留自身已保存组名，组内预览会明确提示空组。新增模具、确认分组和保存产品分别生效。
+
+本轮验证：6 个前端相关测试文件共 44 项通过，新增覆盖完整目录范围一致、目录迟到／失败重试保留手填组名、目录暂缺当前组名及产品分组 PATCH 契约。2 项真实 PostgreSQL HTTP 测试通过，核对模具新增、产品创建／更换／清空分组的响应与数据库一致、模具记录保持独立、审计旧／新值及技术规范关联／解除回归。现代 Chromium 与 Chrome 109 均验证完整建档选用流程，以及组名读取失败后保留模具和组名草稿、重试、保存入主库、确认只改产品草稿；中英文、1440／390 像素布局、读取失败／空库及只读权限通过，相关截图已视觉检查。全项目 TypeScript 构建、改动模块 ESLint、格式和差异检查通过。浏览器使用内存数据替身；数据库使用独立 schema，未以真实业务记录测试。

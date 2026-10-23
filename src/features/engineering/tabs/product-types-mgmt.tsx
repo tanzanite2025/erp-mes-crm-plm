@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { flexRender, type ColumnDef } from '@tanstack/react-table'
 import { CornerDownRight, Edit, Plus, Tags, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
@@ -240,7 +241,7 @@ export function ProductTypesMgmt() {
             size='icon'
             className='text-destructive'
             onClick={async () => {
-              const confirmed = window.confirm(
+              const confirmed = await requestApplicationConfirmation(
                 t('engineering.categoryArchive.confirms.delete')
               )
               if (!confirmed) return

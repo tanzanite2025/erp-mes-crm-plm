@@ -10,6 +10,7 @@ import {
   Users,
   XCircle,
 } from 'lucide-react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import type { DeltaSet } from '@/lib/delta/types'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -92,8 +93,10 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
     setIsDialogOpen(false)
   }
 
-  const handleDeleteTeam = (id: string) => {
-    const confirmed = window.confirm(texts.confirmDeleteMessage)
+  const handleDeleteTeam = async (id: string) => {
+    const confirmed = await requestApplicationConfirmation(
+      texts.confirmDeleteMessage
+    )
     if (!confirmed) return
     void adapter.deleteTeam(id)
   }

@@ -119,7 +119,7 @@ describe('product creation modal wizard', () => {
     renderProductCreationWizardForNavigationTest()
     expect(screen.getAllByRole('dialog')).toHaveLength(1)
     expect(
-      screen.getByRole('dialog', { name: '选择产品模板' })
+      screen.getByRole('dialog', { name: '选择物理规格模板' })
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /基础型号/ })).toBeDisabled()
     confirmCurrentProductCreationWizardConfiguration()
@@ -210,7 +210,7 @@ describe('product creation modal wizard', () => {
       screen.queryByRole('button', { name: '确认当前配置' })
     ).not.toBeInTheDocument()
     expect(
-      screen.getByRole('dialog', { name: '选择产品模板' })
+      screen.getByRole('dialog', { name: '选择物理规格模板' })
     ).toBeInTheDocument()
     expect(
       localStorage.getItem('product-creation-operation-guide:v1:guide-account')

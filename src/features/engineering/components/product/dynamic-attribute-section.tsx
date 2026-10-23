@@ -1,6 +1,7 @@
 'use client'
 
 import { type UseFormReturn } from 'react-hook-form'
+import { cn } from '@/lib/utils'
 import { FormItem, FormLabel } from '@/components/ui/form'
 import { SelectDropdown } from '@/components/select-dropdown'
 import {
@@ -14,6 +15,7 @@ import {
   upsertAttributeValue,
   getProductTemplateAttributeLevelTwoOptionLabel,
 } from '../../utils/product-attribute-utils'
+import { productFormTypographyClassNames } from './product-form-typography.styles'
 
 interface DynamicAttributeSectionProps {
   form: UseFormReturn<Product>
@@ -67,7 +69,12 @@ export function DynamicAttributeSection({
               key={binding.id || binding.categoryKey}
               className='min-w-0 gap-0.5'
             >
-              <FormLabel className='ml-1 text-[10px] font-black tracking-widest text-slate-600 uppercase'>
+              <FormLabel
+                className={cn(
+                  'ml-1 text-foreground',
+                  productFormTypographyClassNames.fieldLabel
+                )}
+              >
                 {getProductTemplateAttributeLevelOneCategoryName(
                   locale,
                   category
@@ -98,7 +105,10 @@ export function DynamicAttributeSection({
                   locale,
                   category
                 )}
-                className='h-[38px] w-full rounded-xl border-none bg-muted/40 px-3 text-[11px] font-bold'
+                className={cn(
+                  'h-[38px] w-full rounded-xl border-none bg-muted/40 px-3',
+                  productFormTypographyClassNames.control
+                )}
               />
             </FormItem>
           )

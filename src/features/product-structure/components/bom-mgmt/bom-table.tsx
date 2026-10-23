@@ -12,6 +12,7 @@ import {
   Trash2,
   Zap,
 } from 'lucide-react'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import {
   normalizeBomChangeType,
   normalizeBomStatus,
@@ -324,7 +325,8 @@ export function BOMTable({
       header: t('engineering.bomArchive.table.actions'),
       cell: ({ row }) => {
         const isLocked = row.original.isLocked
-        const canDerive = isEBOM(row.original) && !isLocked
+        const canDerive =
+          isEBOM(row.original) && row.original.status === 'RELEASED' && isLocked
         const canRevise =
           isMBOM(row.original) && row.original.status === 'RELEASED'
 
@@ -402,9 +404,9 @@ export function BOMTable({
                   ? 'text-muted-foreground/30'
                   : 'text-destructive hover:bg-rose-50'
               )}
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  window.confirm(
+                  await requestApplicationConfirmation(
                     t('engineering.bomArchive.table.confirmDelete')
                   )
                 ) {
