@@ -108,9 +108,9 @@
 
 项目 TypeScript、Prettier 和国际化结构检查通过；受影响文件 ESLint 无错误，保留已有虚拟列表及状态同步相关警告。
 
-## 文档核对发现的生命周期差异（2026-10-23）
+## 早期生命周期核对记录（2026-10-23，评审流程已由三态方案替代）
 
-初次文档核对发现以下差异；同日后续修复已对齐派生条件与发布入口，当前边界如下：
+以下为 2026-10-23 的历史核对与修复记录。2026-10-24 已采用草稿、已发布、已作废三态，评审／批准不再作为新记录的操作步骤。当前按钮、权限与事务见 [三态生命周期与保存发布契约](bom-three-state-lifecycle-direct-release-and-atomic-save-publish-contract.md)。历史修复记录如下：
 
 - **已修正派生条件。** [列表派生按钮](../../src/features/product-structure/components/bom-mgmt/bom-table.tsx) 与 [后端派生服务](../../server/services/bom_service.go) 均要求源记录为研发 BOM、`RELEASED` 且已锁定，草稿、已批准、作废、未锁定及生产 BOM 均不提供该按钮。
 - **已修正发布阻塞。** [弹窗底部操作](../../src/features/product-structure/components/bom-dialog-footer.tsx) 对已批准的 EBOM／MBOM 分别显示“发布研发”／“发布生产”，即使内容已锁定也可操作；前端守卫区分内容编辑与状态操作，提交编排不重新保存锁定表单。后端允许锁定记录的 `APPROVED → RELEASED`，继续执行状态机、权限、预期版本、物料及重量校验，发布后仍锁定。

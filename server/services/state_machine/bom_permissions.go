@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"xdfc-server/audit"
+	"xdfc-server/authz"
 )
 
 // BOM状态流转权限定义
@@ -24,18 +25,17 @@ const (
 // 定义从当前状态到目标状态需要的权限
 var bomTransitionPermissions = map[BOMStatus]map[BOMStatus][]string{
 	BOMStatusDraft: {
-		BOMStatusReviewing: {PermissionBOMEdit, PermissionBOMManage, PermissionManage},
-		BOMStatusApproved:  {PermissionBOMApprove, PermissionBOMManage, PermissionManage}, // 快速通道需要批准权限
+		BOMStatusReleased: {authz.ActionEngineeringBOMPromote, PermissionBOMRelease, PermissionBOMManage, PermissionManage},
 	},
 	BOMStatusReviewing: {
 		BOMStatusDraft:    {PermissionBOMReview, PermissionBOMManage, PermissionManage}, // 退回修改
-		BOMStatusApproved: {PermissionBOMReview, PermissionBOMApprove, PermissionBOMManage, PermissionManage},
+		BOMStatusReleased: {authz.ActionEngineeringBOMPromote, PermissionBOMRelease, PermissionBOMManage, PermissionManage},
 	},
 	BOMStatusApproved: {
-		BOMStatusReleased: {PermissionBOMRelease, PermissionBOMManage, PermissionManage},
+		BOMStatusReleased: {authz.ActionEngineeringBOMPromote, PermissionBOMRelease, PermissionBOMManage, PermissionManage},
 	},
 	BOMStatusReleased: {
-		BOMStatusObsolete: {PermissionBOMObsolete, PermissionBOMManage, PermissionManage},
+		BOMStatusObsolete: {authz.ActionEngineeringBOMPromote, PermissionBOMObsolete, PermissionBOMManage, PermissionManage},
 	},
 	BOMStatusObsolete: {}, // 终态，不可转换
 }
@@ -137,12 +137,12 @@ func GetUserPermissionsFromContext(ctx context.Context) []string {
 	if permissions, ok := audit.PermissionsFromContext(ctx); ok {
 		return permissions
 	}
-	
+
 	// 如果audit context中没有，尝试直接从context获取
 	if permissions, ok := ctx.Value("permissions").([]string); ok {
 		return permissions
 	}
-	
+
 	// 如果都没有，返回空列表
 	return []string{}
 }

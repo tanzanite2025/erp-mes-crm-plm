@@ -34,7 +34,10 @@ export interface OptimisticLockResult {
   /**
    * Validates that the version hasn't changed before save
    */
-  validateVersion: (serverVersion: number) => OptimisticLockError | null
+  validateVersion: (
+    serverVersion: number,
+    expectedVersionAdvance?: number
+  ) => OptimisticLockError | null
 
   /**
    * Checks if a version conflict error occurred
@@ -118,14 +121,17 @@ export function useBOMOptimisticLock(initialBOM?: BOM): OptimisticLockResult {
 
   // Validate that server version matches expected version
   const validateVersion = useCallback(
-    (serverVersion: number): OptimisticLockError | null => {
-      const expected = expectedVersionRef.current
+    (
+      serverVersion: number,
+      expectedVersionAdvance = 1
+    ): OptimisticLockError | null => {
+      const expected = expectedVersionRef.current + expectedVersionAdvance
 
-      if (serverVersion !== expected + 1) {
+      if (serverVersion !== expected) {
         const error: OptimisticLockError = {
           type: 'version-conflict',
-          message: `Version conflict detected. Expected version ${expected + 1}, but server returned ${serverVersion}. Another user may have modified this BOM.`,
-          expectedVersion: expected + 1,
+          message: `Version conflict detected. Expected version ${expected}, but server returned ${serverVersion}. Another user may have modified this BOM.`,
+          expectedVersion: expected,
           actualVersion: serverVersion,
         }
 

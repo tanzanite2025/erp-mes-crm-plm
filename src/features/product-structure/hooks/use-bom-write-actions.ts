@@ -12,12 +12,14 @@ export function useBOMWriteActions() {
   const saveBOMMutation = useMutation({
     mutationFn: (params: { data: SaveBOMInput; previousBom?: BOM }) =>
       bomService.saveBOM(params),
-    onSuccess: async () => {
+    onSuccess: async (savedBOM) => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
       await queryClient.invalidateQueries({
         queryKey: bomVersionTraceQueryKeys.root(),
       })
-      toast.success('BOM 已保存')
+      toast.success(
+        savedBOM.status === 'RELEASED' ? 'BOM 已保存并发布' : 'BOM 已保存'
+      )
     },
     onError: (error: Error) => {
       // 处理并发冲突错误
@@ -165,6 +167,11 @@ export function useBOMWriteActions() {
       ) {
         toast.error('修订失败：MBOM 已被其他用户修改，请刷新后重试')
         queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
+      } else if (
+        error.message.includes('FORBIDDEN') ||
+        error.message.includes('permission')
+      ) {
+        toast.error('修订失败：您没有发布 BOM 修订版本的权限')
       } else if (error.message.includes('only RELEASED MBOM')) {
         toast.error('修订失败：仅生效中的 MBOM 可以提交修订')
       } else if (error.message.includes('reason is required')) {

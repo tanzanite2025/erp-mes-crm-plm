@@ -4,6 +4,8 @@ import { type BOM, type BOMItem } from './data/schema'
 import { type BOMRelationSidecar } from './utils/bom-relation-sidecar'
 
 export type SaveBOMInput = BOM & {
+  /** Save and publish in one server transaction; failed release leaves persisted data unchanged. */
+  publishOnSave?: boolean
   relationSidecar: BOMRelationSidecar
   /**
    * Optional delta set for RelationSidecar changes.

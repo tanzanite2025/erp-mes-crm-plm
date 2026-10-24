@@ -38,10 +38,10 @@ const (
 
 // DeltaEntry 表示单个差量条目
 type DeltaEntry struct {
-	Operation DeltaOperation  `json:"op"`
-	Path      string          `json:"path"`
-	Value     interface{}     `json:"value,omitempty"`
-	OldValue  interface{}     `json:"oldValue,omitempty"`
+	Operation DeltaOperation `json:"op"`
+	Path      string         `json:"path"`
+	Value     interface{}    `json:"value,omitempty"`
+	OldValue  interface{}    `json:"oldValue,omitempty"`
 }
 
 // DeltaSet 表示差量集合
@@ -50,32 +50,33 @@ type DeltaSet struct {
 }
 
 type SaveBOMInput struct {
-	ID              string           `json:"id"`
-	BOMNo           string           `json:"bomNo"`
-	BOMType         string           `json:"bomType"`
-	ProductID       string           `json:"productId"`
-	VersionText     string           `json:"bomVersion"`
-	Status          string           `json:"status"`
+	PublishOnSave bool   `json:"publishOnSave,omitempty"`
+	ID            string `json:"id"`
+	BOMNo         string `json:"bomNo"`
+	BOMType       string `json:"bomType"`
+	ProductID     string `json:"productId"`
+	VersionText   string `json:"bomVersion"`
+	Status        string `json:"status"`
 	// 归属语义在 BOM 维度（方案 B + 1:1 设计）：
 	//   - INTERNAL：内部生产 BOM（OwnerCustomerID 留空）
 	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）
-	OwnerType       string           `json:"ownerType"`
-	OwnerCustomerID string           `json:"ownerCustomerId"`
+	OwnerType       string `json:"ownerType"`
+	OwnerCustomerID string `json:"ownerCustomerId"`
 	// VersionLevel 是 BOM 配方层的"档次"标签（思路 3 重构,Step R1）：
 	//   - 来源 product_attribute_options(category=versionLevel) 的 value
 	//   - 当前阶段允许为空(过渡期),后续 Step R6 加唯一约束时会变必填
-	VersionLevel    string           `json:"versionLevel"`
+	VersionLevel string `json:"versionLevel"`
 	// MeasuredWeight 必填且 > 0,表示该 BOM 对应最终产品的实测/目标重量。
-	MeasuredWeight     float64          `json:"measuredWeight"`
+	MeasuredWeight float64 `json:"measuredWeight"`
 	// MeasuredWeightUnit 必填,单位主数据 WEIGHT 类目的 code(如 g / kg)。
-	MeasuredWeightUnit string           `json:"measuredWeightUnit"`
-	Items           []models.BOMItem `json:"items"`
-	Description     string           `json:"description"`
-	Version         int              `json:"version"`
-	MasterDataControl BOMMasterDataControlSaveInput `json:"masterDataControl"`
-	RelationSidecar json.RawMessage  `json:"relationSidecar"`
+	MeasuredWeightUnit string                        `json:"measuredWeightUnit"`
+	Items              []models.BOMItem              `json:"items"`
+	Description        string                        `json:"description"`
+	Version            int                           `json:"version"`
+	MasterDataControl  BOMMasterDataControlSaveInput `json:"masterDataControl"`
+	RelationSidecar    json.RawMessage               `json:"relationSidecar"`
 	// 🔥 SDRTS 协议：Sidecar Delta
-	SidecarDelta    *DeltaSet        `json:"_sidecarDelta,omitempty"`
+	SidecarDelta *DeltaSet `json:"_sidecarDelta,omitempty"`
 }
 
 type PromoteBOMStatusInput struct {
@@ -86,18 +87,18 @@ type PromoteBOMStatusInput struct {
 }
 
 type DeriveMBOMInput struct {
-	Description     string `json:"description"`
-	RevisionNo      string `json:"revisionNo"`
-	ChangeOrderNo   string `json:"changeOrderNo"`
-	SourceVersion   *int   `json:"sourceVersion,omitempty"` // ✅ 新增：源 EBOM 版本号
+	Description   string `json:"description"`
+	RevisionNo    string `json:"revisionNo"`
+	ChangeOrderNo string `json:"changeOrderNo"`
+	SourceVersion *int   `json:"sourceVersion,omitempty"` // ✅ 新增：源 EBOM 版本号
 }
 
 // ReviseMBOMInput 描述工艺师对当前 MBOM 提交修订时的入参。
 // 修订是 MBOM 自身版本独立升级，不影响 EBOM。
 type ReviseMBOMInput struct {
-	Reason          string `json:"reason"`           // 修订原因（必填，用于审计与通知模板）
-	ChangeOrderNo   string `json:"changeOrderNo"`    // 工艺变更单号（可选）
-	RevisionNo      string `json:"revisionNo"`       // 新版本的修订号（默认在原基础上 +1）
+	Reason          string `json:"reason"`                    // 修订原因（必填，用于审计与通知模板）
+	ChangeOrderNo   string `json:"changeOrderNo"`             // 工艺变更单号（可选）
+	RevisionNo      string `json:"revisionNo"`                // 新版本的修订号（默认在原基础上 +1）
 	ExpectedVersion *int   `json:"expectedVersion,omitempty"` // 乐观锁
 }
 
@@ -115,19 +116,19 @@ func (input SaveBOMInput) toModel() models.BOM {
 			SiteCode:      input.MasterDataControl.SiteCode,
 			IsDefaultSite: input.MasterDataControl.IsDefaultSite,
 		},
-		BOMNo:           input.BOMNo,
-		BOMType:         input.BOMType,
-		ProductID:       input.ProductID,
-		VersionText:     input.VersionText,
-		Status:          input.Status,
+		BOMNo:              input.BOMNo,
+		BOMType:            input.BOMType,
+		ProductID:          input.ProductID,
+		VersionText:        input.VersionText,
+		Status:             input.Status,
 		OwnerType:          strings.TrimSpace(input.OwnerType),
 		OwnerCustomerID:    strings.TrimSpace(input.OwnerCustomerID),
 		VersionLevel:       strings.TrimSpace(input.VersionLevel),
 		MeasuredWeight:     input.MeasuredWeight,
 		MeasuredWeightUnit: strings.TrimSpace(input.MeasuredWeightUnit),
-		Items:           input.Items,
-		Description:     input.Description,
-		RelationSidecar: input.RelationSidecar,
+		Items:              input.Items,
+		Description:        input.Description,
+		RelationSidecar:    input.RelationSidecar,
 	}
 	return model
 }

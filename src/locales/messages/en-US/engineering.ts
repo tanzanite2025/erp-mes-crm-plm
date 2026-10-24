@@ -1436,13 +1436,19 @@ export const engineering = {
       remarkPlaceholder: 'Add BOM notes...',
       save: 'Save BOM',
       saveDraft: 'Save Draft',
-      submitReview: 'Submit Review',
+      saveAndPublish: 'Save and publish',
+      publishDraft: 'Publish draft',
+      obsolete: 'Obsolete BOM',
+      confirmObsolete:
+        'Obsolete this BOM? It will stop being used and remain in history. It cannot return to draft.',
       release: 'Release to Production',
       releaseEngineering: 'Release Engineering BOM',
       locked: 'Current version is locked',
     },
     actions: {
       derive: 'Derive MBOM',
+      reviseRequiresPublishPermission:
+        'BOM lifecycle permission is required to publish a revision',
     },
     form: {
       bomNo: 'BOM Number',

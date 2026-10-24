@@ -192,8 +192,8 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.POST("/bom", bomManage, handlers.SaveBOMHandler)
 			engineeringGroup.POST("/bom/:id/promote", bomPromote, handlers.PromoteBOMStatusHandler)
 			engineeringGroup.POST("/bom/:id/derive-mbom", bomManage, handlers.DeriveMBOMFromEBOMHandler)
-			// MBOM 工艺修订：菜单权限兜底（按你的决定，不单独引入 action 权限位）
-			engineeringGroup.POST("/bom/:id/revise", handlers.ReviseMBOMHandler)
+			// 修订会直接发布替代版本，复用已有 BOM 状态操作权限。
+			engineeringGroup.POST("/bom/:id/revise", bomPromote, handlers.ReviseMBOMHandler)
 			engineeringGroup.DELETE("/bom/:id", bomManage, handlers.DeleteBOMHandler)
 			engineeringGroup.GET("/bom-sections", handlers.GetBOMSectionsHandler)
 			engineeringGroup.GET("/bom-sections/options", handlers.GetBOMSectionOptionsHandler)

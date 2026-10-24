@@ -8,7 +8,7 @@ export const bomFieldBusinessMeaningHelp = {
       engineering: {
         title: '研发 BOM（EBOM）',
         description:
-          '记录设计和研发确认的物料配方，先保存草稿，核对后批准、发布。',
+          '记录设计和研发确认的物料配方，可以保存草稿，核对后直接发布；新建也可以保存并发布。',
       },
       manufacturing: {
         title: '生产 BOM（MBOM）',
@@ -71,15 +71,6 @@ export const bomFieldBusinessMeaningHelp = {
         description:
           '正在准备，可以修改和保存；保存草稿不代表已经可以投入生产。',
       },
-      reviewing: {
-        title: '评审中（REVIEWING）',
-        description:
-          '表示待评审阶段；当前弹窗的“提交评审”使用直接批准的快速通道，不会停留在此状态。',
-      },
-      approved: {
-        title: '已批准（APPROVED）',
-        description: '内容锁定，等待单独执行发布；已批准还不等于已发布。',
-      },
       released: {
         title: '已发布（RELEASED）',
         description:
@@ -91,6 +82,6 @@ export const bomFieldBusinessMeaningHelp = {
       },
     },
     instruction:
-      '生效日期只记录计划适用日期，不会自动批准或发布。状态操作仍受账号权限和业务校验约束。',
+      '当前使用草稿、已发布、已作废三个状态。生效日期不会自动发布。历史评审或批准记录可直接发布，仍受权限及业务校验约束。',
   },
 }

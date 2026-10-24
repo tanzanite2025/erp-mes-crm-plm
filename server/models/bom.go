@@ -6,7 +6,7 @@ const (
 	BOMTypeEBOM = "EBOM"
 	BOMTypeMBOM = "MBOM"
 
-	// EBOM 完整生命周期：DRAFT → REVIEWING → APPROVED → RELEASED → OBSOLETE
+	// 当前生命周期：DRAFT → RELEASED → OBSOLETE；评审、批准值仅兼容历史记录。
 	// MBOM 当前派生为 DRAFT；只有实际 RELEASED 才在消息事件中映射 EFFECTIVE。
 	BOMStatusDraft     = "DRAFT"
 	BOMStatusReviewing = "REVIEWING"

@@ -89,9 +89,14 @@ export function BOMCreationGuideDraftEntry({
           role='status'
           className='text-sm leading-7 text-sky-700 dark:text-sky-300'
         >
-          {t('engineering.bomCreationGuide.draftEntry.saved', {
-            bomNo: savedBOM.bomNo || savedBOM.id,
-          })}
+          {t(
+            savedBOM.status === 'RELEASED'
+              ? 'engineering.bomCreationGuide.draftEntry.published'
+              : 'engineering.bomCreationGuide.draftEntry.saved',
+            {
+              bomNo: savedBOM.bomNo || savedBOM.id,
+            }
+          )}
         </p>
       )}
       {isOpen && canCreateDraft && (

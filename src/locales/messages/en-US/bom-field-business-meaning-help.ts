@@ -8,7 +8,7 @@ export const bomFieldBusinessMeaningHelp = {
       engineering: {
         title: 'Engineering BOM (EBOM)',
         description:
-          'Records the design and development recipe. Save a draft, verify it, then approve and release it.',
+          'Records the design and development recipe. Save a draft and publish it after verification, or save and publish when creating it.',
       },
       manufacturing: {
         title: 'Manufacturing BOM (MBOM)',
@@ -72,16 +72,6 @@ export const bomFieldBusinessMeaningHelp = {
         description:
           'Being prepared; editable and saveable. Saving a draft does not make it ready for production.',
       },
-      reviewing: {
-        title: 'In review (REVIEWING)',
-        description:
-          'Represents pending review. The current dialog’s Submit for Review button uses direct approval and does not pause at this status.',
-      },
-      approved: {
-        title: 'Approved (APPROVED)',
-        description:
-          'Content is locked, awaiting a separate release action. Approval is not release.',
-      },
       released: {
         title: 'Released (RELEASED)',
         description:
@@ -94,6 +84,6 @@ export const bomFieldBusinessMeaningHelp = {
       },
     },
     instruction:
-      'The effective date records intended applicability; it does not approve or release the BOM. Status actions require the appropriate permissions and business validation.',
+      'The current lifecycle is Draft, Released, Obsolete. Effective dates do not publish automatically. Historical In Review or Approved records can be published directly, subject to permissions and validation.',
   },
 }

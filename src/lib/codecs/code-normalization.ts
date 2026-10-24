@@ -75,9 +75,8 @@ export function deriveBomDisplayVersion(bomVersion?: string | null): string {
 const BOM_CHANGE_TYPES = new Set(['MANUAL', 'ECO', 'ECN'])
 
 /**
- * EBOM (研发 BOM) 状态机的有序序列。
- * 完整生命周期：DRAFT → REVIEWING → APPROVED → RELEASED → OBSOLETE。
- * 没有 VALIDATING（设计审批通过即发布，不再需要单独的"验证中"状态）。
+ * EBOM 读取字典，保留历史 REVIEWING / APPROVED 数据兼容。
+ * 当前可操作生命周期使用 BOM_CURRENT_LIFECYCLE_STATUS_ORDER。
  */
 export const EBOM_STATUS_ORDER = [
   'DRAFT',
@@ -89,11 +88,15 @@ export const EBOM_STATUS_ORDER = [
 
 export type EbomStatus = (typeof EBOM_STATUS_ORDER)[number]
 
-/**
- * MBOM (生产 BOM) 在数据存储层的状态字典。
- * 派生即生效（RELEASED），无中间审批态。
- */
-export const MBOM_STATUS_ORDER = ['RELEASED', 'OBSOLETE'] as const
+/** 研发和生产 BOM 共用的当前生命周期；历史中间态仅保留读取。 */
+export const BOM_CURRENT_LIFECYCLE_STATUS_ORDER = [
+  'DRAFT',
+  'RELEASED',
+  'OBSOLETE',
+] as const
+
+/** 生产 BOM 派生为草稿，核对后直接发布。 */
+export const MBOM_STATUS_ORDER = BOM_CURRENT_LIFECYCLE_STATUS_ORDER
 
 export type MbomStatus = (typeof MBOM_STATUS_ORDER)[number]
 
@@ -116,18 +119,13 @@ export type BomStatus = (typeof BOM_STATUS_ORDER)[number]
 const BOM_STATUSES = new Set<string>(BOM_STATUS_ORDER)
 
 /**
- * 按 BOM 类型获取在表单/UI 上可选的状态字典。
- * - EBOM：完整 5 状态
- * - MBOM：仅 RELEASED / OBSOLETE
+ * 获取当前表单/UI 使用的三态字典，研发和生产 BOM 使用同一流程。
+ * 保留类型参数以兼容既有调用；历史状态解析使用 BOM_STATUS_ORDER。
  */
 export function getBomStatusOrderByType(
-  bomType?: string | null
+  _bomType?: string | null
 ): readonly BomStatus[] {
-  const normalized = (bomType || '').trim().toUpperCase()
-  if (normalized === 'MBOM') {
-    return MBOM_STATUS_ORDER
-  }
-  return EBOM_STATUS_ORDER
+  return BOM_CURRENT_LIFECYCLE_STATUS_ORDER
 }
 
 export const ENGINEERING_DATE_PROTOCOL_FORMAT = 'yyyy-MM-dd'

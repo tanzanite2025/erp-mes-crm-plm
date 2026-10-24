@@ -1,7 +1,7 @@
 // Package services - BOM 写路径主入口。
 //
-// 此文件聚焦 BOM 的写操作 (SaveBOM / DeleteBOM / PromoteBOMStatus /
-// DeriveMBOMFromEBOM / ReviseMBOM) 和 SDRTS Sidecar Delta 处理。
+// 此文件聚焦 BOM 的内容保存、删除、派生、修订与 SDRTS Sidecar Delta 处理。
+// 生命周期转换及事务内发布在 bom_lifecycle_status_transition_within_existing_transaction.go。
 //
 // 读路径在 bom_query.go,
 // 校验/归属/唯一性在 bom_validation.go,
@@ -18,8 +18,8 @@ import (
 	"xdfc-server/models"
 	statemachine "xdfc-server/services/state_machine"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // 定义详细的审计操作类型
@@ -100,6 +100,11 @@ func processSidecarDelta(ctx context.Context, tx *gorm.DB, bomID string, delta *
 
 func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error) {
 	modelInput := input.toModel()
+	if input.PublishOnSave {
+		if err := validateBOMFinishedWeightForRelease(&modelInput); err != nil {
+			return BOMDetailResponse{}, err
+		}
+	}
 	if err := validateBOMOwnership(&modelInput); err != nil {
 		return BOMDetailResponse{}, err
 	}
@@ -131,7 +136,7 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 
 		if modelInput.ID != "" {
 			var existing models.BOM
-			if err := tx.Preload("Items").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Items").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
 				return err
 			}
 			if existing.IsLocked {
@@ -164,6 +169,14 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 
 			if err := tx.Model(&existing).Omit("Items").Updates(modelInput).Error; err != nil {
 				return wrapBOMUniqueViolation(err, &modelInput)
+			}
+			// A cleared weight must not silently retain the previous positive value
+			// when validating an edited recipe for publication.
+			if err := tx.Model(&existing).Updates(map[string]interface{}{
+				"measured_weight":      modelInput.MeasuredWeight,
+				"measured_weight_unit": modelInput.MeasuredWeightUnit,
+			}).Error; err != nil {
+				return err
 			}
 
 			// MergeMissingFrom and struct Updates preserve omitted/nil values. Explicit
@@ -217,6 +230,11 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 				}
 			}
 
+			if input.PublishOnSave {
+				saved, err = publishSavedBOMWithinExistingTransaction(ctx, tx, saved)
+				return err
+			}
+
 			return nil
 		}
 
@@ -251,7 +269,13 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			return err
 		}
 		if saved.BOMType == models.BOMTypeEBOM {
-			return dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, saved, "", "CREATED", "", nil)
+			if err := dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, saved, "", "CREATED", "", nil); err != nil {
+				return err
+			}
+		}
+		if input.PublishOnSave {
+			saved, err = publishSavedBOMWithinExistingTransaction(ctx, tx, saved)
+			return err
 		}
 		return nil
 	})
@@ -305,89 +329,6 @@ func DeleteBOM(ctx context.Context, id string) error {
 	})
 }
 
-func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInput) (BOMDetailResponse, error) {
-	if strings.TrimSpace(id) == "" {
-		return BOMDetailResponse{}, ErrBOMIDRequired
-	}
-
-	var saved models.BOM
-	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var existing models.BOM
-		if err := tx.Preload("Items").Where("id = ?", id).First(&existing).Error; err != nil {
-			return err
-		}
-
-		// ✅ 强制乐观锁版本检查
-		if input.ExpectedVersion == nil {
-			return fmt.Errorf("[VALIDATION] expectedVersion is required for status promotion")
-		}
-		if existing.Version != *input.ExpectedVersion {
-			return fmt.Errorf("[CONFLICT] BOM has been modified by another user (expected v%d, got v%d)", *input.ExpectedVersion, existing.Version)
-		}
-
-		// ✅ 状态转换验证（考虑BOM类型）
-		if guard := statemachine.CanTransitionBOMStatusWithType(existing.Status, input.Status, existing.BOMType); !guard.Allowed {
-			return guard.Err()
-		}
-
-		// ✅ 权限检查
-		if permCheck := statemachine.CanUserPromoteBOMStatus(ctx, existing.Status, input.Status); !permCheck.Allowed {
-			return permCheck.Err()
-		}
-
-		// Content locking must not block the approved -> released lifecycle transition.
-		isPublishingApprovedBOM := existing.Status == models.BOMStatusApproved && input.Status == models.BOMStatusReleased
-		if existing.IsLocked && !isPublishingApprovedBOM && input.Status != models.BOMStatusObsolete {
-			return fmt.Errorf("[CRITICAL] Cannot promote a locked BOM (Status: %s) to %s", existing.Status, input.Status)
-		}
-
-		// ✅ 业务完整性校验（防止发布空 BOM 或无效 BOM）
-		if err := validateBOMBusinessIntegrity(tx, id, input.Status); err != nil {
-			return err
-		}
-
-		before := bomAuditSnapshot(existing)
-
-		existing.Status = input.Status
-
-		// ✅ 使用状态机统一管理锁定逻辑
-		existing.IsLocked = statemachine.ShouldLockBOMStatusString(input.Status)
-
-		// ✅ 版本号递增
-		existing.Version++
-
-		if err := tx.Save(&existing).Error; err != nil {
-			return wrapBOMUniqueViolation(err, &existing)
-		}
-		saved = existing
-
-		if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "PROMOTE"); err != nil {
-			return err
-		}
-		payload := bomAuditSnapshot(saved)
-		payload["operation"] = "promote"
-		payload["statusTransition"] = map[string]interface{}{
-			"from":            before["status"],
-			"to":              saved.Status,
-			"reason":          input.Reason,
-			"approverComment": input.ApproverComment,
-		}
-		if err := writeBOMAuditEntryWithContext(ctx, tx, saved.ID, "PROMOTE", before, payload); err != nil {
-			return err
-		}
-		action := "STATUS_CHANGED"
-		if saved.BOMType == models.BOMTypeMBOM && saved.Status == models.BOMStatusObsolete {
-			action = "OBSOLETED"
-		}
-		return dispatchBOMLifecycleNotificationsWithinTransaction(ctx, tx, saved, fmt.Sprint(before["status"]), action, "", map[string]any{"reason": input.Reason, "approverComment": input.ApproverComment})
-	})
-
-	if err != nil {
-		return BOMDetailResponse{}, err
-	}
-	return MapBOMToDetailResponse(saved)
-}
-
 func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInput) (BOMDetailResponse, error) {
 	if strings.TrimSpace(ebomID) == "" {
 		return BOMDetailResponse{}, ErrBOMIDRequired
@@ -397,7 +338,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. 获取源EBOM
 		var ebom models.BOM
-		if err := tx.Preload("Items").Where("id = ?", ebomID).First(&ebom).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).Preload("Items").Where("id = ?", ebomID).First(&ebom).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrEBOMNotFound
 			}
@@ -430,21 +371,9 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		}
 
 		// 3. 克隆BOM Items
-		clonedItems := make([]models.BOMItem, len(ebom.Items))
-		for idx, item := range ebom.Items {
-			clonedItems[idx] = models.BOMItem{
-				ID:             uuid.NewString(),
-				Section:        item.Section,
-				MaterialID:     item.MaterialID,
-				UnitPrice:      item.UnitPrice,
-				Unit:           item.Unit,
-				UnitUsage:      item.UnitUsage,
-				WastagePercent: item.WastagePercent,
-				StandardUsage:  item.StandardUsage,
-				MaterialType:   item.MaterialType,
-				SupplyChannel:  item.SupplyChannel,
-				SortOrder:      item.SortOrder, // ✅ 继承源 EBOM 的装配顺序
-			}
+		clonedItems, clonedRelationSidecar, err := cloneBOMRecipeItemsAndRemapRelationSidecarItemReferences(ebom.Items, ebom.RelationSidecar)
+		if err != nil {
+			return err
 		}
 
 		// 4. 创建MBOM
@@ -468,7 +397,7 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 				ChangeOrderNo: input.ChangeOrderNo,
 				ChangeType:    "MANUAL",
 			},
-			RelationSidecar: ebom.RelationSidecar, // 复制关系结构
+			RelationSidecar: clonedRelationSidecar,
 		}
 
 		// 校验继承的归属是否一致（防止源 EBOM 是历史脏数据传染下游）
@@ -563,12 +492,15 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 	if strings.TrimSpace(input.Reason) == "" {
 		return BOMDetailResponse{}, fmt.Errorf("[VALIDATION] revise reason is required")
 	}
+	if permission := statemachine.CanUserPromoteBOMStatus(ctx, models.BOMStatusDraft, models.BOMStatusReleased); !permission.Allowed {
+		return BOMDetailResponse{}, permission.Err()
+	}
 
 	var savedNew models.BOM
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. 取出当前 MBOM
 		var current models.BOM
-		if err := tx.Preload("Items").Where("id = ?", mbomID).First(&current).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Items").Where("id = ?", mbomID).First(&current).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return fmt.Errorf("[VALIDATION] MBOM not found: %s", mbomID)
 			}
@@ -587,6 +519,13 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 		if input.ExpectedVersion != nil && current.Version != *input.ExpectedVersion {
 			return fmt.Errorf("[CONFLICT] MBOM has been modified (expected v%d, got v%d). Please refresh and try again", *input.ExpectedVersion, current.Version)
 		}
+		if err := validateBOMBusinessIntegrity(tx, current.ID, models.BOMStatusReleased); err != nil {
+			return err
+		}
+		clonedItems, clonedRelationSidecar, err := cloneBOMRecipeItemsAndRemapRelationSidecarItemReferences(current.Items, current.RelationSidecar)
+		if err != nil {
+			return err
+		}
 
 		// 4. 旧 MBOM 置 OBSOLETE
 		beforeSnapshot := bomAuditSnapshot(current)
@@ -594,6 +533,7 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			Updates(map[string]interface{}{
 				"status":    models.BOMStatusObsolete,
 				"is_locked": true,
+				"version":   current.Version + 1,
 			}).Error; err != nil {
 			return err
 		}
@@ -607,35 +547,11 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			return err
 		}
 
-		// 5. 克隆 items
-		clonedItems := make([]models.BOMItem, len(current.Items))
-		for idx, item := range current.Items {
-			clonedItems[idx] = models.BOMItem{
-				ID:             uuid.NewString(),
-				Section:        item.Section,
-				MaterialID:     item.MaterialID,
-				UnitPrice:      item.UnitPrice,
-				Unit:           item.Unit,
-				UnitUsage:      item.UnitUsage,
-				WastagePercent: item.WastagePercent,
-				StandardUsage:  item.StandardUsage,
-				MaterialType:   item.MaterialType,
-				SupplyChannel:  item.SupplyChannel,
-				SortOrder:      item.SortOrder,
-			}
-		}
-
 		// 6. 创建新 MBOM 版本
 		nextVersionText := bumpMBOMVersionText(current.VersionText)
 		nextRevisionNo := strings.TrimSpace(input.RevisionNo)
 		if nextRevisionNo == "" {
 			nextRevisionNo = current.MasterDataControl.RevisionNo
-		}
-
-		// 方案 B：修订是版本递进，新 MBOM 默认继承当前版本的 measuredWeight + 单位。
-		// 如果当前版本不持有重量（理论上不应发生，因为 RELEASED 必须 > 0），快速失败。
-		if current.MeasuredWeight <= 0 || strings.TrimSpace(current.MeasuredWeightUnit) == "" {
-			return fmt.Errorf("[VALIDATION] revise blocked: current MBOM (ID: %s) is missing measuredWeight/unit", current.ID)
 		}
 
 		newMBOM := models.BOM{
@@ -645,7 +561,7 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 			SourceEBOMID:       current.SourceEBOMID,
 			VersionText:        nextVersionText,
 			Status:             models.BOMStatusReleased, // ✅ 修订即生效，无中间态
-			IsLocked:           false,
+			IsLocked:           true,
 			Description:        fmt.Sprintf("Revised from %s (%s) — %s", current.BOMNo, current.VersionText, input.Reason),
 			OwnerType:          current.OwnerType,
 			OwnerCustomerID:    current.OwnerCustomerID,
@@ -657,7 +573,7 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 				ChangeOrderNo: input.ChangeOrderNo,
 				ChangeType:    "MANUAL",
 			},
-			RelationSidecar: current.RelationSidecar,
+			RelationSidecar: clonedRelationSidecar,
 		}
 		// 校验继承的归属是否一致(防止源 MBOM 是历史脏数据传染下游)
 		if err := validateBOMOwnership(&newMBOM); err != nil {

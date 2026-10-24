@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
@@ -29,7 +29,7 @@ const logger = createLogger('useBOMSubmitOrchestrator')
  *   - delta 提交（用于 SDRTS 协议 diff）
  *   - 乐观锁版本注入与冲突校验（optimistic lock）
  *   - 保存后 baseline 重置（sidecar tracker）
- *   - promote 前的"如有未保存改动先 save"流程
+ *   - 草稿在同一请求内保存并发布；只读记录通过独立状态入口流转
  *
  * 本 hook 不承担 UI 副作用（toast / 弹窗）—— 这些由各底层 hook 内部处理。
  */
@@ -62,9 +62,10 @@ export interface UseBOMSubmitOrchestratorParams {
 }
 
 export interface UseBOMSubmitOrchestratorResult {
+  isLifecycleOperationPending: boolean
   /** form `onSubmit` handler。若发生权限拒绝/版本冲突/保护失败返回 null。 */
   submit: (data: BOM) => Promise<BOM | null>
-  /** "提升状态"的 dispatch handler。如果当前 form 是 dirty 会先走 submit。 */
+  /** 草稿原子保存并发布；历史批准发布及已发布作废走独立状态入口。 */
   promote: (targetStatus: string) => Promise<void>
 }
 
@@ -84,6 +85,9 @@ export function useBOMSubmitOrchestrator(
     onPromote,
     onClose,
   } = params
+  const lifecycleOperationPendingRef = useRef(false)
+  const [isLifecycleOperationPending, setIsLifecycleOperationPending] =
+    useState(false)
 
   /**
    * 由 effectiveProtocolDraft + 当前 form values 组装 SaveBOMInput，
@@ -110,6 +114,7 @@ export function useBOMSubmitOrchestrator(
 
   const submit = useCallback(
     async (data: BOM): Promise<BOM | null> => {
+      if (lifecycleOperationPendingRef.current) return null
       // 权限守卫
       if (!permissionGuard.canSave) {
         const reason = permissionGuard.getDenialReason()
@@ -145,7 +150,10 @@ export function useBOMSubmitOrchestrator(
       if (!result) return null
 
       // 版本冲突 → 弹窗已由 useBOMOptimisticLock 内部触发，这里只让调用方知道结果
-      const conflict = optimisticLock.validateVersion(result.version)
+      const conflict = optimisticLock.validateVersion(
+        result.version,
+        currentRow?.id ? 1 : 0
+      )
       if (conflict) {
         logger.warn('Version conflict detected', conflict)
         return null
@@ -158,6 +166,7 @@ export function useBOMSubmitOrchestrator(
     },
     [
       buildSubmitPayload,
+      currentRow?.id,
       deltaTracker,
       effectiveProtocolDraft,
       form.formState.isDirty,
@@ -172,6 +181,9 @@ export function useBOMSubmitOrchestrator(
 
   const promote = useCallback(
     async (targetStatus: string): Promise<void> => {
+      if (lifecycleOperationPendingRef.current || form.formState.isSubmitting)
+        return
+      if (!onSubmit && !onPromote) return
       // 权限守卫
       if (!permissionGuard.canPromote) {
         const reason = permissionGuard.getDenialReason()
@@ -180,53 +192,61 @@ export function useBOMSubmitOrchestrator(
       }
 
       if (!effectiveProtocolDraft) return
+      lifecycleOperationPendingRef.current = true
+      setIsLifecycleOperationPending(true)
+      try {
+        // Content and publication commit together. A failed release must not leave a
+        // new draft or save edits that the user intended to publish.
+        if (targetStatus === 'RELEASED' && permissionGuard.canSave) {
+          if (!onSubmit) return
 
-      let bomToPromote = currentRow
+          let currentData: BOM | undefined
+          await form.handleSubmit((validatedData) => {
+            currentData = validatedData
+          })()
+          if (!currentData) return
 
-      // Locked approved content is published as saved, without resubmitting its read-only form.
-      if (
-        permissionGuard.canSave &&
-        (!bomToPromote?.id || form.formState.isDirty)
-      ) {
-        if (!onSubmit) return
+          const fullSidecar = buildBOMRelationSidecar(effectiveProtocolDraft)
+          const saved = await onSubmit({
+            ...buildSubmitPayload(currentData, fullSidecar, true),
+            publishOnSave: true,
+          })
+          if (!saved) return
 
-        // This pre-save must validate just like the ordinary form submit (including typed dates).
-        let currentData: BOM | undefined
-        await form.handleSubmit((validatedData) => {
-          currentData = validatedData
-        })()
-        if (!currentData) return
-
-        const fullSidecar = buildBOMRelationSidecar(effectiveProtocolDraft)
-        // promote 前的预 save 不走 sidecarDelta（避免 promote 与保存的 delta 混淆）
-        const submitData = buildSubmitPayload(currentData, fullSidecar, false)
-
-        const saved = await onSubmit(submitData)
-        if (!saved) return
-
-        const conflict = optimisticLock.validateVersion(saved.version)
-        if (conflict) {
-          logger.warn('Version conflict during promote', conflict)
+          const conflict = optimisticLock.validateVersion(
+            saved.version,
+            currentRow?.id ? 2 : 1
+          )
+          if (conflict) {
+            logger.warn('Version conflict during promote', conflict)
+            return
+          }
+          optimisticLock.updateVersion(saved.version)
+          deltaTracker.resetBaseline(fullSidecar)
+          onClose()
           return
         }
-        optimisticLock.updateVersion(saved.version)
-        bomToPromote = saved
-      }
 
-      if (bomToPromote?.id && onPromote) {
-        const success = await onPromote(
-          bomToPromote.id,
-          targetStatus,
-          bomToPromote.version
-        )
-        if (success) {
-          onClose()
+        // Historical approved records and released records stay read-only.
+        if (currentRow?.id && onPromote) {
+          const success = await onPromote(
+            currentRow.id,
+            targetStatus,
+            currentRow.version
+          )
+          if (success) {
+            onClose()
+          }
         }
+      } finally {
+        lifecycleOperationPendingRef.current = false
+        setIsLifecycleOperationPending(false)
       }
     },
     [
       buildSubmitPayload,
       currentRow,
+      deltaTracker,
       effectiveProtocolDraft,
       form,
       onClose,
@@ -237,5 +257,5 @@ export function useBOMSubmitOrchestrator(
     ]
   )
 
-  return { submit, promote }
+  return { submit, promote, isLifecycleOperationPending }
 }

@@ -1366,7 +1366,7 @@ export const engineering = {
       approved: '已审核',
       released: '已发布',
       archived: '已归档',
-      obsolete: '已废弃',
+      obsolete: '已作废',
     },
     dialog: {
       createTitle: '新建 BOM',
@@ -1374,13 +1374,18 @@ export const engineering = {
       remarkPlaceholder: '填写 BOM 备注...',
       save: '保存 BOM',
       saveDraft: '存草稿',
-      submitReview: '提交评审',
+      saveAndPublish: '保存并发布',
+      publishDraft: '直接发布',
+      obsolete: '作废 BOM',
+      confirmObsolete:
+        '确认作废这份 BOM？作废后退出使用，保留历史且不能恢复为草稿。',
       release: '发布生产',
       releaseEngineering: '发布研发',
       locked: '当前版本已锁定',
     },
     actions: {
       derive: '派生 MBOM',
+      reviseRequiresPublishPermission: '需要 BOM 状态操作权限才能发布修订版本',
     },
     form: {
       bomNo: 'BOM 编号',

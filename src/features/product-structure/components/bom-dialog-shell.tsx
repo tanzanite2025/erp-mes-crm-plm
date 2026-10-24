@@ -35,7 +35,7 @@ function resolveBOMStatusMeta(statusValue: string | undefined): {
   labelKey: BOMStatusLabelKey
   className: string
 } {
-  const status = normalizeBomStatus(statusValue)
+  const status = normalizeBomStatus(statusValue).toLowerCase()
   const config: Record<
     string,
     { labelKey: BOMStatusLabelKey; className: string }

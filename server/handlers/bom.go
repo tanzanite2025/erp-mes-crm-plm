@@ -36,7 +36,7 @@ func GetBOMsHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to fetch BOM list: " + err.Error()})
 		return
 	}
@@ -84,6 +84,18 @@ func SaveBOMHandler(c *gin.Context) {
 		}
 		if errors.Is(err, services.ErrBOMActiveConflict) {
 			c.JSON(http.StatusConflict, gin.H{"error": "[VALIDATION] failed to save BOM: " + err.Error()})
+			return
+		}
+		if contains(err.Error(), "[FORBIDDEN]") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		if contains(err.Error(), "[CONFLICT]") {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if contains(err.Error(), "[VALIDATION]") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to save BOM: " + err.Error()})
@@ -135,6 +147,14 @@ func PromoteBOMStatusHandler(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error()})
 			return
 		}
+		if contains(err.Error(), "[FORBIDDEN]") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		if contains(err.Error(), "[VALIDATION]") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to promote BOM: " + err.Error()})
 		return
 	}
@@ -165,6 +185,14 @@ func DeriveMBOMFromEBOMHandler(c *gin.Context) {
 
 	saved, err := services.DeriveMBOMFromEBOM(auditContextFromGin(c), ebomID, input)
 	if err != nil {
+		if errors.Is(err, services.ErrBOMRelationSidecarInvalid) || contains(err.Error(), "[VALIDATION]") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+			return
+		}
+		if contains(err.Error(), "[CONFLICT]") {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		if errors.Is(err, services.ErrBOMIDRequired) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] EBOM ID is required"})
 			return
@@ -194,6 +222,18 @@ func ReviseMBOMHandler(c *gin.Context) {
 
 	saved, err := services.ReviseMBOM(auditContextFromGin(c), id, input)
 	if err != nil {
+		if contains(err.Error(), "[FORBIDDEN]") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrBOMRelationSidecarInvalid) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrBOMActiveConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		if errors.Is(err, services.ErrBOMIDRequired) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] MBOM ID is required"})
 			return

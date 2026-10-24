@@ -35,6 +35,7 @@ import {
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { DataTablePagination } from '@/components/data-table'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type BOMSectionOption } from '../../data/bom-section-schema'
 import { type BOM, type Product, type BOMItem } from '../../data/schema'
 import { selectBOMDisplayVersion } from '../../utils/bom-display-version'
@@ -68,6 +69,8 @@ export function BOMTable({
   onDelete,
 }: BOMTableProps) {
   const { t } = useLanguage()
+  const { allowsAction } = usePermissionActions()
+  const canPublishBOMRevision = allowsAction('action_engineering_bom_promote')
   const productMap = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products]
@@ -271,7 +274,7 @@ export function BOMTable({
       accessorKey: 'status',
       header: t('engineering.bomArchive.table.status'),
       cell: ({ row }) => {
-        const status = normalizeBomStatus(row.original.status)
+        const status = normalizeBomStatus(row.original.status).toLowerCase()
         const config: Record<string, { label: string; className: string }> = {
           draft: {
             label: t('engineering.bomArchive.status.draft'),
@@ -328,7 +331,9 @@ export function BOMTable({
         const canDerive =
           isEBOM(row.original) && row.original.status === 'RELEASED' && isLocked
         const canRevise =
-          isMBOM(row.original) && row.original.status === 'RELEASED'
+          isMBOM(row.original) &&
+          row.original.status === 'RELEASED' &&
+          canPublishBOMRevision
 
         return (
           <div className='flex items-center gap-1'>
@@ -376,9 +381,13 @@ export function BOMTable({
                   if (canRevise) onRevise(row.original)
                 }}
                 title={
-                  canRevise
-                    ? '提交修订（产生新版本）'
-                    : '仅生效中（RELEASED）的生产 BOM 可以修订'
+                  !canPublishBOMRevision
+                    ? t(
+                        'engineering.bomArchive.actions.reviseRequiresPublishPermission'
+                      )
+                    : canRevise
+                      ? '提交修订（产生新版本）'
+                      : '仅生效中（RELEASED）的生产 BOM 可以修订'
                 }
               >
                 <RefreshCw className='size-4' />

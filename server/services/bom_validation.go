@@ -149,11 +149,15 @@ func validateBOMBusinessIntegrity(tx *gorm.DB, bomID string, targetStatus string
 		}
 	}
 
+	return validateBOMFinishedWeightForRelease(&bom)
+}
+
+func validateBOMFinishedWeightForRelease(bom *models.BOM) error {
 	if bom.MeasuredWeight <= 0 {
-		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without a positive measuredWeight; product weight comes solely from BOM", bomID)
+		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without a positive measuredWeight; product weight comes solely from BOM", bom.ID)
 	}
 	if strings.TrimSpace(bom.MeasuredWeightUnit) == "" {
-		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without measuredWeightUnit; pick a WEIGHT-category unit from basic settings", bomID)
+		return fmt.Errorf("[VALIDATION] Cannot release BOM (ID: %s) without measuredWeightUnit; pick a WEIGHT-category unit from basic settings", bom.ID)
 	}
 
 	return nil
@@ -208,10 +212,15 @@ func wrapBOMUniqueViolation(err error, bom *models.BOM) error {
 	if ownerType == "" {
 		ownerType = "INTERNAL"
 	}
+	bomType := strings.TrimSpace(bom.BOMType)
+	if bomType == "" {
+		bomType = "BOM"
+	}
 	return fmt.Errorf(
-		"%w: product %s already has a RELEASED MBOM for owner=%s/%s versionLevel=%q",
+		"%w: product %s already has a RELEASED %s for owner=%s/%s versionLevel=%q",
 		ErrBOMActiveConflict,
 		bom.ProductID,
+		bomType,
 		ownerType,
 		strings.TrimSpace(bom.OwnerCustomerID),
 		strings.TrimSpace(bom.VersionLevel),

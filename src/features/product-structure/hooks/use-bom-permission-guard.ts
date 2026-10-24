@@ -87,7 +87,7 @@ export function useBOMPermissionGuard({
   const canRemove = useMemo(() => !isLocked, [isLocked])
   const canModifyFields = useMemo(() => !isLocked, [isLocked])
   const canSave = useMemo(() => !isLocked, [isLocked])
-  const canPromote = !isLocked || status === 'APPROVED'
+  const canPromote = !isLocked || status === 'APPROVED' || status === 'RELEASED'
 
   // Get human-readable denial reason
   const getDenialReason = useCallback((): string | null => {

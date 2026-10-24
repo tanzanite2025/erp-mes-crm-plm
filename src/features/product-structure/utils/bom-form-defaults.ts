@@ -20,6 +20,7 @@ function normalizeDraftItems(
   const defaultSectionCode = getDefaultBOMSectionCode(sections)
   return (items || []).map((item) => ({
     ...item,
+    id: item.id?.trim() || crypto.randomUUID(),
     section: normalizeBOMSectionValue(
       sections,
       item.section || defaultSectionCode
@@ -29,7 +30,7 @@ function normalizeDraftItems(
 
 export function createEmptyBOMItem(sectionCode: string): BOM['items'][number] {
   return {
-    id: '',
+    id: crypto.randomUUID(),
     section: sectionCode,
     materialId: '',
     materialName: '',

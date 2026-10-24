@@ -30,9 +30,9 @@ const (
 // BOM 状态转换规则
 //
 // EBOM (研发 BOM) 与 MBOM (生产 BOM) 共用以下转换表：
-// DRAFT -> REVIEWING, APPROVED (快速通道)
-// REVIEWING -> DRAFT (退回修改), APPROVED
-// APPROVED -> RELEASED (独立发布转换)
+// DRAFT -> RELEASED
+// REVIEWING -> DRAFT, RELEASED（兼容历史记录，不再进入评审或批准）
+// APPROVED -> RELEASED（兼容历史记录）
 // RELEASED -> OBSOLETE
 // OBSOLETE -> 终态
 //
@@ -40,12 +40,11 @@ const (
 // 新版本直接为 RELEASED，旧版作废。初始状态由各写入入口决定。
 var bomTransitions = map[BOMStatus][]BOMStatus{
 	BOMStatusDraft: {
-		BOMStatusReviewing,
-		BOMStatusApproved, // 快速通道：跳过评审直接批准
+		BOMStatusReleased,
 	},
 	BOMStatusReviewing: {
 		BOMStatusDraft, // 退回修改
-		BOMStatusApproved,
+		BOMStatusReleased,
 	},
 	BOMStatusApproved: {
 		BOMStatusReleased,

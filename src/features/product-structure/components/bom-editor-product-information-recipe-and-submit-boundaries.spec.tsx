@@ -35,8 +35,13 @@ import {
 } from '../utils/bom-form-defaults'
 import { BOMActionDialog } from './bom-action-dialog'
 
+const bomEditorLifecyclePermission = vi.hoisted(() => ({ canPromote: true }))
 vi.mock('@/features/authz/hooks/use-permission-access', () => ({
-  usePermissionActions: () => ({ allowsAction: () => true }),
+  usePermissionActions: () => ({
+    allowsAction: (action: string) =>
+      action !== 'action_engineering_bom_promote' ||
+      bomEditorLifecyclePermission.canPromote,
+  }),
 }))
 vi.mock('@/lib/api-client', () => ({ apiFetch: vi.fn() }))
 vi.mock('@/context/language-provider', () => ({
@@ -100,9 +105,7 @@ const initialRecipeItems = [
 ]
 
 function renderBOMDialogWithProductInformationAndRecipe(
-  onSubmit: (
-    data: SaveBOMInput
-  ) => Promise<ReturnType<typeof createEmptyBOMFormValue>>,
+  onSubmit: (data: SaveBOMInput) => Promise<BOM | null>,
   onPromote = vi.fn(),
   currentRow?: BOM
 ) {
@@ -127,6 +130,7 @@ function renderBOMDialogWithProductInformationAndRecipe(
 }
 
 beforeEach(() => {
+  bomEditorLifecyclePermission.canPromote = true
   vi.clearAllMocks()
   editBOMRecord = undefined
   vi.stubGlobal(
@@ -278,7 +282,7 @@ describe('BOM product information, recipe and submit responsibility boundaries',
     expect(onSubmit.mock.calls[0][0].effectiveFrom).toBe('2020-02-29')
   })
 
-  it('blocks invalid dates in both draft save and the save-before-approval path, retaining the entered text', async () => {
+  it('blocks invalid dates in draft save and atomic publication, retaining the entered text', async () => {
     const onSubmit = vi.fn(async (data: SaveBOMInput) =>
       createEmptyBOMFormValue({ ...data, id: 'date-bom', version: 2 })
     )
@@ -290,16 +294,16 @@ describe('BOM product information, recipe and submit responsibility boundaries',
     expect(await screen.findByRole('alert')).toHaveTextContent('请输入有效日期')
     expect(input).toHaveValue('2023-02-29')
     expect(onSubmit).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: '提交评审' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存并发布' }))
     await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'))
     expect(onSubmit).not.toHaveBeenCalled()
     expect(onPromote).not.toHaveBeenCalled()
     fireEvent.change(input, { target: { value: '20240229' } })
-    fireEvent.click(screen.getByRole('button', { name: '提交评审' }))
-    await waitFor(() =>
-      expect(onPromote).toHaveBeenCalledWith('date-bom', 'APPROVED', 2)
-    )
+    fireEvent.click(screen.getByRole('button', { name: '保存并发布' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
     expect(onSubmit.mock.calls[0][0].effectiveFrom).toBe('2024-02-29')
+    expect(onSubmit.mock.calls[0][0].publishOnSave).toBe(true)
+    expect(onPromote).not.toHaveBeenCalled()
   })
 
   it('preserves real nested parent-child relationships when editing and saving in the accordion', async () => {
@@ -445,6 +449,7 @@ describe('BOM product information, recipe and submit responsibility boundaries',
       editBOMRecord
     )
     const recipe = await screen.findByRole('region', { name: 'BOM 配方明细' })
+    expect(screen.getByText('已发布', { exact: true })).toBeInTheDocument()
     await waitFor(() =>
       expect(
         recipe.querySelector<HTMLInputElement>('[name="items.0.unitUsage"]')
@@ -486,9 +491,13 @@ describe('BOM product information, recipe and submit responsibility boundaries',
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('edits immediately, folds each group independently and adds material to the clicked non-default group', async () => {
+  it('edits and folds groups independently, retaining newly added recipe row identities after reopening', async () => {
     const onSubmit = vi.fn(async (data: SaveBOMInput) =>
-      createEmptyBOMFormValue({ ...data, id: 'saved-bom' })
+      createEmptyBOMFormValue({
+        ...data,
+        id: 'saved-bom',
+        version: data.id ? data.version! + 1 : 1,
+      })
     )
     renderBOMDialogWithProductInformationAndRecipe(onSubmit)
     const recipe = await screen.findByRole('region', { name: 'BOM 配方明细' })
@@ -544,6 +553,57 @@ describe('BOM product information, recipe and submit responsibility boundaries',
         },
       },
     })
+    const saved = onSubmit.mock.calls[0][0]
+    const addedItemID = saved.items[1].id
+    expect(addedItemID).toMatch(/^[0-9a-f-]{36}$/)
+    expect(saved.relationSidecar?.protocolDraft.itemNodes).toContainEqual(
+      expect.objectContaining({
+        itemId: addedItemID,
+        sectionCode: 'PACKING',
+      })
+    )
+
+    cleanup()
+    editBOMRecord = createEmptyBOMFormValue({ ...saved, id: 'saved-bom' })
+    renderBOMDialogWithProductInformationAndRecipe(
+      onSubmit,
+      vi.fn(),
+      editBOMRecord
+    )
+    const reopenedRecipe = await screen.findByRole('region', {
+      name: 'BOM 配方明细',
+    })
+    await waitFor(() =>
+      expect(within(reopenedRecipe).getAllByRole('combobox')).toHaveLength(2)
+    )
+    expect(
+      reopenedRecipe.querySelector<HTMLInputElement>(
+        '[name="items.0.unitUsage"]'
+      )?.value
+    ).toBe('4')
+    fireEvent.click(screen.getByRole('button', { name: '存草稿' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2))
+    expect(onSubmit.mock.calls[1][0].items[1].id).toBe(addedItemID)
+    const reopenedProtocol =
+      onSubmit.mock.calls[1][0].relationSidecar!.protocolDraft
+    const savedProtocol = saved.relationSidecar!.protocolDraft
+    expect(reopenedProtocol.rootChildren).toEqual(savedProtocol.rootChildren)
+    expect(reopenedProtocol.branchNodes).toHaveLength(
+      savedProtocol.branchNodes.length
+    )
+    expect(reopenedProtocol.itemNodes).toHaveLength(
+      savedProtocol.itemNodes.length
+    )
+    for (const node of [
+      ...savedProtocol.branchNodes,
+      ...savedProtocol.itemNodes,
+    ]) {
+      expect(
+        [...reopenedProtocol.branchNodes, ...reopenedProtocol.itemNodes].find(
+          (reopenedNode) => reopenedNode.id === node.id
+        )
+      ).toMatchObject(node)
+    }
   })
 
   it('keeps historical rows visible when their shared group is inactive and hides empty inactive groups', async () => {
@@ -700,6 +760,7 @@ describe('BOM product information, recipe and submit responsibility boundaries',
       const releaseButton = await screen.findByRole('button', {
         name: bomType === 'EBOM' ? '发布研发' : '发布生产',
       })
+      expect(screen.getByText('已审核', { exact: true })).toBeInTheDocument()
       expect(screen.getByRole('textbox', { name: 'BOM 备注' })).toBeDisabled()
       expect(screen.getByRole('textbox', { name: '生效开始' })).toBeDisabled()
       expect(
@@ -779,7 +840,7 @@ describe('BOM product information, recipe and submit responsibility boundaries',
     expect(onClose).toHaveBeenCalledExactlyOnceWith()
   })
 
-  it('continues to save before promoting from the shared footer without merging lifecycle controls into the information panel', async () => {
+  it('publishes new content in one save request from the shared footer', async () => {
     const onSubmit = vi.fn(async (data: SaveBOMInput) =>
       createEmptyBOMFormValue({ ...data, id: 'saved-bom', version: 2 })
     )
@@ -789,22 +850,126 @@ describe('BOM product information, recipe and submit responsibility boundaries',
       name: '产品与 BOM 信息',
     })
     expect(
-      within(information).queryByRole('button', { name: '提交评审' })
+      within(information).queryByRole('button', { name: '保存并发布' })
     ).toBeNull()
     fireEvent.change(
       within(information).getByRole('textbox', { name: 'BOM 备注' }),
       { target: { value: '准备评审' } }
     )
-    fireEvent.click(screen.getByRole('button', { name: '提交评审' }))
-    await waitFor(() =>
-      expect(onPromote).toHaveBeenCalledWith('saved-bom', 'APPROVED', 2)
-    )
+    fireEvent.click(screen.getByRole('button', { name: '保存并发布' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
     expect(onSubmit).toHaveBeenCalledTimes(1)
     expect(onSubmit.mock.calls[0][0]).toMatchObject({
       productId: 'model-a',
       description: '准备评审',
       items: initialRecipeItems,
+      publishOnSave: true,
     })
+    expect(onPromote).not.toHaveBeenCalled()
+  })
+
+  it('keeps draft saving available without exposing publication to an account without lifecycle permission', async () => {
+    bomEditorLifecyclePermission.canPromote = false
+    const onSubmit = vi.fn(async (data: SaveBOMInput) =>
+      createEmptyBOMFormValue({ ...data, id: 'draft-without-publication' })
+    )
+    renderBOMDialogWithProductInformationAndRecipe(onSubmit)
+    await screen.findByRole('textbox', { name: 'BOM 备注' })
+    expect(
+      screen.queryByRole('button', { name: '保存并发布' })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: '提交评审' })
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '存草稿' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0].publishOnSave).toBeUndefined()
+  })
+
+  it('keeps a failed publication open, blocks duplicate requests and retries with the entered values', async () => {
+    let finishPublication!: (saved: BOM | null) => void
+    const onSubmit = vi.fn<(data: SaveBOMInput) => Promise<BOM | null>>()
+    onSubmit.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishPublication = resolve
+        })
+    )
+    renderBOMDialogWithProductInformationAndRecipe(onSubmit)
+    const publish = await screen.findByRole('button', { name: '保存并发布' })
+    fireEvent.click(publish)
+    fireEvent.click(publish)
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(publish).toBeDisabled()
+    expect(screen.getByRole('button', { name: '存草稿' })).toBeDisabled()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await act(async () => finishPublication(null))
+    expect(publish).toBeEnabled()
+    fireEvent.change(screen.getByRole('textbox', { name: 'BOM 备注' }), {
+      target: { value: '修正后发布' },
+    })
+    onSubmit.mockResolvedValueOnce(
+      createEmptyBOMFormValue({
+        id: 'published-bom',
+        status: 'RELEASED',
+        isLocked: true,
+        version: 2,
+      })
+    )
+    fireEvent.click(publish)
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2))
+    expect(onSubmit.mock.calls[1][0]).toMatchObject({
+      publishOnSave: true,
+      description: '修正后发布',
+    })
+  })
+
+  it('publishes the current recipe for an existing draft and accepts the save-and-release version advance', async () => {
+    editBOMRecord = createEmptyBOMFormValue({
+      id: 'existing-draft',
+      productId: 'model-a',
+      status: 'DRAFT',
+      version: 7,
+      measuredWeight: 420,
+      measuredWeightUnit: 'g',
+      items: initialRecipeItems,
+      relationSidecar: {
+        kind: 'parent_children_protocol',
+        version: 'v1',
+        protocolDraft: { rootChildren: [], branchNodes: [], itemNodes: [] },
+      },
+    })
+    const onSubmit = vi.fn(async (data: SaveBOMInput) =>
+      createEmptyBOMFormValue({
+        ...data,
+        status: 'RELEASED',
+        isLocked: true,
+        version: 9,
+      })
+    )
+    const onPromote = vi.fn(async () => true)
+    renderBOMDialogWithProductInformationAndRecipe(
+      onSubmit,
+      onPromote,
+      editBOMRecord
+    )
+    const publish = await screen.findByRole('button', { name: '直接发布' })
+    fireEvent.change(screen.getByRole('textbox', { name: 'BOM 备注' }), {
+      target: { value: '核对后发布' },
+    })
+    fireEvent.click(publish)
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      id: 'existing-draft',
+      version: 7,
+      publishOnSave: true,
+      description: '核对后发布',
+    })
+    expect(onPromote).not.toHaveBeenCalled()
+    expect(
+      screen.queryByText(/Version conflict detected/)
+    ).not.toBeInTheDocument()
   })
 
   it('preserves information, recipe edits and each version weight draft across mobile steps without submitting', async () => {

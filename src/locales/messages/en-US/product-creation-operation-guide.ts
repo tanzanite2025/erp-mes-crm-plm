@@ -358,7 +358,7 @@ export const productCreationOperationGuide = {
       fields:
         'Linked product, BOM version, ownership, performance version, material lines and finished weight/unit. Select a customer for customer ownership.',
       result:
-        'An EBOM draft is linked to the product. Continue review, release and manufacturing BOM derivation in the BOM module.',
+        'The EBOM is linked to the product. Save a draft or save and publish after verification. Continue manufacturing BOM derivation in the BOM module.',
     },
   },
 }

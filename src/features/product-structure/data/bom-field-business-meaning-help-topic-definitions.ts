@@ -3,7 +3,7 @@ export const bomFieldBusinessMeaningHelpTopicItemKeys = {
   bomType: ['engineering', 'manufacturing'],
   ownership: ['internal', 'customer'],
   performanceAndWeight: ['catalog', 'weight', 'save'],
-  lifecycle: ['draft', 'reviewing', 'approved', 'released', 'obsolete'],
+  lifecycle: ['draft', 'released', 'obsolete'],
 } as const
 
 export type BOMFieldBusinessMeaningHelpTopic =

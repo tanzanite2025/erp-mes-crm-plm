@@ -94,6 +94,7 @@ function sanitizeBOMInput(data: SaveBOMInput): Record<string, unknown> {
 
   return {
     ...bomFields,
+    publishOnSave: data.publishOnSave,
     masterDataControl: {
       ...masterDataControl,
       effectiveFrom:

@@ -5,6 +5,7 @@ import { type UseFormReturn } from 'react-hook-form'
 import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { Form } from '@/components/ui/form'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
 import { useBOMOptimisticLock } from '../hooks/use-bom-optimistic-lock'
@@ -54,6 +55,8 @@ export function BOMActionDialog({
   onSubmit,
   onPromote,
 }: BOMActionDialogProps) {
+  const { allowsAction } = usePermissionActions()
+  const canChangeBOMLifecycle = allowsAction('action_engineering_bom_promote')
   const isEdit = Boolean(currentRow)
   const {
     form,
@@ -136,20 +139,23 @@ export function BOMActionDialog({
   }, [effectiveProtocolDraft, updateSidecar])
 
   // 提交编排（submit + promote）
-  const { submit: handleFormSubmit, promote: handlePromote } =
-    useBOMSubmitOrchestrator({
-      isEdit,
-      currentRow,
-      form: typedForm,
-      effectiveProtocolDraft,
-      isSidecarDirty: deltaTracker.isDirty,
-      permissionGuard,
-      optimisticLock,
-      deltaTracker,
-      onSubmit,
-      onPromote,
-      onClose: () => onOpenChange(false),
-    })
+  const {
+    submit: handleFormSubmit,
+    promote: handlePromote,
+    isLifecycleOperationPending,
+  } = useBOMSubmitOrchestrator({
+    isEdit,
+    currentRow,
+    form: typedForm,
+    effectiveProtocolDraft,
+    isSidecarDirty: deltaTracker.isDirty,
+    permissionGuard,
+    optimisticLock,
+    deltaTracker,
+    onSubmit,
+    onPromote,
+    onClose: () => onOpenChange(false),
+  })
 
   const isLocked = currentRow?.isLocked || false
 
@@ -158,7 +164,10 @@ export function BOMActionDialog({
       <BOMDialogShell
         wizardHeader={wizardHeader}
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={(nextOpen) => {
+          if (!isLifecycleOperationPending && !typedForm.formState.isSubmitting)
+            onOpenChange(nextOpen)
+        }}
         isEdit={isEdit}
         headerMeta={{
           version: typeof bomVersion === 'string' ? bomVersion : '',
@@ -220,7 +229,15 @@ export function BOMActionDialog({
                 >
                   <BOMDialogFooter
                     currentRow={currentRow}
-                    onPromote={onPromote ? handlePromote : undefined}
+                    onPromote={
+                      canChangeBOMLifecycle && (onPromote || onSubmit)
+                        ? handlePromote
+                        : undefined
+                    }
+                    canSaveAndPublish={
+                      Boolean(onSubmit) && canChangeBOMLifecycle
+                    }
+                    isLifecycleOperationPending={isLifecycleOperationPending}
                     isSubmitDisabled={
                       isLocked || typedForm.formState.isSubmitting
                     }

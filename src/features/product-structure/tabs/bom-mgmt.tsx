@@ -91,8 +91,7 @@ export function BOMMgmt() {
   const handleFormSubmit = async (formData: SaveBOMInput) => {
     const saved = await saveBOM({ data: formData })
     if (saved) handleDialogOpenChange(false)
-    // Return null since we don't have the BOM object
-    return null
+    return saved
   }
 
   const closePreview = () => {

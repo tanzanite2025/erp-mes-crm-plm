@@ -15,7 +15,7 @@ interface BOMDataResult {
   readResource: BOMReadDataResource
   customers: Customer[]
   customerNameMap: Map<string, string>
-  saveBOM: (params: { data: SaveBOMInput }) => Promise<boolean>
+  saveBOM: (params: { data: SaveBOMInput }) => Promise<BOM | null>
   deleteBOM: (id: string) => Promise<boolean>
   promoteBOM: (
     id: string,
@@ -40,10 +40,10 @@ interface BOMDataResult {
  * 职责仅限：
  *   1. 把 useBOMReadData / useBOMWriteActions / useBOMImportExport 三个底层 hook 串起来
  *   2. 从 readResource 中提取 previousBom 快照透传给 write action（让事件派发能拿到上下文）
- *   3. 把所有 mutation 的成功 / 失败统一映射为 `Promise<boolean>`
+ *   3. 保存返回真实 BOM 或 null，供编辑器核对版本；其他操作返回成功标记
  *
  * Toast 与具体错误分支由 useBOMWriteActions 内部的 onSuccess / onError 处理；
- * 本 hook **不**再做 toast，避免双重通知。调用方只需要看返回的 boolean
+ * 本 hook **不**再做 toast，避免双重通知。调用方使用保存结果或成功标记
  * 决定是否关闭弹窗或刷新。
  */
 export function useBOMData(): BOMDataResult {
@@ -98,12 +98,16 @@ export function useBOMData(): BOMDataResult {
     }
   }
 
-  const saveBOM = (params: { data: SaveBOMInput }) => {
+  const saveBOM = async (params: { data: SaveBOMInput }) => {
     const candidateId = (params.data.id || '').trim()
     const previousBom = candidateId
       ? getCurrentBomSnapshot(candidateId)
       : undefined
-    return resolveAsBool(() => persistBOM({ data: params.data, previousBom }))
+    try {
+      return await persistBOM({ data: params.data, previousBom })
+    } catch {
+      return null
+    }
   }
 
   const deleteBOM = (id: string) => {

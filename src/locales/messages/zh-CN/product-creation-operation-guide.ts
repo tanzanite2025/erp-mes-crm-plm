@@ -335,7 +335,7 @@ export const productCreationOperationGuide = {
       fields:
         '关联产品、BOM 版本、归属、性能版本、物料明细及成品重量/单位；客户归属时还需选择客户。',
       result:
-        '得到关联该产品的 EBOM 草稿。后续评审、发布和派生生产 BOM 在 BOM 模块中继续处理。',
+        '得到关联该产品的 EBOM，可保存草稿或核对后保存并发布。后续派生生产 BOM 在 BOM 模块中处理。',
     },
   },
 }
