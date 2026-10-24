@@ -220,8 +220,10 @@ export function BOMActionDialog({
                 >
                   <BOMDialogFooter
                     currentRow={currentRow}
-                    onPromote={handlePromote}
-                    isSubmitDisabled={isLocked}
+                    onPromote={onPromote ? handlePromote : undefined}
+                    isSubmitDisabled={
+                      isLocked || typedForm.formState.isSubmitting
+                    }
                   />
                 </div>
               </div>

@@ -249,6 +249,59 @@ afterEach(() => {
 })
 
 describe('BOM product information, recipe and submit responsibility boundaries', () => {
+  it('keeps typed historical date input intact and normalizes it on blur before saving', async () => {
+    const onSubmit = vi.fn(async (data: SaveBOMInput) =>
+      createEmptyBOMFormValue({ ...data, id: 'date-bom' })
+    )
+    renderBOMDialogWithProductInformationAndRecipe(onSubmit)
+    const input = await screen.findByRole('textbox', { name: '生效开始' })
+    fireEvent.change(input, { target: { value: '1998/1/' } })
+    expect(input).toHaveValue('1998/1/')
+    fireEvent.change(input, { target: { value: '1998/1/15' } })
+    expect(input).toHaveValue('1998/1/15')
+    fireEvent.blur(input)
+    expect(input).toHaveValue('1998-01-15')
+    fireEvent.click(screen.getByRole('button', { name: '存草稿' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0].effectiveFrom).toBe('1998-01-15')
+  })
+
+  it('validates and normalizes a pasted compact date on submit even without blur', async () => {
+    const onSubmit = vi.fn(async (data: SaveBOMInput) =>
+      createEmptyBOMFormValue({ ...data, id: 'date-bom' })
+    )
+    renderBOMDialogWithProductInformationAndRecipe(onSubmit)
+    const input = await screen.findByRole('textbox', { name: '生效开始' })
+    fireEvent.change(input, { target: { value: '20200229' } })
+    fireEvent.submit(input.closest('form')!)
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0].effectiveFrom).toBe('2020-02-29')
+  })
+
+  it('blocks invalid dates in both draft save and the save-before-approval path, retaining the entered text', async () => {
+    const onSubmit = vi.fn(async (data: SaveBOMInput) =>
+      createEmptyBOMFormValue({ ...data, id: 'date-bom', version: 2 })
+    )
+    const onPromote = vi.fn(async () => true)
+    renderBOMDialogWithProductInformationAndRecipe(onSubmit, onPromote)
+    const input = await screen.findByRole('textbox', { name: '生效开始' })
+    fireEvent.change(input, { target: { value: '2023-02-29' } })
+    fireEvent.click(screen.getByRole('button', { name: '存草稿' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('请输入有效日期')
+    expect(input).toHaveValue('2023-02-29')
+    expect(onSubmit).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '提交评审' }))
+    await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'))
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onPromote).not.toHaveBeenCalled()
+    fireEvent.change(input, { target: { value: '20240229' } })
+    fireEvent.click(screen.getByRole('button', { name: '提交评审' }))
+    await waitFor(() =>
+      expect(onPromote).toHaveBeenCalledWith('date-bom', 'APPROVED', 2)
+    )
+    expect(onSubmit.mock.calls[0][0].effectiveFrom).toBe('2024-02-29')
+  })
+
   it('preserves real nested parent-child relationships when editing and saving in the accordion', async () => {
     editBOMRecord = createEmptyBOMFormValue({
       id: 'nested-bom',
@@ -411,6 +464,25 @@ describe('BOM product information, recipe and submit responsibility boundaries',
         }) as HTMLButtonElement
       ).disabled
     ).toBe(true)
+    const ownershipHelp = screen.getByRole('button', { name: '查看归属说明' })
+    expect(ownershipHelp).toBeEnabled()
+    expect(ownershipHelp.closest('label')).toBeNull()
+    expect(ownershipHelp).toHaveAttribute('type', 'button')
+    fireEvent.click(ownershipHelp)
+    const helpPopover = await screen.findByRole('dialog', {
+      name: '归属：这份配方供谁使用',
+    })
+    expect(within(helpPopover).getByText('内部生产')).toBeInTheDocument()
+    expect(within(helpPopover).getByText('客户专供')).toBeInTheDocument()
+    expect(within(helpPopover).getByText(/归属客户.*留空/)).toBeInTheDocument()
+    expect(within(helpPopover).getByText(/选择实际客户/)).toBeInTheDocument()
+    fireEvent.keyDown(helpPopover, { key: 'Escape' })
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: '归属：这份配方供谁使用' })
+      ).not.toBeInTheDocument()
+    )
+    expect(screen.getByRole('dialog', { name: /BOM/ })).toBeInTheDocument()
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
@@ -629,6 +701,10 @@ describe('BOM product information, recipe and submit responsibility boundaries',
         name: bomType === 'EBOM' ? '发布研发' : '发布生产',
       })
       expect(screen.getByRole('textbox', { name: 'BOM 备注' })).toBeDisabled()
+      expect(screen.getByRole('textbox', { name: '生效开始' })).toBeDisabled()
+      expect(
+        screen.getByRole('button', { name: '选择生效开始日期' })
+      ).toBeDisabled()
       await waitFor(() =>
         expect(
           document.querySelector('[name="items.0.unitUsage"]')

@@ -5,9 +5,16 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { matchesPathPermissionProjection } from '@/features/authz/guards/route-access'
+import { BOMCreationGuideChapterOperationInstructions } from '../components/bom-creation-guide/bom-creation-guide-chapter-operation-instructions'
+import { ProductAndBOMResponsibilityGuideWithBusinessEntryActions } from '../components/bom-creation-guide/product-and-bom-responsibility-guide-with-business-entry-actions'
+import {
+  BOMFieldBusinessMeaningExplanation,
+  BOMFieldBusinessMeaningHelpPopover,
+} from '../components/bom-field-business-meaning-help-popover'
 import {
   bomCreationOperationGuideChecklistKeys,
   bomCreationOperationGuideLifecycleStageKeys,
+  bomCreationOperationGuideManufacturingDerivationStepKeys,
   bomCreationOperationGuideProductFieldKeys,
   bomCreationOperationGuideProductRecordKeys,
   bomCreationOperationGuideRecipeFieldKeys,
@@ -50,7 +57,7 @@ function BOMCreationOperationGuideSection({
   )
 }
 
-/** Read-only handbook. Editing and persistence belong to the BOM workspace. */
+/** Chapter explanations compose independent action adapters; BOM rules remain in the editor. */
 export function BOMCreationOperationGuidePage() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
@@ -123,6 +130,8 @@ export function BOMCreationOperationGuidePage() {
         <div className='grid min-w-0 items-start gap-6 @5xl:grid-cols-[minmax(0,1fr)_18rem]'>
           <div className='min-w-0'>
             <BOMCreationOperationGuideSection sectionKey='purpose'>
+              <ProductAndBOMResponsibilityGuideWithBusinessEntryActions />
+              <BOMCreationGuideChapterOperationInstructions chapter='purpose' />
               <dl className='grid gap-3 @2xl:grid-cols-3'>
                 {bomCreationOperationGuideProductRecordKeys.map((recordKey) => (
                   <div
@@ -148,15 +157,24 @@ export function BOMCreationOperationGuidePage() {
             </BOMCreationOperationGuideSection>
 
             <BOMCreationOperationGuideSection sectionKey='product'>
+              <BOMCreationGuideChapterOperationInstructions chapter='product' />
               <dl className='divide-y rounded-xl border bg-card px-4 sm:px-5'>
                 {bomCreationOperationGuideProductFieldKeys.map((fieldKey) => (
                   <div
                     key={fieldKey}
                     className='grid gap-2 py-4 @3xl:grid-cols-[10rem_minmax(0,1fr)] @3xl:gap-5'
                   >
-                    <dt className='text-sm leading-7 font-semibold'>
+                    <dt className='flex items-center gap-1 text-sm leading-7 font-semibold'>
                       {t(
                         `engineering.bomCreationGuide.product.fields.${fieldKey}.title`
+                      )}
+                      {fieldKey === 'ownership' && (
+                        <BOMFieldBusinessMeaningHelpPopover
+                          topic='ownership'
+                          fieldLabel={t(
+                            'engineering.bomCreationGuide.product.fields.ownership.title'
+                          )}
+                        />
                       )}
                     </dt>
                     <dd className='text-sm leading-7 text-muted-foreground'>
@@ -173,6 +191,7 @@ export function BOMCreationOperationGuidePage() {
             </BOMCreationOperationGuideSection>
 
             <BOMCreationOperationGuideSection sectionKey='performance'>
+              <BOMCreationGuideChapterOperationInstructions chapter='performance' />
               <dl className='grid gap-3 @2xl:grid-cols-3'>
                 {bomCreationOperationGuideVersionConceptKeys.map(
                   (conceptKey) => (
@@ -245,6 +264,7 @@ export function BOMCreationOperationGuidePage() {
             </BOMCreationOperationGuideSection>
 
             <BOMCreationOperationGuideSection sectionKey='recipe'>
+              <BOMCreationGuideChapterOperationInstructions chapter='recipe' />
               <section
                 aria-labelledby='bom-creation-guide-groups-title'
                 className='space-y-3 rounded-xl border bg-card p-4 sm:p-5'
@@ -294,6 +314,18 @@ export function BOMCreationOperationGuidePage() {
             </BOMCreationOperationGuideSection>
 
             <BOMCreationOperationGuideSection sectionKey='lifecycle'>
+              <section
+                aria-labelledby='bom-creation-guide-lifecycle-meaning-title'
+                className='space-y-3 rounded-xl border bg-card p-4 sm:p-5'
+              >
+                <h3
+                  id='bom-creation-guide-lifecycle-meaning-title'
+                  className='text-sm font-semibold'
+                >
+                  {t('engineering.bomCreationGuide.lifecycle.meaningTitle')}
+                </h3>
+                <BOMFieldBusinessMeaningExplanation topic='lifecycle' />
+              </section>
               <ol className='divide-y rounded-xl border bg-card px-4 sm:px-5'>
                 {bomCreationOperationGuideLifecycleStageKeys.map(
                   (stageKey, index) => (
@@ -320,6 +352,48 @@ export function BOMCreationOperationGuidePage() {
                   )
                 )}
               </ol>
+              <section
+                aria-labelledby='bom-creation-guide-manufacturing-derivation-title'
+                className='space-y-3 rounded-xl border border-sky-200 bg-sky-50/45 p-4 sm:p-5 dark:border-sky-900 dark:bg-sky-950/20'
+              >
+                <h3
+                  id='bom-creation-guide-manufacturing-derivation-title'
+                  className='text-sm font-semibold'
+                >
+                  {t('engineering.bomCreationGuide.lifecycle.derivationTitle')}
+                </h3>
+                <p className='text-sm leading-7 text-muted-foreground'>
+                  {t(
+                    'engineering.bomCreationGuide.lifecycle.derivationDescription'
+                  )}
+                </p>
+                <ol className='divide-y divide-sky-200/70 dark:divide-sky-900/60'>
+                  {bomCreationOperationGuideManufacturingDerivationStepKeys.map(
+                    (stepKey, index) => (
+                      <li key={stepKey} className='flex items-start gap-3 py-4'>
+                        <span
+                          aria-hidden='true'
+                          className='flex size-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-semibold text-sky-700 dark:text-sky-300'
+                        >
+                          {index + 1}
+                        </span>
+                        <div className='min-w-0 space-y-1.5'>
+                          <h4 className='text-sm leading-7 font-semibold'>
+                            {t(
+                              `engineering.bomCreationGuide.lifecycle.derivationSteps.${stepKey}.title`
+                            )}
+                          </h4>
+                          <p className='text-sm leading-7 text-muted-foreground'>
+                            {t(
+                              `engineering.bomCreationGuide.lifecycle.derivationSteps.${stepKey}.description`
+                            )}
+                          </p>
+                        </div>
+                      </li>
+                    )
+                  )}
+                </ol>
+              </section>
               <p className='text-xs leading-6 text-muted-foreground'>
                 {t('engineering.bomCreationGuide.lifecycle.layoutHint')}
               </p>

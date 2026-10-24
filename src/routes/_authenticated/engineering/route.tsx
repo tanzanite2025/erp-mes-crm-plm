@@ -19,19 +19,24 @@ function EngineeringLayout() {
   const { t } = useLanguage()
   const { pathname } = useLocation()
   const isBOMCreationGuide = pathname === '/engineering/bom-creation-guide'
-  const tabs =
+  const isProductCreationGuide =
     pathname === '/engineering/product-creation-guide'
-      ? getProductCreationGuideTabs(t)
-      : isBOMCreationGuide
-        ? getBOMCreationOperationGuideTabs(t)
-        : getEngineeringTabs(t)
+  const isCreationGuideReadingPage =
+    isBOMCreationGuide || isProductCreationGuide
+  const tabs = isProductCreationGuide
+    ? getProductCreationGuideTabs(t)
+    : isBOMCreationGuide
+      ? getBOMCreationOperationGuideTabs(t)
+      : getEngineeringTabs(t)
 
   return (
     <ModuleTabbedLayout
       tabs={tabs}
-      mainClassName={isBOMCreationGuide ? 'overflow-hidden pb-0' : undefined}
+      mainClassName={
+        isCreationGuideReadingPage ? 'overflow-hidden pb-0' : undefined
+      }
       contentClassName={
-        isBOMCreationGuide ? 'h-full flex-1 overflow-hidden' : undefined
+        isCreationGuideReadingPage ? 'h-full flex-1 overflow-hidden' : undefined
       }
     >
       <Outlet />

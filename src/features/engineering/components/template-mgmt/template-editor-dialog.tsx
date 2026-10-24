@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { type ProductTemplate } from '../../data/schema'
+import { ProductAndBOMFieldResponsibilityNotice } from '../product-and-bom-field-responsibility-explanations'
 import { productPhysicalSpecificationTemplateEditorDialogClasses as dialogClasses } from './product-physical-specification-template-editor-dialog-and-attribute-layout.styles'
 import { ProductTemplateOwnedAttributeDefinitionsEditor } from './product-template-owned-attribute-definitions-editor'
 
@@ -127,6 +128,7 @@ export function TemplateEditorDialog({
                 />
               </div>
             </div>
+            <ProductAndBOMFieldResponsibilityNotice context='template' t={t} />
             <ProductTemplateOwnedAttributeDefinitionsEditor
               locale={locale}
               definitions={editingTemplate?.attributeBindings ?? []}

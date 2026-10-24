@@ -28,7 +28,10 @@ vi.mock('@/lib/api-client', () => ({ apiFetch: vi.fn() }))
 vi.mock('@/context/language-provider', () => ({
   useLanguage: () => ({
     locale: 'zh-CN',
-    t: (key: Parameters<typeof translate>[1]) => translate('zh-CN', key),
+    t: (
+      key: Parameters<typeof translate>[1],
+      values?: Parameters<typeof translate>[2]
+    ) => translate('zh-CN', key, values),
   }),
 }))
 vi.mock('@/features/basic-settings/hooks/use-units-query', () => ({
@@ -654,9 +657,11 @@ describe('independent BOM performance version editor', () => {
       ).disabled
     ).toBe(true)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    const performanceVersionField = screen.getByText('性能版本', {
-      selector: 'label',
-    }).parentElement!.parentElement!
+    const performanceVersionField = screen
+      .getByText('性能版本', {
+        selector: 'label',
+      })
+      .closest<HTMLElement>('[data-slot="form-item"]')!
     fireEvent.click(within(performanceVersionField).getByRole('combobox'))
     expect(
       (await screen.findAllByRole('option')).map((option) => option.textContent)

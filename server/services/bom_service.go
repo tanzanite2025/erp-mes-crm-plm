@@ -166,6 +166,21 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 				return wrapBOMUniqueViolation(err, &modelInput)
 			}
 
+			// MergeMissingFrom and struct Updates preserve omitted/nil values. Explicit
+			// JSON null dates must instead clear the columns inside this same transaction.
+			explicitDateClears := map[string]interface{}{}
+			if input.MasterDataControl.effectiveFromProvided && input.MasterDataControl.EffectiveFrom == nil {
+				explicitDateClears["effective_from"] = nil
+			}
+			if input.MasterDataControl.effectiveToProvided && input.MasterDataControl.EffectiveTo == nil {
+				explicitDateClears["effective_to"] = nil
+			}
+			if len(explicitDateClears) > 0 {
+				if err := tx.Model(&existing).Updates(explicitDateClears).Error; err != nil {
+					return err
+				}
+			}
+
 			// ✅ 使用智能 Upsert 替代物理删除，保持 ID 稳定性
 			upsertResult, err := upsertBOMItems(tx, existing.ID, modelInput.Items)
 			if err != nil {

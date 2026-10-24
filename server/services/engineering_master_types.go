@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
-	"time"
 	"xdfc-server/models"
 )
 
@@ -73,15 +72,7 @@ type SaveBOMInput struct {
 	Items           []models.BOMItem `json:"items"`
 	Description     string           `json:"description"`
 	Version         int              `json:"version"`
-	MasterDataControl struct {
-		RevisionNo    string     `json:"revisionNo"`
-		EffectiveFrom *time.Time `json:"effectiveFrom"`
-		EffectiveTo   *time.Time `json:"effectiveTo"`
-		ChangeType    string     `json:"changeType"`
-		ChangeOrderNo string     `json:"changeOrderNo"`
-		SiteCode      string     `json:"siteCode"`
-		IsDefaultSite bool       `json:"isDefaultSite"`
-	} `json:"masterDataControl"`
+	MasterDataControl BOMMasterDataControlSaveInput `json:"masterDataControl"`
 	RelationSidecar json.RawMessage  `json:"relationSidecar"`
 	// 🔥 SDRTS 协议：Sidecar Delta
 	SidecarDelta    *DeltaSet        `json:"_sidecarDelta,omitempty"`

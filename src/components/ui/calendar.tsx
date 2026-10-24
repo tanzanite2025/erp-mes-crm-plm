@@ -4,7 +4,12 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from 'lucide-react'
-import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker'
+import {
+  DayPicker,
+  getDefaultClassNames,
+  type DayButton,
+  type RootProps,
+} from 'react-day-picker'
 import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
 
@@ -122,16 +127,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }) => {
-          return (
-            <div
-              data-slot='calendar'
-              ref={rootRef}
-              className={cn(className)}
-              {...props}
-            />
-          )
-        },
+        Root: CalendarRootPreservingDropdownFocus,
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === 'left') {
             return (
@@ -164,6 +160,23 @@ function Calendar({
         },
         ...components,
       }}
+      {...props}
+    />
+  )
+}
+
+// Keep the root component identity stable: recreating it in Calendar's render
+// remounts native selects, immediately dismissing an open year/month dropdown.
+function CalendarRootPreservingDropdownFocus({
+  className,
+  rootRef,
+  ...props
+}: RootProps) {
+  return (
+    <div
+      data-slot='calendar'
+      ref={rootRef}
+      className={cn(className)}
       {...props}
     />
   )

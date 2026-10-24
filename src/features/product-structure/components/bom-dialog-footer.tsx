@@ -8,7 +8,7 @@ import { isMBOM } from '../utils/bom-identity'
 
 interface BOMDialogFooterProps {
   currentRow?: BOM
-  onPromote: (status: string) => Promise<void>
+  onPromote?: (status: string) => Promise<void>
   isSubmitDisabled: boolean
 }
 
@@ -43,7 +43,7 @@ export function BOMDialogFooter({
               {t('engineering.bomArchive.dialog.saveDraft')}
             </Button>
 
-            {status === 'DRAFT' && (
+            {status === 'DRAFT' && onPromote && (
               <Button
                 type='button'
                 onClick={() => onPromote('APPROVED')}
@@ -54,7 +54,7 @@ export function BOMDialogFooter({
             )}
           </>
         )}
-        {status === 'APPROVED' && (
+        {status === 'APPROVED' && onPromote && (
           <Button
             type='button'
             onClick={() => onPromote('RELEASED')}

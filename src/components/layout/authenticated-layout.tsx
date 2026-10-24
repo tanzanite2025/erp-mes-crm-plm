@@ -283,7 +283,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             'min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-background',
             isPDAShellRoute
               ? 'pt-0'
-              : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16',
+              : 'pt-14 pb-[calc(env(safe-area-inset-bottom)+4rem)] md:pt-16 md:pb-16 lg:pb-24',
             !isPDAShellRoute &&
               'peer-data-[variant=inset]:mx-2 peer-data-[variant=inset]:mb-2 peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm'
           )}

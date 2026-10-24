@@ -164,6 +164,16 @@ export const productCreationOperationGuide = {
   productBaseModelMismatch: 'Select the base model confirmed in this task.',
   handbook: {
     contentsLabel: 'On this page',
+    readingAreaLabel: 'Product guide content',
+    readingIntroduction:
+      'Read one chapter at a time. Open the wizard when you are ready to create a product.',
+    shortSectionLabels: {
+      productRecord: 'Details',
+      classification: 'Models',
+      workflow: 'Steps',
+      displayMapping: 'Display',
+      references: 'Config',
+    },
     sections: {
       productRecord: 'Product details',
       classification: 'Models and cards',

@@ -4,9 +4,17 @@
 
 范围：`/engineering/product-creation-guide` 说明页、产品管理与手册之间的入口、HOME 共用建档入口、四步向导、第二步分类／基础型号弹窗，以及它们直接使用的表单、查询和保存模块。
 
-2026-10-23 补充：“如何建立 BOM”已作为同级独立手册，由 `product-structure` 承接五章说明，详见 [BOM 说明指南的内容、导航与职责边界](bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md)。它使用固定标题与章节 Tabs、正文独立滚动，不接入业务弹窗或向导进度。本文的产品说明页仍使用章节锚点并提供手动建档入口；产品向导第四步继续复用 [BOM 编辑弹窗](bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md)。
+2026-10-24 更新：“如何建立产品”与同级的“如何建立 BOM”均使用固定标题与五章 Tabs、正文独立滚动，一次只阅读当前章节，切章从正文顶部开始，不再跳转整页锚点。产品说明页保留手动建档入口，关闭向导后保留当前阅读章节；第三章独立说明建立步骤，不再作为其他章节旁边的固定侧栏。阅读章节状态只属于说明页，不写入向导进度。BOM 指南由 `product-structure` 独立承接，第一步通过独立适配组件提供手动打开的研发 BOM 草稿入口，详见 [BOM 说明指南的内容、导航与职责边界](bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md)。产品向导第四步继续复用 [BOM 编辑弹窗](bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md)。
 
 本文记录当前实现、已完成的四轮整理及后续建议。第一轮已分离四个步骤、共用弹窗和提交锁；第二轮已分离分类弹窗的表单 Hook 和两个字段区；第三轮已分离向导会话 Hook 与完成面板；第四轮已统一步骤顺序、页面与阶段定义，并使导航列数适应步骤数量，操作规则保持原样。型号选择推导和目录查询职责的后续建议尚未实施。优先级表示后续增加交互前的整理顺序，不表示已确认的数据丢失或保存故障。
+
+## 产品与 BOM 资料入口补充（2026-10-24）
+
+两份指南第一章共用蓝色产品说明卡、紫色 BOM 说明卡及琥珀色提示，明确产品维护型号、框高等物理规格及涂装外观，BOM 维护归属、性能版本、成品重量及单位、物料配方和生命周期。提醒不要在产品规格或模板重复建立重量等 BOM 字段。产品录入弹窗顶部及规格模板属性区也显示共用短提示。
+
+蓝色卡的“录入产品型号、规格与涂装”进入产品管理页面，紫色卡的“录入归属、版本、重量与配方”主动打开既有研发 BOM 草稿编辑器。原“开始 / 继续建档”向导入口保留。两类入口遵循各自业务权限，阅读章节不打开弹窗或写入业务数据。
+
+职责说明由 `product-and-bom-field-responsibility-explanations.tsx` 及独立中英文词典承接；`product-and-bom-responsibility-guide-with-business-entry-actions.tsx` 仅组合业务入口，保存继续由现有领域编辑器、Hook 和服务负责。详见 [BOM 指南的资料职责及录入入口](bom-creation-operation-guide-content-navigation-and-responsibility-boundaries.md#产品与-bom-的资料职责及录入入口)。
 
 ## 1. 当前架构
 
@@ -170,7 +178,7 @@ flowchart TD
 
 ## 7. 暂不优先拆分的部分
 
-- 手册页虽有 464 行，但主要是说明内容。后续有独立交互的章节再按“型号与卡片”“建立步骤”“展示与维护”等语义拆组件，不必先拆成大量静态碎片。
+- 手册页主要承载五章说明及本地阅读切换。继续使用系统 Tabs，不把说明章节与建档向导的业务步骤合并；后续有独立业务交互的章节再按语义拆组件，不必先拆成大量静态碎片。
 - 产品表单已经拆出初始化、模板解析、派生与提交 Hook；BOM 也已经有独立工作区、权限和提交编排。向导继续复用，不复制成向导专用表单。
 - 共用保存 Hook、API 适配器、模板本地化与产品聚合名称工具继续由原模块负责，步骤文件不再各写一份。
 

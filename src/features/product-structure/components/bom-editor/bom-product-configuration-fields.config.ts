@@ -1,6 +1,6 @@
 import { type TranslationKey } from '@/locales'
+import { type BOMFieldBusinessMeaningHelpTopic } from '../../data/bom-field-business-meaning-help-topic-definitions'
 import { type BOM } from '../../data/schema'
-import { normalizeBOMControlFieldPatch } from '../../utils/bom-control-normalization'
 
 type BOMProductConfigurationFieldName = Extract<
   keyof BOM,
@@ -25,10 +25,12 @@ interface BOMProductConfigurationFieldBase {
   name: BOMProductConfigurationFieldName
   label: string
   placeholder?: string
+  helpTopic?: BOMFieldBusinessMeaningHelpTopic
 }
 
 export type BOMProductConfigurationField = BOMProductConfigurationFieldBase &
   (
+    | { type: 'effective-date' }
     | {
         type: 'input'
         inputType?: 'text' | 'date'
@@ -73,6 +75,7 @@ export function getBOMProductConfigurationFields(
     },
     {
       name: 'bomType',
+      helpTopic: 'bomType',
       label: context.t('engineering.bomArchive.form.bomType'),
       type: 'input',
       readOnly: true,
@@ -85,14 +88,11 @@ export function getBOMProductConfigurationFields(
     {
       name: 'effectiveFrom',
       label: context.t('engineering.bomArchive.form.effectiveFrom'),
-      type: 'input',
-      inputType: 'date',
-      transformOnChange: (value) =>
-        normalizeBOMControlFieldPatch({ effectiveFrom: value })
-          .effectiveFrom as string,
+      type: 'effective-date',
     },
     {
       name: 'ownerType',
+      helpTopic: 'ownership',
       label: context.t('engineering.bomArchive.form.ownerType'),
       type: 'select',
       placeholder: context.t(
@@ -102,6 +102,7 @@ export function getBOMProductConfigurationFields(
     },
     {
       name: 'ownerCustomerId',
+      helpTopic: 'ownership',
       label: context.t('engineering.bomArchive.form.ownerCustomer'),
       type: 'select',
       placeholder: context.t(

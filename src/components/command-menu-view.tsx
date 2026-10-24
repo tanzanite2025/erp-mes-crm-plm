@@ -2,7 +2,6 @@ import { ArrowRight, BookOpenText, Box, Search, Zap } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
-import { useIsMobile } from '@/hooks/use-mobile'
 import {
   CommandDialog,
   CommandGroup,
@@ -51,7 +50,6 @@ export function CommandMenuView({
   onItemSelect,
 }: CommandMenuViewProps) {
   const { t } = useLanguage()
-  const isMobile = useIsMobile()
 
   const categoryLabels: Record<string, string> = {
     modules: t('commandMenu.headings.modules'),
@@ -65,9 +63,13 @@ export function CommandMenuView({
 
   return (
     <>
-      {isMobile && open && typeof document !== 'undefined'
+      {open && typeof document !== 'undefined'
         ? createPortal(
-            <div className='fixed inset-0 z-100 animate-in bg-black/50 fade-in-0' />,
+            <div
+              data-slot='global-search-overlay'
+              aria-hidden='true'
+              className='fixed inset-0 z-100 animate-in bg-[rgba(0,0,0,0.5)] fade-in-0'
+            />,
             document.body
           )
         : null}

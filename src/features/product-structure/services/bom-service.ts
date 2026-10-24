@@ -11,6 +11,7 @@ import {
   type BOMList,
 } from '../data/schema'
 import { normalizeBOMInput } from '../utils/bom-control-normalization'
+import { mapBOMEffectiveDateAPIValueToDateProtocol } from '../utils/bom-effective-date-input-and-calendar-date-protocol'
 import { normalizeBOMSectionValue } from '../utils/bom-section-utils'
 
 const saveBOMSchema = bomSchema
@@ -25,7 +26,7 @@ export interface BOMDetailSource {
  *
  * 日期格式归一化：后端 `time.Time` 序列化为 ISO 8601 完整时间戳
  * （例：`"2026-06-01T00:00:00Z"`），但前端 schema 要求 `YYYY-MM-DD`。
- * 在 masterDataControl 嵌套对象内截断日期字段。
+ * masterDataControl 是唯一 wire 命名空间；投影到编辑器/列表沿用的日期字段。
  */
 function mapBOMWireToSchema(
   wire: Record<string, unknown>
@@ -40,30 +41,23 @@ function mapBOMWireToSchema(
     typeof mapped.masterDataControl === 'object'
   ) {
     const mdc = { ...(mapped.masterDataControl as Record<string, unknown>) }
-    mdc.effectiveFrom = truncateIsoDateToProtocol(mdc.effectiveFrom)
-    mdc.effectiveTo = truncateIsoDateToProtocol(mdc.effectiveTo)
+    mdc.effectiveFrom = mapBOMEffectiveDateAPIValueToDateProtocol(
+      mdc.effectiveFrom
+    )
+    mdc.effectiveTo = mapBOMEffectiveDateAPIValueToDateProtocol(mdc.effectiveTo)
     mapped.masterDataControl = mdc
+    mapped.effectiveFrom = mdc.effectiveFrom
+    mapped.effectiveTo = mdc.effectiveTo
   }
 
   return mapped
 }
 
 /**
- * 把后端可能返回的 ISO 8601 时间戳截断为 `YYYY-MM-DD` 协议格式。
- * 保留 null 与 undefined（前端 schema 允许 nullable.optional）。
- */
-function truncateIsoDateToProtocol(value: unknown): unknown {
-  if (typeof value !== 'string') return value
-  if (value.length === 0) return value
-  // 只取日期部分；如果原本就是 10 字符 YYYY-MM-DD，slice(0,10) 等价于不变
-  return value.slice(0, 10)
-}
-
-/**
  * 把前端 SaveBOMInput 转换为后端 wire format 的 payload。
  *
- * 自从统一 json tag 后，前后端字段名一致（bomVersion + version），
- * 不再需要 version/_v 重映射。直接序列化即可。
+ * 日期在表单中为 YYYY-MM-DD，在 masterDataControl 内发 UTC 零点 RFC3339。
+ * 直接拼接明确的协议值，不经本地 Date/时区转换；空值使用 null。
  */
 function sanitizeBOMInput(data: SaveBOMInput): Record<string, unknown> {
   const {
@@ -81,8 +75,40 @@ function sanitizeBOMInput(data: SaveBOMInput): Record<string, unknown> {
     })),
   })
 
+  const { effectiveFrom, effectiveTo, masterDataControl, ...bomFields } =
+    sanitizedPayload
+  const controlDates = {
+    effectiveFrom:
+      data.effectiveFrom !== undefined
+        ? effectiveFrom
+        : masterDataControl?.effectiveFrom,
+    effectiveTo:
+      data.effectiveTo !== undefined
+        ? effectiveTo
+        : masterDataControl?.effectiveTo,
+  }
+  // Validate nested-only callers too; never let malformed values reach time.Time decoding.
+  const validatedDates = saveBOMSchema
+    .pick({ effectiveFrom: true, effectiveTo: true })
+    .parse(controlDates)
+
   return {
-    ...sanitizedPayload,
+    ...bomFields,
+    masterDataControl: {
+      ...masterDataControl,
+      effectiveFrom:
+        validatedDates.effectiveFrom === undefined
+          ? undefined
+          : validatedDates.effectiveFrom
+            ? `${validatedDates.effectiveFrom}T00:00:00Z`
+            : null,
+      effectiveTo:
+        validatedDates.effectiveTo === undefined
+          ? undefined
+          : validatedDates.effectiveTo
+            ? `${validatedDates.effectiveTo}T00:00:00Z`
+            : null,
+    },
     relationSidecar: normalizedData.relationSidecar,
     // 🔥 CRITICAL: 保留 _sidecarDelta 用于 SDRTS 协议
     _sidecarDelta: data._sidecarDelta,

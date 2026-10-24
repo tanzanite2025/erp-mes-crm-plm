@@ -10,6 +10,7 @@ import { type BOM } from '../../data/schema'
 import { useBOMPerformanceVersionOptions } from '../../hooks/use-bom-performance-version-options'
 import { type BOMPerformanceVersionWeightDrafts } from '../../hooks/use-bom-performance-version-weight-drafts'
 import { formatBOMProductPerformanceVersionWeight } from '../../utils/bom-product-performance-version-weight-comparison'
+import { BOMFieldBusinessMeaningHelpPopover } from '../bom-field-business-meaning-help-popover'
 import { BOMPerformanceVersionOptionManagementDialog } from './bom-performance-version-option-management-dialog'
 
 interface BOMPerformanceVersionAndWeightFieldProps {
@@ -82,9 +83,15 @@ export function BOMPerformanceVersionAndWeightField({
         render={({ field }) => (
           <FormItem className='min-w-0 gap-1.5'>
             <div className='flex items-center justify-between gap-2'>
-              <FormLabel className='text-[11px] font-bold text-foreground/80'>
-                {t('engineering.bomArchive.form.versionLevel')}
-              </FormLabel>
+              <div className='flex items-center gap-1'>
+                <FormLabel className='text-[11px] font-bold text-foreground/80'>
+                  {t('engineering.bomArchive.form.versionLevel')}
+                </FormLabel>
+                <BOMFieldBusinessMeaningHelpPopover
+                  topic='performanceAndWeight'
+                  fieldLabel={t('engineering.bomArchive.form.versionLevel')}
+                />
+              </div>
               <Button
                 type='button'
                 variant='ghost'

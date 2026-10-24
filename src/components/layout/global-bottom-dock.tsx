@@ -34,7 +34,6 @@ const DEFAULT_DOCK_SIZE: DockSize = {
   height: 72,
 }
 
-const DOCK_ITEM_BASE_SIZE = 44
 const DOCK_ITEM_HOVER_SPRING = {
   mass: 0.1,
   stiffness: 260,
@@ -97,11 +96,7 @@ function FloatingDockItem({ children }: FloatingDockItemProps) {
       initial='idle'
       animate='idle'
       whileHover='hover'
-      style={{
-        width: DOCK_ITEM_BASE_SIZE,
-        height: DOCK_ITEM_BASE_SIZE,
-      }}
-      className='relative flex shrink-0 items-center justify-center'
+      className='relative flex size-11 shrink-0 items-center justify-center lg:size-13 lg:[&_[data-slot=button]]:size-13 lg:[&_[data-slot=button]_svg]:size-5.5'
     >
       <motion.div
         aria-hidden='true'
@@ -223,7 +218,7 @@ export function GlobalBottomDock({ children }: GlobalBottomDockProps) {
         <div
           data-slot='global-bottom-dock-content'
           style={dockContentStyle}
-          className='pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-(--dock-border) sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-xl sm:shadow-black/20 sm:hover:shadow-2xl dark:sm:border-(--dock-border-dark) dark:sm:bg-(--dock-surface-dark)'
+          className='pointer-events-auto relative z-10 flex min-w-0 items-center justify-center gap-3 px-(--dock-content-padding-x) pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:rounded-full sm:border sm:border-(--dock-border) sm:bg-(--dock-surface) sm:px-3 sm:py-2 sm:pb-2 sm:shadow-xl sm:shadow-black/20 sm:hover:shadow-2xl lg:gap-4 lg:px-4 lg:py-2.5 dark:sm:border-(--dock-border-dark) dark:sm:bg-(--dock-surface-dark)'
         >
           {dockItems.map((child, index) => (
             <FloatingDockItem key={index}>{child}</FloatingDockItem>

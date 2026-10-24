@@ -28,6 +28,7 @@ import {
 } from '../hooks/use-product-form'
 import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import { ProductAndBOMFieldResponsibilityNotice } from './product-and-bom-field-responsibility-explanations'
 import {
   productCreationDialogViewportClassName,
   productCreationGuideDialogContentClassName,
@@ -259,6 +260,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               })}
               className='space-y-3'
             >
+              <ProductAndBOMFieldResponsibilityNotice context='product' t={t} />
               <ProductBasicInfo
                 form={form}
                 dynamicTypes={dynamicTypes}

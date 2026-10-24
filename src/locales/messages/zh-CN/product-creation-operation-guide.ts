@@ -149,6 +149,16 @@ export const productCreationOperationGuide = {
   productBaseModelMismatch: '请选择本次确认的基础型号。',
   handbook: {
     contentsLabel: '本页内容',
+    readingAreaLabel: '产品指南正文',
+    readingIntroduction:
+      '逐章了解产品资料与建档方法，需要操作时再打开建档向导。',
+    shortSectionLabels: {
+      productRecord: '资料组成',
+      classification: '型号卡片',
+      workflow: '建立步骤',
+      displayMapping: '展示维护',
+      references: '配置参考',
+    },
     sections: {
       productRecord: '资料组成',
       classification: '型号与卡片',

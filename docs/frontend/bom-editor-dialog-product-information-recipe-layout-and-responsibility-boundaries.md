@@ -26,7 +26,8 @@
 | `components/bom-dialog-shell.tsx` | 弹窗尺寸、标题、修订版本与状态展示、变更记录入口、向导头部 | 外层弹窗与标题样式 |
 | `components/bom-editor/bom-editor-product-information-and-recipe-layout.tsx` | 桌面左右排列、移动端步骤显示及区域滚动；输入仅为两个展示区 | 列宽、留白、移动端步骤切换 |
 | `components/bom-editor/bom-product-configuration-information-panel.tsx` | 产品与归属选项、普通字段、备注，并组合性能版本字段 | BOM 基本信息交互 |
-| `components/bom-editor/bom-product-configuration-fields.config.ts` | 普通字段定义、只读与禁用规则、生效日期规范化 | 增减普通信息字段 |
+| `components/bom-editor/bom-product-configuration-fields.config.ts` | 普通字段定义、只读与禁用规则，声明生效日期使用独立输入组件 | 增减普通信息字段 |
+| `components/bom-editor/bom-effective-start-date-text-input-with-calendar.tsx` | 生效开始手输、粘贴、日历年月选择、规范化及错误反馈 | 日期输入交互；传输契约见[日期专文](bom-effective-start-date-input-and-api-format-contract.md) |
 | `components/bom-editor/bom-performance-version-and-weight-field.tsx` | 公共版本与重量单位选项、组合下拉、设置入口、管理弹窗开关 | 版本选择和入口展示 |
 | `hooks/use-bom-performance-version-weight-drafts.ts` | 当前版本重量、不同版本的会话草稿、具体产品／归属切换时的清理；只写版本与重量字段，会话键包含 BOM、具体产品、BOM 类型和归属 | 版本切换及重量暂存规则 |
 | `hooks/use-bom-product-performance-version-weight-comparison.ts`、`utils/bom-product-performance-version-weight-comparison.ts` | 查询完整 BOM 元数据，按具体产品、BOM 类型、归属和生命周期选择对比来源，再按性能版本展示 | 重量来源与比较范围 |
@@ -45,7 +46,7 @@
 1. **区分 BOM 级和物料行级字段。** 产品、归属、性能版本、成品重量和备注属于当前 BOM；物料、用量、损耗属于具体行。新工艺字段先确定归属，再加入对应字段区和保存契约。
 2. **固定性能版本的业务身份。** 共用目录提供标准版、轻量版等可选名称，各具体产品按需选用。重量保存在各自 BOM 上，比较范围按具体产品 `productId`、BOM 类型、归属及性能版本区分，不按基础型号 `typeId` 共用；修订号和生命周期继续独立。目录保存只维护名称，重量随当前 BOM 保存，其他会话版本草稿不批量持久化。
 3. **统一草稿初始化时机。** 打开记录、切换实际 BOM 或取消后重开才应替换草稿。以后调整引用资料加载或刷新时，检查 `use-bom-form-initialization.ts` 的依赖，防止选项刷新间接触发 `form.reset` 覆盖正在填写的内容。
-4. **保存与生命周期共享领域规则。** 新增必填项时同时检查保存草稿、评审、发布路径。当前 `submit` 使用表单提交校验；`promote` 在内容可保存且存在未保存改动或尚无记录时先保存，锁定的已批准记录直接发布已保存版本。发布权限、版本及物料／重量完整性继续由服务端校验；后续校验规则扩展应在统一编排和服务端定义阶段要求。
+4. **保存与生命周期共享领域规则。** 新增必填项时同时检查保存草稿、评审、发布路径。当前 `submit` 使用表单提交校验；`promote` 在内容可保存且存在未保存改动或尚无记录时，先经过相同表单校验再保存，锁定的已批准记录直接发布已保存版本。发布权限、版本及物料／重量完整性继续由服务端校验；后续校验规则扩展应在统一编排和服务端定义阶段要求。
 5. **计算规则扩展时再提取纯函数。** 目前用量和损耗更新集中在行组件。增加单位换算、成本口径或更复杂公式时，应先抽出可独立验证的领域计算，避免在左右布局或基本信息组件中增加公式。
 6. **按业务变化扩展，不增加通用表单框架。** 本轮沿用现有表单、配方工作区和服务入口；新增独立字段组时按职责拆组件。布局组件始终只处理展示区域，公共目录和 BOM 保存继续使用各自服务。
 

@@ -1,10 +1,24 @@
-/** Read-only handbook order and links. No BOM editing state or persistence. */
+/** Handbook order and links. Business actions are composed in separate entry components. */
 export const bomCreationOperationGuideSectionKeys = [
   'purpose',
   'product',
   'performance',
   'recipe',
   'lifecycle',
+] as const
+
+export const bomCreationOperationGuideChapterInstructionKeys = {
+  purpose: ['prepare', 'open', 'continue'],
+  product: ['select', 'ownership', 'identity'],
+  performance: ['manage', 'select', 'verify'],
+  recipe: ['expand', 'enter', 'check'],
+} as const
+
+export const bomCreationOperationGuideManufacturingDerivationStepKeys = [
+  'release',
+  'derive',
+  'verify',
+  'publish',
 ] as const
 
 export const bomCreationOperationGuideProductRecordKeys = [

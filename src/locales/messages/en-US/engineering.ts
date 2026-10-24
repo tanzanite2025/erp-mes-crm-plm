@@ -1,9 +1,13 @@
 import { bomCreationOperationGuide } from './bom-creation-operation-guide'
+import { bomFieldBusinessMeaningHelp } from './bom-field-business-meaning-help'
+import { productAndBOMFieldResponsibilityGuidance } from './product-and-bom-field-responsibility-guidance'
 import { productCreationOperationGuide } from './product-creation-operation-guide'
 
 export const engineering = {
   bomCreationGuide: bomCreationOperationGuide,
+  bomFieldHelp: bomFieldBusinessMeaningHelp,
   productCreationGuide: productCreationOperationGuide,
+  productAndBOMResponsibilities: productAndBOMFieldResponsibilityGuidance,
   tabs: {
     bomCreationGuide: 'How to Create a BOM',
     productCreationGuide: 'How to Create a Product',
@@ -1461,6 +1465,11 @@ export const engineering = {
       effectiveFrom: 'Effective From',
       effectiveTo: 'Effective To',
       manual: 'Manual',
+      effectiveDateInputHint:
+        'Type or paste: 2020-01-15, 2020/01/15, or 20200115',
+      effectiveDateInvalid:
+        'Enter a valid date, such as 2020-01-15 (year-month-day)',
+      effectiveDateOpenCalendar: 'Choose effective start date',
       eco: 'ECO',
       ecn: 'ECN',
       measuredWeight: 'Measured Weight',

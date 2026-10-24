@@ -2,7 +2,52 @@ export const bomCreationOperationGuide = {
   title: 'How to Create a BOM',
   domainLabel: 'Product Handbook · BOM',
   introduction:
-    'Learn how a BOM links a product to its materials, performance version, finished weight, and lifecycle. Select a chapter below.',
+    'Follow five steps to connect a product, performance version, finished weight, and recipe, then manage approval, release, and production derivation.',
+  operationStepsTitle: 'What to do in this step',
+  draftEntry: {
+    description:
+      'Once the product exists, open the editor here to enter and save an engineering BOM draft. Closing returns to this reading step. Continue approval, release, and derivation in BOM Recipes.',
+    open: 'Start a BOM draft',
+    checking: 'Checking account permissions. Please wait.',
+    noPermission:
+      'This account lacks access to BOM Recipes or BOM management. You can read all explanations; ask an authorized user to create the BOM.',
+    loading: 'Loading the BOM editor…',
+    saved:
+      'Draft {{bomNo}} saved. Continue viewing, approval, release, or derivation in BOM Recipes.',
+  },
+  operationSteps: {
+    purpose: {
+      prepare:
+        'Save the specific product first. Materials and their units should also be available. If the product does not exist, follow How to Create a Product first.',
+      open: 'Choose Enter BOM ownership, versions, weight and recipe above, or New in BOM Recipes. Both start an engineering BOM draft.',
+      continue:
+        'Enter the product and ownership on the left, set the performance version and weight, then edit the recipe on the right. On mobile, switch between Basic Information and Recipe Details. Choose Save Draft when ready.',
+    },
+    product: {
+      select:
+        'Select the specific product and verify its model and specifications. Select it before opening performance version settings. An existing BOM’s product cannot be changed.',
+      ownership:
+        'For a general internal recipe, choose Internal and leave Owner Customer empty. For a dedicated recipe, choose Customer-specific and select Owner Customer. Use the question mark beside the field for examples.',
+      identity:
+        'A new BOM is an EBOM; its number is generated on save. Enter the intended effective date and remarks. The date does not approve or release it. Use derivation in the final step to create an MBOM.',
+    },
+    performance: {
+      manage:
+        'After selecting the product and ownership, choose the blue settings button beside Performance Version. Select a version on the left and enter this product’s finished weight and unit on the right.',
+      select:
+        'Save version options, then choose the combined entry, such as Lightweight · 420 g, from the dropdown. The catalog offers names; each model does not need every version.',
+      verify:
+        'Compare Standard and Lightweight weights in the same scope for incorrect units or values, then save this BOM. Saving options neither saves the BOM nor saves other versions’ weight drafts in bulk.',
+    },
+    recipe: {
+      expand:
+        'Expand the groups needed in the recipe. Use Manage Shared Groups for missing categories; names, order, and activation affect the shared catalog.',
+      enter:
+        'Use the add entry within a group to choose materials, verify units, and enter unit usage, loss, and unit price. Add the rows you need; multiple groups can stay expanded.',
+      check:
+        'Check calculated usage and estimated cost against materials, units, quantities, and loss. These do not calculate finished weight. Verify version weight too, then choose Save Draft.',
+    },
+  },
   contentsLabel: 'BOM guide contents',
   readingAreaLabel: 'BOM guide reading area',
   meaningLabel: 'Meaning',
@@ -151,6 +196,33 @@ export const bomCreationOperationGuide = {
     title: 'Save the current BOM, then manage its status',
     description:
       'Saving a draft stores the product, ownership, selected performance version and weight, remarks, and material rows together. Performance version names and groups have their own shared catalogs; saving a catalog does not save this BOM.',
+    meaningTitle: 'Why is lifecycle status shown?',
+    derivationTitle:
+      'How to create a manufacturing BOM from an engineering BOM',
+    derivationDescription:
+      'Derivation creates a linked manufacturing record; it does not change the source EBOM’s type. Follow the actions currently supported by the system.',
+    derivationSteps: {
+      release: {
+        title: 'Approve and release the engineering BOM',
+        description:
+          'Open and verify the engineering draft in BOM Recipes. Submit for Review currently uses direct approval and locks content. Reopen the record and choose Release Engineering. The source must be released and locked before derivation.',
+      },
+      derive: {
+        title: 'Choose Derive MBOM on the source record',
+        description:
+          'Find the released EBOM in BOM Recipes and choose Derive MBOM on its row. The system creates a manufacturing draft, copies the product, ownership, version, weight, and recipe, and links it to the source. The source EBOM remains unchanged.',
+      },
+      verify: {
+        title: 'Open and verify the manufacturing draft',
+        description:
+          'Open the new MBOM and verify the copied materials, groups, quantities, loss, performance version, weight, and unit for production. Adjust and save as needed. Derivation does not release the MBOM.',
+      },
+      publish: {
+        title: 'Approve, then release manufacturing separately',
+        description:
+          'After verification, approve and choose Release Manufacturing. Release requires material rows, positive usage, valid materials, and a positive finished weight with a weight unit. Permissions, status, and concurrency checks still apply.',
+      },
+    },
     stages: {
       draft: {
         title: 'Prepare a draft',
@@ -158,9 +230,9 @@ export const bomCreationOperationGuide = {
           'Enter and save the recipe, then check the product, materials, quantities, loss, and weight. A draft can be completed later; saving it does not make it ready for production.',
       },
       confirm: {
-        title: 'Verify and review',
+        title: 'Verify, approve, then release separately',
         description:
-          'Confirm the recipe under your business process, then use the available status actions. Actions depend on the current status, account permissions, and business validation. Saving once does not complete every confirmation.',
+          'Open the draft in BOM Recipes, verify it, and choose Submit for Review. This currently uses direct approval, resulting in Approved with locked content. Reopen the record to release it. It does not pause at In Review or release automatically on save.',
       },
       use: {
         title: 'Release and production use',
@@ -170,7 +242,7 @@ export const bomCreationOperationGuide = {
       change: {
         title: 'Revise and trace changes',
         description:
-          'Use revision with a reason to change an effective manufacturing recipe. Previous versions retain their history. Use BOM Trace and change records to inspect versions and changes.',
+          'Use revision with a reason for a released MBOM. The current implementation creates a released revision and obsoletes the previous one while retaining history, without another draft approval stage. Use BOM Trace and change records to inspect versions and changes.',
       },
     },
     layoutHint:

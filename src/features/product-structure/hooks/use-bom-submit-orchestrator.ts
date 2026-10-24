@@ -190,8 +190,14 @@ export function useBOMSubmitOrchestrator(
       ) {
         if (!onSubmit) return
 
+        // This pre-save must validate just like the ordinary form submit (including typed dates).
+        let currentData: BOM | undefined
+        await form.handleSubmit((validatedData) => {
+          currentData = validatedData
+        })()
+        if (!currentData) return
+
         const fullSidecar = buildBOMRelationSidecar(effectiveProtocolDraft)
-        const currentData = form.getValues()
         // promote 前的预 save 不走 sidecarDelta（避免 promote 与保存的 delta 混淆）
         const submitData = buildSubmitPayload(currentData, fullSidecar, false)
 

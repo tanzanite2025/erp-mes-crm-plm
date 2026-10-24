@@ -12,10 +12,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { ProductAndBOMFieldResponsibilityNotice } from '@/features/engineering/components/product-and-bom-field-responsibility-explanations'
 import { getCustomers } from '@/features/trading/customer'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type BOM, type Product } from '../../data/schema'
 import { useBOMPerformanceVersionWeightDrafts } from '../../hooks/use-bom-performance-version-weight-drafts'
+import { BOMFieldBusinessMeaningHelpPopover } from '../bom-field-business-meaning-help-popover'
+import { BOMEffectiveStartDateTextInputWithCalendar } from './bom-effective-start-date-text-input-with-calendar'
 import { BOMPerformanceVersionAndWeightField } from './bom-performance-version-and-weight-field'
 import {
   getBOMProductConfigurationFields,
@@ -92,6 +95,7 @@ export function BOMProductConfigurationInformationPanel({
 
   return (
     <div className='space-y-3'>
+      <ProductAndBOMFieldResponsibilityNotice context='bom' t={t} />
       <div className='space-y-2.5'>
         {getBOMProductConfigurationFields(context).map((fieldConfig) => (
           <BOMProductConfigurationFormField
@@ -149,6 +153,14 @@ function BOMProductConfigurationFormField({
   isLocked: boolean
   onProductOrOwnershipChange: () => void
 }) {
+  if (fieldConfig.type === 'effective-date') {
+    return (
+      <BOMEffectiveStartDateTextInputWithCalendar
+        form={form}
+        isLocked={isLocked}
+      />
+    )
+  }
   const inputClassName =
     'h-9! w-full rounded-xl border-transparent bg-muted/50 text-xs shadow-none'
   return (
@@ -157,9 +169,17 @@ function BOMProductConfigurationFormField({
       name={fieldConfig.name}
       render={({ field }) => (
         <FormItem className='min-w-0 gap-1.5'>
-          <FormLabel className='text-[11px] font-bold text-foreground/80'>
-            {fieldConfig.label}
-          </FormLabel>
+          <div className='flex items-center gap-1'>
+            <FormLabel className='text-[11px] font-bold text-foreground/80'>
+              {fieldConfig.label}
+            </FormLabel>
+            {fieldConfig.helpTopic && (
+              <BOMFieldBusinessMeaningHelpPopover
+                topic={fieldConfig.helpTopic}
+                fieldLabel={fieldConfig.label}
+              />
+            )}
+          </div>
           {fieldConfig.type === 'select' ? (
             <SelectDropdown
               value={field.value ?? ''}

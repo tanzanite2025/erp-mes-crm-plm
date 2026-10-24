@@ -13,6 +13,8 @@ import { BOMCreationOperationGuidePage } from './bom-creation-operation-guide-pa
 
 const bomHandbookAccount = vi.hoisted(() => ({
   user: { id: 'bom-handbook-reader', permissions: ['menu_engineering'] },
+  isIdentitySynced: true,
+  isSyncing: false,
 }))
 
 vi.mock('@/stores/auth-store', () => ({
@@ -43,7 +45,7 @@ function renderBOMCreationOperationGuideForExplanationTests(
   )
 }
 
-describe('BOM handbook explanations without an editing workflow', () => {
+describe('BOM handbook chapters and explicit business entry', () => {
   it('switches five numbered tabs with only the selected chapter visible and resets its reading position', () => {
     renderBOMCreationOperationGuideForExplanationTests()
     expect(
@@ -75,13 +77,18 @@ describe('BOM handbook explanations without an editing workflow', () => {
       if (index > 0) expect(readingArea.scrollTop).toBe(0)
     }
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
 
   it('explains version scope, finished weight, shared groups, and what saving persists', () => {
     renderBOMCreationOperationGuideForExplanationTests()
+    expect(
+      screen.getByText(/具体产品 ＋ 归属 ＋ 性能版本 ＋ 成品重量/)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '录入归属、版本、重量与配方' })
+    ).toBeDisabled()
     fireEvent.mouseDown(
       screen.getByRole('tab', { name: '确定具体产品与归属' }),
       { button: 0, ctrlKey: false }
@@ -133,13 +140,36 @@ describe('BOM handbook explanations without an editing workflow', () => {
       { button: 0, ctrlKey: false }
     )
     expect(
-      screen.getByText(/保存草稿不代表已经可以投入生产/)
+      screen.getByText(/草稿允许继续完善，保存草稿不代表已经可以投入生产/)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: '为什么能看到生命周期状态' })
+    ).toBeInTheDocument()
+    const derivation = screen.getByRole('region', {
+      name: '研发 BOM 如何变成生产 BOM',
+    })
+    expect(within(derivation).getAllByRole('listitem')).toHaveLength(4)
+    expect(
+      within(derivation).getByText(/源记录必须达到已发布且锁定/)
+    ).toBeInTheDocument()
+    expect(within(derivation).getByText(/源研发记录不变/)).toBeInTheDocument()
+    expect(
+      within(derivation).getByText(/派生成功不等于已经发布生产/)
     ).toBeInTheDocument()
   })
 
   it('keeps all explanations available for a guide-only account without exposing inaccessible pages', () => {
     bomHandbookAccount.user.permissions = ['tab_engineering_bom_creation_guide']
     renderBOMCreationOperationGuideForExplanationTests()
+    expect(
+      screen.getByText(/请勿在产品规格或模板中另建同义字段/)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: '录入产品型号、规格与涂装' })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '录入归属、版本、重量与配方' })
+    ).toBeDisabled()
     fireEvent.mouseDown(
       screen.getByRole('tab', { name: '选择性能版本并填写重量' }),
       { button: 0, ctrlKey: false }

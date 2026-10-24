@@ -4,6 +4,19 @@ import {
   masterDataControlSchema,
   productSchema,
 } from '@/features/engineering/data/schema'
+import { parseBOMEffectiveDateInputToDateProtocol } from '../utils/bom-effective-date-input-and-calendar-date-protocol'
+
+const optionalBOMEffectiveDateSchema = z
+  .string()
+  .trim()
+  .refine((value) => parseBOMEffectiveDateInputToDateProtocol(value) !== null, {
+    message: 'Enter a valid date in YYYY-MM-DD format',
+  })
+  .transform(
+    (value) => parseBOMEffectiveDateInputToDateProtocol(value) ?? value
+  )
+  .nullable()
+  .optional()
 
 export const bomParentChildrenProtocolBranchDraftSchema = z.object({
   id: z.string().trim().min(1, 'Node ID is required'),
@@ -86,8 +99,8 @@ export const bomSchema = z.object({
     .default(0),
   measuredWeightUnit: z.string().trim().default(''),
   revisionNo: z.string().optional(),
-  effectiveFrom: masterDataControlSchema.shape.effectiveFrom,
-  effectiveTo: masterDataControlSchema.shape.effectiveTo,
+  effectiveFrom: optionalBOMEffectiveDateSchema,
+  effectiveTo: optionalBOMEffectiveDateSchema,
   changeType: masterDataControlSchema.shape.changeType,
   changeOrderNo: z.string().optional(),
   siteCode: z.string().optional(),

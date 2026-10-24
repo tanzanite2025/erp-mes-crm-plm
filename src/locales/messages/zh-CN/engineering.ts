@@ -1,9 +1,13 @@
 import { bomCreationOperationGuide } from './bom-creation-operation-guide'
+import { bomFieldBusinessMeaningHelp } from './bom-field-business-meaning-help'
+import { productAndBOMFieldResponsibilityGuidance } from './product-and-bom-field-responsibility-guidance'
 import { productCreationOperationGuide } from './product-creation-operation-guide'
 
 export const engineering = {
   bomCreationGuide: bomCreationOperationGuide,
+  bomFieldHelp: bomFieldBusinessMeaningHelp,
   productCreationGuide: productCreationOperationGuide,
+  productAndBOMResponsibilities: productAndBOMFieldResponsibilityGuidance,
   tabs: {
     bomCreationGuide: '如何建立 BOM',
     productCreationGuide: '如何建立产品',
@@ -1398,6 +1402,9 @@ export const engineering = {
       revisionNoPlaceholder: 'V1.0 / HK-R2',
       effectiveFrom: '生效开始',
       effectiveTo: '生效结束',
+      effectiveDateInputHint: '可输入或粘贴：2020-01-15、2020/01/15、20200115',
+      effectiveDateInvalid: '请输入有效日期，例如 2020-01-15（年-月-日）',
+      effectiveDateOpenCalendar: '选择生效开始日期',
       manual: '手动',
       eco: 'ECO',
       ecn: 'ECN',

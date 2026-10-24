@@ -4,11 +4,11 @@ import {
   normalizeBomNo,
   normalizeBomStatus,
   normalizeBomVersion,
-  normalizeEngineeringDateProtocol,
   normalizeRevisionNo,
   normalizeSiteCode,
 } from '@/lib/codecs/code-normalization'
 import { type SaveBOMInput } from '../mutation-types'
+import { parseBOMEffectiveDateInputToDateProtocol } from './bom-effective-date-input-and-calendar-date-protocol'
 
 export function normalizeEngineeringRevisionNo(
   value?: string | null,
@@ -22,7 +22,9 @@ function normalizeBOMSiteCode(value?: string | null): string {
 }
 
 function normalizeBOMEffectiveDate(value?: string | null): string {
-  return normalizeEngineeringDateProtocol(value)
+  const text = (value ?? '').trim()
+  // Preserve invalid/incomplete input so validation can reject it, rather than truncate it.
+  return parseBOMEffectiveDateInputToDateProtocol(text) ?? text
 }
 
 function normalizeBOMNoValue(value?: string | null): string {
@@ -104,7 +106,13 @@ export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     changeType: normalizeEngineeringBomChangeType(data.changeType),
     status: normalizeEngineeringBomStatus(data.status),
     revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
-    effectiveFrom: normalizeBOMEffectiveDate(data.effectiveFrom) || undefined,
-    effectiveTo: normalizeBOMEffectiveDate(data.effectiveTo) || undefined,
+    effectiveFrom:
+      data.effectiveFrom === undefined
+        ? undefined
+        : normalizeBOMEffectiveDate(data.effectiveFrom),
+    effectiveTo:
+      data.effectiveTo === undefined
+        ? undefined
+        : normalizeBOMEffectiveDate(data.effectiveTo),
   }
 }
