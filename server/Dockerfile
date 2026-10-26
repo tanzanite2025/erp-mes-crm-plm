@@ -38,7 +38,7 @@ ARG XDFC_APP_UID=10001
 ARG XDFC_APP_GID=10001
 
 RUN apk upgrade --no-cache \
-    && apk add --no-cache ca-certificates tzdata curl postgresql-client
+    && apk add --no-cache ca-certificates tzdata 'curl>=8.23.0-r0' postgresql-client
 
 # Keep runtime paths aligned with docker-compose volume mounts.
 RUN addgroup -S -g "${XDFC_APP_GID}" xdfcgroup \
