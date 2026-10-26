@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { parseBusinessRecordSearchRouteParameters } from '@/hooks/use-business-record-search-keyword'
 import { ensureAuthenticatedRouteSession } from '@/features/authz/guards/ensure-authenticated-route-session'
 import { MaterialsRouteLayout } from '@/features/material-archive/components/materials-route-layout'
 import {
@@ -8,6 +9,7 @@ import {
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
 
 export const Route = createFileRoute('/_authenticated/materials')({
+  validateSearch: parseBusinessRecordSearchRouteParameters,
   beforeLoad: async ({ location }) => {
     await ensureAuthenticatedRouteSession(location.pathname)
   },

@@ -535,12 +535,6 @@ func RecordInbound(ctx context.Context, inbound *models.InboundRecord) error {
 		payload["inventory"] = inventoryAuditSnapshot(auditResult.inventoryAfter)
 		return writeInventoryAuditEntryWithContext(ctx, tx, inbound.ID, "INVENTORY_INBOUND", before, payload, strings.TrimSpace(inbound.Operator))
 	})
-	if err == nil {
-		var latestInv models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", inbound.MaterialID, inbound.TargetCategory, inbound.BatchNo).First(&latestInv).Error == nil {
-			syncInventoryToSearch(latestInv)
-		}
-	}
 	return err
 }
 
@@ -756,10 +750,6 @@ func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResp
 		})
 	})
 	if err == nil {
-		var latestInv models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", shipment.MaterialID, shipment.SourceCategory, shipment.BatchNo).First(&latestInv).Error == nil {
-			syncInventoryToSearch(latestInv)
-		}
 		if err := db.DB.First(&shipment, "id = ?", id).Error; err != nil {
 			return InventoryShipmentRecordResponse{}, err
 		}
@@ -888,15 +878,6 @@ func TransferInventory(ctx context.Context, input TransferInventoryInput) error 
 		return writeInventoryAuditEntryWithContext(ctx, tx, strings.TrimSpace(input.MaterialID), "INVENTORY_TRANSFER", before, payload, "")
 	})
 
-	if err == nil {
-		var fromInv, toInv models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).First(&fromInv).Error == nil {
-			syncInventoryToSearch(fromInv)
-		}
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.ToCategory, input.BatchNo).First(&toInv).Error == nil {
-			syncInventoryToSearch(toInv)
-		}
-	}
 	return err
 }
 

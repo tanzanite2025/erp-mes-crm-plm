@@ -71,6 +71,11 @@ export const approval = {
     createdAt: 'Created At',
   },
   requests: {
+    selectedRequest: 'Selected approval request',
+    selectedUnavailable:
+      'This approval request is no longer available or you cannot view it.',
+    selectedLoadFailed:
+      'Could not load the approval request. Refresh to try again.',
     loading: 'Loading approval tasks...',
     heroTitle: 'Inbox & Requests',
     heroSubtitle:

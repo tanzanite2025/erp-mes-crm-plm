@@ -188,6 +188,16 @@ jobs:
       - name: Run frontend contract tests
         run: pnpm run test:contracts
 
+      - name: Run global search and API request boundary tests
+        run: >-
+          pnpm exec vitest run
+          src/components/layout/data/global-search-navigation-coverage-and-keyword-matching.spec.ts
+          src/hooks/global-business-search-request-lifecycle-and-route-keyword.spec.tsx
+          src/features/global-search/services/global-business-record-search-api-response-contract.spec.ts
+          src/lib/api-request-cancellation-and-search-circuit-breaker-isolation.spec.ts
+          src/components/global-search-business-result-retry-and-keyboard-selection.spec.tsx
+          src/features/approval/components/approval-request-global-search-destination-and-current-route-selection.spec.tsx
+
       - name: Build the project
         run: pnpm build
 
@@ -212,6 +222,60 @@ jobs:
         run: |
           cd server
           go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  global-business-search-rust-integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: search_test
+          POSTGRES_PASSWORD: search_test
+          POSTGRES_DB: search_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U search_test -d search_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.10'
+          cache-dependency-path: server/go.sum
+
+      - name: Setup Rust matching the sidecar image
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+
+      - name: Test and build the Rust business search sidecar
+        run: |
+          cargo test --locked --manifest-path server/search-engine/Cargo.toml
+          cargo build --locked --manifest-path server/search-engine/Cargo.toml
+
+      - name: Test Go to Rust search with isolated PostgreSQL schemas
+        env:
+          GLOBAL_SEARCH_TEST_RUST_URL: http://127.0.0.1:18031
+          GLOBAL_SEARCH_TEST_POSTGRES_DSN: postgresql://search_test:search_test@127.0.0.1:5432/search_test?sslmode=disable
+        run: |
+          set -euo pipefail
+          SEARCH_ENGINE_PORT=18031 ./server/search-engine/target/debug/xdfc-search > "$RUNNER_TEMP/business-record-search-sidecar.log" 2>&1 &
+          business_search_process_id=$!
+          trap 'kill "$business_search_process_id" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --silent --fail "$GLOBAL_SEARCH_TEST_RUST_URL/v1/health"; then break; fi
+            sleep 1
+          done
+          curl --silent --fail "$GLOBAL_SEARCH_TEST_RUST_URL/v1/health"
+          cd server
+          go test ./services -run '^TestGlobalBusinessSearch' -count=1 -v
 
   vehicle-loading-engine-tests:
     runs-on: ubuntu-latest

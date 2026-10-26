@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearch } from '@tanstack/react-router'
 import {
   AlertCircle,
   Check,
@@ -29,6 +30,7 @@ import {
   getApprovalModuleLabel,
   getApprovalStatusMeta,
 } from '../approval-i18n'
+import { ApprovalRequestRouteSelectionDetail } from '../components/approval-request-route-selection-detail'
 import { DeltaPreview } from '../components/delta-preview'
 import {
   ApprovalService,
@@ -36,6 +38,11 @@ import {
 } from '../services/approval-service'
 
 export function ApprovalRequests() {
+  const routeSearch = useSearch({ strict: false })
+  const selectedApprovalRequestId =
+    'requestId' in routeSearch && typeof routeSearch.requestId === 'string'
+      ? routeSearch.requestId
+      : undefined
   const { t, locale } = useLanguage()
   const { allowsAction } = usePermissionActions()
   const [requests, setRequests] = useState<ApprovalRequest[]>([])
@@ -142,6 +149,14 @@ export function ApprovalRequests() {
 
   return (
     <div className='animate-in space-y-4 duration-700 fade-in'>
+      {selectedApprovalRequestId && (
+        <ApprovalRequestRouteSelectionDetail
+          request={requests.find(
+            (request) => request.id === selectedApprovalRequestId
+          )}
+          failed={error !== null}
+        />
+      )}
       <div className='flex flex-col justify-between gap-4 md:flex-row md:items-center'>
         <div className='flex-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
           <div className='flex items-center gap-2 text-primary'>

@@ -6,19 +6,21 @@ The project already has recognizable layers, but the boundaries are uneven. Fron
 
 ## Current Responsibility Map
 
-| Area | Responsibility | Current clarity |
-| --- | --- | --- |
-| `src/routes` | Route definitions and route-level guards | Clear when route files only import feature entries; should stay thin. |
-| `src/features` | Frontend domain modules | Mostly clear. Many modules use `components`, `hooks`, `services`, `data`, `tabs`, and `index` exports. |
-| `src/components` | Shared UI shells and cross-feature components | Clear, but should not absorb business logic from feature modules. |
-| `src/lib` | Cross-cutting frontend infrastructure | Clear for API, logging, delta tracking, schema helpers, and utility code. |
-| `src/locales` | Locale catalogs and override guidance | Clear, but large locale files are expected to grow and should remain generated/structured. |
-| `server/routes` | Gin route registration | Clear. |
-| `server/handlers` | HTTP handlers, DTO mapping, validation boundaries | Partly clear; file count is high and some handlers contain business-adjacent logic. |
-| `server/services` | Business rules, transactions, workflow orchestration | Partly clear; some files are too large and act as multiple services in one. |
-| `server/models` | GORM persistence models | Clear. |
-| `server/modules` | Newer cohesive backend domain modules | Clearer than the flat `handlers`/`services` areas and worth using as the future direction. |
-| `docs` | Durable architecture, analysis, and ops knowledge | Clearer after pruning generated/historical docs. |
+This review describes application layering. For the implemented language/runtime boundaries, including Rust HTTP, CLI, browser WASM, the optional watchdog, and the Go/C++ attendance gateway, use the [cross-language responsibility and integration contract](typescript-go-rust-and-native-sdk-runtime-responsibilities-and-integration-contract.md). Frontend TypeScript services are API adapters; the main business backend is Go.
+
+| Area              | Responsibility                                       | Current clarity                                                                                        |
+| ----------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `src/routes`      | Route definitions and route-level guards             | Clear when route files only import feature entries; should stay thin.                                  |
+| `src/features`    | Frontend domain modules                              | Mostly clear. Many modules use `components`, `hooks`, `services`, `data`, `tabs`, and `index` exports. |
+| `src/components`  | Shared UI shells and cross-feature components        | Clear, but should not absorb business logic from feature modules.                                      |
+| `src/lib`         | Cross-cutting frontend infrastructure                | Clear for API, logging, delta tracking, schema helpers, and utility code.                              |
+| `src/locales`     | Locale catalogs and override guidance                | Clear, but large locale files are expected to grow and should remain generated/structured.             |
+| `server/routes`   | Gin route registration                               | Clear.                                                                                                 |
+| `server/handlers` | HTTP handlers, DTO mapping, validation boundaries    | Partly clear; file count is high and some handlers contain business-adjacent logic.                    |
+| `server/services` | Business rules, transactions, workflow orchestration | Partly clear; some files are too large and act as multiple services in one.                            |
+| `server/models`   | GORM persistence models                              | Clear.                                                                                                 |
+| `server/modules`  | Newer cohesive backend domain modules                | Clearer than the flat `handlers`/`services` areas and worth using as the future direction.             |
+| `docs`            | Durable architecture, analysis, and ops knowledge    | Clearer after pruning generated/historical docs.                                                       |
 
 ## Layering Assessment
 

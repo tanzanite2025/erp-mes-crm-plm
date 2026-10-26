@@ -2,142 +2,120 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
 )
 
-const defaultSearchEngineURL = "http://127.0.0.1:8030"
+const defaultSearchEngineURL = "http://127.0.0.1:18030"
 
-// SearchServiceClient 负责与 Rust 搜索微服务通信情况情况总量针对。
+// SearchServiceClient connects the Go business API to the Rust search/image sidecar.
 type SearchServiceClient struct {
 	BaseURL    string
 	HTTPClient *http.Client
 }
 
-// SearchDocument 对应 Rust 端的索引文档结构
 type SearchDocument struct {
-	ID       string `json:"id"`
-	Code     string `json:"code"`
-	Name     string `json:"name"`
-	Model    string `json:"model"`
-	Category string `json:"category"`
-	Version  uint64 `json:"version"`
+	ID                string   `json:"id"`
+	Code              string   `json:"code"`
+	Name              string   `json:"name"`
+	Model             string   `json:"model"`
+	Category          string   `json:"category"`
+	RestrictedToUsers bool     `json:"restricted_to_users"`
+	AllowedUserIDs    []string `json:"allowed_user_ids"`
 }
 
-var (
-	GlobalSearchClient *SearchServiceClient
-)
+type GlobalBusinessSearchEngineHit struct {
+	ID       string  `json:"id"`
+	Category string  `json:"category"`
+	Score    float32 `json:"score"`
+}
+
+type SearchResponse struct {
+	Items      []GlobalBusinessSearchEngineHit `json:"items"`
+	HasMore    bool                            `json:"has_more"`
+	Generation string                          `json:"generation"`
+}
+
+var GlobalSearchClient *SearchServiceClient
 
 func InitSearchClient() {
-	baseURL := strings.TrimSpace(os.Getenv("SEARCH_ENGINE_URL"))
+	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("SEARCH_ENGINE_URL")), "/")
 	if baseURL == "" {
 		baseURL = defaultSearchEngineURL
 	}
-
-	GlobalSearchClient = &SearchServiceClient{
-		BaseURL: baseURL,
-		HTTPClient: &http.Client{
-			Timeout: 5 * time.Second,
-		},
-	}
+	GlobalSearchClient = &SearchServiceClient{BaseURL: baseURL, HTTPClient: &http.Client{Timeout: 5 * time.Second}}
 	log.Printf("[SEARCH_CLIENT] Initialized with BaseURL: %s", baseURL)
 }
 
-// SyncIndex 将文档同步到 Rust 搜索引擎情况情况总量针对。
-func (s *SearchServiceClient) SyncIndex(doc SearchDocument) error {
-	url := fmt.Sprintf("%s/v1/index", s.BaseURL)
-	payload, err := json.Marshal(doc)
+func (client *SearchServiceClient) sendGlobalBusinessSearchJSON(searchContext context.Context, path string, payload, result any, requestTimeout time.Duration) error {
+	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("marshal search doc failed: %w", err)
-	}
-
-	resp, err := s.HTTPClient.Post(url, "application/json", bytes.NewBuffer(payload))
-	if err != nil {
-		// Fail Loudly: 搜索同步失败必须产生核心告警
-		log.Printf("[CRITICAL][SEARCH_OFFLINE] Failed to sync search index for ID %s: %v", doc.ID, err)
 		return err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("[CRITICAL][SEARCH_ERROR] Search engine returned status %d for ID %s", resp.StatusCode, doc.ID)
-		return fmt.Errorf("search engine status: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func (s *SearchServiceClient) DeleteIndex(id string) error {
-	url := fmt.Sprintf("%s/v1/index/%s", s.BaseURL, url.PathEscape(strings.TrimSpace(id)))
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	request, err := http.NewRequestWithContext(searchContext, http.MethodPost, client.BaseURL+path, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("create search delete request failed: %w", err)
-	}
-
-	resp, err := s.HTTPClient.Do(req)
-	if err != nil {
-		log.Printf("[CRITICAL][SEARCH_OFFLINE] Failed to delete search index for ID %s: %v", id, err)
 		return err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("[CRITICAL][SEARCH_ERROR] Search engine returned status %d while deleting ID %s", resp.StatusCode, id)
-		return fmt.Errorf("search engine status: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-// SearchResponse 从引擎返回的搜索命中结果情况情况总量针对。
-type SearchResponse struct {
-	Items []struct {
-		ID       string  `json:"id"`
-		Category string  `json:"category"`
-		Score    float32 `json:"score"`
-	} `json:"items"`
-}
-
-// Search 调用 Rust 搜索引擎执行全文检索情况情况总量针对。
-func (s *SearchServiceClient) Search(query string) (SearchResponse, error) {
-	url := fmt.Sprintf("%s/v1/search?q=%s", s.BaseURL, query)
-	resp, err := s.HTTPClient.Get(url)
+	request.Header.Set("Content-Type", "application/json")
+	// Query latency and full-snapshot publication have different time budgets.
+	requestClient := *client.HTTPClient
+	requestClient.Timeout = requestTimeout
+	response, err := requestClient.Do(request)
 	if err != nil {
-		return SearchResponse{}, fmt.Errorf("search request failed: %w", err)
+		return fmt.Errorf("Rust search request %s: %w", path, err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return SearchResponse{}, fmt.Errorf("search engine status: %d", resp.StatusCode)
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		if path == "/v1/search" && response.StatusCode == http.StatusConflict {
+			return ErrGlobalBusinessSearchSnapshotChanged
+		}
+		message, _ := io.ReadAll(io.LimitReader(response.Body, 2048))
+		return fmt.Errorf("Rust search %s returned %d: %s", path, response.StatusCode, strings.TrimSpace(string(message)))
 	}
-
-	var res SearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return SearchResponse{}, fmt.Errorf("decode search response failed: %w", err)
+	if result != nil {
+		return json.NewDecoder(response.Body).Decode(result)
 	}
-
-	return res, nil
+	_, err = io.Copy(io.Discard, response.Body)
+	return err
 }
 
-// HealthCheck 检查搜索服务连通性
-func (s *SearchServiceClient) HealthCheck() bool {
-	url := fmt.Sprintf("%s/v1/health", s.BaseURL)
-	resp, err := s.HTTPClient.Get(url)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
+func (client *SearchServiceClient) SearchGlobalBusinessIndex(searchContext context.Context, request GlobalBusinessSearchEngineRequest) (SearchResponse, error) {
+	var response SearchResponse
+	err := client.sendGlobalBusinessSearchJSON(searchContext, "/v1/search", request, &response, 5*time.Second)
+	return response, err
 }
 
-// ImageProcessResult 对应 Rust 图像处理结果情况情况总量针对。
+func (client *SearchServiceClient) BeginGlobalBusinessSearchSnapshot(searchContext context.Context) (string, error) {
+	var response struct {
+		Token string `json:"token"`
+	}
+	err := client.sendGlobalBusinessSearchJSON(searchContext, "/v1/index/snapshot/start", struct{}{}, &response, 2*time.Minute)
+	if err == nil && response.Token == "" {
+		err = fmt.Errorf("Rust search returned an empty snapshot token")
+	}
+	return response.Token, err
+}
+
+func (client *SearchServiceClient) AppendGlobalBusinessSearchSnapshotBatch(searchContext context.Context, token string, documents []SearchDocument) error {
+	return client.sendGlobalBusinessSearchJSON(searchContext, "/v1/index/snapshot/"+token+"/batch", documents, nil, 2*time.Minute)
+}
+
+func (client *SearchServiceClient) PublishGlobalBusinessSearchSnapshot(searchContext context.Context, token, generation string) error {
+	return client.sendGlobalBusinessSearchJSON(searchContext, "/v1/index/snapshot/"+token+"/publish", map[string]string{"generation": generation}, nil, 2*time.Minute)
+}
+
+func (client *SearchServiceClient) AbortGlobalBusinessSearchSnapshot(searchContext context.Context, token string) error {
+	return client.sendGlobalBusinessSearchJSON(searchContext, "/v1/index/snapshot/"+token+"/abort", struct{}{}, nil, 5*time.Second)
+}
+
+// ImageProcessResult contains the Rust sidecar's image fingerprint, WebP data and dimensions.
 type ImageProcessResult struct {
 	PHash      string `json:"phash"`
 	WebPBase64 string `json:"webp_base64"`
@@ -145,7 +123,7 @@ type ImageProcessResult struct {
 	Height     uint32 `json:"height"`
 }
 
-// ProcessImage 调用 Rust 微服务对图片进行 pHash 计算与 WebP 压缩情况情况总量针对。
+// ProcessImage asks the Rust sidecar to compute pHash and encode WebP.
 func (s *SearchServiceClient) ProcessImage(rawData []byte) (*ImageProcessResult, error) {
 	url := fmt.Sprintf("%s/v1/process-image", s.BaseURL)
 	resp, err := s.HTTPClient.Post(url, "application/octet-stream", bytes.NewReader(rawData))

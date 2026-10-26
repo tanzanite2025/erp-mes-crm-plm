@@ -1,6 +1,11 @@
 export const commandMenu = {
   placeholder: 'Search pages, features, actions, or business data (Ctrl+K)...',
   empty: 'No matching results found.',
+  searchFailed: 'Business data search failed. Please try again.',
+  retrySearch: 'Retry search',
+  loadMore: 'Load more business results',
+  narrowBusinessSearch:
+    'Many records match. Add an order number, material code, or customer name to narrow your search.',
   headings: {
     navigation: 'Pages / Navigation',
     modules: 'Modules / Features',

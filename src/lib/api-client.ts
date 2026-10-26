@@ -35,6 +35,7 @@ export async function ensureCSRFToken(baseUrl: string): Promise<string | null> {
 interface ExtendedRequestInit extends RequestInit {
   ignoreBreaker?: boolean
   suppressErrorStatuses?: number[]
+  circuitBreakerScope?: 'application' | 'global-business-search'
 }
 
 interface ApiFetchError extends Error {
@@ -43,12 +44,19 @@ interface ApiFetchError extends Error {
   isConflict?: boolean
 }
 
-const circuitBreaker = {
-  failures: 0,
-  tripped: false,
-  tripTime: 0,
-  resetTimeout: 5000,
-  threshold: import.meta.env.DEV ? 50 : 10,
+function createApiRequestCircuitBreakerState() {
+  return {
+    failures: 0,
+    tripped: false,
+    tripTime: 0,
+    resetTimeout: 5000,
+    threshold: import.meta.env.DEV ? 50 : 10,
+  }
+}
+
+const circuitBreakersByScope = {
+  application: createApiRequestCircuitBreakerState(),
+  'global-business-search': createApiRequestCircuitBreakerState(),
 }
 
 const logger = createLogger('apiFetch')
@@ -123,6 +131,8 @@ export async function apiFetch<T>(
   endpoint: string,
   options: ExtendedRequestInit = {}
 ): Promise<T> {
+  const circuitBreaker =
+    circuitBreakersByScope[options.circuitBreakerScope ?? 'application']
   const requestMethod = (options.method || 'GET').toUpperCase()
   if (circuitBreaker.tripped && !options.ignoreBreaker) {
     if (Date.now() - circuitBreaker.tripTime > circuitBreaker.resetTimeout) {
@@ -172,9 +182,23 @@ export async function apiFetch<T>(
 
   const controller = new AbortController()
   const dynamicTimeout = nextTimeout(endpoint)
-  const timeoutId = setTimeout(() => controller.abort(), dynamicTimeout)
+  let requestTimedOut = false
+  const abortRequestWhenCallerCancels = () =>
+    controller.abort(options.signal?.reason)
+  if (options.signal?.aborted) {
+    abortRequestWhenCallerCancels()
+  } else {
+    options.signal?.addEventListener('abort', abortRequestWhenCallerCancels, {
+      once: true,
+    })
+  }
+  const timeoutId = setTimeout(() => {
+    requestTimedOut = true
+    controller.abort()
+  }, dynamicTimeout)
 
   try {
+    controller.signal.throwIfAborted()
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string>),
     }
@@ -193,14 +217,13 @@ export async function apiFetch<T>(
       }
     }
 
+    controller.signal.throwIfAborted()
     const response = await fetch(`${baseUrl}/api/v1${endpoint}`, {
       ...options,
       headers,
       credentials: 'include', // 发送和接收 Cookie
       signal: controller.signal,
     })
-
-    clearTimeout(timeoutId)
 
     const fetchEnd = performance.now()
     const serverTime = response.headers.get('X-Response-Time') || 'unknown'
@@ -213,6 +236,7 @@ export async function apiFetch<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      controller.signal.throwIfAborted()
 
       if (response.status >= 400 && response.status < 500) {
         circuitBreaker.failures = 0
@@ -267,19 +291,28 @@ export async function apiFetch<T>(
       throw error
     }
 
-    circuitBreaker.failures = 0
-    circuitBreaker.tripped = false
-
     if (response.status === 204) {
+      circuitBreaker.failures = 0
+      circuitBreaker.tripped = false
       return null as T
     }
 
     const data = await response.json()
+    controller.signal.throwIfAborted()
+    circuitBreaker.failures = 0
+    circuitBreaker.tripped = false
     return data as T
   } catch (err) {
-    clearTimeout(timeoutId)
+    // User/query cancellation is an expected lifecycle event. Preserve its
+    // reason so Query can discard it without reporting a timeout or outage.
+    if (!requestTimedOut && options.signal?.aborted) {
+      throw options.signal.reason ?? err
+    }
 
-    if (err instanceof Error && err.name === 'AbortError') {
+    if (
+      requestTimedOut ||
+      (err instanceof Error && err.name === 'AbortError')
+    ) {
       if (!isDiscoveryRequest(endpoint) && !options.ignoreBreaker) {
         circuitBreaker.failures++
         if (circuitBreaker.failures >= circuitBreaker.threshold) {
@@ -398,5 +431,8 @@ export async function apiFetch<T>(
     }
 
     throw normalizedError
+  } finally {
+    clearTimeout(timeoutId)
+    options.signal?.removeEventListener('abort', abortRequestWhenCallerCancels)
   }
 }

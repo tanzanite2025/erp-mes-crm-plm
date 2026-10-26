@@ -269,13 +269,6 @@ func ConfirmSalesExchangeOldItemInbound(input ConfirmSalesExchangeOldItemInbound
 		return ConfirmSalesExchangeOldItemInboundResponse{}, err
 	}
 
-	for _, inboundRecord := range result.CreatedInboundRecords {
-		var latestInventory models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", inboundRecord.MaterialID, inboundRecord.TargetCategory, inboundRecord.BatchNo).First(&latestInventory).Error == nil {
-			syncInventoryToSearch(latestInventory)
-		}
-	}
-
 	return MapConfirmSalesExchangeOldItemInboundResultToResponse(result), nil
 }
 
@@ -300,13 +293,6 @@ func ConfirmSalesExchangeReplacementShipment(input ConfirmSalesExchangeReplaceme
 	})
 	if err != nil {
 		return ConfirmSalesExchangeReplacementShipmentResponse{}, err
-	}
-
-	for _, shipmentRecord := range result.CreatedShipmentRecords {
-		var latestInventory models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", shipmentRecord.MaterialID, shipmentRecord.SourceCategory, shipmentRecord.BatchNo).First(&latestInventory).Error == nil {
-			syncInventoryToSearch(latestInventory)
-		}
 	}
 
 	return MapConfirmSalesExchangeReplacementShipmentResultToResponse(result), nil

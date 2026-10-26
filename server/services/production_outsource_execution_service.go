@@ -264,7 +264,6 @@ func (s *ProductionOutsourcingService) recordOutsourceTransfer(transferType stri
 
 	var savedOrder models.OutsourceOrder
 	var savedTransfer models.OutsourceTransfer
-	var inventoryResult productionOutsourceInventoryTransferResult
 	err = s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		order, line, err := loadOutsourceOrderLineForExecutionTx(tx, normalized.OutsourceOrderLineID)
 		if err != nil {
@@ -290,7 +289,7 @@ func (s *ProductionOutsourcingService) recordOutsourceTransfer(transferType stri
 			return err
 		}
 		savedTransfer = transfer
-		inventoryResult, err = applyProductionOutsourceInventoryTransferTx(tx, productionOutsourceInventoryTransferInput{
+		_, err = applyProductionOutsourceInventoryTransferTx(tx, productionOutsourceInventoryTransferInput{
 			TransferID:         transfer.ID,
 			TransferType:       transferType,
 			ProductID:          line.ProductID,
@@ -348,8 +347,6 @@ func (s *ProductionOutsourcingService) recordOutsourceTransfer(transferType stri
 	if err != nil {
 		return OutsourceTransferActionResponse{}, normalizeOutsourceExecutionError(err)
 	}
-	syncInventoryToSearch(inventoryResult.SourceInventory)
-	syncInventoryToSearch(inventoryResult.TargetInventory)
 
 	return OutsourceTransferActionResponse{
 		Order:    mapOutsourceOrderToDTO(savedOrder),

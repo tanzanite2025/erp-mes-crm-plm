@@ -27,7 +27,6 @@ func DeleteCustomer(customerID, actorID, username, ip string) error {
 	}); err != nil {
 		return err
 	}
-	deleteSearchDocument(customer.ID)
 	return nil
 }
 
@@ -48,6 +47,5 @@ func DeleteSupplier(supplierID, actorID, username, ip string) error {
 	}); err != nil {
 		return err
 	}
-	deleteSearchDocument(supplier.ID)
 	return nil
 }

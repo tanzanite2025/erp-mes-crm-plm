@@ -7,6 +7,7 @@ import {
 } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
+import { useBusinessRecordSearchKeyword } from '@/hooks/use-business-record-search-keyword'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { WarehouseCategoryCoreService } from '../category'
 import type { WarehouseCategory } from '../category/services/warehouse-category-core-service'
@@ -68,7 +69,7 @@ export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
     queryFn: () => WarehouseCategoryCoreService.getCategoryList(),
   })
 
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useBusinessRecordSearchKeyword()
   const [hideZeroStockMap, setHideZeroStockMap] = useState<
     Record<string, boolean>
   >({})

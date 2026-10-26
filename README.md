@@ -19,9 +19,11 @@ This system bridges complex industrial workflows with cloud-native architecture,
 
 ## Tech Stack
 
-- Frontend: React 19, Vite, TanStack Router/Table, Shadcn UI, TailwindCSS.
-- Backend: Go (Gin), GORM.
-- Database: PostgreSQL (Dockerized).
+- Frontend: TypeScript, React 19, Vite, TanStack Router/Table, Shadcn UI, TailwindCSS.
+- Business backend: Go (Gin), GORM; domain transactions, permissions, approvals, and persistence.
+- Rust: Tantivy search/image HTTP sidecar, vehicle geometry CLI, browser loading/cutting WASM, and an optional operations watchdog.
+- Device integration: separate Go attendance gateway and C++17 vendor SDK bridge.
+- Storage: PostgreSQL for authoritative business records; Redis for cache, coordination, and refresh notifications.
 - API: RESTful endpoints consumed via `apiFetch`.
 - Package manager: pnpm 10.33.0 via Corepack.
 
@@ -38,6 +40,11 @@ server/handlers/     HTTP handlers, request/response DTO mapping, and validation
 server/services/     Backend business rules, transactions, integrations, and workflow orchestration.
 server/models/       GORM persistence models.
 server/modules/      Newer backend domain modules that bundle focused handlers/services/repositories.
+server/search-engine/ Rust HTTP sidecar for business search and image processing.
+server/watchdog/     Optional Rust infrastructure probe and Redis status publisher.
+vehicle-loading-engine/ Rust geometry/loading core with CLI and browser WASM boundaries.
+attendance-gateway/  Separate Go field gateway; sdk-bridge/native contains the C++ vendor bridge.
+scripts/             Node.js development, build, generation, and verification tools.
 docs/architecture/   Architecture decisions and current-state topology maps.
 docs/analysis/       Durable audits, retrospectives, and migration analysis.
 docs/frontend/       Frontend-specific implementation guidance.
@@ -45,7 +52,7 @@ docs/ops/            Deployment, monitoring, and operations checklists.
 cutting-engine/      Rust/WASM cutting optimization engine.
 ```
 
-For the current file responsibility and layering assessment, see `docs/architecture/project-structure-review.md`.
+For language, runtime, authority, and integration boundaries, see the [TypeScript / Go / Rust / native SDK contract](docs/architecture/typescript-go-rust-and-native-sdk-runtime-responsibilities-and-integration-contract.md). For file layering, see the [project structure review](docs/architecture/project-structure-review.md).
 
 ## Documentation Hygiene
 

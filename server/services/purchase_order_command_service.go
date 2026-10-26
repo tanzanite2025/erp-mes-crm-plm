@@ -45,7 +45,6 @@ func SavePurchaseOrder(command SavePurchaseOrderCommand) (PurchaseOrderResponse,
 			return PurchaseOrderResponse{}, err
 		}
 		response := MapPurchaseOrderToResponse(*created)
-		syncPurchaseOrderToSearch(response)
 		return response, nil
 	}
 

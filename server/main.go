@@ -277,7 +277,7 @@ func main() {
 	}
 	services.StartVehicleModelTemplateGeometryParserWorker(context.Background())
 	db.InitRedis()
-	services.StartInitialSearchRebuild()
+	services.StartGlobalBusinessSearchSnapshotCoordinator(context.Background())
 
 	go handlers.GlobalHub.Run()
 	go handlers.StartRedisSubscriber()

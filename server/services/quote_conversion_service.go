@@ -92,9 +92,6 @@ func ConvertQuoteToSalesOrder(id string, operator string) (QuoteConvertResponse,
 		return QuoteConvertResponse{}, err
 	}
 
-	if targetOrder.ID != "" {
-		syncSalesOrderToSearch(MapSalesOrderToResponse(targetOrder))
-	}
 	return response, nil
 }
 

@@ -202,7 +202,7 @@ func DeleteSalesOrder(id string) error {
 	}); err != nil {
 		return err
 	}
-	deleteSearchDocument(order.ID)
+
 	return nil
 }
 
@@ -416,6 +416,6 @@ func DeletePurchaseOrder(id string) error {
 	}); err != nil {
 		return err
 	}
-	deleteSearchDocument(order.ID)
+
 	return nil
 }

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { FileText } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { useBusinessRecordSearchKeyword } from '@/hooks/use-business-record-search-keyword'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { QuotePrintPreviewDialog } from '@/features/quotes/components/quote-print-preview-dialog'
 import { QuoteWorkspaceCreateEditor } from '@/features/quotes/components/quote-workspace-create-editor'
@@ -43,10 +45,12 @@ const typeLabels: Record<string, string> = {
 
 export function QuoteOrdersTab() {
   const { t } = useLanguage()
+  const navigate = useNavigate({ from: '/quotes/orders' })
+  const routeSearch = useSearch({ from: '/_authenticated/quotes/orders' })
   const [customer, setCustomer] = useState<QuoteCustomerFilter>('all')
   const [status, setStatus] = useState<QuoteStatusFilter>('all')
   const [quoteType, setQuoteType] = useState<QuoteTypeFilter>('all')
-  const [keyword, setKeyword] = useState('')
+  const [keyword, setKeyword] = useBusinessRecordSearchKeyword()
   const {
     dialogMode,
     selectedQuoteId,
@@ -62,7 +66,17 @@ export function QuoteOrdersTab() {
     handleCreateQuote,
     handleDialogOpenChange,
     switchToDetailMode,
-  } = useQuoteWorkspaceController()
+  } = useQuoteWorkspaceController(routeSearch.detailId)
+
+  function handleQuoteDialogOpenChange(open: boolean) {
+    handleDialogOpenChange(open)
+    if (!open && routeSearch.detailId) {
+      void navigate({
+        search: (previous) => ({ ...previous, detailId: undefined }),
+        replace: true,
+      })
+    }
+  }
 
   const activeCustomerLabel = useMemo(
     () => customerLabels[customer] ?? '全部客户',
@@ -215,7 +229,7 @@ export function QuoteOrdersTab() {
         createEditor={createEditor}
         editedAmountLabel={activeEditedAmountLabel}
         editedRequirements={activeEditedRequirements}
-        onOpenChange={handleDialogOpenChange}
+        onOpenChange={handleQuoteDialogOpenChange}
         onAmountLabelChange={setEditedAmountLabel}
         onRequirementsChange={setEditedRequirements}
         onExportPdf={() => setIsPrintPreviewOpen(true)}

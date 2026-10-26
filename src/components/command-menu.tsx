@@ -23,6 +23,11 @@ export function CommandMenu() {
     setKnowledgeCreateDraft,
     setSelectedKnowledgeEntry,
     isSearching,
+    searchError,
+    businessSearchCandidateLimitReached,
+    hasMoreBusinessResults,
+    loadMoreBusinessResults,
+    retryBusinessSearch,
     groupedItems,
     handleItemSelect,
     handleKnowledgeCreate,
@@ -42,6 +47,13 @@ export function CommandMenu() {
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         isSearching={isSearching}
+        searchError={searchError}
+        businessSearchCandidateLimitReached={
+          businessSearchCandidateLimitReached
+        }
+        hasMoreBusinessResults={hasMoreBusinessResults}
+        onLoadMoreBusinessResults={loadMoreBusinessResults}
+        onRetryBusinessSearch={retryBusinessSearch}
         groupedItems={groupedItems}
         asyncResults={asyncResults}
         knowledgeEntries={knowledgeEntries}

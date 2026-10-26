@@ -1,6 +1,7 @@
 import type { ElementType } from 'react'
 import { type TranslationKey } from '@/locales'
-import { Layout, PlusCircle } from 'lucide-react'
+import { PlusCircle } from 'lucide-react'
+import { buildGlobalSearchNavigationItems } from './global-search-navigation-catalog'
 import {
   ENABLED_QUICK_ACTION_IDS,
   QUICK_ACTION_DEFINITIONS,
@@ -42,68 +43,85 @@ type CommandItemConfig = {
 
 export const ENABLED_ACTION_RESULT_IDS: string[] = [...ENABLED_QUICK_ACTION_IDS]
 
-const moduleGroups: CommandItemConfig[] = [
+// Legacy search aliases enrich the shared navigation catalog; they do not
+// define which pages exist or which destinations are searchable.
+type GlobalSearchNavigationKeywordAlias = {
+  href: string
+  labelKeys: TranslationKey[]
+  keywords: string[]
+  pinyin: string
+}
+
+const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
   {
-    id: 'tab-personnel-org',
     href: '/personnel/org',
-    titleKey: 'commandMenu.items.orgStructure',
-    parentKey: 'commandMenu.parents.orgPersonnelCenter',
+    labelKeys: [
+      'commandMenu.items.orgStructure',
+      'commandMenu.parents.orgPersonnelCenter',
+    ],
     keywords: ['org', 'structure', '组织'],
     pinyin: 'zzjg',
   },
   {
-    id: 'tab-personnel-employees',
     href: '/personnel/employees',
-    titleKey: 'commandMenu.items.employees',
-    parentKey: 'commandMenu.parents.orgPersonnelCenter',
+    labelKeys: [
+      'commandMenu.items.employees',
+      'commandMenu.parents.orgPersonnelCenter',
+    ],
     keywords: ['employee', 'staff', '员工'],
     pinyin: 'rygl',
   },
   {
-    id: 'tab-personnel-accounts',
     href: '/personnel/accounts',
-    titleKey: 'commandMenu.items.accounts',
-    parentKey: 'commandMenu.parents.orgPersonnelCenter',
+    labelKeys: [
+      'commandMenu.items.accounts',
+      'commandMenu.parents.orgPersonnelCenter',
+    ],
     keywords: ['account', 'accounts', '账户'],
     pinyin: 'zhlb',
   },
   {
-    id: 'tab-personnel-rights',
     href: '/personnel/rights',
-    titleKey: 'commandMenu.items.rights',
-    parentKey: 'commandMenu.parents.orgPersonnelCenter',
+    labelKeys: [
+      'commandMenu.items.rights',
+      'commandMenu.parents.orgPersonnelCenter',
+    ],
     keywords: ['user', 'permission', 'rights', '授权', '用户权限'],
     pinyin: 'yhqx',
   },
   {
-    id: 'tab-production-architecture-mindmap',
     href: '/production-architecture/mindmap',
-    titleKey: 'productionArchitecture.layout.tabs.mindmap',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'productionArchitecture.layout.tabs.mindmap',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: ['mindmap', 'L1', 'L2', 'L3', '产线脑图', '脑图', '生产结构'],
     pinyin: 'ctxnt',
   },
   {
-    id: 'tab-production-architecture-topology',
     href: '/production-architecture/topology',
-    titleKey: 'commandMenu.items.topology',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'commandMenu.items.topology',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: ['topology', 'template', '拓扑'],
     pinyin: 'tpmb',
   },
   {
-    id: 'tab-production-architecture-routes',
     href: '/production-architecture/routes',
-    titleKey: 'commandMenu.items.productionRoutes',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'commandMenu.items.productionRoutes',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: ['production route', 'process route', '路线', '工艺路线'],
     pinyin: 'sclx',
   },
   {
-    id: 'tab-production-execution',
     href: '/production-execution',
-    titleKey: 'commandMenu.items.productionExecution',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'commandMenu.items.productionExecution',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: [
       'production execution',
       'scan execution',
@@ -115,26 +133,29 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'sczx',
   },
   {
-    id: 'tab-production-outsourcing-orders',
     href: '/production-outsourcing/orders',
-    titleKey: 'productionOutsourcing.layout.tabs.orders',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'productionOutsourcing.layout.tabs.orders',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: ['outsourcing', 'outsource order', '委外', '外协', '委外任务'],
     pinyin: 'wwrw',
   },
   {
-    id: 'tab-production-outsourcing-partners',
     href: '/production-outsourcing/partners',
-    titleKey: 'productionOutsourcing.layout.tabs.partners',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'productionOutsourcing.layout.tabs.partners',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: ['outsourcing', 'outsource partner', '委外', '外协', '委外单位'],
     pinyin: 'wwdw',
   },
   {
-    id: 'tab-production-outsourcing-transfers',
     href: '/production-outsourcing/transfers',
-    titleKey: 'productionOutsourcing.layout.tabs.transfers',
-    parentKey: 'commandMenu.parents.productionCoordination',
+    labelKeys: [
+      'productionOutsourcing.layout.tabs.transfers',
+      'commandMenu.parents.productionCoordination',
+    ],
     keywords: [
       'outsourcing',
       'outsource transfer',
@@ -147,10 +168,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'wwsfj',
   },
   {
-    id: 'tab-attendance-devices',
     href: '/attendance-management/devices',
-    titleKey: 'commandMenu.items.attendanceDevices',
-    parentKey: 'sidebar.items.attendanceManagement',
+    labelKeys: [
+      'commandMenu.items.attendanceDevices',
+      'sidebar.items.attendanceManagement',
+    ],
     keywords: [
       'attendance device',
       'clock terminal',
@@ -163,194 +185,200 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'kqsb',
   },
   {
-    id: 'tab-attendance-leave-management',
     href: '/attendance-management/leave',
-    titleKey: 'commandMenu.items.leaveManagement',
-    parentKey: 'sidebar.items.attendanceManagement',
+    labelKeys: [
+      'commandMenu.items.leaveManagement',
+      'sidebar.items.attendanceManagement',
+    ],
     keywords: ['leave', 'vacation', '请假'],
     pinyin: 'qjgl',
   },
   {
-    id: 'tab-attendance-hall-of-fame',
     href: '/attendance-management/hall-of-fame',
-    titleKey: 'orgPersonnel.tabs.stats',
-    parentKey: 'sidebar.items.attendanceManagement',
+    labelKeys: [
+      'orgPersonnel.tabs.stats',
+      'sidebar.items.attendanceManagement',
+    ],
     keywords: ['honor', 'ranking', '荣誉榜', '优秀员工榜'],
     pinyin: 'ryb',
   },
   {
-    id: 'tab-warehouse-stock',
     href: '/warehouse',
-    titleKey: 'commandMenu.items.stock',
-    parentKey: 'commandMenu.parents.warehouse',
+    labelKeys: ['commandMenu.items.stock', 'commandMenu.parents.warehouse'],
     keywords: ['stock', 'inventory', '库存'],
     pinyin: 'kcqd',
   },
   {
-    id: 'tab-warehouse-reports',
     href: '/warehouse/reports',
-    titleKey: 'commandMenu.items.reports',
-    parentKey: 'commandMenu.parents.warehouse',
+    labelKeys: ['commandMenu.items.reports', 'commandMenu.parents.warehouse'],
     keywords: ['reports', '报表'],
     pinyin: 'bb',
   },
   {
-    id: 'tab-warehouse-inbound',
     href: '/warehouse/inbound',
-    titleKey: 'commandMenu.items.inbound',
-    parentKey: 'commandMenu.parents.warehouse',
+    labelKeys: ['commandMenu.items.inbound', 'commandMenu.parents.warehouse'],
     keywords: ['inbound', '入库'],
     pinyin: 'cprk',
   },
   {
-    id: 'tab-warehouse-shipment',
     href: '/warehouse/shipment',
-    titleKey: 'commandMenu.items.shipment',
-    parentKey: 'commandMenu.parents.warehouse',
+    labelKeys: ['commandMenu.items.shipment', 'commandMenu.parents.warehouse'],
     keywords: ['shipment', 'outbound', '出货'],
     pinyin: 'cpch',
   },
   {
-    id: 'tab-warehouse-stocktake',
     href: '/warehouse/stocktake',
-    titleKey: 'commandMenu.items.stocktake',
-    parentKey: 'commandMenu.parents.warehouse',
+    labelKeys: ['commandMenu.items.stocktake', 'commandMenu.parents.warehouse'],
     keywords: ['stocktake', '盘点'],
     pinyin: 'wlpd',
   },
   {
-    id: 'tab-warehouse-adjustments',
     href: '/warehouse/adjustments',
-    titleKey: 'commandMenu.items.adjustments',
-    parentKey: 'commandMenu.parents.warehouse',
+    labelKeys: [
+      'commandMenu.items.adjustments',
+      'commandMenu.parents.warehouse',
+    ],
     keywords: ['adjustment', 'record', '调账'],
     pinyin: 'tzjl',
   },
   {
-    id: 'tab-warehouse-config-packaging-assembly',
     href: '/warehouse-config/packaging-assembly',
-    titleKey: 'commandMenu.items.packagingAssembly',
-    parentKey: 'commandMenu.items.warehouseConfig',
+    labelKeys: [
+      'commandMenu.items.packagingAssembly',
+      'commandMenu.items.warehouseConfig',
+    ],
     keywords: ['warehouse', 'packaging', 'assembly', '装箱组装'],
     pinyin: 'zxzz',
   },
   {
-    id: 'tab-warehouse-config-category',
     href: '/warehouse-config/category',
-    titleKey: 'commandMenu.items.warehouseCategory',
-    parentKey: 'commandMenu.items.warehouseConfig',
+    labelKeys: [
+      'commandMenu.items.warehouseCategory',
+      'commandMenu.items.warehouseConfig',
+    ],
     keywords: ['warehouse', 'category', '仓库基础配置', '仓库分类'],
     pinyin: 'ckjc',
   },
   {
-    id: 'tab-trading-customers',
     href: '/trading/customers',
-    titleKey: 'trading.tabs.customers',
-    parentKey: 'commandMenu.parents.salesManagement',
+    labelKeys: [
+      'trading.tabs.customers',
+      'commandMenu.parents.salesManagement',
+    ],
     keywords: ['customer', '客户'],
     pinyin: 'khgl',
   },
   {
-    id: 'tab-quotes-management',
     href: '/quotes/orders',
-    titleKey: 'commandMenu.items.quoteManagement',
-    parentKey: 'commandMenu.parents.quoteManagement',
+    labelKeys: [
+      'commandMenu.items.quoteManagement',
+      'commandMenu.parents.quoteManagement',
+    ],
     keywords: ['quote', 'quotation', '报价'],
     pinyin: 'bjgl',
   },
   {
-    id: 'tab-trading-sales-orders',
     href: '/trading/sales-orders',
-    titleKey: 'trading.tabs.salesOrders',
-    parentKey: 'commandMenu.parents.salesManagement',
+    labelKeys: [
+      'trading.tabs.salesOrders',
+      'commandMenu.parents.salesManagement',
+    ],
     keywords: ['sales', 'order', '销售订单'],
     pinyin: 'xsdd',
   },
   {
-    id: 'tab-mrp-requirements',
     href: '/mrp/requirements',
-    titleKey: 'mrp.tabs.requirements',
-    parentKey: 'commandMenu.parents.mrp',
+    labelKeys: ['mrp.tabs.requirements', 'commandMenu.parents.mrp'],
     keywords: ['requirements', 'part', 'mrp', '料号需求'],
     pinyin: 'lhxq',
   },
   {
-    id: 'tab-shipping-logistics',
     href: '/shipping-management/logistics',
-    titleKey: 'trading.shippingManagement.tabs.logistics',
-    parentKey: 'sidebar.items.shippingManagement',
+    labelKeys: [
+      'trading.shippingManagement.tabs.logistics',
+      'sidebar.items.shippingManagement',
+    ],
     keywords: ['logistics', '物流'],
     pinyin: 'wlgl',
   },
   {
-    id: 'tab-logistics-container-specs',
     href: '/logistics-loading-specs/container-specs',
-    titleKey: 'logisticsContainerManagement.tabs.specs',
-    parentKey: 'sidebar.items.loadingSpecs',
+    labelKeys: [
+      'logisticsContainerManagement.tabs.specs',
+      'sidebar.items.loadingSpecs',
+    ],
     keywords: ['container', 'shipping container', '货柜', '集装箱', '柜型'],
     pinyin: 'hggg',
   },
   {
-    id: 'tab-logistics-vehicle-specs-library',
     href: '/logistics-loading-specs/vehicle-specs-library',
-    titleKey: 'logisticsConfig.tabs.vehicleSpecsLibrary',
-    parentKey: 'sidebar.items.loadingSpecs',
+    labelKeys: [
+      'logisticsConfig.tabs.vehicleSpecsLibrary',
+      'sidebar.items.loadingSpecs',
+    ],
     keywords: ['vehicle', 'vehicle specs', '车型', '车型规格', '车辆规格'],
     pinyin: 'cxggk',
   },
   {
-    id: 'tab-business-analysis-capacity',
     href: '/business-analysis/production-capacity',
-    titleKey: 'businessAnalysis.tabs.productionCapacity',
-    parentKey: 'sidebar.groups.analysisAggregation',
+    labelKeys: [
+      'businessAnalysis.tabs.productionCapacity',
+      'sidebar.groups.analysisAggregation',
+    ],
     keywords: ['capacity', 'monthly capacity', '产能', '月产能'],
     pinyin: 'yncn',
   },
   {
-    id: 'tab-business-analysis-scrap',
     href: '/business-analysis/scrap',
-    titleKey: 'businessAnalysis.tabs.scrap',
-    parentKey: 'sidebar.groups.analysisAggregation',
+    labelKeys: [
+      'businessAnalysis.tabs.scrap',
+      'sidebar.groups.analysisAggregation',
+    ],
     keywords: ['scrap', 'quality', '报废', '品质分析'],
     pinyin: 'bffx',
   },
   {
-    id: 'tab-business-analysis-orders',
     href: '/business-analysis/orders',
-    titleKey: 'businessAnalysis.tabs.orders',
-    parentKey: 'sidebar.groups.analysisAggregation',
+    labelKeys: [
+      'businessAnalysis.tabs.orders',
+      'sidebar.groups.analysisAggregation',
+    ],
     keywords: ['orders', 'customer', 'sales', '订单', '客户', '销售分析'],
     pinyin: 'ddfx',
   },
   {
-    id: 'tab-terminal-pda',
     href: '/terminal-config/pda',
-    titleKey: 'commandMenu.items.terminalPda',
-    parentKey: 'commandMenu.parents.terminalConfig',
+    labelKeys: [
+      'commandMenu.items.terminalPda',
+      'commandMenu.parents.terminalConfig',
+    ],
     keywords: ['pda', 'terminal', 'PDA终端'],
     pinyin: 'pdazd',
   },
   {
-    id: 'tab-terminal-scanners',
     href: '/terminal-config/scanners',
-    titleKey: 'commandMenu.items.terminalScanners',
-    parentKey: 'commandMenu.parents.terminalConfig',
+    labelKeys: [
+      'commandMenu.items.terminalScanners',
+      'commandMenu.parents.terminalConfig',
+    ],
     keywords: ['usb', 'scanner', 'barcode', 'USB扫码配置', '扫码枪', 'hid'],
     pinyin: 'usbsmpz',
   },
   {
-    id: 'tab-terminal-mobile-capture',
     href: '/terminal-config/mobile-capture',
-    titleKey: 'commandMenu.items.terminalMobileCapture',
-    parentKey: 'commandMenu.parents.terminalConfig',
+    labelKeys: [
+      'commandMenu.items.terminalMobileCapture',
+      'commandMenu.parents.terminalConfig',
+    ],
     keywords: ['mobile', 'camera', 'capture', 'phone', '移动采集', '手机扫码'],
     pinyin: 'ydcj',
   },
   {
-    id: 'tab-code-center-linear-barcode-status',
     href: '/code-center/linear-barcode/status',
-    titleKey: 'codeCenter.linearBarcode.tabs.status',
-    parentKey: 'commandMenu.parents.codeCenter',
+    labelKeys: [
+      'codeCenter.linearBarcode.tabs.status',
+      'commandMenu.parents.codeCenter',
+    ],
     keywords: [
       'linear barcode',
       'barcode state',
@@ -364,10 +392,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'ywmzt',
   },
   {
-    id: 'tab-code-center-shared-numbering-engine',
     href: '/code-center/shared-code-source/numbering-engine',
-    titleKey: 'commandMenu.items.sharedNumberingEngine',
-    parentKey: 'commandMenu.parents.codeCenter',
+    labelKeys: [
+      'commandMenu.items.sharedNumberingEngine',
+      'commandMenu.parents.codeCenter',
+    ],
     keywords: [
       'shared',
       'numbering',
@@ -384,130 +413,143 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'gxfhqy',
   },
   {
-    id: 'tab-basic-units',
     href: '/basic-settings/units',
-    titleKey: 'commandMenu.items.units',
-    parentKey: 'commandMenu.parents.basicSettings',
+    labelKeys: ['commandMenu.items.units', 'commandMenu.parents.basicSettings'],
     keywords: ['unit', '单位'],
     pinyin: 'dwgl',
   },
   {
-    id: 'tab-basic-enterprise',
     href: '/basic-settings/enterprise',
-    titleKey: 'commandMenu.items.enterprise',
-    parentKey: 'commandMenu.parents.basicSettings',
+    labelKeys: [
+      'commandMenu.items.enterprise',
+      'commandMenu.parents.basicSettings',
+    ],
     keywords: ['enterprise', 'company', '企业'],
     pinyin: 'qyxx',
   },
   {
-    id: 'tab-basic-security',
     href: '/basic-settings/security',
-    titleKey: 'commandMenu.items.security',
-    parentKey: 'commandMenu.parents.basicSettings',
+    labelKeys: [
+      'commandMenu.items.security',
+      'commandMenu.parents.basicSettings',
+    ],
     keywords: ['security', '安全'],
     pinyin: 'aqsz',
   },
   {
-    id: 'tab-message-center-rules',
     href: '/message-center/rules',
-    titleKey: 'messageCenter.pages.rules.title',
-    parentKey: 'commandMenu.parents.messageAndApproval',
+    labelKeys: [
+      'messageCenter.pages.rules.title',
+      'commandMenu.parents.messageAndApproval',
+    ],
     keywords: ['message center', 'rules', '通知监听规则', '消息中心'],
     pinyin: 'xxzxgz',
   },
   {
-    id: 'tab-message-center-sources',
     href: '/message-center/sources',
-    titleKey: 'messageCenter.pages.sources.title',
-    parentKey: 'commandMenu.parents.messageAndApproval',
+    labelKeys: [
+      'messageCenter.pages.sources.title',
+      'commandMenu.parents.messageAndApproval',
+    ],
     keywords: ['message center', 'sources', '业务事件源', '消息中心'],
     pinyin: 'xxzxsjy',
   },
   {
-    id: 'tab-message-center-templates',
     href: '/message-center/templates',
-    titleKey: 'messageCenter.pages.templates.title',
-    parentKey: 'commandMenu.parents.messageAndApproval',
+    labelKeys: [
+      'messageCenter.pages.templates.title',
+      'commandMenu.parents.messageAndApproval',
+    ],
     keywords: ['message center', 'templates', '通知内容模板', '消息中心'],
     pinyin: 'xxzxmb',
   },
   {
-    id: 'tab-message-center-executions',
     href: '/message-center/executions',
-    titleKey: 'messageCenter.pages.executions.title',
-    parentKey: 'commandMenu.parents.messageAndApproval',
+    labelKeys: [
+      'messageCenter.pages.executions.title',
+      'commandMenu.parents.messageAndApproval',
+    ],
     keywords: ['message center', 'executions', '执行日志', '消息中心'],
     pinyin: 'xxzxzxrz',
   },
   {
-    id: 'tab-engineering-products',
     href: '/engineering/products',
-    titleKey: 'commandMenu.items.engineeringProducts',
-    parentKey: 'commandMenu.parents.engineering',
+    labelKeys: [
+      'commandMenu.items.engineeringProducts',
+      'commandMenu.parents.engineering',
+    ],
     keywords: ['product', 'engineering', '型号'],
     pinyin: 'cpgcxh',
   },
   {
-    id: 'tab-engineering-bom',
     href: '/engineering/bom',
-    titleKey: 'commandMenu.items.engineeringBom',
-    parentKey: 'commandMenu.parents.engineering',
+    labelKeys: [
+      'commandMenu.items.engineeringBom',
+      'commandMenu.parents.engineering',
+    ],
     keywords: ['bom', 'formula', '物料配方'],
     pinyin: 'bomwlpf',
   },
   {
-    id: 'tab-engineering-templates',
     href: '/engineering/templates',
-    titleKey: 'commandMenu.items.engineeringTemplates',
-    parentKey: 'commandMenu.parents.engineering',
+    labelKeys: [
+      'commandMenu.items.engineeringTemplates',
+      'commandMenu.parents.engineering',
+    ],
     keywords: ['template', 'product', '模板'],
     pinyin: 'cpmb',
   },
   {
-    id: 'tab-quality-standards',
     href: '/quality/standards',
-    titleKey: 'commandMenu.items.qualityStandards',
-    parentKey: 'commandMenu.parents.qualityStandards',
+    labelKeys: [
+      'commandMenu.items.qualityStandards',
+      'commandMenu.parents.qualityStandards',
+    ],
     keywords: ['quality', 'standards', '标准'],
     pinyin: 'pzjybz',
   },
   {
-    id: 'tab-quality-abnormalities',
     href: '/production-quality/abnormalities',
-    titleKey: 'commandMenu.items.qualityAbnormalities',
-    parentKey: 'commandMenu.parents.qualityOperations',
+    labelKeys: [
+      'commandMenu.items.qualityAbnormalities',
+      'commandMenu.parents.qualityOperations',
+    ],
     keywords: ['quality', 'abnormality', 'handling', '异常'],
     pinyin: 'yccz',
   },
   {
-    id: 'tab-quality-inspection',
     href: '/production-quality/inspection',
-    titleKey: 'commandMenu.items.qualityInspection',
-    parentKey: 'commandMenu.parents.qualityOperations',
+    labelKeys: [
+      'commandMenu.items.qualityInspection',
+      'commandMenu.parents.qualityOperations',
+    ],
     keywords: ['inspection', 'execution', '检验'],
     pinyin: 'jyzx',
   },
   {
-    id: 'tab-quality-special-buy',
     href: '/production-quality/special-buy',
-    titleKey: 'commandMenu.items.qualitySpecialBuy',
-    parentKey: 'commandMenu.parents.qualityOperations',
+    labelKeys: [
+      'commandMenu.items.qualitySpecialBuy',
+      'commandMenu.parents.qualityOperations',
+    ],
     keywords: ['special', 'acceptance', 'release', '特采'],
     pinyin: 'tcfx',
   },
   {
-    id: 'tab-materials',
     href: '/materials',
-    titleKey: 'commandMenu.items.materialArchive',
-    parentKey: 'commandMenu.parents.materialArchive',
+    labelKeys: [
+      'commandMenu.items.materialArchive',
+      'commandMenu.parents.materialArchive',
+    ],
     keywords: ['material', 'master', 'archive', '物料主数据'],
     pinyin: 'wlzsj',
   },
   {
-    id: 'tab-cutting-database',
     href: '/raw-materials',
-    titleKey: 'commandMenu.items.cuttingDatabase',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    labelKeys: [
+      'commandMenu.items.cuttingDatabase',
+      'commandMenu.parents.rawMaterialsManagement',
+    ],
     keywords: [
       'cutting database',
       'raw materials',
@@ -518,10 +560,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'cssjk',
   },
   {
-    id: 'tab-prepreg-catalog',
     href: '/raw-materials/catalog',
-    titleKey: 'commandMenu.items.prepregCatalog',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    labelKeys: [
+      'commandMenu.items.prepregCatalog',
+      'commandMenu.parents.rawMaterialsManagement',
+    ],
     keywords: [
       'prepreg',
       'prepreg catalog',
@@ -532,10 +575,8 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'yjl',
   },
   {
-    id: 'tab-cutting-simulation',
     href: '/raw-materials-engine/cutting-simulation',
-    titleKey: 'commandMenu.items.batchEngine',
-    parentKey: 'sidebar.items.cuttingEngine',
+    labelKeys: ['commandMenu.items.batchEngine', 'sidebar.items.cuttingEngine'],
     keywords: [
       'cutting simulation',
       'cutting preview',
@@ -547,10 +588,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'cqmn',
   },
   {
-    id: 'tab-cut-size-library',
     href: '/raw-materials/cut-size-library',
-    titleKey: 'commandMenu.items.cutSizeLibrary',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    labelKeys: [
+      'commandMenu.items.cutSizeLibrary',
+      'commandMenu.parents.rawMaterialsManagement',
+    ],
     keywords: [
       'cut size library',
       'cutting size library',
@@ -561,10 +603,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'cqcck',
   },
   {
-    id: 'tab-cutting-plan',
     href: '/raw-materials/cutting-plan',
-    titleKey: 'commandMenu.items.cuttingPlan',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    labelKeys: [
+      'commandMenu.items.cuttingPlan',
+      'commandMenu.parents.rawMaterialsManagement',
+    ],
     keywords: [
       'cutting plan',
       'cut plan',
@@ -575,10 +618,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'csfa',
   },
   {
-    id: 'tab-cutting-operations',
     href: '/cutting-operations/cutting-issuance',
-    titleKey: 'commandMenu.items.cuttingOperations',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    labelKeys: [
+      'commandMenu.items.cuttingOperations',
+      'commandMenu.parents.rawMaterialsManagement',
+    ],
     keywords: [
       'cutting issuance',
       'cutting operations',
@@ -589,10 +633,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'cszy',
   },
   {
-    id: 'tab-cutting-size-inventory',
     href: '/cutting-operations/size-inventory',
-    titleKey: 'commandMenu.items.cuttingSizeInventory',
-    parentKey: 'commandMenu.parents.rawMaterialsManagement',
+    labelKeys: [
+      'commandMenu.items.cuttingSizeInventory',
+      'commandMenu.parents.rawMaterialsManagement',
+    ],
     keywords: [
       'cutting size inventory',
       'size inventory',
@@ -604,26 +649,29 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'cscsskc',
   },
   {
-    id: 'tab-experimental-equipment',
     href: '/labs/experimental/equipment',
-    titleKey: 'commandMenu.items.experimentalEquipmentArchive',
-    parentKey: 'commandMenu.parents.experimental',
+    labelKeys: [
+      'commandMenu.items.experimentalEquipmentArchive',
+      'commandMenu.parents.experimental',
+    ],
     keywords: ['lab', 'laboratory', 'equipment', '实验设备'],
     pinyin: 'sysbda',
   },
   {
-    id: 'tab-experimental-tests',
     href: '/labs/experimental/tests',
-    titleKey: 'commandMenu.items.experimentalProjects',
-    parentKey: 'commandMenu.parents.experimental',
+    labelKeys: [
+      'commandMenu.items.experimentalProjects',
+      'commandMenu.parents.experimental',
+    ],
     keywords: ['lab', 'laboratory', 'project', '测试'],
     pinyin: 'syxm',
   },
   {
-    id: 'tab-experimental-reports',
     href: '/labs/experimental/reports',
-    titleKey: 'commandMenu.items.experimentalReportArchive',
-    parentKey: 'commandMenu.parents.experimental',
+    labelKeys: [
+      'commandMenu.items.experimentalReportArchive',
+      'commandMenu.parents.experimental',
+    ],
     keywords: ['lab', 'laboratory', 'report', '实验报告'],
     pinyin: 'sybgda',
   },
@@ -640,11 +688,6 @@ const actionConfigs: CommandItemConfig[] = actionConfigDefinitions.map(
     enabled: ENABLED_ACTION_RESULT_IDS.includes(config.id),
   })
 )
-
-export const STATIC_SEARCH_RESULT_REGISTRY = {
-  modules: moduleGroups,
-  actions: actionConfigs,
-} as const
 
 function buildKeywords(
   t: TranslateFn,
@@ -683,27 +726,39 @@ function toSearchItem(
 }
 
 function getTabItems(t: TranslateFn): SearchItem[] {
-  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map(
-    (config) => toSearchItem(t, config, 'modules', Layout)
+  const itemsByHref = new Map(
+    buildGlobalSearchNavigationItems(t).map((item) => [item.href, item])
   )
+  for (const config of moduleSearchKeywordOverrides) {
+    const navigationItem = itemsByHref.get(config.href)
+    if (!navigationItem) continue
+    itemsByHref.set(config.href, {
+      ...navigationItem,
+      pinyin: config.pinyin,
+      keywords: [
+        ...(navigationItem?.keywords ?? []),
+        ...config.labelKeys.map((key) => t(key)),
+        ...config.keywords,
+      ],
+    })
+  }
+  return [...itemsByHref.values()]
 }
 
 function getActionItems(t: TranslateFn): SearchItem[] {
-  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.actions).map(
-    (config) => toSearchItem(t, config, 'actions', PlusCircle)
+  return getEnabledConfigs(actionConfigs).map((config) =>
+    toSearchItem(t, config, 'actions', PlusCircle)
   )
 }
 
 export function getKnowledgeRouteOptions(
   t: TranslateFn
 ): KnowledgeRouteOption[] {
-  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map(
-    (config) => ({
-      value: config.href,
-      label: t(config.titleKey),
-      parentLabel: t(config.parentKey),
-    })
-  )
+  return getTabItems(t).map((item) => ({
+    value: item.href,
+    label: item.title,
+    parentLabel: item.parentTitle ?? '',
+  }))
 }
 
 export function getSearchItems(t: TranslateFn): SearchItem[] {

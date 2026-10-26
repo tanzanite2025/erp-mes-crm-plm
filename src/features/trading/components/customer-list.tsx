@@ -20,6 +20,7 @@ import { type CompositeReadResource } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
+import { useBusinessRecordSearchKeyword } from '@/hooks/use-business-record-search-keyword'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -53,7 +54,7 @@ type CustomerDashboardResource = CompositeReadResource<{
 export function CustomerList() {
   const { locale, t } = useLanguage()
   const { allowsAction } = usePermissionActions()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useBusinessRecordSearchKeyword()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
@@ -62,7 +63,18 @@ export function CustomerList() {
   const [showDeleted, setShowDeleted] = useState(false)
   const [quoteStatusFilter, setQuoteStatusFilter] =
     useState<QuoteStatusFilter>('all')
-  const [page, setPage] = useState(1)
+  const [customerPagination, setCustomerPagination] = useState({
+    searchTerm,
+    page: 1,
+  })
+  if (customerPagination.searchTerm !== searchTerm) {
+    setCustomerPagination({ searchTerm, page: 1 })
+  }
+  const page =
+    customerPagination.searchTerm === searchTerm ? customerPagination.page : 1
+  function setCustomerListPage(nextPage: number) {
+    setCustomerPagination({ searchTerm, page: nextPage })
+  }
   const [quoteWorkspaceRequest, setQuoteWorkspaceRequest] = useState<{
     open: boolean
     mode: 'create' | 'detail' | null
@@ -432,7 +444,7 @@ export function CustomerList() {
             value={searchTerm}
             onChange={(event) => {
               setSearchTerm(event.target.value)
-              setPage(1)
+              setCustomerListPage(1)
             }}
             className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-[13px] font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20 sm:h-12'
           />
@@ -469,7 +481,7 @@ export function CustomerList() {
               variant='ghost'
               onClick={() => {
                 setShowDeleted((value) => !value)
-                setPage(1)
+                setCustomerListPage(1)
               }}
               className={cn(
                 'h-10 min-w-0 flex-1 rounded-full px-3 text-[8px] font-black tracking-widest uppercase transition-all sm:h-11 sm:flex-none sm:px-6 sm:text-[10px]',
@@ -534,7 +546,7 @@ export function CustomerList() {
           total={customerTotal}
           disabled={customerListQuery.isFetching}
           showPageNumbers
-          onPageChange={setPage}
+          onPageChange={setCustomerListPage}
           className='border-t border-dashed border-border/60 pt-5'
         />
       ) : null}

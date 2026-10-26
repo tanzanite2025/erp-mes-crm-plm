@@ -67,18 +67,6 @@ func VoidSalesExchangeReplacementShipment(
 		return VoidSalesExchangeReplacementShipmentResult{}, err
 	}
 
-	var latestInventory models.Inventory
-	if db.DB.
-		Where(
-			"material_id = ? AND category_code = ? AND batch_no = ?",
-			result.Shipment.MaterialID,
-			result.Shipment.SourceCategory,
-			result.Shipment.BatchNo,
-		).
-		First(&latestInventory).Error == nil {
-		syncInventoryToSearch(latestInventory)
-	}
-
 	return result, nil
 }
 

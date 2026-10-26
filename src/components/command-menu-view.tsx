@@ -13,6 +13,7 @@ import type { KnowledgeBaseEntry } from '@/features/basic-settings/knowledge-bas
 import { CommandMenuKnowledgeDetailDrawer } from './command-menu-knowledge-detail-drawer'
 import { CommandMenuKnowledgeTab } from './command-menu-knowledge-tab'
 import type { SearchItem } from './layout/data/search-data'
+import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
@@ -22,6 +23,11 @@ interface CommandMenuViewProps {
   searchValue: string
   onSearchChange: (value: string) => void
   isSearching: boolean
+  searchError?: boolean
+  businessSearchCandidateLimitReached?: boolean
+  hasMoreBusinessResults?: boolean
+  onLoadMoreBusinessResults?: () => void
+  onRetryBusinessSearch?: () => void
   groupedItems: Record<string, SearchItem[]>
   asyncResults: SearchItem[]
   knowledgeEntries: KnowledgeBaseEntry[]
@@ -40,6 +46,11 @@ export function CommandMenuView({
   searchValue,
   onSearchChange,
   isSearching,
+  searchError = false,
+  businessSearchCandidateLimitReached = false,
+  hasMoreBusinessResults = false,
+  onLoadMoreBusinessResults,
+  onRetryBusinessSearch,
   groupedItems,
   asyncResults,
   knowledgeEntries,
@@ -56,7 +67,7 @@ export function CommandMenuView({
     actions: t('commandMenu.headings.actions'),
   }
 
-  const isInitialState = searchValue === ''
+  const isInitialState = searchValue.trim() === ''
   const hasBusinessResults =
     asyncResults.length > 0 || (groupedItems.modules?.length ?? 0) > 0
   const hasActionResults = (groupedItems.actions?.length ?? 0) > 0
@@ -134,11 +145,39 @@ export function CommandMenuView({
                   className='m-0 focus-visible:outline-none'
                 >
                   <div className='space-y-2 p-2.5'>
-                    {!hasBusinessResults && (
-                      <SearchEmptyState message={t('commandMenu.empty')} />
+                    {searchError && (
+                      <div role='alert' className='space-y-2'>
+                        <SearchEmptyState
+                          message={t('commandMenu.searchFailed')}
+                        />
+                        {onRetryBusinessSearch && (
+                          <Button
+                            variant='outline'
+                            className='w-full'
+                            disabled={isSearching}
+                            onClick={onRetryBusinessSearch}
+                          >
+                            {t('commandMenu.retrySearch')}
+                          </Button>
+                        )}
+                      </div>
                     )}
+                    {businessSearchCandidateLimitReached && (
+                      <p
+                        role='status'
+                        className='px-2 py-3 text-sm text-muted-foreground'
+                      >
+                        {t('commandMenu.narrowBusinessSearch')}
+                      </p>
+                    )}
+                    {!hasBusinessResults &&
+                      !isSearching &&
+                      !searchError &&
+                      !businessSearchCandidateLimitReached && (
+                        <SearchEmptyState message={t('commandMenu.empty')} />
+                      )}
 
-                    {/* Rust Results (Always show all matches if searching) */}
+                    {/* Business records returned by the unified search catalog. */}
                     {asyncResults.length > 0 && (
                       <CommandGroup
                         heading={t('commandMenu.headings.data')}
@@ -152,6 +191,16 @@ export function CommandMenuView({
                             isData
                           />
                         ))}
+                        {hasMoreBusinessResults && (
+                          <Button
+                            variant='ghost'
+                            className='mt-2 w-full'
+                            disabled={isSearching}
+                            onClick={onLoadMoreBusinessResults}
+                          >
+                            {t('commandMenu.loadMore')}
+                          </Button>
+                        )}
                       </CommandGroup>
                     )}
 
@@ -284,7 +333,7 @@ function SearchListItem({
 }) {
   return (
     <CommandItem
-      value={`${item.title} ${item.parentTitle || ''} ${item.keywords?.join(' ') || ''} ${item.pinyin || ''}`}
+      value={item.id}
       className={cn(
         'group flex cursor-pointer items-center rounded-lg py-1.5 transition-all data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary',
         isAction ? 'gap-1.5 px-1.5' : 'gap-2 px-2'

@@ -495,8 +495,6 @@ func ExecutePurchaseOrderTransaction(input ExecutePurchaseOrderTransactionInput)
 	if err != nil {
 		return PurchaseOrderResponse{}, err
 	}
-
-	syncPurchaseOrderToSearch(response)
 	return response, nil
 }
 

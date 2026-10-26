@@ -258,7 +258,6 @@ func PrepareVirtualShipment(ctx context.Context, input PrepareVirtualShipmentReq
 		return InventoryShipmentRecordResponse{}, err
 	}
 
-	syncShipmentPreparationInventory(materialID, sourceCategory, ShippingVirtualCategoryCode, batchNo)
 	return MapShipmentRecordToResponse(shipment), nil
 }
 
@@ -269,16 +268,4 @@ func isShipmentDemandOrderStatusActive(status string) bool {
 		}
 	}
 	return false
-}
-
-func syncShipmentPreparationInventory(materialID string, sourceCategory string, targetCategory string, batchNo string) {
-	if strings.TrimSpace(materialID) == "" {
-		return
-	}
-	for _, category := range []string{sourceCategory, targetCategory} {
-		var inv models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", materialID, category, batchNo).First(&inv).Error == nil {
-			syncInventoryToSearch(inv)
-		}
-	}
 }

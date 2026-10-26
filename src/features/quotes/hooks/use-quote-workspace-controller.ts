@@ -1,12 +1,24 @@
 import { useMemo, useState } from 'react'
 
-export function useQuoteWorkspaceController() {
+export function useQuoteWorkspaceController(routeQuoteId?: string) {
+  const [handledRouteQuoteId, setHandledRouteQuoteId] = useState(routeQuoteId)
   const [dialogMode, setDialogMode] = useState<'create' | 'detail'>('detail')
-  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(
+    routeQuoteId ?? null
+  )
+  const [isDialogOpen, setIsDialogOpen] = useState(Boolean(routeQuoteId))
   const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false)
   const [editedAmountLabel, setEditedAmountLabel] = useState('')
   const [editedRequirements, setEditedRequirements] = useState('')
+
+  if (handledRouteQuoteId !== routeQuoteId) {
+    setHandledRouteQuoteId(routeQuoteId)
+    setDialogMode('detail')
+    setSelectedQuoteId(routeQuoteId ?? null)
+    setIsDialogOpen(Boolean(routeQuoteId))
+    setEditedAmountLabel('')
+    setEditedRequirements('')
+  }
 
   const isCreateModeOpen = useMemo(
     () => isDialogOpen && dialogMode === 'create',

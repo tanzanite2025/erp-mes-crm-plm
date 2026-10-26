@@ -187,7 +187,7 @@ func (service *ApprovalService) RequestApproval(ctx context.Context, input Reque
 	if err != nil {
 		return ApprovalWorkflowResult{}, err
 	}
-	syncApprovalRequestToSearch(result.Request)
+
 	return result, nil
 }
 
@@ -303,7 +303,7 @@ func (service *ApprovalService) ApproveRequest(ctx context.Context, input Approv
 	}
 
 	result.Request = request
-	syncApprovalRequestToSearch(request)
+
 	return result, nil
 }
 
@@ -460,7 +460,6 @@ func (service *ApprovalService) VerifyAuthCode(ctx context.Context, input Verify
 	if err != nil {
 		return models.ApprovalRequest{}, err
 	}
-	syncApprovalRequestToSearch(request)
 
 	return request, nil
 }

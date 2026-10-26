@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
 import { failLoudly } from '@/lib/safe-catch'
+import { useBusinessRecordSearchKeyword } from '@/hooks/use-business-record-search-keyword'
 import { type Material, type MaterialCategory } from '../data/schema'
 import {
   getMaterialListQueryKey,
@@ -22,12 +23,15 @@ interface UseMaterialMgmtDataParams {
 
 export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
   const queryClient = useQueryClient()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [searchTerm, setSearchTerm] = useBusinessRecordSearchKeyword()
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm)
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 })
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm)
+      setPagination((current) => ({ ...current, pageIndex: 0 }))
+    }, 300)
     return () => clearTimeout(timer)
   }, [searchTerm])
 

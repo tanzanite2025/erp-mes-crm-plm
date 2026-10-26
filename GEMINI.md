@@ -7,7 +7,8 @@
 
 ## 🛡️ 1. 核心哲学：后端权威 (Backend Authority)
 
-- **数据唯一性**: 所有的计算逻辑、状态流转和权限校验必须以中心化服务器为终点。前端仅提供响应式展示与输入采集。
+- **数据唯一性**: 正式业务状态、权限、版本、审批和持久化以 Go 领域服务及 PostgreSQL 为准。前端负责交互、展示和计算预演；浏览器 Rust/WASM 可以执行装箱、裁切等数值求解，正式业务动作仍须由 Go 校验确认。
+- **语言与运行边界**: TS 前端、Go API、Rust HTTP 侧车、Rust CLI、浏览器 WASM、Go 现场网关和 C++ SDK Bridge 的当前职责见[跨语言集成契约](docs/architecture/typescript-go-rust-and-native-sdk-runtime-responsibilities-and-integration-contract.md)。已有的检索、几何、装箱与裁切 Rust 核心沿各自调用边界维护；Go 负责领域编排、结果校验及其现有领域计算。
 - **Fail Loudly**: 禁止任何形式的静默失败。数据缺失或 API 异常必须抛出 [CRITICAL] 错误或可见的挂起，严禁使用空对象 `{}` 或空数组 `[]` 掩盖错误。
 
 ---
@@ -16,7 +17,7 @@
 
 ### 2.1 全量 DTO 模型
 
-- 所有的 `services` 返回值必须基于 Zod Schema 定义的 DTO 模型，严禁在业务层直接透传后端原始 JSON。
+- 前端 `services` 返回值必须基于 Zod Schema 定义的 DTO 模型，严禁在业务层直接透传后端原始 JSON。Go `server/services` 是领域服务层，使用 Go DTO 和领域校验，不与前端同名目录混淆。
 - 需要并发保护的实体必须提交其接口约定的版本标识，由后端校验；版本字段类型遵循领域模型。版本比较属于乐观并发控制，数据库行锁由后端事务按需取得。
 
 ### 2.2 SDRTS 差量更新协议

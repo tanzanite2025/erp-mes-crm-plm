@@ -67,6 +67,9 @@ export const approval = {
     createdAt: '创建时间',
   },
   requests: {
+    selectedRequest: '所选审批申请',
+    selectedUnavailable: '此审批申请已不存在，或你当前无法查看。',
+    selectedLoadFailed: '审批申请读取失败，请刷新后重试。',
     loading: '待办任务加载中...',
     heroTitle: '待办与申请中心',
     heroSubtitle:

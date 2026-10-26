@@ -1,6 +1,11 @@
 export const commandMenu = {
   placeholder: '搜索页面、功能、操作或业务数据 (Ctrl+K)...',
   empty: '未找到匹配结果。',
+  searchFailed: '业务数据查询失败，请稍后重试。',
+  retrySearch: '重新搜索',
+  loadMore: '加载更多业务结果',
+  narrowBusinessSearch:
+    '匹配结果较多，请补充订单号、料号或客户名以缩小搜索范围。',
   headings: {
     navigation: '页面 / 导航',
     modules: '模块 / 功能',

@@ -51,7 +51,6 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 			return SalesOrderResponse{}, err
 		}
 		response := MapSalesOrderToResponse(*created)
-		syncSalesOrderToSearch(response)
 		return response, nil
 	}
 
@@ -75,7 +74,6 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 	if err := recordAuditEventTx(db.DB, trading_audit.BuildSalesOrderStatusChangeEvent(result.ID, "", result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: operator, IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
 		return SalesOrderResponse{}, err
 	}
-	syncSalesOrderToSearch(result)
 	return result, nil
 }
 
@@ -121,7 +119,6 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 	if err := recordAuditEventTx(db.DB, trading_audit.BuildSalesOrderStatusChangeEvent(result.ID, snapshot.Status, result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: strings.TrimSpace(command.Operator), IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
 		return SalesOrderResponse{}, err
 	}
-	syncSalesOrderToSearch(result)
 	return result, nil
 }
 

@@ -306,7 +306,7 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 		}); err != nil {
 			return SupplierResponse{}, err
 		}
-		syncSupplierToSearch(model)
+
 		return MapSupplierToResponse(model), nil
 	}
 

@@ -86,13 +86,6 @@ func ConfirmSalesReturnInbound(input ConfirmSalesReturnInboundInput) (ConfirmSal
 		return ConfirmSalesReturnInboundResponse{}, err
 	}
 
-	for _, inboundRecord := range result.CreatedInboundRecords {
-		var latestInventory models.Inventory
-		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", inboundRecord.MaterialID, inboundRecord.TargetCategory, inboundRecord.BatchNo).First(&latestInventory).Error == nil {
-			syncInventoryToSearch(latestInventory)
-		}
-	}
-
 	return MapConfirmSalesReturnInboundResultToResponse(result), nil
 }
 
