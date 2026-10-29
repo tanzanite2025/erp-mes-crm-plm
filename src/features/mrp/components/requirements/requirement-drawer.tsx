@@ -11,6 +11,12 @@ import {
   SheetDescription,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { ProductionMaterialIssuanceStartWorkflowLauncher } from '@/features/production-material-issuance/components/production-material-issuance-start-workflow-launcher'
+import { ProductionMaterialRequirementBomBasisReview } from '@/features/production-material-requirements/components/production-material-requirement-bom-basis-review'
+import type {
+  ProductionMaterialRequirementBomSelection,
+  ProductionMaterialRequirementSourceLine,
+} from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 import { type MaterialRequirement } from '../../data/requirement-schema'
 import { RequirementExportService } from '../../services/requirement-export-service'
 import { MoldRequirementAlert } from './mold-requirement-alert'
@@ -27,6 +33,13 @@ interface RequirementDrawerProps {
   }
   isLoading: boolean
   selectedCount: number
+  sourceLines: ProductionMaterialRequirementSourceLine[]
+  bomSelections: ProductionMaterialRequirementBomSelection[]
+  isComplete: boolean
+  onBomSelectionChange: (
+    selection: ProductionMaterialRequirementBomSelection
+  ) => void
+  onRecalculate: () => void
 }
 
 export function RequirementDrawer({
@@ -37,10 +50,19 @@ export function RequirementDrawer({
   stats,
   isLoading,
   selectedCount,
+  sourceLines,
+  bomSelections,
+  isComplete,
+  onBomSelectionChange,
+  onRecalculate,
 }: RequirementDrawerProps) {
   const { locale, t } = useLanguage()
   const isAnalyzedButEmpty =
-    !isLoading && !errorMessage && selectedCount > 0 && data.length === 0
+    !isLoading &&
+    !errorMessage &&
+    isComplete &&
+    selectedCount > 0 &&
+    data.length === 0
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -80,6 +102,7 @@ export function RequirementDrawer({
                   size='sm'
                   className='h-11 gap-2 rounded-full border-2 border-dashed border-muted/50 px-6 text-[11px] font-black uppercase hover:bg-muted/5'
                   onClick={() => window.print()}
+                  disabled={!isComplete || isLoading}
                 >
                   <Printer className='size-4' />
                   {t('mrp.requirements.drawer.printList')}
@@ -87,6 +110,7 @@ export function RequirementDrawer({
                 <Button
                   size='sm'
                   className='h-11 gap-2 rounded-full bg-primary px-8 text-[11px] font-black uppercase shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95'
+                  disabled={!isComplete || isLoading}
                   onClick={async () => {
                     try {
                       await RequirementExportService.exportToExcel(data, locale)
@@ -114,6 +138,27 @@ export function RequirementDrawer({
             data-mobile-floating-surface-scroll-body
             className='custom-scrollbar min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]'
           >
+            <ProductionMaterialRequirementBomBasisReview
+              sourceLines={sourceLines}
+              selections={bomSelections}
+              isComplete={isComplete}
+              isLoading={isLoading}
+              onSelectionChange={onBomSelectionChange}
+              onRecalculate={onRecalculate}
+            />
+            {isOpen && (
+              <ProductionMaterialIssuanceStartWorkflowLauncher
+                key={`${isComplete && !isLoading && !errorMessage}/${JSON.stringify(sourceLines)}`}
+                initialSources={sourceLines.map((source) => ({
+                  salesOrderId: source.salesOrderId,
+                  salesOrderLineId: source.salesOrderLineId,
+                  ...(source.bom ? { bomId: source.bom.id } : {}),
+                  orderNo: source.orderNo,
+                  lineNo: source.lineNo,
+                  productName: source.productName,
+                }))}
+              />
+            )}
             {errorMessage ? (
               <RequirementStageAlert
                 tone='error'
@@ -129,12 +174,12 @@ export function RequirementDrawer({
                   'mrp.requirements.drawer.emptyAnalyzedDescription'
                 )}
               />
-            ) : (
+            ) : isComplete || isLoading ? (
               <>
                 <MoldRequirementAlert models={stats.analyzedModels} />
                 <RequirementList data={data} isLoading={isLoading} />
               </>
-            )}
+            ) : null}
           </div>
 
           <div className='flex flex-wrap items-center justify-between gap-3 border-t bg-white px-6 py-4 text-[10px] font-bold text-muted-foreground/40'>

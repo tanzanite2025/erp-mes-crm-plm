@@ -184,6 +184,7 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			rejected_quantity REAL,
 			rework_quantity REAL,
 			scrap_quantity REAL,
+			registered_product_barcodes TEXT,
 			notes TEXT,
 			version INTEGER
 		)

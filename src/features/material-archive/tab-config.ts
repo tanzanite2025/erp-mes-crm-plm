@@ -1,6 +1,7 @@
 import type { AppLocale, TranslationKey } from '@/locales'
 import type { TabItem } from '@/components/module-tabs'
 import { getMaterialCategoryOptions } from './data/material-category-options'
+import { getProductionMaterialCreationOperationGuideTabs } from './production-material-creation-operation-guide-tab-config'
 
 type TranslateFn = (
   key: TranslationKey,
@@ -25,6 +26,7 @@ export function getMaterialStaticTabs(t: TranslateFn): TabItem[] {
 export function getMaterialPermissionTabs(t: TranslateFn): TabItem[] {
   return [
     ...getMaterialStaticTabs(t),
+    ...getProductionMaterialCreationOperationGuideTabs(t),
     {
       key: 'category',
       label: t('materialArchive.layout.categoryDialogTitle'),

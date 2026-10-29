@@ -1,4 +1,4 @@
-import { ClipboardList, Loader2, X } from 'lucide-react'
+import { ClipboardList, Loader2 } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 import { buildHostedQuickActionDialogContentClassName } from '@/components/hosted-quick-action-dialog.styles'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { DocumentFooterStats } from '@/features/sales-document/components/document-footer-stats'
@@ -115,14 +116,10 @@ export function SalesOrderActionDialog({
               {t('tradingSalesOrder.dialog.description')}
             </DialogDescription>
           </DialogHeader>
-          <Button
-            variant='ghost'
-            size='icon'
+          <FloatingSurfaceCloseButton
+            aria-label={t('common.actions.close')}
             onClick={() => onOpenChange(false)}
-            className='rounded-full transition-colors hover:bg-muted'
-          >
-            <X className='size-4' />
-          </Button>
+          />
         </div>
 
         {dialogResource.status === 'error' ? (

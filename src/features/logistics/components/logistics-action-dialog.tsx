@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Truck, X } from 'lucide-react'
+import { Truck } from 'lucide-react'
 import { showApplicationAlert } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
@@ -207,7 +208,7 @@ export function LogisticsActionDialog({
         className='max-w-[500px] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'
       >
         <div className='relative border-b border-dashed border-primary/20 bg-primary/5 px-8 py-6'>
-          <DialogHeader>
+          <DialogHeader className='pe-10'>
             <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight uppercase'>
               <Truck className='size-5 text-primary' />
               {record
@@ -218,14 +219,11 @@ export function LogisticsActionDialog({
               {t('trading.logistics.dialog.description')}
             </DialogDescription>
           </DialogHeader>
-          <Button
-            variant='ghost'
-            size='icon'
+          <FloatingSurfaceCloseButton
+            aria-label={t('common.actions.close')}
             onClick={() => onOpenChange(false)}
-            className='absolute top-4 right-4 rounded-full'
-          >
-            <X className='size-4' />
-          </Button>
+            className='absolute end-4 top-4'
+          />
         </div>
 
         <div className='space-y-5 p-8'>

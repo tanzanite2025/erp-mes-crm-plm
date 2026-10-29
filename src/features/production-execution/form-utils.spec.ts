@@ -15,7 +15,6 @@ const baseValues: ProductionExecutionFormValues = {
   processStepId: 'process-1',
   targetRouteStepId: '',
   targetProcessStepId: '',
-  partnerId: '',
   result: '',
   notes: 'begin',
   fromHolderType: '',
@@ -25,6 +24,18 @@ const baseValues: ProductionExecutionFormValues = {
 }
 
 describe('production execution form utils', () => {
+  it('does not send a previous rework destination when completing or starting a process', () => {
+    for (const action of ['START', 'COMPLETE', 'HOLD'] as const) {
+      expect(
+        buildProductionExecutionCommandInput({
+          ...baseValues,
+          action,
+          targetRouteStepId: 'old-rework-step',
+          targetProcessStepId: 'old-rework-process',
+        })
+      ).toMatchObject({ targetRouteStepId: '', targetProcessStepId: '' })
+    }
+  })
   it('maps USB capture mode to the unified hardware source', () => {
     expect(resolveProductionExecutionCaptureSource('usb')).toBe('hardware')
     expect(resolveProductionExecutionCaptureSource('camera')).toBe('camera')

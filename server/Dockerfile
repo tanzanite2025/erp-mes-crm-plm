@@ -14,6 +14,7 @@ RUN go mod download
 
 COPY server ./
 RUN go build -ldflags="-s -w" -o xdfc-server .
+RUN go build -ldflags="-s -w" -o recover-protected-administrator-password ./cmd/recover-protected-administrator-password
 
 # --- Stage 2: Build Rust vehicle geometry parser CLI ---
 FROM rust:1-alpine AS vehicle-geometry-parser-builder
@@ -48,6 +49,7 @@ RUN mkdir -p /app/uploads /app/backups /app/storage \
     && chown -R "${XDFC_APP_UID}:${XDFC_APP_GID}" /app
 
 COPY --from=api-builder /app/server/xdfc-server /app/xdfc-server
+COPY --from=api-builder /app/server/recover-protected-administrator-password /app/recover-protected-administrator-password
 COPY --from=vehicle-geometry-parser-builder /app/vehicle-loading-engine/target/release/xdfc-vehicle-geometry-parser /app/xdfc-vehicle-geometry-parser
 
 USER xdfcuser

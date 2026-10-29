@@ -66,11 +66,10 @@ func GetMoldsHandler(c *gin.Context) {
 
 func GetMoldGroupNamesHandler(c *gin.Context) {
 	var rows []moldGroupNameRow
-	err := db.DB.Model(&models.Mold{}).
-		Select("DISTINCT TRIM(group_name) AS group_name").
-		Where("group_name IS NOT NULL").
-		Where("TRIM(group_name) <> ''").
-		Order("TRIM(group_name) ASC").
+	err := db.DB.Model(&models.MoldGroup{}).
+		Select("name AS group_name").
+		Where("active = ?", true).
+		Order("name ASC").
 		Scan(&rows).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取模具组名失败: " + err.Error()})

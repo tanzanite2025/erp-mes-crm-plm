@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { Layers, XIcon } from 'lucide-react'
+import { Layers } from 'lucide-react'
 import { normalizeBomStatus } from '@/lib/codecs/code-normalization'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { productCreationGuideDialogContentClassName } from '@/features/engineering/components/product-creation-dialog-layout.styles'
@@ -157,9 +158,8 @@ export function BOMDialogShell({
                   className='h-9 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
                 />
               ) : null}
-              <DialogClose className='inline-flex size-9 items-center justify-center rounded-full border border-dashed border-border/50 bg-background/85 text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none'>
-                <XIcon className='size-4' />
-                <span className='sr-only'>Close</span>
+              <DialogClose asChild>
+                <FloatingSurfaceCloseButton />
               </DialogClose>
             </div>
           </div>

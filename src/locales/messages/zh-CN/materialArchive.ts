@@ -1,12 +1,16 @@
+import { productionMaterialCreationOperationGuide } from './production-material-creation-operation-guide'
+
 export const materialArchive = {
+  operationGuide: productionMaterialCreationOperationGuide,
   layout: {
-    title: '物料资源中心',
-    description: '厂内物料、半成品及原材料的数字化定义与规格治理空间',
+    title: '生产物料档案',
+    description:
+      '维护系统内置“生产物料仓库”所对应生产用物料的编码、规格、单位与分类',
     manageCategories: '管理物料分类',
     categoryDialogTitle: '物料分类管理',
     categoryDialogDescription: '在此添加、编辑或删除物料档案的分类标签。',
     tabs: {
-      all: '全部物料',
+      all: '生产物料',
       assembly: '拼装规则',
     },
   },
@@ -132,7 +136,7 @@ export const materialArchive = {
     confirm: '确认保存档案',
   },
   excel: {
-    allMaterials: '全部物料',
+    allMaterials: '生产物料',
     maintenanceSheetName: '物料档案维护',
     fileName: '物料档案批量维护表_{{category}}_{{date}}.xlsx',
     headers: {

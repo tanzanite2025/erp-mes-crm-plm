@@ -35,11 +35,13 @@ const (
 
 // Client wraps one websocket client session.
 type Client struct {
-	Conn        *websocket.Conn
-	Send        chan []byte
-	UserID      string
-	Username    string
-	Permissions map[string]struct{}
+	Conn                *websocket.Conn
+	Send                chan []byte
+	UserID              string
+	Username            string
+	Permissions         map[string]struct{}
+	PasswordVersion     int64
+	CredentialsExpireAt time.Time
 }
 
 // Hub manages active websocket clients.
@@ -130,20 +132,60 @@ func (c *Client) ReadPump() {
 }
 
 func (c *Client) WritePump() {
+	c.writeMessagesWhileAccountPasswordVersionRemainsValid(15 * time.Second)
+}
+
+func (c *Client) writeMessagesWhileAccountPasswordVersionRemainsValid(validationInterval time.Duration) {
 	defer func() {
 		c.Conn.Close()
 	}()
-	for message := range c.Send {
-		if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
-			break
+	ticker := time.NewTicker(validationInterval)
+	defer ticker.Stop()
+	expirationTimer := time.NewTimer(time.Until(c.CredentialsExpireAt))
+	defer expirationTimer.Stop()
+	closeWebsocketWithExpiredCredentials := func() {
+		_ = c.Conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "Account credentials expired; please sign in again"), time.Now().Add(time.Second))
+	}
+	validateActiveWebsocketAccountCredentials := func() bool {
+		if !time.Now().Before(c.CredentialsExpireAt) {
+			closeWebsocketWithExpiredCredentials()
+			return false
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if middleware.ValidateAccountPasswordVersionWithDatabase(ctx, db.DB, c.UserID, c.PasswordVersion) != nil || !time.Now().Before(c.CredentialsExpireAt) {
+			closeWebsocketWithExpiredCredentials()
+			return false
+		}
+		return true
+	}
+	for {
+		select {
+		case message, open := <-c.Send:
+			if !open || !validateActiveWebsocketAccountCredentials() {
+				return
+			}
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
+				return
+			}
+		case <-ticker.C:
+			if !validateActiveWebsocketAccountCredentials() {
+				return
+			}
+		case <-expirationTimer.C:
+			closeWebsocketWithExpiredCredentials()
+			return
 		}
 	}
 }
 
 type wsTicketClaims struct {
-	UserID   string    `json:"userId"`
-	Username string    `json:"username"`
-	IssuedAt time.Time `json:"issuedAt"`
+	UserID              string    `json:"userId"`
+	Username            string    `json:"username"`
+	IssuedAt            time.Time `json:"issuedAt"`
+	PasswordVersion     int64     `json:"passwordVersion"`
+	CredentialsExpireAt time.Time `json:"credentialsExpireAt"`
 }
 
 type wsTicketResponse struct {
@@ -159,6 +201,14 @@ func CreateWSTicketHandler(c *gin.Context) {
 	}
 
 	username := strings.TrimSpace(middleware.GetSafeUsername(c))
+	passwordVersionRaw, exists := c.Get("passwordVersion")
+	passwordVersion, validVersion := passwordVersionRaw.(int64)
+	credentialExpirationRaw, hasExpiration := c.Get("credentialExpiresAt")
+	credentialExpiration, validExpiration := credentialExpirationRaw.(time.Time)
+	if !exists || !validVersion || !hasExpiration || !validExpiration || !time.Now().Before(credentialExpiration) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or expired authenticated credentials"})
+		return
+	}
 	ticket, err := generateRandomWSTicket(24)
 	if err != nil {
 		log.Printf("[WS_TICKET][ERROR] failed to generate ticket for userId=%s err=%v", userID, err)
@@ -173,10 +223,16 @@ func CreateWSTicketHandler(c *gin.Context) {
 	}
 
 	now := time.Now().UTC()
+	ticketExpiresAt := now.Add(wsTicketTTL)
+	if credentialExpiration.Before(ticketExpiresAt) {
+		ticketExpiresAt = credentialExpiration
+	}
 	claimsBytes, err := json.Marshal(wsTicketClaims{
-		UserID:   userID,
-		Username: username,
-		IssuedAt: now,
+		UserID:              userID,
+		Username:            username,
+		IssuedAt:            now,
+		PasswordVersion:     passwordVersion,
+		CredentialsExpireAt: credentialExpiration,
 	})
 	if err != nil {
 		log.Printf("[WS_TICKET][ERROR] failed to marshal claims for userId=%s err=%v", userID, err)
@@ -184,7 +240,12 @@ func CreateWSTicketHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.RDB.Set(c.Request.Context(), wsTicketRedisPrefix+ticket, claimsBytes, wsTicketTTL).Err(); err != nil {
+	remainingTicketLifetime := time.Until(ticketExpiresAt)
+	if remainingTicketLifetime <= 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authenticated credentials expired"})
+		return
+	}
+	if err := db.RDB.Set(c.Request.Context(), wsTicketRedisPrefix+ticket, claimsBytes, remainingTicketLifetime).Err(); err != nil {
 		log.Printf("[WS_TICKET][ERROR] failed to persist ticket for userId=%s err=%v", userID, err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Realtime ticket service unavailable"})
 		return
@@ -192,16 +253,20 @@ func CreateWSTicketHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, wsTicketResponse{
 		Ticket:    ticket,
-		ExpiresAt: now.Add(wsTicketTTL),
+		ExpiresAt: ticketExpiresAt,
 	})
 }
 
 // WSHandler handles websocket handshake and enforces JWT authentication.
 func WSHandler(c *gin.Context) {
-	userID, username, err := resolveWSIdentity(c)
+	userID, username, passwordVersion, credentialExpiration, err := resolveWSIdentity(c)
 	if err != nil {
 		log.Printf("[WS_AUTH_FAIL] %v, RemoteAddr=%s", err, c.Request.RemoteAddr)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired websocket credentials"})
+		return
+	}
+	if err := middleware.ValidateAccountPasswordVersionWithDatabase(c.Request.Context(), db.DB, userID, passwordVersion); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Account credentials have expired; please sign in again", "code": "auth_password_version_expired"})
 		return
 	}
 
@@ -221,7 +286,7 @@ func WSHandler(c *gin.Context) {
 		return
 	}
 
-	client := &Client{Conn: conn, Send: make(chan []byte, 256), UserID: userID, Username: username, Permissions: buildPermissionSet(accessSnapshot.Permissions)}
+	client := &Client{Conn: conn, Send: make(chan []byte, 256), UserID: userID, Username: username, Permissions: buildPermissionSet(accessSnapshot.Permissions), PasswordVersion: passwordVersion, CredentialsExpireAt: credentialExpiration}
 	GlobalHub.Register <- client
 
 	go client.WritePump()
@@ -293,30 +358,32 @@ func clientHasPermission(client *Client, permissionID string) bool {
 	return ok
 }
 
-func resolveWSIdentity(c *gin.Context) (string, string, error) {
+func resolveWSIdentity(c *gin.Context) (string, string, int64, time.Time, error) {
 	if ticket := strings.TrimSpace(c.Query("ticket")); ticket != "" {
 		return consumeWSTicket(c, ticket)
 	}
 
 	authHeader := strings.TrimSpace(c.GetHeader("Authorization"))
 	if authHeader == "" {
-		return "", "", errors.New("missing websocket credentials")
+		return "", "", 0, time.Time{}, errors.New("missing websocket credentials")
 	}
 
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
 		claims, err := middleware.ParseJWTClaims(strings.TrimSpace(parts[1]))
 		if err != nil {
-			return "", "", errors.New("invalid or expired bearer token")
+			return "", "", 0, time.Time{}, errors.New("invalid or expired bearer token")
 		}
 		userID, username := extractWSIdentity(claims)
 		if strings.TrimSpace(userID) == "" {
-			return "", "", errors.New("missing websocket subject")
+			return "", "", 0, time.Time{}, errors.New("missing websocket subject")
 		}
-		return userID, username, nil
+		passwordVersion, err := middleware.PasswordVersionFromJWTClaims(claims)
+		credentialExpiration, _ := claims.GetExpirationTime()
+		return userID, username, passwordVersion, credentialExpiration.Time, err
 	}
 
-	return "", "", errors.New("invalid websocket authorization header")
+	return "", "", 0, time.Time{}, errors.New("invalid websocket authorization header")
 }
 
 func extractWSIdentity(claims jwt.MapClaims) (userID string, username string) {
@@ -325,28 +392,28 @@ func extractWSIdentity(claims jwt.MapClaims) (userID string, username string) {
 	return userID, username
 }
 
-func consumeWSTicket(c *gin.Context, ticket string) (string, string, error) {
+func consumeWSTicket(c *gin.Context, ticket string) (string, string, int64, time.Time, error) {
 	if db.RDB == nil {
-		return "", "", errors.New("realtime ticket service unavailable")
+		return "", "", 0, time.Time{}, errors.New("realtime ticket service unavailable")
 	}
 
 	key := wsTicketRedisPrefix + strings.TrimSpace(ticket)
 	claimsRaw, err := db.RDB.GetDel(c.Request.Context(), key).Bytes()
 	if err != nil {
-		return "", "", errors.New("invalid or expired websocket ticket")
+		return "", "", 0, time.Time{}, errors.New("invalid or expired websocket ticket")
 	}
 
 	var claims wsTicketClaims
 	if err := json.Unmarshal(claimsRaw, &claims); err != nil {
-		return "", "", errors.New("invalid websocket ticket payload")
+		return "", "", 0, time.Time{}, errors.New("invalid websocket ticket payload")
 	}
 
 	userID := strings.TrimSpace(claims.UserID)
-	if userID == "" {
-		return "", "", errors.New("invalid websocket ticket subject")
+	if userID == "" || !time.Now().Before(claims.CredentialsExpireAt) {
+		return "", "", 0, time.Time{}, errors.New("invalid or expired websocket ticket identity")
 	}
 
-	return userID, strings.TrimSpace(claims.Username), nil
+	return userID, strings.TrimSpace(claims.Username), claims.PasswordVersion, claims.CredentialsExpireAt, nil
 }
 
 func generateRandomWSTicket(byteLen int) (string, error) {

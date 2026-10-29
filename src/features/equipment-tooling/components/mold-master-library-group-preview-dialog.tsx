@@ -8,13 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { createMoldGroupMasterDirectoryQueryOptions } from '../queries/mold-group-master-directory-query-options'
 import { createMoldMasterLibrarySelectionOptionsQueryOptions } from '../queries/mold-master-library-query-options'
 
 export function MoldMasterLibraryGroupPreviewDialog({
-  groupName,
+  groupId,
   onClose,
 }: {
-  groupName: string
+  groupId: string
   onClose: () => void
 }) {
   const { locale, t } = useLanguage()
@@ -22,8 +23,12 @@ export function MoldMasterLibraryGroupPreviewDialog({
   const moldsQuery = useQuery(
     createMoldMasterLibrarySelectionOptionsQueryOptions()
   )
+  const groupsQuery = useQuery(createMoldGroupMasterDirectoryQueryOptions())
+  const groupName =
+    groupsQuery.data?.find((group) => group.id === groupId)?.name ??
+    (isChineseLocale ? '模具分组' : 'Mold group')
   const members = (moldsQuery.data ?? []).filter(
-    (mold) => mold.groupName?.trim() === groupName
+    (mold) => mold.groupId === groupId
   )
   return (
     <Dialog
@@ -44,11 +49,11 @@ export function MoldMasterLibraryGroupPreviewDialog({
           </DialogDescription>
         </DialogHeader>
         <div className='min-h-0 flex-1 space-y-3 overflow-y-auto p-5'>
-          {moldsQuery.isPending ? (
+          {moldsQuery.isPending || groupsQuery.isPending ? (
             <p role='status' className='text-sm'>
               {isChineseLocale ? '正在读取模具主库…' : 'Loading mold library…'}
             </p>
-          ) : moldsQuery.isError ? (
+          ) : moldsQuery.isError || groupsQuery.isError ? (
             <div role='alert' className='space-y-3 text-sm'>
               <p>
                 {isChineseLocale
@@ -59,7 +64,10 @@ export function MoldMasterLibraryGroupPreviewDialog({
                 type='button'
                 variant='outline'
                 className='rounded-full'
-                onClick={() => void moldsQuery.refetch()}
+                onClick={() => {
+                  void moldsQuery.refetch()
+                  void groupsQuery.refetch()
+                }}
               >
                 {isChineseLocale ? '重新读取' : 'Retry'}
               </Button>
@@ -125,8 +133,8 @@ export function MoldMasterLibraryGroupPreviewDialog({
           ) : (
             <p role='status' className='text-sm text-muted-foreground'>
               {isChineseLocale
-                ? '此分组已没有模具，请刷新并重新选择分组。'
-                : 'This group no longer contains molds. Refresh and choose another group.'}
+                ? '此分组暂未录入模具。'
+                : 'No molds have been registered in this group yet.'}
             </p>
           )}
         </div>

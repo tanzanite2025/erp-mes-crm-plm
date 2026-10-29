@@ -90,7 +90,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
       <DialogContent
         size='2xl'
         className={productTemplateAttributeOptionDialogClasses.content}
-        closeButtonClassName='top-5 end-5 flex size-8 items-center justify-center rounded-full bg-muted/60'
+        closeButtonClassName='top-5 end-5'
       >
         <DialogHeader
           className={productTemplateAttributeOptionDialogClasses.header}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
@@ -15,18 +15,56 @@ const logger = createLogger('useAiPermissions')
  * 账号能否访问页面由独立的账号权限体系负责。
  */
 export function useAiPermissions() {
-  const hasSignedInUser = useAuthStore((s) => !!s.user)
+  const signedInUserId = useAuthStore((state) => state.user?.id)
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const hasSignedInUser = Boolean(signedInUserId && accessToken)
+  const permissionCheckState = useRef({ generation: 0 })
   const pathname = useLocation({ select: (location) => location.pathname })
   const [isVisible, setIsVisible] = useState(false)
   const [isRouteAllowed, setIsRouteAllowed] = useState(false)
   const [isApiConfigured, setIsApiConfigured] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
+  const [resolvedPolicyIdentity, setResolvedPolicyIdentity] = useState<{
+    userId: string
+    accessToken: string
+    pathname: string
+  } | null>(null)
+  const hasCurrentIdentityPolicy = Boolean(
+    hasSignedInUser &&
+    resolvedPolicyIdentity?.userId === signedInUserId &&
+    resolvedPolicyIdentity?.accessToken === accessToken &&
+    resolvedPolicyIdentity?.pathname === pathname
+  )
 
   const checkVisibility = useCallback(async () => {
+    const requestGeneration = ++permissionCheckState.current.generation
+    const requestIdentity = useAuthStore.getState()
+    if (
+      !signedInUserId ||
+      !accessToken ||
+      requestIdentity.user?.id !== signedInUserId ||
+      requestIdentity.accessToken !== accessToken
+    ) {
+      setIsVisible(false)
+      setIsRouteAllowed(false)
+      setIsApiConfigured(false)
+      setIsChecking(false)
+      setResolvedPolicyIdentity(null)
+      return
+    }
+    const belongsToCurrentIdentityAndRequest = () => {
+      const currentIdentity = useAuthStore.getState()
+      return (
+        permissionCheckState.current.generation === requestGeneration &&
+        currentIdentity.accessToken === accessToken &&
+        currentIdentity.user?.id === signedInUserId
+      )
+    }
     setIsChecking(true)
     try {
       const config = await aiPolicyService.getRuntimePolicy()
-      const globalEnabledForUser = config.enabled && hasSignedInUser
+      if (!belongsToCurrentIdentityAndRequest()) return
+      const globalEnabledForUser = config.enabled
       const apiConfigured = config.api.configured
       const routeAllowed = isAiRoutePermissionAllowed(
         pathname,
@@ -37,20 +75,31 @@ export function useAiPermissions() {
       setIsApiConfigured(apiConfigured)
       setIsRouteAllowed(globalEnabledForUser && routeAllowed)
     } catch (e) {
+      if (!belongsToCurrentIdentityAndRequest()) return
       logger.error('Permission check failed', e)
       setIsVisible(false)
       setIsRouteAllowed(false)
       setIsApiConfigured(false)
     } finally {
-      setIsChecking(false)
+      if (belongsToCurrentIdentityAndRequest()) {
+        setResolvedPolicyIdentity({
+          userId: signedInUserId,
+          accessToken,
+          pathname,
+        })
+        setIsChecking(false)
+      }
     }
-  }, [hasSignedInUser, pathname])
+  }, [accessToken, signedInUserId, pathname])
 
   useEffect(() => {
+    const subscribedPermissionChecks = permissionCheckState.current
     void checkVisibility()
     window.addEventListener('xdfc_ai_config_updated', checkVisibility)
-    return () =>
+    return () => {
+      subscribedPermissionChecks.generation++
       window.removeEventListener('xdfc_ai_config_updated', checkVisibility)
+    }
   }, [checkVisibility])
 
   useEffect(() => {
@@ -58,12 +107,20 @@ export function useAiPermissions() {
   }, [])
 
   return {
-    isVisible,
-    isRouteAllowed,
-    isApiConfigured,
-    isChecking,
-    canUsePageContext: isVisible && isRouteAllowed && isApiConfigured,
-    canUseDashboardSnapshot: isVisible && isRouteAllowed && isApiConfigured,
+    isVisible: hasCurrentIdentityPolicy && isVisible,
+    isRouteAllowed: hasCurrentIdentityPolicy && isRouteAllowed,
+    isApiConfigured: hasCurrentIdentityPolicy && isApiConfigured,
+    isChecking: hasSignedInUser && (!hasCurrentIdentityPolicy || isChecking),
+    canUsePageContext:
+      hasCurrentIdentityPolicy &&
+      isVisible &&
+      isRouteAllowed &&
+      isApiConfigured,
+    canUseDashboardSnapshot:
+      hasCurrentIdentityPolicy &&
+      isVisible &&
+      isRouteAllowed &&
+      isApiConfigured,
     refreshPermissions: checkVisibility,
   }
 }

@@ -258,6 +258,9 @@ func PatchInventoryRecord(ctx context.Context, id string, patch PatchInventoryRe
 		}
 
 		ApplyPatchInventoryRequestToModel(&inventory, patch)
+		if isProductionMaterialPendingConsumptionInventoryCategory(inventory.CategoryCode) {
+			return ErrDedicatedInventoryExecutionPath
+		}
 		if inventory.Quantity < 0 {
 			return errors.New("[CRITICAL_LOGIC_ERROR] inventory quantity cannot be negative")
 		}
@@ -308,7 +311,7 @@ func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmen
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&shipment, "id = ?", id).Error; err != nil {
 			return err
 		}
-		if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+		if isDedicatedInventoryExecutionSourceType(shipment.SourceType) || isProductionMaterialPendingConsumptionInventoryCategory(shipment.SourceCategory) {
 			return ErrDedicatedInventoryExecutionPath
 		}
 		if shipment.Status != "DRAFT" {
@@ -319,6 +322,9 @@ func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmen
 		}
 
 		ApplyPatchShipmentRequestToModel(&shipment, patch)
+		if isProductionMaterialPendingConsumptionInventoryCategory(shipment.SourceCategory) {
+			return ErrDedicatedInventoryExecutionPath
+		}
 		if shipment.Quantity <= 0 {
 			return errors.New("[CRITICAL_LOGIC_ERROR] shipment quantity must be greater than zero")
 		}
@@ -371,7 +377,7 @@ func CreateShipmentDraft(shipment *models.ShipmentRecord) error {
 	if shipment == nil {
 		return errors.New("shipment is required")
 	}
-	if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+	if isDedicatedInventoryExecutionSourceType(shipment.SourceType) || isProductionMaterialPendingConsumptionInventoryCategory(shipment.SourceCategory) {
 		return ErrDedicatedInventoryExecutionPath
 	}
 	if strings.TrimSpace(shipment.Status) == "" {
@@ -399,6 +405,9 @@ func recordInboundTx(
 ) (inboundInventoryAuditResult, error) {
 	if tx == nil || inbound == nil {
 		return inboundInventoryAuditResult{}, errors.New("transaction and inbound are required")
+	}
+	if isProductionMaterialPendingConsumptionInventoryCategory(inbound.TargetCategory) {
+		return inboundInventoryAuditResult{}, ErrDedicatedInventoryExecutionPath
 	}
 	auditResult := inboundInventoryAuditResult{}
 	var material models.Material
@@ -497,7 +506,7 @@ func RecordInbound(ctx context.Context, inbound *models.InboundRecord) error {
 	if inbound == nil {
 		return errors.New("inbound is required")
 	}
-	if isDedicatedInventoryExecutionSourceType(inbound.SourceType) {
+	if isDedicatedInventoryExecutionSourceType(inbound.SourceType) || isProductionMaterialPendingConsumptionInventoryCategory(inbound.TargetCategory) {
 		return ErrDedicatedInventoryExecutionPath
 	}
 	if inbound.Quantity <= 0 {
@@ -624,6 +633,9 @@ func commitShipmentRecordTx(
 ) error {
 	if tx == nil || shipment == nil {
 		return errors.New("transaction and shipment are required")
+	}
+	if isProductionMaterialPendingConsumptionInventoryCategory(shipment.SourceCategory) {
+		return ErrDedicatedInventoryExecutionPath
 	}
 	if shipment.Quantity <= 0 {
 		return errors.New("[CRITICAL_LOGIC_ERROR] invalid shipment quantity")
@@ -946,6 +958,9 @@ func BulkSyncInventory(ctx context.Context, items []BulkSyncInventoryItemRequest
 			if lookupErr != nil {
 				return lookupErr
 			}
+			if isProductionMaterialPendingConsumptionInventoryCategory(existing.CategoryCode) {
+				return ErrDedicatedInventoryExecutionPath
+			}
 
 			before := inventoryAuditSnapshot(existing)
 			mergeInventoryForSync(&existing, inv)
@@ -974,7 +989,7 @@ func VoidShipment(ctx context.Context, id string) error {
 			return err
 		}
 
-		if isDedicatedInventoryExecutionSourceType(shipment.SourceType) {
+		if isDedicatedInventoryExecutionSourceType(shipment.SourceType) || isProductionMaterialPendingConsumptionInventoryCategory(shipment.SourceCategory) {
 			return ErrDedicatedInventoryExecutionPath
 		}
 		if shipment.Status == "VOID" {

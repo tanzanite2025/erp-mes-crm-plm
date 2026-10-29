@@ -22,7 +22,7 @@ const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
   'steerer',
   'image',
   'restrictions',
-  'moldGroup',
+  'moldGroupId',
   'description',
   'engineeringSpecId',
   'attributeValues',

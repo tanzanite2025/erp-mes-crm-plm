@@ -27,6 +27,7 @@ export function ApsCuttingIssuanceTab() {
     lineNo,
     setLineNo,
     templateId,
+    setTemplateId,
     headerStatus,
     templateMatchHint,
     missingTemplateMessage,
@@ -101,6 +102,7 @@ export function ApsCuttingIssuanceTab() {
           templateMatchHint={templateMatchHint}
           onOrderIdChange={setOrderId}
           onLineNoChange={setLineNo}
+          onTemplateIdChange={setTemplateId}
           onCreateExecution={handleCreateExecution}
         />
 

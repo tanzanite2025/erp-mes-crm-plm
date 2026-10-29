@@ -61,7 +61,6 @@ export function ProductTypeActionDialog({
             : 'flex w-[96vw] flex-col gap-0 rounded-[24px] border-none p-0 shadow-2xl sm:max-w-4xl sm:rounded-[32px]',
           'overflow-clip'
         )}
-        closeButtonClassName='flex size-7 items-center justify-center rounded-full'
       >
         {wizardHeader}
         <DialogHeader className='shrink-0 border-b px-4 py-4 pr-12 text-start sm:px-6 sm:pr-12'>

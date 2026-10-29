@@ -52,8 +52,8 @@ const salesOrderLinePackagingSelectionSchema = z
 
 export const salesOrderLineApiDTOSchema = z
   .object({
-    id: z.number().optional(),
-    lineNo: z.number(),
+    id: z.number().int().positive().optional(),
+    lineNo: z.number().int().positive(),
     productId: z.string().optional(),
     productModel: z.string(),
     productCode: z.string(),

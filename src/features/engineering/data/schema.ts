@@ -68,6 +68,7 @@ export const productSchema = z.object({
   steerer: z.string().optional(),
   image: z.string().optional(),
   restrictions: z.array(z.string()).default([]),
+  moldGroupId: z.string().optional(),
   moldGroup: z.string().optional(),
   description: z.string().optional(),
   engineeringSpecId: z.string().optional(),

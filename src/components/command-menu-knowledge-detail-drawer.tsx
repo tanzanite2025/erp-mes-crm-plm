@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { ExternalLink, X } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { KnowledgeBaseRichContent } from '@/features/basic-settings/knowledge-base/components/knowledge-base-rich-content'
 import {
@@ -84,15 +85,10 @@ export function CommandMenuKnowledgeDetailDrawer({
                 {entry.summary}
               </p>
             </div>
-            <Button
-              type='button'
-              variant='ghost'
-              size='icon'
-              className='size-8 shrink-0 rounded-full'
+            <FloatingSurfaceCloseButton
+              aria-label={t('common.actions.close')}
               onClick={onClose}
-            >
-              <X className='size-4' />
-            </Button>
+            />
           </div>
 
           <ScrollArea className='relative min-h-0 flex-1'>

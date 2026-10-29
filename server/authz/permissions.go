@@ -26,8 +26,11 @@ const (
 )
 
 const (
-	TabPersonnelAccounts = "tab_personnel_accounts"
-	TabPersonnelRights   = "tab_personnel_rights"
+	TabPersonnelAccounts              = "tab_personnel_accounts"
+	TabPersonnelRights                = "tab_personnel_rights"
+	TabMrpRequirements                = "tab_mrp_requirements"
+	TabMrpProductionMaterialIssuance  = "tab_mrp_production_material_issuance"
+	TabProductionOutsourcingTransfers = "tab_production_outsourcing_transfers"
 )
 
 const (
@@ -118,15 +121,21 @@ const (
 )
 
 const (
-	ActionProductionLineUpdate      = "action_production_line_update"
-	ActionProductionRouteManage     = "action_production_route_manage"
-	ActionProductionPlanManage      = "action_production_plan_manage"
-	ActionProductionIssuanceExecute = "action_production_issuance_execute"
-	ActionOutsourcePartnerManage    = "action_outsource_partner_manage"
-	ActionOutsourceOrderManage      = "action_outsource_order_manage"
-	ActionOutsourceTransferExecute  = "action_outsource_transfer_execute"
-	ActionOutsourceInspectionSubmit = "action_outsource_inspection_submit"
-	ActionBarcodeBindingManage      = "action_barcode_binding_manage"
+	ActionProductionLineUpdate                          = "action_production_line_update"
+	ActionProductionMaterialIssuanceView                = "action_production_material_issuance_view"
+	ActionProductionMaterialIssuanceDispatch            = "action_production_material_issuance_dispatch"
+	ActionProductionMaterialIssuanceWithdraw            = "action_production_material_issuance_withdraw"
+	ActionProductionMaterialIssuanceWarehouseIssue      = "action_production_material_issuance_warehouse_issue"
+	ActionProductionMaterialIssuanceWarehouseSupplement = "action_production_material_issuance_warehouse_supplement"
+	ActionProductionMaterialIssuanceWarehouseReturn     = "action_production_material_issuance_warehouse_return"
+	ActionProductionRouteManage                         = "action_production_route_manage"
+	ActionProductionPlanManage                          = "action_production_plan_manage"
+	ActionProductionIssuanceExecute                     = "action_production_issuance_execute"
+	ActionOutsourcePartnerManage                        = "action_outsource_partner_manage"
+	ActionOutsourceOrderManage                          = "action_outsource_order_manage"
+	ActionOutsourceTransferExecute                      = "action_outsource_transfer_execute"
+	ActionOutsourceInspectionSubmit                     = "action_outsource_inspection_submit"
+	ActionBarcodeBindingManage                          = "action_barcode_binding_manage"
 )
 
 const (
@@ -215,6 +224,12 @@ var baseAdminFallbackPermissions = []string{
 	ActionEmployeeImportCommit,
 	ActionAttendanceDeviceManage,
 	ActionProductionLineUpdate,
+	ActionProductionMaterialIssuanceView,
+	ActionProductionMaterialIssuanceDispatch,
+	ActionProductionMaterialIssuanceWithdraw,
+	ActionProductionMaterialIssuanceWarehouseIssue,
+	ActionProductionMaterialIssuanceWarehouseSupplement,
+	ActionProductionMaterialIssuanceWarehouseReturn,
 	ActionProductionRouteManage,
 	ActionProductionPlanManage,
 	ActionProductionIssuanceExecute,

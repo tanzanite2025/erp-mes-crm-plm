@@ -35,6 +35,7 @@ const (
 	AuditModuleTaxRate               = "tax-rate"
 	AuditModuleExchangeRateConfig    = "exchange-rate-config"
 	AuditModuleMold                  = "mold"
+	AuditModuleMoldGroup             = "mold-group"
 	AuditModuleFurnace               = "furnace"
 	AuditModuleMaintenanceRecord     = "maintenance-record"
 	AuditModuleMoldDrawing           = "mold-drawing"

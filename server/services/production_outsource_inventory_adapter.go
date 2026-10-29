@@ -57,6 +57,9 @@ func applyProductionOutsourceInventoryTransferTx(
 
 	sourceCategory := normalizeWarehouseCategoryCode(input.SourceCategory)
 	targetCategory := normalizeWarehouseCategoryCode(input.TargetCategory)
+	if isProductionMaterialPendingConsumptionInventoryCategory(sourceCategory) || isProductionMaterialPendingConsumptionInventoryCategory(targetCategory) {
+		return productionOutsourceInventoryTransferResult{}, ErrDedicatedInventoryExecutionPath
+	}
 	if sourceCategory == "" || targetCategory == "" {
 		return productionOutsourceInventoryTransferResult{}, errors.New("[CRITICAL_DATA_INTEGRITY] outsource source and target inventory categories are required")
 	}

@@ -68,10 +68,7 @@ export function ProductCreationGuideCompletionSummaryDialog({
         if (!open) onClose()
       }}
     >
-      <DialogContent
-        className={productCreationGuideDialogContentClassName}
-        closeButtonClassName='flex size-7 items-center justify-center rounded-full'
-      >
+      <DialogContent className={productCreationGuideDialogContentClassName}>
         {wizardHeader}
         <DialogHeader className='shrink-0 px-5 pt-5 text-start'>
           <DialogTitle>

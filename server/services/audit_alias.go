@@ -126,6 +126,7 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleMold,
 		"Mold",
 	},
+	AuditModuleMoldGroup: {AuditModuleMoldGroup, "MoldGroup"},
 	AuditModuleFurnace: {
 		AuditModuleFurnace,
 		"Furnace",

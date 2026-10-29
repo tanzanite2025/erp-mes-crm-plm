@@ -73,10 +73,11 @@ describe('产品建档复用模具主库 HTTP 契约', () => {
     expect(snapshot).toEqual({ molds: masterLibrary, version: 789 })
   })
 
-  it('新分组随真实模具新增进入原主库，并使用服务器返回的身份', async () => {
+  it('模具按独立分组 ID 新增，不通过名称隐式建组，并使用服务器返回的身份', async () => {
     const draft = createMoldDraft({
       sn: 'SN-NEW',
       name: '新增模具',
+      groupId: '60b7446e-55f7-4c02-b287-c20d60a01002',
       groupName: '新分组',
     })
     vi.mocked(apiFetch).mockResolvedValue({ ...draft, id: 'server-mold-id' })
@@ -87,38 +88,47 @@ describe('产品建档复用模具主库 HTTP 契约', () => {
     expect(JSON.parse(request?.body as string)).toMatchObject({
       sn: 'SN-NEW',
       name: '新增模具',
-      groupName: '新分组',
+      groupId: '60b7446e-55f7-4c02-b287-c20d60a01002',
     })
     expect(JSON.parse(request?.body as string).id).toBeUndefined()
     expect(saved.id).toBe('server-mold-id')
   })
 
-  it('产品编辑按 moldGroup 差分保存分组，并读回服务器确认的关联', async () => {
+  it('产品编辑按 moldGroupId 差分保存分组，名称不作为写入关联依据', async () => {
     const product = createProductDraft({
       id: 'product-with-mold-group',
       name: 'R50 碟刹',
       sku: 'R50-01',
       typeId: 'R50-base-model',
       version: 3,
+      moldGroupId: '60b7446e-55f7-4c02-b287-c20d60a01001',
       moldGroup: '原分组',
     })
     vi.mocked(apiFetch).mockResolvedValueOnce({
       ...product,
+      moldGroupId: '60b7446e-55f7-4c02-b287-c20d60a01002',
       moldGroup: '新分组',
       version: 4,
     })
     const saved = await ProductMaintenanceService.patchProduct(product, {
       ...product,
+      moldGroupId: '60b7446e-55f7-4c02-b287-c20d60a01002',
       moldGroup: '新分组',
     })
     const [endpoint, request] = vi.mocked(apiFetch).mock.calls[0]
     expect(endpoint).toBe('/engineering/products/product-with-mold-group')
     expect(request?.method).toBe('PATCH')
     expect(JSON.parse(request?.body as string)).toMatchObject({
-      delta: { moldGroup: { o: '原分组', n: '新分组' } },
+      delta: {
+        moldGroupId: {
+          o: '60b7446e-55f7-4c02-b287-c20d60a01001',
+          n: '60b7446e-55f7-4c02-b287-c20d60a01002',
+        },
+      },
       metadata: { id: product.id, version: 3 },
     })
     expect(saved.moldGroup).toBe('新分组')
+    expect(saved.moldGroupId).toBe('60b7446e-55f7-4c02-b287-c20d60a01002')
     expect(saved.version).toBe(4)
   })
 })

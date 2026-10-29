@@ -15,6 +15,7 @@ export interface MoldApiDTO {
   currentCycles: number
   maintenanceThreshold: number
   totalLifeCycles: number
+  groupId?: string | null
   groupName?: string
   status: MoldStatusApiDTO
   location?: string
@@ -45,6 +46,7 @@ export interface SaveMoldApiDTO {
   currentCycles: number
   maintenanceThreshold: number
   totalLifeCycles: number
+  groupId?: string
   groupName?: string
   status: MoldStatusApiDTO
   location?: string

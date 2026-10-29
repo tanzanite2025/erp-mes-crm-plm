@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
 var (
@@ -58,6 +59,9 @@ func sanitizeUserAuditUpdates(updates map[string]interface{}) map[string]any {
 		switch key {
 		case "password":
 			payload["passwordChanged"] = true
+		case "password_version":
+			// The version expression is internal authentication state, not audit data.
+			continue
 		default:
 			payload[key] = value
 		}
@@ -68,7 +72,7 @@ func sanitizeUserAuditUpdates(updates map[string]interface{}) map[string]any {
 func userUpdatesAffectIdentityAccessSnapshot(updates map[string]interface{}) bool {
 	for key := range updates {
 		switch strings.TrimSpace(key) {
-		case "username", "email", "status", "permission_preset_id", "employee_id":
+		case "username", "email", "status", "permission_preset_id", "employee_id", "password":
 			return true
 		}
 	}
@@ -91,7 +95,7 @@ func writeUserAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID s
 
 func CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	created := user
-	if err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := db.DB.WithContext(ctx).Session(&gorm.Session{Logger: db.DB.Logger.LogMode(logger.Silent)}).Transaction(func(tx *gorm.DB) error {
 		var existing models.User
 		existingResult := tx.Unscoped().Where("LOWER(username) = ?", strings.ToLower(strings.TrimSpace(created.Username))).First(&existing)
 		if existingResult.Error == nil {
@@ -153,6 +157,11 @@ func updateUserWithAudit(ctx context.Context, userID string, updates map[string]
 			return err
 		}
 		before := userAuditSnapshot(current)
+		if _, changesPassword := updates["password"]; changesPassword {
+			updates["password_version"] = gorm.Expr("password_version + 1")
+			// Never log password hash SQL parameters on a failed database write.
+			tx = tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(logger.Silent)})
+		}
 		if err := tx.Model(&current).Updates(updates).Error; err != nil {
 			return mapUserUniqueViolation(err)
 		}

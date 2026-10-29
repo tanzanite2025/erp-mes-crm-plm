@@ -152,6 +152,33 @@ export const common = {
     items: '条目',
   },
   auth: {
+    changePassword: {
+      title: '修改密码',
+      description:
+        '修改成功后，当前及其他设备的登录都会失效，请使用新密码重新登录。',
+      currentPassword: '当前密码',
+      newPassword: '新密码',
+      confirmPassword: '确认新密码',
+      submit: '确认修改',
+      policy:
+        '至少 8 位，包含小写字母和数字，UTF-8 编码不超过 72 字节，首尾不能有空白。',
+      selfServiceGuidance:
+        '修改自己的密码，请使用头像菜单中的“修改密码”，并验证当前密码。',
+      currentPasswordRequired: '请输入当前密码。',
+      currentPasswordIncorrect: '当前密码不正确，请重新输入。',
+      unchanged: '新密码不能与当前密码相同。',
+      rateLimited: '修改密码尝试过于频繁，请 5 分钟后重试。',
+      failed:
+        '未能确认修改结果。如遇网络异常，请先尝试用新密码登录；仍无法登录时联系管理员。',
+      success: '密码已修改，请使用新密码重新登录。',
+    },
+    passwordRecovery: {
+      title: '忘记密码',
+      description: '请联系系统管理员核实身份并协助重置密码。',
+      explanation:
+        '当前未开通邮件或短信自助找回。若仍能登录，可在头像菜单中选择“修改密码”。',
+      backToSignIn: '返回登录',
+    },
     signOutTitle: '退出登录',
     signOutDescription:
       '确定要退出登录吗？退出后需要重新登录才能继续访问当前账户。',

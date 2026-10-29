@@ -62,7 +62,7 @@ export function buildProductWriteCandidate(
     steerer: normalizedProduct.steerer,
     image: normalizedProduct.image,
     restrictions: normalizedProduct.restrictions,
-    moldGroup: normalizedProduct.moldGroup,
+    moldGroupId: normalizedProduct.moldGroupId || '',
     description: normalizedProduct.description,
     engineeringSpecId: normalizedProduct.engineeringSpecId || '',
     attributeValues: filterProductSpecificationOwnedAttributeValues(

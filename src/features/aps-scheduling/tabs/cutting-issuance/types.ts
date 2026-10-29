@@ -20,7 +20,6 @@ export type CuttingIssuanceTemplate = {
   planName: string
   productModel: string
   productCode: string
-  holeCount: number
   version: string
   templateLineCount: number
   updatedAt: string

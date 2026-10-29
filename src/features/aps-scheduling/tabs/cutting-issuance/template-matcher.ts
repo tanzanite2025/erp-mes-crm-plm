@@ -52,10 +52,6 @@ export function isTemplateCompatible(
     return false
   }
 
-  if (line.holeCount > 0) {
-    return template.holeCount === line.holeCount
-  }
-
   return true
 }
 
@@ -77,5 +73,5 @@ export function findTemplateForOrder(
   templates: CuttingIssuanceTemplate[]
 ): CuttingIssuanceTemplate | undefined {
   const compatibleTemplates = getCompatibleTemplates(line, templates)
-  return compatibleTemplates[0]
+  return compatibleTemplates.length === 1 ? compatibleTemplates[0] : undefined
 }

@@ -115,4 +115,91 @@ describe('effective permission service', () => {
       true
     )
   })
+
+  it('does not restore identity when an earlier snapshot arrives after password-change logout', async () => {
+    serviceMocks.authState.accessToken = 'old-password-token'
+    let resolveOldSnapshot!: (profile: unknown) => void
+    serviceMocks.apiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOldSnapshot = resolve
+      })
+    )
+    const pendingSnapshot = syncIdentitySnapshotFromProfile()
+    const rejectedSnapshot = expect(pendingSnapshot).rejects.toMatchObject({
+      kind: 'auth_required',
+    })
+    serviceMocks.authState.accessToken = ''
+    resolveOldSnapshot({
+      id: 'old-account',
+      username: 'operator',
+      permissions: ['user_edit'],
+    })
+    await rejectedSnapshot
+    expect(serviceMocks.authState.user).toBeNull()
+    expect(serviceMocks.authState.setUser).not.toHaveBeenCalled()
+    expect(serviceMocks.authState.setIsIdentitySynced).not.toHaveBeenCalled()
+  })
+
+  it('separates in-flight snapshot requests for old and new sign-in credentials', async () => {
+    let resolveOldSnapshot!: (profile: unknown) => void
+    let resolveNewSnapshot!: (profile: unknown) => void
+    serviceMocks.apiFetch
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveOldSnapshot = resolve
+        })
+      )
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveNewSnapshot = resolve
+        })
+      )
+    serviceMocks.authState.accessToken = 'old-password-token'
+    const oldSnapshot = syncIdentitySnapshotFromProfile()
+    const rejectedOldSnapshot = expect(oldSnapshot).rejects.toMatchObject({
+      kind: 'auth_required',
+    })
+    serviceMocks.authState.accessToken = 'new-password-token'
+    const newSnapshot = syncIdentitySnapshotFromProfile()
+    resolveOldSnapshot({
+      id: 'old-account',
+      username: 'old',
+      permissions: ['perm_manage'],
+    })
+    await rejectedOldSnapshot
+    const concurrentNewSnapshot = syncIdentitySnapshotFromProfile()
+    expect(serviceMocks.apiFetch).toHaveBeenCalledTimes(2)
+    resolveNewSnapshot({
+      id: 'new-account',
+      username: 'new',
+      permissions: ['user_view'],
+    })
+    expect(await newSnapshot).toEqual(['user_view'])
+    expect(await concurrentNewSnapshot).toEqual(['user_view'])
+    expect(serviceMocks.authState.user).toMatchObject({
+      id: 'new-account',
+      permissions: ['user_view'],
+    })
+  })
+
+  it('rejects identity snapshots for a different account without updating permissions', async () => {
+    serviceMocks.authState.accessToken = 'token'
+    serviceMocks.authState.user = {
+      id: 'current-account',
+      username: 'current',
+      accountNo: 'current',
+      email: '',
+      exp: Date.now() + 60_000,
+    }
+    serviceMocks.apiFetch.mockResolvedValueOnce({
+      id: 'another-account',
+      username: 'another',
+      permissions: ['perm_manage'],
+    })
+    await expect(syncIdentitySnapshotFromProfile()).rejects.toMatchObject({
+      kind: 'invalid_response',
+    })
+    expect(serviceMocks.authState.setUser).not.toHaveBeenCalled()
+    expect(serviceMocks.authState.setIsIdentitySynced).not.toHaveBeenCalled()
+  })
 })

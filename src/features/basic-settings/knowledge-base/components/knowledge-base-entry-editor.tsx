@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { type TranslationKey } from '@/locales'
-import { Check, ChevronsUpDown, Save, Search, X } from 'lucide-react'
+import { Check, ChevronsUpDown, Save, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 import { Input } from '@/components/ui/input'
 import {
   Popover,
@@ -114,8 +115,8 @@ export function KnowledgeBaseEntryEditor({
         data-mobile-floating-surface='knowledge-editor'
         className='flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[32px] border-none bg-background shadow-2xl'
       >
-        <div className='flex items-center justify-between border-b border-dashed border-muted/50 bg-muted/20 px-6 py-4'>
-          <div>
+        <div className='flex items-center justify-between gap-4 border-b border-dashed border-muted/50 bg-muted/20 px-6 py-4'>
+          <div className='min-w-0 flex-1'>
             <div className='text-base font-black tracking-tight'>
               {isEditing
                 ? t('basicSettings.knowledgeBase.editor.editTitle')
@@ -125,14 +126,10 @@ export function KnowledgeBaseEntryEditor({
               {t('basicSettings.knowledgeBase.editor.description')}
             </div>
           </div>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='size-9 rounded-full'
+          <FloatingSurfaceCloseButton
+            aria-label={t('common.actions.close')}
             onClick={onClose}
-          >
-            <X className='size-4' />
-          </Button>
+          />
         </div>
 
         <div className='grid gap-4 overflow-y-auto px-6 py-5'>

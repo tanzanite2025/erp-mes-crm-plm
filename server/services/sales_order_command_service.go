@@ -242,6 +242,13 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operator, ip string) (*models.SalesOrder, error) {
 	var created models.SalesOrder
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if strings.TrimSpace(input.ID) == "" {
+			input.ID = uuid.NewString()
+		}
+		if err := validateAndAssignSalesOrderLineOwnershipForSave(input.ID, nil, input.Lines); err != nil {
+			return err
+		}
+		preserveSalesOrderLineExecutionFactsByStableIdentity(nil, input.Lines)
 		for _, line := range input.Lines {
 			var product models.Product
 			if err := tx.Where("id = ?", line.ProductID).First(&product).Error; err != nil {
@@ -273,9 +280,6 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 		}
 		if input.OrderNo == "" {
 			return fmt.Errorf("[VALIDATION] sales order orderNo is required")
-		}
-		if strings.TrimSpace(input.ID) == "" {
-			input.ID = uuid.NewString()
 		}
 		if err := normalizeSalesOrderLineProductFieldsForCustomerTx(tx, input.CustomerID, input.Lines); err != nil {
 			return err

@@ -43,7 +43,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
 import type { Product } from '@/features/engineering/data/schema'
 import { useProductDisplayOptions } from '@/features/engineering/hooks/use-product-display-options'
 import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
@@ -161,7 +160,6 @@ function parseCommaSeparatedList(value: string): string[] {
 export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   const { t } = useLanguage()
   const { products = [], productOptions } = useProductDisplayOptions()
-  const { countOptions } = useActiveHoleCodeSource()
 
   const prepregQuery = useQuery<
     PrepregMaterialSpec[] | PrepregMaterialSpecListResponse
@@ -219,9 +217,8 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
       buildCuttingPlanName({
         productName: value.productName,
         productCode: value.productCode,
-        holeCount: value.holeCount,
       }),
-    [value.productCode, value.productName, value.holeCount]
+    [value.productCode, value.productName]
   )
   const selectedEffectiveDate = useMemo(
     () => parseDateInput(value.effectiveDate),
@@ -409,7 +406,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
         <EditorField
           label={t('engineering.cuttingPlan.fields.planName')}
           required
-          className='xl:col-span-3'
+          className='xl:col-span-4'
         >
           <Input
             value={value.name}
@@ -423,7 +420,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
         <EditorField
           label={t('engineering.cuttingPlan.fields.productModel')}
           required
-          className='xl:col-span-3'
+          className='xl:col-span-4'
         >
           <Select
             value={value.productId || undefined}
@@ -443,31 +440,6 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                   value={productOption.value}
                 >
                   {productOption.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </EditorField>
-        <EditorField
-          label={t('engineering.cuttingPlan.fields.holeCount')}
-          required
-          className='xl:col-span-2'
-        >
-          <Select
-            value={value.holeCount || undefined}
-            onValueChange={(nextValue) => updateField('holeCount', nextValue)}
-          >
-            <SelectTrigger className='h-10 w-full rounded-2xl'>
-              <SelectValue
-                placeholder={t(
-                  'engineering.cuttingPlan.placeholders.selectHoleCount'
-                )}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {countOptions.map((count) => (
-                <SelectItem key={count} value={count}>
-                  {count}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { type DeltaSet } from '@/lib/delta/types'
+import { getServerErrorPresentation } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
@@ -33,11 +34,14 @@ type OrgActionDialogProps = {
   parentNode?: OrgNode
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSaved?: (organization: OrgNode) => void
+  isSaving?: boolean
+  creationParentSelector?: ReactNode
   onSubmit?: (
     data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string },
     isPatch?: boolean,
     delta?: DeltaSet
-  ) => void
+  ) => void | Promise<OrgNode | void>
 }
 
 function inferOrgTypeFromParent(parentNode?: OrgNode): OrgForm['type'] {
@@ -127,11 +131,8 @@ type OrgActionDialogFormProps = {
   parentNode?: OrgNode
   isEdit: boolean
   open: boolean
-  onSubmit?: (
-    data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string },
-    isPatch?: boolean,
-    delta?: DeltaSet
-  ) => void
+  onSubmit?: OrgActionDialogProps['onSubmit']
+  onSaved?: OrgActionDialogProps['onSaved']
   onOpenChange: (open: boolean) => void
   t: ReturnType<typeof useLanguage>['t']
   locale: string
@@ -143,6 +144,7 @@ function OrgActionDialogForm({
   isEdit,
   open,
   onSubmit,
+  onSaved,
   onOpenChange,
   t,
   locale,
@@ -169,7 +171,13 @@ function OrgActionDialogForm({
     defaultValues: initialValues,
   })
 
-  function handleFormSubmit(values: OrgFormOutput) {
+  useEffect(() => {
+    if (!isEdit) form.setValue('type', inferOrgTypeFromParent(parentNode))
+  }, [form, isEdit, parentNode])
+
+  async function submitOrganizationFormAndCloseOnlyAfterSuccess(
+    values: OrgFormOutput
+  ) {
     Object.assign(deltaProxy, values)
     const delta = tracker.commit()
     const isDirty = Object.keys(delta).length > 0
@@ -185,7 +193,22 @@ function OrgActionDialogForm({
       ...values,
     }
 
-    onSubmit?.(nodeData, isEdit, isEdit ? delta : undefined)
+    try {
+      const savedOrganization = await onSubmit?.(
+        nodeData,
+        isEdit,
+        isEdit ? delta : undefined
+      )
+      if (onSaved) {
+        if (!savedOrganization) return
+        onSaved(savedOrganization)
+      }
+    } catch (error) {
+      form.setError('root', {
+        message: getServerErrorPresentation(error).message,
+      })
+      return
+    }
     form.reset(getOrgFormDefaults(currentRow, parentNode))
     onOpenChange(false)
   }
@@ -194,9 +217,16 @@ function OrgActionDialogForm({
     <Form {...form}>
       <form
         id='org-form'
-        onSubmit={form.handleSubmit(handleFormSubmit)}
+        onSubmit={form.handleSubmit(
+          submitOrganizationFormAndCloseOnlyAfterSuccess
+        )}
         className='space-y-4'
       >
+        {form.formState.errors.root?.message && (
+          <p role='alert' className='text-sm text-destructive'>
+            {form.formState.errors.root.message}
+          </p>
+        )}
         <FormField
           control={form.control}
           name='name'
@@ -234,12 +264,12 @@ function OrgActionDialogForm({
                       ? '自动识别层级类型'
                       : 'Auto-detected hierarchy type'
                   }
-                  items={[
-                    {
-                      label: getOrgTypeLabel(field.value, locale),
-                      value: field.value,
-                    },
-                  ]}
+                  items={(['company', 'department', 'team'] as const).map(
+                    (organizationType) => ({
+                      label: getOrgTypeLabel(organizationType, locale),
+                      value: organizationType,
+                    })
+                  )}
                   disabled
                   isControlled
                 />
@@ -300,13 +330,18 @@ export function OrgActionDialog({
   open,
   onOpenChange,
   onSubmit,
+  onSaved,
+  isSaving = false,
+  creationParentSelector,
 }: OrgActionDialogProps) {
   const { locale, t } = useLanguage()
   const isEdit = !!currentRow
-  const formKey = `${currentRow?.id ?? 'create'}:${parentNode?.id ?? 'root'}`
+  const formKey = currentRow?.id ?? 'create'
   const shellClasses = buildActionDialogShellClasses({
-    content: 'sm:max-w-lg',
+    content: 'flex flex-col gap-0 sm:max-w-lg',
     header: 'text-start',
+    body: 'min-h-0 flex-1 overflow-y-auto',
+    footer: 'shrink-0',
     title: 'text-lg font-black tracking-tighter uppercase',
     description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
   })
@@ -314,11 +349,15 @@ export function OrgActionDialog({
   return (
     <ActionDialogShell
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(nextOpen) => {
+        if (!isSaving) onOpenChange(nextOpen)
+      }}
       title={
         isEdit
           ? t('orgPersonnel.org.dialog.editTitle')
-          : t('orgPersonnel.org.dialog.createTitle')
+          : parentNode
+            ? t('orgPersonnel.org.dialog.createTitle')
+            : t('orgPersonnel.operationGuide.actions.createOrganization')
       }
       description={
         isEdit
@@ -333,6 +372,7 @@ export function OrgActionDialog({
       descriptionClassName={shellClasses.description}
       footer={
         <Button
+          disabled={isSaving}
           type='submit'
           form='org-form'
           className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/10'
@@ -341,6 +381,7 @@ export function OrgActionDialog({
         </Button>
       }
     >
+      {creationParentSelector}
       {open ? (
         <OrgActionDialogForm
           key={formKey}
@@ -349,6 +390,7 @@ export function OrgActionDialog({
           isEdit={isEdit}
           open={open}
           onSubmit={onSubmit}
+          onSaved={onSaved}
           onOpenChange={onOpenChange}
           t={t}
           locale={locale}

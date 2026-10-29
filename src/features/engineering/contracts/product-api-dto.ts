@@ -30,6 +30,7 @@ export interface ProductApiDTO {
   steerer?: string
   image?: string
   restrictions?: string[]
+  moldGroupId?: string
   moldGroup?: string
   description?: string
   engineeringSpecId?: string

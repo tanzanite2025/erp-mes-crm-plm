@@ -14,10 +14,19 @@ export function useSidebarNavGroupsWithBadges(
   navGroups: NavGroup[]
 ): NavGroup[] {
   const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const { data: approvals = [] } = useQuery({
     queryKey: ['my-approvals', user?.id, user?.permissions],
-    queryFn: ApprovalService.getMyApprovals,
-    enabled: Boolean(user?.id && user.permissions?.includes('menu_approval')),
+    queryFn: () => {
+      const currentIdentity = useAuthStore.getState()
+      return currentIdentity.accessToken &&
+        currentIdentity.user?.id === user?.id
+        ? ApprovalService.getMyApprovals()
+        : []
+    },
+    enabled: Boolean(
+      accessToken && user?.id && user.permissions?.includes('menu_approval')
+    ),
     refetchInterval: 30_000,
     refetchOnWindowFocus: 'always',
     staleTime: 5_000,
@@ -34,16 +43,21 @@ export function useSidebarNavGroupsWithBadges(
     [navGroups]
   )
   const { data: systemActiveAlerts = [] } = useQuery({
-    queryKey: ['sidebar-system-active-alerts'],
-    queryFn: () =>
-      apiFetch<SidebarSystemAlert[]>('/system/status/alerts/active'),
+    queryKey: ['sidebar-system-active-alerts', user?.id],
+    queryFn: () => {
+      const currentIdentity = useAuthStore.getState()
+      return currentIdentity.accessToken &&
+        currentIdentity.user?.id === user?.id
+        ? apiFetch<SidebarSystemAlert[]>('/system/status/alerts/active')
+        : []
+    },
     refetchInterval: (query) => {
       const error = query.state.error as { status?: number } | null
       return error?.status === 403 ? false : 10000
     },
     staleTime: 5000,
     retry: false,
-    enabled: shouldWatchSystemAlerts,
+    enabled: Boolean(accessToken && user?.id && shouldWatchSystemAlerts),
   })
   const systemAlertCount = systemActiveAlerts.length
 

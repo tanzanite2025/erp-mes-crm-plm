@@ -39,6 +39,12 @@ func registerEquipmentRoutes(authorized *gin.RouterGroup) {
 	moldGroup.POST("/:id/telemetry", telemetryUpdate, handlers.UpdateTelemetryHandler)
 	moldGroup.POST("/sync", moldSync, handlers.BulkSyncMoldsHandler)
 
+	moldGroupDirectory := equipmentGroup.Group("/mold-groups")
+	moldGroupDirectory.GET("", handlers.GetMoldGroupMasterDirectoryHandler)
+	moldGroupDirectory.POST("", moldManage, handlers.SaveMoldGroupMasterHandler)
+	moldGroupDirectory.PUT("/:id", moldManage, handlers.SaveMoldGroupMasterHandler)
+	moldGroupDirectory.DELETE("/:id", moldManage, handlers.DeleteMoldGroupMasterHandler)
+
 	partnerGroup := equipmentGroup.Group("/equipment-partners")
 	partnerGroup.GET("", handlers.GetEquipmentPartnersHandler)
 	partnerGroup.POST("", partnerManage, handlers.SaveEquipmentPartnerHandler)

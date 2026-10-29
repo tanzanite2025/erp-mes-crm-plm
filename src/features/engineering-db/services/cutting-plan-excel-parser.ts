@@ -41,7 +41,6 @@ type HeaderSnapshot = {
   effectiveDate: string
   productCode: string
   productName: string
-  holeCount: string
   carbonFiberModel: string
   resinModel: string
   resinContentPercent: string
@@ -54,7 +53,6 @@ const EMPTY_HEADER: HeaderSnapshot = {
   effectiveDate: '',
   productCode: '',
   productName: '',
-  holeCount: '',
   carbonFiberModel: '',
   resinModel: '',
   resinContentPercent: '',
@@ -138,6 +136,15 @@ export async function parseCuttingPlanImportExcel(
     throw new Error('未找到导入工作表，请使用系统模板。')
   }
 
+  // 旧模板第七列为孔数，仅兼容其列位置，不再读取孔数值。
+  const legacyHoleCountColumnOffset =
+    normalizeCellText(safelyGetCellValue(sheet.getRow(1).getCell(7))).replace(
+      /\*$/,
+      ''
+    ) === '孔数'
+      ? 1
+      : 0
+
   const header: HeaderSnapshot = { ...EMPTY_HEADER }
   const lines: CuttingPlanInput['lines'] = []
   let rowLimitExceeded = false
@@ -155,20 +162,25 @@ export async function parseCuttingPlanImportExcel(
       effectiveDate: normalizeCellText(safelyGetCellValue(row.getCell(4))),
       productCode: normalizeCellText(safelyGetCellValue(row.getCell(5))),
       productName: normalizeCellText(safelyGetCellValue(row.getCell(6))),
-      holeCount: normalizeCellText(safelyGetCellValue(row.getCell(7))),
-      carbonFiberModel: normalizeCellText(safelyGetCellValue(row.getCell(8))),
-      resinModel: normalizeCellText(safelyGetCellValue(row.getCell(9))),
-      resinContentPercent: normalizeCellText(
-        safelyGetCellValue(row.getCell(10))
+      carbonFiberModel: normalizeCellText(
+        safelyGetCellValue(row.getCell(7 + legacyHoleCountColumnOffset))
       ),
-      status: normalizeCellText(safelyGetCellValue(row.getCell(16))),
+      resinModel: normalizeCellText(
+        safelyGetCellValue(row.getCell(8 + legacyHoleCountColumnOffset))
+      ),
+      resinContentPercent: normalizeCellText(
+        safelyGetCellValue(row.getCell(9 + legacyHoleCountColumnOffset))
+      ),
+      status: normalizeCellText(
+        safelyGetCellValue(row.getCell(15 + legacyHoleCountColumnOffset))
+      ),
     }
 
     const lineFields = [
-      safelyGetCellValue(row.getCell(11)),
-      safelyGetCellValue(row.getCell(12)),
-      safelyGetCellValue(row.getCell(13)),
-      safelyGetCellValue(row.getCell(14)),
+      safelyGetCellValue(row.getCell(10 + legacyHoleCountColumnOffset)),
+      safelyGetCellValue(row.getCell(11 + legacyHoleCountColumnOffset)),
+      safelyGetCellValue(row.getCell(12 + legacyHoleCountColumnOffset)),
+      safelyGetCellValue(row.getCell(13 + legacyHoleCountColumnOffset)),
     ]
 
     Object.entries(rowHeader).forEach(([key, fieldValue]) => {
@@ -183,11 +195,6 @@ export async function parseCuttingPlanImportExcel(
       rowHeader.productName || header.productName,
       rowNumber,
       '产品型号'
-    )
-    const holeCount = requireHeaderValue(
-      rowHeader.holeCount || header.holeCount,
-      rowNumber,
-      '孔数'
     )
     const productCode = rowHeader.productCode || header.productCode
 
@@ -205,7 +212,9 @@ export async function parseCuttingPlanImportExcel(
       cutSizeCode: normalizeCellText(lineFields[2]),
       operationNote: normalizeCellText(lineFields[3]),
       manualGroupBreakBefore: resolveManualBreak(
-        normalizeCellText(safelyGetCellValue(row.getCell(15)))
+        normalizeCellText(
+          safelyGetCellValue(row.getCell(14 + legacyHoleCountColumnOffset))
+        )
       ),
     }
 
@@ -221,7 +230,6 @@ export async function parseCuttingPlanImportExcel(
 
     header.productName = productName
     header.productCode = productCode
-    header.holeCount = holeCount
     lines.push(
       syncCuttingPlanLineWithCutSizeUnit(
         {
@@ -247,10 +255,6 @@ export async function parseCuttingPlanImportExcel(
 
   if (!header.productName && !header.productCode) {
     throw new Error('缺少产品型号/产品编码，无法生成方案名称。')
-  }
-
-  if (!header.holeCount) {
-    throw new Error('缺少孔数，无法生成方案名称。')
   }
 
   return buildCuttingPlanInput(

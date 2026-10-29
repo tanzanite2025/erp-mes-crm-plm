@@ -237,10 +237,9 @@ export const engineering = {
       lines: '裁片行',
     },
     placeholders: {
-      search: '搜索方案、文件编号、产品、孔数、碳丝型号',
-      generatedName: '根据产品型号 + 孔数自动生成',
+      search: '搜索方案、文件编号、产品、碳丝型号',
+      generatedName: '根据产品型号自动生成',
       selectProduct: '请选择产品工程型号',
-      selectHoleCount: '请选择共享编码源孔数',
       documentNo: '例如 XD2603028',
       revisionNo: 'A1',
       selectEffectiveDate: '请选择生效日期',
@@ -267,7 +266,6 @@ export const engineering = {
       lineCount: '裁片行',
       planName: '方案名称',
       productModel: '产品型号',
-      holeCount: '孔数',
       documentNo: '文件编号',
       revisionNo: '版次',
       status: '状态',
@@ -329,8 +327,7 @@ export const engineering = {
       saveUpdated: '裁纱方案已更新',
       deleteSuccess: '裁纱方案已删除',
       productRequired: '请先选择或匹配产品型号',
-      holeCountRequired: '请先选择孔数',
-      nameGenerateFailed: '方案名称生成失败，请检查产品型号和孔数',
+      nameGenerateFailed: '方案名称生成失败，请检查产品型号',
       emptyLines: '请至少添加一行裁片明细后再保存或导出。',
       conflict: '裁纱方案已被其他操作更新，请刷新后重试。',
       saveFailed: '裁纱方案保存失败：{{message}}',
@@ -364,7 +361,6 @@ export const engineering = {
     },
     values: {
       lineCount: '{{count}} 行',
-      holeCount: '{{count}}孔',
     },
   },
   masterData: {

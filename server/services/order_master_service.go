@@ -9,6 +9,7 @@ import (
 	"xdfc-server/salesorderidentity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var ErrSalesOrderDeleteRequiresCanceled = errors.New("sales order must be canceled before delete")
@@ -192,7 +193,16 @@ func DeleteSalesOrder(id string) error {
 	}
 
 	if err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&order).Update("version", order.Version+1).Error; err != nil {
+		if err := applySalesOrderRecordScope(tx.Clauses(clause.Locking{Strength: "UPDATE"})).First(&order, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if order.Status != "Canceled" {
+			return ErrSalesOrderDeleteRequiresCanceled
+		}
+		if err := rejectSalesOrderRemovalWithActiveProductionMaterialCoverageTx(tx, order.ID); err != nil {
+			return err
+		}
+		if err := tx.Model(&order).Omit("Lines").Update("version", order.Version+1).Error; err != nil {
 			return err
 		}
 		if err := tx.Delete(&order).Error; err != nil {
@@ -216,19 +226,38 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 		if order.OrderNo == "" {
 			return fmt.Errorf("sales order orderNo is required")
 		}
-		return tx.Create(order).Error
+		if err := validateAndAssignSalesOrderLineOwnershipForSave(order.ID, nil, order.Lines); err != nil {
+			return err
+		}
+		order.Version = 1
+		preserveSalesOrderLineExecutionFactsByStableIdentity(nil, order.Lines)
+		recalculateSalesOrderAuthorityCosts(order)
+		return tx.Omit("Lines").Create(order).Error
 	}
 
 	var existing models.SalesOrder
-	if err := tx.Where("id = ?", order.ID).First(&existing).Error; err != nil {
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").Where("id = ?", order.ID).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if order.OrderNo == "" {
 				return fmt.Errorf("sales order orderNo is required")
 			}
-			return tx.Create(order).Error
+			if err := validateAndAssignSalesOrderLineOwnershipForSave(order.ID, nil, order.Lines); err != nil {
+				return err
+			}
+			order.Version = 1
+			preserveSalesOrderLineExecutionFactsByStableIdentity(nil, order.Lines)
+			recalculateSalesOrderAuthorityCosts(order)
+			return tx.Omit("Lines").Create(order).Error
 		}
 		return err
 	}
+	if order.Version != existing.Version {
+		return ErrSalesTransactionVersionConflict
+	}
+	if err := validateAndAssignSalesOrderLineOwnershipForSave(order.ID, existing.Lines, order.Lines); err != nil {
+		return err
+	}
+	preserveSalesOrderLineExecutionFactsByStableIdentity(existing.Lines, order.Lines)
 
 	order.OrderNo, order.Barcode = salesorderidentity.ResolveSalesOrderIdentity(order.OrderNo, order.Barcode, existing.OrderNo)
 	if order.OrderNo == "" {
@@ -294,9 +323,11 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	if order.UpdatedBy == "" {
 		order.UpdatedBy = existing.UpdatedBy
 	}
-	if order.Version == 0 {
-		order.Version = existing.Version
+	if err := validateSalesOrderMutationAgainstActiveProductionMaterialCoverageTx(tx, order); err != nil {
+		return err
 	}
+	order.Version = existing.Version + 1
+	recalculateSalesOrderAuthorityCosts(order)
 
 	updates := map[string]interface{}{
 		"order_no":               order.OrderNo,
@@ -327,7 +358,7 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	if order.DeletedAt.Valid || order.IsDeleted {
 		updates["deleted_at"] = gorm.Expr("COALESCE(deleted_at, NOW())")
 	}
-	return tx.Model(&existing).Updates(updates).Error
+	return tx.Model(&existing).Omit("Lines").Updates(updates).Error
 }
 
 func BulkSyncSalesOrders(inputs []SalesOrderSnapshotRequest) error {
@@ -337,7 +368,7 @@ func BulkSyncSalesOrders(inputs []SalesOrderSnapshotRequest) error {
 			if err := SaveSalesOrderForBulkSync(tx, &order); err != nil {
 				return err
 			}
-			if err := tx.Model(&order).Association("Lines").Replace(order.Lines); err != nil {
+			if err := persistSalesOrderLinesByStableIdentityTx(tx, order.ID, order.Lines); err != nil {
 				return err
 			}
 		}

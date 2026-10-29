@@ -46,6 +46,7 @@ export const outsourceOrderLineSchema = z.object({
   scrapQuantity: z.number(),
   notes: z.string(),
   version: z.number(),
+  registeredProductBarcodes: z.array(z.string()).default([]),
 })
 
 export const outsourceOrderSchema = z.object({

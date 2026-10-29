@@ -108,6 +108,7 @@ export function createMoldSchema(t?: EquipmentToolingTranslate) {
         .number()
         .min(0, 'Total life cycles must be greater than or equal to 0')
         .default(0),
+      groupId: z.string().optional(),
       groupName: z.string().optional(),
       status: moldStatusSchema,
       location: z.string().optional(),
@@ -223,6 +224,7 @@ export function createMoldDraft(
     currentCycles: 0,
     maintenanceThreshold: 800,
     totalLifeCycles: 0,
+    groupId: '',
     groupName: '',
     status: 'IDLE',
     location: '',

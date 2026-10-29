@@ -8,17 +8,17 @@
 
 ## 1. 当前资产
 
-| 项目 | 当前值 |
-| --- | --- |
-| Hostinger VPS ID | `1834903` |
-| 管理入口 | `https://hpanel.hostinger.com/vps/1834903/docker-manager` |
-| 系统 | Ubuntu 24.04 LTS |
-| 主机名 | `srv1834903.hstgr.cloud` |
-| IPv4 | `2.25.85.201` |
-| IPv6 | `2a02:4780:75:fa73::1` |
-| Hostinger 防火墙 | `erp-prod-edge`，ID `330015` |
-| ERP 域名 | `erp.tanzanite.site` |
-| Cloudflare Zone | `tanzanite.site` |
+| 项目             | 当前值                                                    |
+| ---------------- | --------------------------------------------------------- |
+| Hostinger VPS ID | `1834903`                                                 |
+| 管理入口         | `https://hpanel.hostinger.com/vps/1834903/docker-manager` |
+| 系统             | Ubuntu 24.04 LTS                                          |
+| 主机名           | `srv1834903.hstgr.cloud`                                  |
+| IPv4             | `2.25.85.201`                                             |
+| IPv6             | `2a02:4780:75:fa73::1`                                    |
+| Hostinger 防火墙 | `erp-prod-edge`，ID `330015`                              |
+| ERP 域名         | `erp.tanzanite.site`                                      |
+| Cloudflare Zone  | `tanzanite.site`                                          |
 
 当前生产流量：
 
@@ -47,11 +47,11 @@ erp project
 
 生产 Stack：
 
-| Compose Project | 配置文件 | 职责 | 宿主机端口 |
-| --- | --- | --- | --- |
-| `tanzanite-edge` | `deployment/gateway/compose.yml` | Caddy、TLS、域名路由、共享 `tanzanite-edge` 网络 | `80/443` |
-| `erp` | `compose.prod.yml` | ERP Web、API、Search、PostgreSQL、Redis、可选 Watchdog | 无 |
-| `host-kernel-tuning` | 一次性 Hostinger Docker Manager Project | 写入宿主机内核参数，例如 Redis 所需的 `vm.overcommit_memory=1` | 无 |
+| Compose Project      | 配置文件                                | 职责                                                           | 宿主机端口 |
+| -------------------- | --------------------------------------- | -------------------------------------------------------------- | ---------- |
+| `tanzanite-edge`     | `deployment/gateway/compose.yml`        | Caddy、TLS、域名路由、共享 `tanzanite-edge` 网络               | `80/443`   |
+| `erp`                | `compose.prod.yml`                      | ERP Web、API、Search、PostgreSQL、Redis、可选 Watchdog         | 无         |
+| `host-kernel-tuning` | 一次性 Hostinger Docker Manager Project | 写入宿主机内核参数，例如 Redis 所需的 `vm.overcommit_memory=1` | 无         |
 
 `server/docker-compose.yml` 只用于本地开发，不得复制到 Hostinger Docker Manager。
 
@@ -94,11 +94,11 @@ sysctl --system
 
 Hostinger 防火墙当前规则：
 
-| 端口 | 当前来源 | 用途 |
-| --- | --- | --- |
-| `22/TCP` | 任意，临时 | SSH 初始化 |
-| `80/TCP` | 任意，临时 | HTTP 和 ACME 验证 |
-| `443/TCP` | 任意，临时 | HTTPS |
+| 端口      | 当前来源   | 用途              |
+| --------- | ---------- | ----------------- |
+| `22/TCP`  | 任意，临时 | SSH 初始化        |
+| `80/TCP`  | 任意，临时 | HTTP 和 ACME 验证 |
+| `443/TCP` | 任意，临时 | HTTPS             |
 
 未列出的入站端口不放行。当前规则已同步到 VPS，且 TCP `22` 已从本机验证可达。
 
@@ -288,6 +288,8 @@ docker compose --env-file /docker/erp/.env -f /docker/erp/docker-compose.yml up 
 当前线上 ERP 由 Hostinger Docker Manager 管理，不再使用旧 SSH 发布脚本或 VPS 本地源码构建路径。
 
 ## 11. 备份与恢复
+
+受保护管理员遗失密码时，使用[管理员应急密码恢复与改密上线验收规程](../security/protected-administrator-emergency-password-recovery-and-password-change-production-acceptance-runbook.md)中的独立维护命令。该命令待随改密功能发布，需使用包含恢复工具的同版本镜像；不要通过还原整个业务数据库撤回单个账号的密码。
 
 最低要求：
 

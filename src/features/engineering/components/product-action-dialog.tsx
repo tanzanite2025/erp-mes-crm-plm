@@ -171,6 +171,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     name: t('engineering.productMgmt.form.category'),
     sku: t('engineering.productMgmt.form.sku'),
     engineeringSpecId: t('engineering.productMgmt.form.spec'),
+    moldGroupId: t('engineering.productMgmt.form.mold'),
     moldGroup: t('engineering.productMgmt.form.mold'),
     description: t('engineering.productMgmt.form.memo'),
     barcodeConfig: t('engineering.productMgmt.barcode.configTitle'),

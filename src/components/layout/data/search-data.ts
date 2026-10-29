@@ -54,6 +54,62 @@ type GlobalSearchNavigationKeywordAlias = {
 
 const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
   {
+    href: '/warehouse/production-material-handovers-guide',
+    labelKeys: ['warehouse.productionMaterialHandoversGuide.title'],
+    keywords: [
+      '生产领退',
+      '仓库发料',
+      '补料',
+      '退料',
+      '分批领料',
+      'production issue return guide',
+    ],
+    pinyin: 'scrtczzn',
+  },
+  {
+    href: '/production-outsourcing/task-and-partner-operation-guide',
+    labelKeys: ['productionOutsourcing.operationGuides.tasksAndPartners.title'],
+    keywords: [
+      '委外任务',
+      '委外单位',
+      '建单',
+      '下发',
+      'outsourcing task partner guide',
+    ],
+    pinyin: 'wwrwwwdwczzn',
+  },
+  {
+    href: '/production-outsourcing/send-return-inspection-scanning-guide',
+    labelKeys: [
+      'productionOutsourcing.operationGuides.sendReturnInspection.title',
+    ],
+    keywords: [
+      '扫码录入',
+      '条码登记',
+      '发出',
+      '回厂',
+      '检验',
+      'outsourcing scanning guide',
+    ],
+    pinyin: 'sfjysmzn',
+  },
+  {
+    href: '/personnel/attendance-management-operation-guide',
+    labelKeys: [
+      'orgPersonnel.attendanceOperationGuide.title',
+      'sidebar.groups.orgPersonnelHandbook',
+    ],
+    keywords: [
+      'attendance guide',
+      'leave guide',
+      '出勤管理操作指南',
+      '考勤指南',
+      '请假指南',
+      '工号匹配',
+    ],
+    pinyin: 'cqglczzn',
+  },
+  {
     href: '/personnel/org',
     labelKeys: [
       'commandMenu.items.orgStructure',
@@ -229,8 +285,8 @@ const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
   {
     href: '/warehouse/stocktake',
     labelKeys: ['commandMenu.items.stocktake', 'commandMenu.parents.warehouse'],
-    keywords: ['stocktake', '盘点'],
-    pinyin: 'wlpd',
+    keywords: ['stocktake', 'full inventory', '全库存盘点', '盘点'],
+    pinyin: 'qkcpd',
   },
   {
     href: '/warehouse/adjustments',
@@ -541,8 +597,23 @@ const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
       'commandMenu.items.materialArchive',
       'commandMenu.parents.materialArchive',
     ],
-    keywords: ['material', 'master', 'archive', '物料主数据'],
-    pinyin: 'wlzsj',
+    keywords: [
+      'production materials',
+      'material',
+      'master',
+      'archive',
+      '物料主数据',
+    ],
+    pinyin: 'scwlda wlzsj',
+  },
+  {
+    href: '/materials/all',
+    labelKeys: [
+      'materialArchive.layout.tabs.all',
+      'commandMenu.parents.materialArchive',
+    ],
+    keywords: ['production materials', '生产物料', '生产用料'],
+    pinyin: 'scwl',
   },
   {
     href: '/raw-materials',

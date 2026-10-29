@@ -94,14 +94,9 @@ function classifyInvalidCuttingPlanFailure(error: unknown): {
 
     if (
       paths.some((path) =>
-        [
-          'name',
-          'productId',
-          'productCode',
-          'productName',
-          'holeCount',
-          'status',
-        ].includes(path)
+        ['name', 'productId', 'productCode', 'productName', 'status'].includes(
+          path
+        )
       )
     ) {
       return {

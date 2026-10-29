@@ -37,7 +37,10 @@ const homeBusinessCategoryDescriptionKeys: Record<string, TranslationKey> = {
   'engineering-management': 'home.categories.engineering',
   'quality-management': 'home.categories.quality',
   'warehouse-logistics': 'home.categories.warehouseAndLogistics',
+  'logistics-center': 'home.categories.logistics',
   'asset-management': 'home.categories.assets',
+  'experimental-center-group': 'home.categories.experimentalCenter',
+  'org-personnel-group': 'home.categories.orgPersonnel',
   'finance-management': 'home.categories.finance',
   'message-and-approval': 'home.categories.messagesAndApproval',
   'system-management-root': 'home.categories.system',
@@ -53,6 +56,21 @@ const productStartingPointUrls = [
 ]
 
 const homeBusinessShortcutDescriptionKeys: Record<string, TranslationKey> = {
+  '/warehouse/production-material-handovers-guide':
+    'warehouse.productionMaterialHandoversGuide.shortcutDescription',
+  '/production-outsourcing/task-and-partner-operation-guide':
+    'productionOutsourcing.operationGuides.tasksAndPartners.shortcutDescription',
+  '/production-outsourcing/send-return-inspection-scanning-guide':
+    'productionOutsourcing.operationGuides.sendReturnInspection.shortcutDescription',
+  '/personnel/attendance-management-operation-guide':
+    'orgPersonnel.attendanceOperationGuide.shortcutDescription',
+  '/personnel/organization-and-account-operation-guide':
+    'orgPersonnel.operationGuide.shortcutDescription',
+  '/materials/production-material-creation-guide':
+    'materialArchive.operationGuide.shortcutDescription',
+  '/mrp/requirements-guide': 'mrp.operationGuide.shortcutDescription',
+  '/mrp/production-material-issuance-guide':
+    'mrp.productionMaterialIssuanceGuide.shortcutDescription',
   '/engineering/product-creation-guide':
     'home.productCreationGuideShortcutDescription',
   '/engineering/bom-creation-guide': 'home.bomCreationGuideShortcutDescription',

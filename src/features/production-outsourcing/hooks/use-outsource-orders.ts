@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import type {
@@ -27,15 +28,17 @@ import {
 } from '../services/outsource-orders-service'
 
 export function useOutsourceOrders(filters: OutsourceOrderFilters = {}) {
+  const actorId = useAuthStore((state) => state.user?.id ?? '')
   return useQuery({
-    queryKey: outsourceOrderQueryKeys.list(filters),
+    queryKey: [...outsourceOrderQueryKeys.list(filters), actorId],
     queryFn: () => getOutsourceOrders(filters),
   })
 }
 
 export function useOutsourceDiagnostics() {
+  const actorId = useAuthStore((state) => state.user?.id ?? '')
   return useQuery({
-    queryKey: outsourceDiagnosticsQueryKeys.status(),
+    queryKey: [...outsourceDiagnosticsQueryKeys.status(), actorId],
     queryFn: getOutsourceDiagnostics,
   })
 }
@@ -108,6 +111,7 @@ export function useOutsourceOrderMutations() {
   })
 
   const sendLineMutation = useMutation({
+    retry: false,
     mutationFn: ({
       lineId,
       values,
@@ -123,6 +127,7 @@ export function useOutsourceOrderMutations() {
   })
 
   const returnLineMutation = useMutation({
+    retry: false,
     mutationFn: ({
       lineId,
       values,
@@ -138,6 +143,7 @@ export function useOutsourceOrderMutations() {
   })
 
   const inspectLineMutation = useMutation({
+    retry: false,
     mutationFn: ({
       lineId,
       values,

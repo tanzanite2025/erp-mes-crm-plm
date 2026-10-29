@@ -34,8 +34,8 @@ export const quickActions = {
       description: '直接进入仓库出货扫描模式，快速完成出库处理。',
     },
     warehouseStocktakeScan: {
-      title: '盘点扫描',
-      description: '直接进入 PDA 盘点扫描模式。',
+      title: '全库存盘点扫描',
+      description: '进入全库存盘点 PDA 扫描模式，按盘点任务记录实盘数量。',
     },
     personalWorkbenchPhoto: {
       title: '个人拍照',

@@ -259,5 +259,6 @@ export const bomCreationOperationGuide = {
     groups: '查看分组配置',
     records: '查看 BOM 追溯',
     productGuide: '阅读如何建立产品',
+    materialGuide: '阅读如何建立生产物料档案',
   },
 }

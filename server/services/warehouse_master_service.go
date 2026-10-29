@@ -833,6 +833,9 @@ func ExecuteAdjustment(ctx context.Context, id string, username string) error {
 		beforeAdjustment := adj
 
 		for _, item := range adj.Items {
+			if isProductionMaterialPendingConsumptionInventoryCategory(item.CategoryCode) {
+				return ErrDedicatedInventoryExecutionPath
+			}
 			var inv models.Inventory
 			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 				Where("material_id = ? AND category_code = ? AND batch_no = ?", item.MaterialID, item.CategoryCode, item.BatchNo).

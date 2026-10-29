@@ -115,11 +115,15 @@ func PatchUserHandler(c *gin.Context) {
 		updates["status"] = normalizedStatus
 	}
 	if input.Password != nil {
-		normalizedPassword := strings.TrimSpace(*input.Password)
+		normalizedPassword := *input.Password
 		if normalizedPassword != "" {
+			if strings.TrimSpace(middleware.GetSafeUserID(c)) == user.ID {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Use the authenticated password change endpoint to change your own password", "code": "auth_self_password_change_required"})
+				return
+			}
 			hashedPassword, err := hashUserPassword(normalizedPassword)
 			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] password must be plain text and non-empty"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 				return
 			}
 			updates["password"] = hashedPassword
@@ -199,10 +203,14 @@ func ReplaceUserHandler(c *gin.Context) {
 		"permission_preset_id": strings.TrimSpace(normalizedPermissionPresetID),
 		"employee_id":          strings.TrimSpace(input.EmployeeID),
 	}
-	if normalizedPassword := strings.TrimSpace(input.Password); normalizedPassword != "" {
+	if normalizedPassword := input.Password; normalizedPassword != "" {
+		if strings.TrimSpace(middleware.GetSafeUserID(c)) == user.ID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Use the authenticated password change endpoint to change your own password", "code": "auth_self_password_change_required"})
+			return
+		}
 		hashedPassword, err := hashUserPassword(normalizedPassword)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] password must be plain text and non-empty"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 			return
 		}
 		updates["password"] = hashedPassword

@@ -21,23 +21,28 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MaintenanceRecordList } from '@/features/equipment-maintenance/components/maintenance-record-list'
 import { MoldActionDialog } from '../components/mold-action-dialog'
+import { MoldGroupMasterManagementDialog } from '../components/mold-group-master-management-dialog'
 import { createMoldDraft, type Mold, type MoldStatus } from '../data/schema'
 import { useAssets } from '../hooks/use-assets'
-import { useMoldGroups } from '../hooks/use-mold-groups'
+import { useMoldGroupMasterLibraryAssetsAndProductReferences } from '../hooks/use-mold-group-master-library-assets-and-product-references'
 
 export function MoldMgmt() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const isMobile = useIsMobile()
   const { runConfirmedAction } = useConfirmedActionFlow()
   const { molds, updateMolds } = useAssets()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isGroupManagementOpen, setIsGroupManagementOpen] = useState(false)
   const [editingMold, setEditingMold] = useState<Mold | null>(null)
 
-  const { groupNames, groupedMolds, groupToProducts } = useMoldGroups(
-    molds,
-    searchTerm
-  )
+  const {
+    groupIds,
+    groupLabels,
+    groupedMolds,
+    groupToProducts,
+    groupDirectoryError,
+  } = useMoldGroupMasterLibraryAssetsAndProductReferences(molds, searchTerm)
 
   const saveMold = (mold: Mold, isPatch?: boolean, delta?: DeltaSet) => {
     return updateMolds(mold, isPatch, delta)
@@ -150,6 +155,13 @@ export function MoldMgmt() {
         </div>
 
         <Button
+          variant='outline'
+          className='h-12 rounded-full px-6'
+          onClick={() => setIsGroupManagementOpen(true)}
+        >
+          {locale.startsWith('zh') ? '分组管理' : 'Manage groups'}
+        </Button>
+        <Button
           onClick={handleAddMold}
           className='h-12 w-full shrink-0 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 md:w-auto'
         >
@@ -159,8 +171,15 @@ export function MoldMgmt() {
       </div>
 
       <div className='space-y-4'>
-        <Accordion type='multiple' defaultValue={groupNames}>
-          {groupNames.map((group) => {
+        {groupDirectoryError && (
+          <p role='alert' className='text-sm text-destructive'>
+            {locale.startsWith('zh')
+              ? '分组目录读取失败，请在分组管理中刷新重试。'
+              : 'Cannot load group directory. Open group management to retry.'}
+          </p>
+        )}
+        <Accordion type='multiple' defaultValue={groupIds}>
+          {groupIds.map((group) => {
             const groupMolds = groupedMolds[group]
             const totalMolds = groupMolds.length
             const alertCount = groupMolds.filter(
@@ -185,7 +204,7 @@ export function MoldMgmt() {
                       <div className='min-w-0 text-left'>
                         <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
                           <h4 className='truncate text-xs font-black tracking-tight text-foreground uppercase'>
-                            {group}
+                            {groupLabels[group]}
                           </h4>
                           <Badge
                             variant='outline'
@@ -228,7 +247,11 @@ export function MoldMgmt() {
                       </div>
 
                       <div className='flex items-center gap-2'>
-                        {overCount > 0 ? (
+                        {totalMolds === 0 ? (
+                          <Badge variant='outline'>
+                            {locale.startsWith('zh') ? '暂无模具' : 'No molds'}
+                          </Badge>
+                        ) : overCount > 0 ? (
                           <Badge className='h-4 border-none bg-rose-500 text-[8px] font-black tracking-tighter text-white uppercase'>
                             {t('equipmentTooling.molds.group.expired', {
                               count: overCount,
@@ -361,9 +384,9 @@ export function MoldMgmt() {
                                     {t('equipmentTooling.molds.card.sku')}
                                   </div>
                                   <div className='truncate text-right font-black text-primary/80'>
-                                    {mold.groupName &&
-                                    groupToProducts[mold.groupName] ? (
-                                      groupToProducts[mold.groupName].join(', ')
+                                    {mold.groupId &&
+                                    groupToProducts[mold.groupId] ? (
+                                      groupToProducts[mold.groupId].join(', ')
                                     ) : (
                                       <span className='font-black text-muted-foreground/20'>
                                         {t('equipmentTooling.molds.card.unset')}
@@ -476,7 +499,7 @@ export function MoldMgmt() {
           })}
         </Accordion>
 
-        {groupNames.length === 0 && (
+        {groupIds.length === 0 && (
           <div className='flex flex-col items-center justify-center rounded-[32px] border border-dashed bg-muted/5 px-6 py-20 text-center'>
             <Box className='mb-6 size-14 text-muted-foreground/10' />
             <h3 className='text-sm font-black tracking-widest text-foreground/40 uppercase'>
@@ -495,6 +518,11 @@ export function MoldMgmt() {
         )}
       </div>
 
+      {isGroupManagementOpen && (
+        <MoldGroupMasterManagementDialog
+          onClose={() => setIsGroupManagementOpen(false)}
+        />
+      )}
       <MoldActionDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}

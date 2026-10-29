@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 	"xdfc-server/audit"
+	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/stretchr/testify/require"
@@ -13,10 +14,11 @@ import (
 
 func TestMoldMasterLibraryGroupSelectionReadsAllMoldsAndNewGroupProductAssociation(t *testing.T) {
 	database, router := createIsolatedProductAttributeCatalogPostgresHTTPFixture(t)
-	require.NoError(t, database.AutoMigrate(&models.Mold{}, &models.ProductTemplate{}, &models.ProductType{}, &models.Product{}, &models.AuditLog{}))
+	require.NoError(t, database.AutoMigrate(&models.MoldGroup{}, &models.Mold{}, &models.ProductTemplate{}, &models.ProductType{}, &models.Product{}, &models.AuditLog{}))
 	router.GET("/molds", GetMoldsHandler)
 	router.GET("/molds/group-names", GetMoldGroupNamesHandler)
 	router.POST("/molds", SaveMoldHandler)
+	router.POST("/mold-groups", SaveMoldGroupMasterHandler)
 	router.GET("/molds/:id", GetMoldHandler)
 	router.POST("/products", SaveProductHandler)
 	router.GET("/products/:id", GetProductHandler)
@@ -25,6 +27,7 @@ func TestMoldMasterLibraryGroupSelectionReadsAllMoldsAndNewGroupProductAssociati
 		mold := models.Mold{SN: fmt.Sprintf("SN-%03d", index), Name: "已有模具", GroupName: fmt.Sprintf("组-%03d", index), Status: "IDLE"}
 		require.NoError(t, database.Create(&mold).Error)
 	}
+	require.NoError(t, db.BackfillMoldGroupMasterIdentities(database))
 	response := submitProductAttributeCatalogHTTPRequest(t, router, http.MethodGet, "/molds?options=true", nil)
 	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
 	var options struct {
@@ -32,6 +35,8 @@ func TestMoldMasterLibraryGroupSelectionReadsAllMoldsAndNewGroupProductAssociati
 	}
 	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &options))
 	require.Len(t, options.Items, 61)
+	response = submitProductAttributeCatalogHTTPRequest(t, router, http.MethodPost, "/mold-groups", map[string]any{"name": "R50 新模具分组"})
+	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
 	response = submitProductAttributeCatalogHTTPRequest(t, router, http.MethodPost, "/molds", map[string]any{
 		"sn": "SN-NEW", "name": "新建分组的第一副模具", "groupName": "R50 新模具分组", "status": "IDLE",
 		"maxCycles": 1000, "maintenanceThreshold": 800, "currentCycles": 0, "totalLifeCycles": 0,

@@ -119,7 +119,6 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
         .header-grid { width: 100%; border-collapse: collapse; }
         .header-grid td { border: 1px solid #94a3b8; padding: 6px 8px; font-size: 12px; }
         .title { text-align: center; font-size: 20px; font-weight: 900; }
-        .subtitle { text-align: center; color: #334155; font-size: 12px; margin-top: 2px; }
         .section-title { margin-top: 10px; font-size: 13px; font-weight: 800; text-align: center; }
         table.main { width: 100%; border-collapse: collapse; margin-top: 8px; }
         table.main th, table.main td { border: 1px solid #94a3b8; padding: 5px 6px; font-size: 12px; text-align: center; }
@@ -149,7 +148,6 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
             <td rowspan="3" style="width: 28%; text-align: center; font-weight: 800;">企业平台</td>
             <td rowspan="3" style="width: 28%;">
               <div class="title">${title}</div>
-              <div class="subtitle">${escapeHtml(plan.holeCount ? `${plan.holeCount}孔` : '')}</div>
             </td>
             <td style="width: 12%; text-align: center; font-weight: 700;">文件编号</td>
             <td style="width: 32%;">${escapeHtml(plan.documentNo || '--')}</td>

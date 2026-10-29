@@ -10,12 +10,14 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { StocktakeScanner } from './components/stocktake-scanner'
 import { useGetStocktakeTasks } from './hooks/use-stocktake'
 
 export default function PDAStocktake() {
+  const { t } = useLanguage()
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const { data: tasks = [], isLoading } = useGetStocktakeTasks()
 
@@ -36,11 +38,11 @@ export default function PDAStocktake() {
         <div className='flex items-center gap-2 text-blue-600'>
           <Landmark className='size-5' />
           <h3 className='text-lg font-black tracking-tighter uppercase underline decoration-dashed decoration-1 underline-offset-4'>
-            PDA_STOCKTAKE_HUB
+            {t('quickActions.actions.warehouseStocktakeScan.title')}
           </h3>
         </div>
         <p className='text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>
-          盘点核心中心 / 选择待处理任务以进入 SDRTS 扫码模式
+          {t('quickActions.actions.warehouseStocktakeScan.description')}
         </p>
       </div>
 

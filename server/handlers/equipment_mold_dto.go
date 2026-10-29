@@ -3,6 +3,7 @@ package handlers
 import (
 	"time"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,7 @@ func mapMoldResponse(mold models.Mold) gin.H {
 		"currentCycles":        mold.CurrentCycles,
 		"maintenanceThreshold": mold.MaintenanceThreshold,
 		"totalLifeCycles":      mold.TotalLifeCycles,
+		"groupId":              services.MoldGroupIDString(mold.GroupID),
 		"groupName":            mold.GroupName,
 		"status":               mold.Status,
 		"location":             mold.Location,

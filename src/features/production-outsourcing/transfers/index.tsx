@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { TranslationKey } from '@/locales'
 import {
   ArrowDownToLine,
@@ -12,22 +12,14 @@ import {
   ScanLine,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import {
@@ -35,33 +27,26 @@ import {
   industrialPanelGradientClassName,
 } from '@/components/uds/industrial-panel'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import { getAuthSessionPermissionIds } from '@/features/authz/utils/auth-session'
 import { OutsourceStatCard } from '../components/outsource-stat-card'
 import type {
-  OutsourceInspectionDisposition,
-  OutsourceInspectionFormValues,
-  OutsourceInspectionResult,
   OutsourceDiagnosticsResponse,
+  OutsourceInspectionFormValues,
   OutsourceOrder,
   OutsourceOrderLine,
   OutsourceOrderStatus,
   OutsourceTransferFormValues,
 } from '../data/outsource-order'
-import { useOutsourceInventoryCategoryOptions } from '../hooks/use-outsource-inventory-category-options'
 import {
   useOutsourceDiagnostics,
   useOutsourceOrderMutations,
   useOutsourceOrders,
 } from '../hooks/use-outsource-orders'
-
-type ExecutionAction = 'send' | 'return' | 'inspect'
-
-interface ActiveAction {
-  action: ExecutionAction
-  order: OutsourceOrder
-  line: OutsourceOrderLine
-}
-
-const PRODUCTION_OUTSOURCE_CATEGORY = 'PRODUCTION_OUTSOURCE'
+import { OutsourceOrderLineOptionalBarcodeRegistrationDialog } from './outsource-order-line-optional-barcode-registration-dialog'
+import {
+  OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecutionDialog,
+  type SelectedOutsourceOrderLineExecution,
+} from './outsource-selected-order-line-barcode-review-and-explicit-send-return-inspection-dialog'
 
 function statusLabelKey(status: OutsourceOrderStatus): TranslationKey {
   return `productionOutsourcing.orders.statuses.${status}` as TranslationKey
@@ -99,35 +84,39 @@ function remainingInspectionQuantity(line: OutsourceOrderLine) {
   return Math.max(0, line.returnedQuantity - lineDisposedQuantity(line))
 }
 
-function defaultActionQuantity(
-  line: OutsourceOrderLine,
-  action: ExecutionAction
-) {
-  const remaining =
-    action === 'send'
-      ? remainingSendQuantity(line)
-      : action === 'return'
-        ? remainingReturnQuantity(line)
-        : remainingInspectionQuantity(line)
-  return Math.min(1, remaining || 1)
-}
-
 function quantityText(value: number, uom: string) {
   return `${Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2)} ${uom}`
 }
 
 export function OutsourceTransferManagement() {
+  const user = useAuthStore((state) => state.user)
+  return (
+    <OutsourceTransferExecutionWorkspace
+      key={`${user?.id}:${getAuthSessionPermissionIds(user).join('|')}`}
+    />
+  )
+}
+
+function OutsourceTransferExecutionWorkspace() {
   const { t } = useLanguage()
   const { allowsAction, isChecking } = usePermissionActions()
   const [search, setSearch] = useState('')
-  const [activeAction, setActiveAction] = useState<ActiveAction | null>(null)
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
+  const [activeAction, setActiveAction] =
+    useState<SelectedOutsourceOrderLineExecution | null>(null)
+  const [barcodeRegistrationLine, setBarcodeRegistrationLine] = useState<{
+    order: OutsourceOrder
+    line: OutsourceOrderLine
+  } | null>(null)
+  const executionSubmissionLockRef = useRef(false)
   const ordersQuery = useOutsourceOrders({ search, status: 'ALL' })
-  const diagnosticsQuery = useOutsourceDiagnostics()
   const { sendLineMutation, returnLineMutation, inspectLineMutation } =
     useOutsourceOrderMutations()
   const orders = ordersQuery.data?.items
   const canTransfer = allowsAction('action_outsource_transfer_execute')
   const canInspect = allowsAction('action_outsource_inspection_submit')
+  const canRegisterBarcodes =
+    canTransfer || allowsAction('action_outsource_order_manage')
   const isSubmitting =
     sendLineMutation.isPending ||
     returnLineMutation.isPending ||
@@ -160,47 +149,40 @@ export function OutsourceTransferManagement() {
   return (
     <div className='flex animate-in flex-col gap-4 pb-8 duration-500 fade-in'>
       <IndustrialHeader
+        className='p-3 md:p-3 [&_p]:text-sm [&_p]:font-normal [&_p]:tracking-normal [&_p]:opacity-100'
         icon={ScanLine}
         title={t('productionOutsourcing.execution.title')}
         description={t('productionOutsourcing.execution.description')}
       />
 
-      <div className='grid gap-3 md:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
         <OutsourceStatCard
           label={t('productionOutsourcing.execution.stats.releasedLines')}
           value={stats.released}
+          className='py-0 sm:py-0'
         />
         <OutsourceStatCard
           label={t('productionOutsourcing.execution.stats.sent')}
           value={stats.sent}
-          className='bg-blue-500/5'
+          className='bg-blue-500/5 py-0 sm:py-0'
           labelClassName='text-blue-600'
           valueClassName='text-blue-600'
         />
         <OutsourceStatCard
           label={t('productionOutsourcing.execution.stats.returned')}
           value={stats.returned}
-          className='bg-violet-500/5'
+          className='bg-violet-500/5 py-0 sm:py-0'
           labelClassName='text-violet-600'
           valueClassName='text-violet-600'
         />
         <OutsourceStatCard
           label={t('productionOutsourcing.execution.stats.pendingInspection')}
           value={stats.pendingInspection}
-          className='bg-amber-500/5'
+          className='bg-amber-500/5 py-0 sm:py-0'
           labelClassName='text-amber-600'
           valueClassName='text-amber-600'
         />
       </div>
-
-      <OutsourceDiagnosticsPanel
-        diagnostics={diagnosticsQuery.data}
-        isLoading={diagnosticsQuery.isLoading}
-        isFetching={diagnosticsQuery.isFetching}
-        onRefresh={() => {
-          void diagnosticsQuery.refetch()
-        }}
-      />
 
       <div className='relative w-full md:max-w-sm'>
         <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
@@ -214,6 +196,11 @@ export function OutsourceTransferManagement() {
 
       {ordersQuery.isLoading ? (
         <Card className={cn(industrialPanelClassName, 'h-48')} />
+      ) : ordersQuery.isError ? (
+        <p role='alert' className='text-sm text-destructive'>
+          {t('productionOutsourcing.orders.loadingFailed')}:{' '}
+          {ordersQuery.error.message}
+        </p>
       ) : executionOrders.length === 0 ? (
         <Card className={industrialPanelClassName}>
           <div className={industrialPanelGradientClassName} />
@@ -225,9 +212,17 @@ export function OutsourceTransferManagement() {
           </CardContent>
         </Card>
       ) : (
-        <div className='grid gap-4 xl:grid-cols-2'>
+        <div
+          className={cn(
+            'grid gap-4',
+            executionOrders.length > 1 && 'xl:grid-cols-2'
+          )}
+        >
           {executionOrders.map((order) => (
-            <Card key={order.id} className={industrialPanelClassName}>
+            <Card
+              key={order.id}
+              className={cn(industrialPanelClassName, 'gap-0 py-0')}
+            >
               <div className={industrialPanelGradientClassName} />
               <CardHeader className='relative z-10 border-b border-dashed border-muted/20 bg-background/20 p-4'>
                 <div className='flex flex-wrap items-start justify-between gap-3'>
@@ -310,6 +305,20 @@ export function OutsourceTransferManagement() {
                         <Button
                           variant='outline'
                           size='sm'
+                          disabled={isChecking || isSubmitting}
+                          onClick={() =>
+                            setBarcodeRegistrationLine({ order, line })
+                          }
+                        >
+                          <ScanLine className='mr-2 size-3.5' />
+                          {t(
+                            'productionOutsourcing.barcodeRegistration.entry',
+                            { count: line.registeredProductBarcodes.length }
+                          )}
+                        </Button>
+                        <Button
+                          variant='outline'
+                          size='sm'
                           disabled={!canSend || isChecking || isSubmitting}
                           title={
                             canSend
@@ -376,7 +385,17 @@ export function OutsourceTransferManagement() {
         </div>
       )}
 
-      <OutsourceExecutionDialog
+      <details
+        className='rounded-md border p-3'
+        onToggle={(event) => setIsDiagnosticsOpen(event.currentTarget.open)}
+      >
+        <summary className='cursor-pointer text-sm text-muted-foreground'>
+          {t('productionOutsourcing.execution.diagnostics.title')}
+        </summary>
+        {isDiagnosticsOpen && <OutsourceDiagnosticsPanel />}
+      </details>
+
+      <OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecutionDialog
         key={
           activeAction
             ? `${activeAction.action}:${activeAction.line.id}`
@@ -390,7 +409,7 @@ export function OutsourceTransferManagement() {
           }
         }}
         onSubmit={(values) => {
-          if (!activeAction) {
+          if (!activeAction || executionSubmissionLockRef.current) {
             return
           }
           if (!values.productBarcode.trim()) {
@@ -398,12 +417,18 @@ export function OutsourceTransferManagement() {
             return
           }
           if (activeAction.action === 'inspect') {
+            executionSubmissionLockRef.current = true
             inspectLineMutation.mutate(
               {
                 lineId: activeAction.line.id,
                 values: values as OutsourceInspectionFormValues,
               },
-              { onSuccess: () => setActiveAction(null) }
+              {
+                onSuccess: () => setActiveAction(null),
+                onSettled: () => {
+                  executionSubmissionLockRef.current = false
+                },
+              }
             )
             return
           }
@@ -421,46 +446,67 @@ export function OutsourceTransferManagement() {
             activeAction.action === 'send'
               ? sendLineMutation
               : returnLineMutation
+          executionSubmissionLockRef.current = true
           mutation.mutate(
             {
               lineId: activeAction.line.id,
               values: transferValues,
             },
-            { onSuccess: () => setActiveAction(null) }
+            {
+              onSuccess: () => setActiveAction(null),
+              onSettled: () => {
+                executionSubmissionLockRef.current = false
+              },
+            }
           )
         }}
       />
+      {barcodeRegistrationLine && (
+        <OutsourceOrderLineOptionalBarcodeRegistrationDialog
+          key={barcodeRegistrationLine.line.id}
+          order={barcodeRegistrationLine.order}
+          line={barcodeRegistrationLine.line}
+          canEdit={
+            canRegisterBarcodes &&
+            barcodeRegistrationLine.order.status !== 'CLOSED'
+          }
+          onClose={() => setBarcodeRegistrationLine(null)}
+        />
+      )}
     </div>
   )
 }
 
-function OutsourceDiagnosticsPanel({
-  diagnostics,
-  isLoading,
-  isFetching,
-  onRefresh,
-}: {
-  diagnostics?: OutsourceDiagnosticsResponse
-  isLoading: boolean
-  isFetching: boolean
-  onRefresh: () => void
-}) {
+function OutsourceDiagnosticsPanel() {
   const { t } = useLanguage()
-  const summary = diagnostics?.summary
-  const issues = diagnostics?.issues ?? []
+  const {
+    data: diagnostics,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useOutsourceDiagnostics()
+  const summary = isError ? undefined : diagnostics?.summary
+  const issues = isError ? [] : (diagnostics?.issues ?? [])
   const totalIssues = summary?.totalIssues ?? 0
   const hasCritical = (summary?.criticalIssues ?? 0) > 0
-  const statusTone = hasCritical
-    ? 'border-rose-500/30 bg-rose-500/10 text-rose-600'
-    : totalIssues > 0
-      ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
-      : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600'
+  const statusTone = isError
+    ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
+    : !summary
+      ? 'border-muted bg-muted text-muted-foreground'
+      : hasCritical
+        ? 'border-rose-500/30 bg-rose-500/10 text-rose-600'
+        : totalIssues > 0
+          ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
+          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600'
   const StatusIcon = isLoading
     ? Loader2
-    : totalIssues > 0
+    : isError || totalIssues > 0
       ? AlertTriangle
       : CheckCircle2
-  const generatedAt = formatDiagnosticsTime(diagnostics?.generatedAt)
+  const generatedAt = formatDiagnosticsTime(
+    isError ? undefined : diagnostics?.generatedAt
+  )
 
   return (
     <Card className={cn(industrialPanelClassName, 'py-0')}>
@@ -482,15 +528,22 @@ function OutsourceDiagnosticsPanel({
               <p className='text-sm font-semibold'>
                 {t('productionOutsourcing.execution.diagnostics.title')}
               </p>
-              <p className='truncate text-xs text-muted-foreground'>
-                {isLoading
-                  ? t('productionOutsourcing.execution.diagnostics.loading')
-                  : totalIssues > 0
-                    ? t(
-                        'productionOutsourcing.execution.diagnostics.statusIssues',
-                        { count: totalIssues }
-                      )
-                    : t('productionOutsourcing.execution.diagnostics.statusOk')}
+              <p
+                role={isError ? 'alert' : undefined}
+                className='text-xs text-muted-foreground'
+              >
+                {isError
+                  ? t('productionOutsourcing.execution.diagnostics.loadFailed')
+                  : isLoading || !summary
+                    ? t('productionOutsourcing.execution.diagnostics.loading')
+                    : totalIssues > 0
+                      ? t(
+                          'productionOutsourcing.execution.diagnostics.statusIssues',
+                          { count: totalIssues }
+                        )
+                      : t(
+                          'productionOutsourcing.execution.diagnostics.statusOk'
+                        )}
                 {summary?.issuesTruncated
                   ? ` · ${t('productionOutsourcing.execution.diagnostics.truncated')}`
                   : ''}
@@ -507,7 +560,7 @@ function OutsourceDiagnosticsPanel({
             className='size-8 rounded-full'
             disabled={isFetching}
             title={t('productionOutsourcing.execution.diagnostics.refresh')}
-            onClick={onRefresh}
+            onClick={() => void refetch()}
           >
             <RefreshCw
               className={cn('size-3.5', isFetching && 'animate-spin')}
@@ -657,299 +710,4 @@ function formatDiagnosticsIssueContext(
   const line = issue.lineNo > 0 ? `#${issue.lineNo}` : ''
   const barcode = issue.productBarcode || issue.metadata.eventKey || issue.type
   return [order, line, barcode].filter(Boolean).join(' · ')
-}
-
-function OutsourceExecutionDialog({
-  activeAction,
-  isSubmitting,
-  onOpenChange,
-  onSubmit,
-}: {
-  activeAction: ActiveAction | null
-  isSubmitting: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (
-    values: OutsourceTransferFormValues | OutsourceInspectionFormValues
-  ) => void
-}) {
-  const { t } = useLanguage()
-  const categoryOptionsQuery = useOutsourceInventoryCategoryOptions()
-  const [productBarcode, setProductBarcode] = useState('')
-  const [quantity, setQuantity] = useState(() =>
-    activeAction
-      ? defaultActionQuantity(activeAction.line, activeAction.action)
-      : 1
-  )
-  const [result, setResult] = useState<OutsourceInspectionResult>('PASS')
-  const [disposition, setDisposition] =
-    useState<OutsourceInspectionDisposition>('ACCEPT')
-  const [sourceCategory, setSourceCategory] = useState('')
-  const [targetCategory, setTargetCategory] = useState('')
-  const [batchNo, setBatchNo] = useState('')
-  const [notes, setNotes] = useState('')
-
-  const open = activeAction !== null
-  const line = activeAction?.line
-
-  if (!activeAction || !line) {
-    return null
-  }
-
-  const isInspection = activeAction.action === 'inspect'
-  const titleKey =
-    `productionOutsourcing.execution.dialog.${activeAction.action}Title` as TranslationKey
-  const categoryOptions = categoryOptionsQuery.data ?? []
-  const sourceCategoryOptions = categoryOptions.filter(
-    (option) =>
-      option.allowShipment && option.code !== PRODUCTION_OUTSOURCE_CATEGORY
-  )
-  const targetCategoryOptions = categoryOptions.filter(
-    (option) =>
-      option.allowInbound && option.code !== PRODUCTION_OUTSOURCE_CATEGORY
-  )
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size='md' className='max-w-[calc(100%-0.5rem)]'>
-        <DialogHeader>
-          <DialogTitle>{t(titleKey)}</DialogTitle>
-          <DialogDescription>
-            {activeAction.order.orderNo} ·{' '}
-            {line.productName || line.productCode}
-          </DialogDescription>
-        </DialogHeader>
-        <div className='grid gap-3'>
-          <div className='grid gap-1.5'>
-            <span className='text-xs font-medium text-muted-foreground'>
-              {t('productionOutsourcing.execution.fields.productBarcode')}
-            </span>
-            <Input
-              value={productBarcode}
-              onChange={(event) => setProductBarcode(event.target.value)}
-              placeholder={t(
-                'productionOutsourcing.execution.placeholders.productBarcode'
-              )}
-            />
-          </div>
-          {!isInspection ? (
-            <div className='grid gap-3 sm:grid-cols-2'>
-              <div className='grid gap-1.5'>
-                <span className='text-xs font-medium text-muted-foreground'>
-                  {t('productionOutsourcing.execution.fields.sourceCategory')}
-                </span>
-                <select
-                  value={
-                    activeAction.action === 'send'
-                      ? sourceCategory
-                      : PRODUCTION_OUTSOURCE_CATEGORY
-                  }
-                  disabled={activeAction.action === 'return'}
-                  onChange={(event) => setSourceCategory(event.target.value)}
-                  className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30'
-                >
-                  <option value=''>
-                    {t(
-                      'productionOutsourcing.execution.placeholders.sourceCategory'
-                    )}
-                  </option>
-                  {activeAction.action === 'send'
-                    ? sourceCategoryOptions.map((option) => (
-                        <option key={option.code} value={option.code}>
-                          {option.label}
-                        </option>
-                      ))
-                    : null}
-                </select>
-              </div>
-              <div className='grid gap-1.5'>
-                <span className='text-xs font-medium text-muted-foreground'>
-                  {t('productionOutsourcing.execution.fields.targetCategory')}
-                </span>
-                <select
-                  value={
-                    activeAction.action === 'send'
-                      ? PRODUCTION_OUTSOURCE_CATEGORY
-                      : targetCategory
-                  }
-                  disabled={activeAction.action === 'send'}
-                  onChange={(event) => setTargetCategory(event.target.value)}
-                  className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30'
-                >
-                  <option
-                    value={
-                      activeAction.action === 'send'
-                        ? PRODUCTION_OUTSOURCE_CATEGORY
-                        : ''
-                    }
-                  >
-                    {activeAction.action === 'send'
-                      ? t(
-                          'productionOutsourcing.execution.fields.outsourceInProcess'
-                        )
-                      : t(
-                          'productionOutsourcing.execution.placeholders.targetCategory'
-                        )}
-                  </option>
-                  {activeAction.action === 'return'
-                    ? targetCategoryOptions.map((option) => (
-                        <option key={option.code} value={option.code}>
-                          {option.label}
-                        </option>
-                      ))
-                    : null}
-                </select>
-              </div>
-            </div>
-          ) : null}
-          {!isInspection ? (
-            <div className='grid gap-1.5'>
-              <span className='text-xs font-medium text-muted-foreground'>
-                {t('productionOutsourcing.execution.fields.batchNo')}
-              </span>
-              <Input
-                value={batchNo}
-                onChange={(event) => setBatchNo(event.target.value)}
-                placeholder={t(
-                  'productionOutsourcing.execution.placeholders.batchNo'
-                )}
-              />
-            </div>
-          ) : null}
-          <div className='grid gap-1.5'>
-            <span className='text-xs font-medium text-muted-foreground'>
-              {t('productionOutsourcing.execution.fields.quantity')}
-            </span>
-            <Input
-              type='number'
-              min='0'
-              step='0.01'
-              value={quantity}
-              onChange={(event) => setQuantity(Number(event.target.value))}
-            />
-          </div>
-          {isInspection ? (
-            <div className='grid gap-3 sm:grid-cols-2'>
-              <div className='grid gap-1.5'>
-                <span className='text-xs font-medium text-muted-foreground'>
-                  {t('productionOutsourcing.execution.fields.result')}
-                </span>
-                <select
-                  value={result}
-                  onChange={(event) => {
-                    const next = event.target.value as OutsourceInspectionResult
-                    setResult(next)
-                    setDisposition(
-                      next === 'FAIL'
-                        ? 'REWORK'
-                        : next === 'CONDITIONAL'
-                          ? 'CONCESSION'
-                          : 'ACCEPT'
-                    )
-                  }}
-                  className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
-                >
-                  <option value='PASS'>
-                    {t('productionOutsourcing.execution.results.PASS')}
-                  </option>
-                  <option value='CONDITIONAL'>
-                    {t('productionOutsourcing.execution.results.CONDITIONAL')}
-                  </option>
-                  <option value='FAIL'>
-                    {t('productionOutsourcing.execution.results.FAIL')}
-                  </option>
-                </select>
-              </div>
-              <div className='grid gap-1.5'>
-                <span className='text-xs font-medium text-muted-foreground'>
-                  {t('productionOutsourcing.execution.fields.disposition')}
-                </span>
-                <select
-                  value={disposition}
-                  onChange={(event) =>
-                    setDisposition(
-                      event.target.value as OutsourceInspectionDisposition
-                    )
-                  }
-                  className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
-                >
-                  <option value='ACCEPT'>
-                    {t('productionOutsourcing.execution.dispositions.ACCEPT')}
-                  </option>
-                  <option value='CONCESSION'>
-                    {t(
-                      'productionOutsourcing.execution.dispositions.CONCESSION'
-                    )}
-                  </option>
-                  <option value='REWORK'>
-                    {t('productionOutsourcing.execution.dispositions.REWORK')}
-                  </option>
-                  <option value='SCRAP'>
-                    {t('productionOutsourcing.execution.dispositions.SCRAP')}
-                  </option>
-                </select>
-              </div>
-            </div>
-          ) : null}
-          <div className='grid gap-1.5'>
-            <span className='text-xs font-medium text-muted-foreground'>
-              {t('productionOutsourcing.execution.fields.notes')}
-            </span>
-            <Textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              className='min-h-20'
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant='outline'
-            onClick={() => onOpenChange(false)}
-            className='rounded-full'
-          >
-            {t('common.actions.cancel')}
-          </Button>
-          <Button
-            disabled={isSubmitting}
-            onClick={() => {
-              if (isInspection) {
-                onSubmit({
-                  productBarcode,
-                  result,
-                  disposition,
-                  inspectedQuantity: quantity,
-                  uom: line.uom,
-                  inspectedAt: '',
-                  notes,
-                })
-                return
-              }
-              onSubmit({
-                productBarcode,
-                quantity,
-                uom: line.uom,
-                occurredAt: '',
-                sourceCategory:
-                  activeAction.action === 'send'
-                    ? sourceCategory
-                    : PRODUCTION_OUTSOURCE_CATEGORY,
-                targetCategory:
-                  activeAction.action === 'send'
-                    ? PRODUCTION_OUTSOURCE_CATEGORY
-                    : targetCategory,
-                batchNo,
-                notes,
-              })
-            }}
-            className='rounded-full'
-          >
-            {isSubmitting ? (
-              <Loader2 className='mr-2 size-4 animate-spin' />
-            ) : null}
-            {t('common.actions.commit')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"xdfc-server/models"
+	"xdfc-server/services"
 )
 
 func decodeProductStringArray(raw []byte) []string {
@@ -76,6 +77,7 @@ func toProductApiDTO(product models.Product) ProductApiDTO {
 		Steerer:                  product.Steerer,
 		Image:                    product.Image,
 		Restrictions:             decodeProductStringArray(product.Restrictions),
+		MoldGroupID:              services.MoldGroupIDString(product.MoldGroupID),
 		MoldGroup:                product.MoldGroup,
 		Description:              product.Description,
 		EngineeringSpecID:        product.EngineeringSpecID,
@@ -90,10 +92,10 @@ func toProductApiDTO(product models.Product) ProductApiDTO {
 		TemplateResolutionSource: product.TemplateResolutionSource,
 		TemplateResolutionError:  product.TemplateResolutionError,
 		// 嵌套命名空间
-		MasterDataControl:        mdc,
-		CreatedAt:                product.CreatedAt,
-		UpdatedAt:                product.UpdatedAt,
-		Version:                  product.Version,
+		MasterDataControl: mdc,
+		CreatedAt:         product.CreatedAt,
+		UpdatedAt:         product.UpdatedAt,
+		Version:           product.Version,
 	}
 }
 

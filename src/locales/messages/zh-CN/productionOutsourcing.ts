@@ -1,4 +1,24 @@
+import { productionOutsourcingOperationGuides } from './production-outsourcing-task-partner-and-scanning-operation-guides'
+
 export const productionOutsourcing = {
+  operationGuides: productionOutsourcingOperationGuides,
+  barcodeRegistration: {
+    title: '明细条码登记（可选）',
+    entry: '条码登记（可选 · {{count}}）',
+    optionalExplanation:
+      '可连续扫描或手工输入，按回车加入当前明细。允许暂不登记或只登记一部分，不要求条码条数等于委外数量；保存登记不会发出、回厂或推进工序。',
+    scanPlaceholder: '扫描条码，按回车继续录入',
+    add: '加入',
+    count: '已登记 {{count}} 条条码（不是已发出数量）',
+    empty: '尚未登记条码，可稍后补录，不影响任务下发。',
+    duplicate: '当前明细已登记该条码，请勿重复录入。',
+    invalidBarcode: '条码不能超过120个字符或包含控制字符。',
+    limit: '单条明细最多登记1000条条码。',
+    remove: '移除条码 {{barcode}}',
+    saved: '明细条码登记已保存',
+    processUnbound: '未指定工序',
+    pickRegistered: '从已登记条码中选择（也可直接扫码）',
+  },
   layout: {
     tabs: {
       orders: '委外任务',
@@ -83,10 +103,10 @@ export const productionOutsourcing = {
       createTitle: '新增委外任务',
       editTitle: '编辑委外任务',
       description:
-        '第一版先建立委外任务主链路；发出、回厂、检验和扫码状态机会在后续执行页接入。',
+        '先填写来源、委外单位和数量。任务下发后，可在“收发检验”选择明细补录条码；条码登记为可选项。',
       linesTitle: '委外明细',
       linesDescription:
-        '一条明细代表一个产品/工序的委外数量，后续扫码转移和检验会引用这里的明细。',
+        '一条明细对应一个产品及委外数量；条码登记、发出、回厂和检验均引用这条明细。',
       statusLocked:
         '状态由下发、发出、回厂、检验等动作推进，不能在表单里直接改',
     },
@@ -106,9 +126,21 @@ export const productionOutsourcing = {
     },
   },
   execution: {
+    review: {
+      read: '读取条码并核对',
+      currentProcess: '条码当前工序',
+      available: '该条码本次最多可办理',
+      inspectionDestination: '确认检验后：{{process}}',
+      routeCompleted: '路线完成',
+      sendEffect: '确认发出后转交委外单位，工序保持不变。',
+      returnEffect: '确认回厂后收回厂内，检验后按结果确定后续工序。',
+      confirmSend: '确认委外发出',
+      confirmReturn: '确认委外回厂',
+      confirmInspection: '确认提交检验',
+    },
     title: '委外收发检验',
     description:
-      '按委外任务明细登记产品条码发出、回厂和回厂检验，执行结果会同步推进产品条码当前工序状态。',
+      '选择委外明细后，可补录条码，也可办理发出、回厂或检验。发出、回厂记录交接；检验按结果推进工序。',
     searchPlaceholder: '搜索委外单号、来源单号、客户或委外单位',
     empty: '暂无可执行的委外任务',
     stats: {
@@ -120,6 +152,7 @@ export const productionOutsourcing = {
     diagnostics: {
       title: '运行诊断',
       loading: '正在读取诊断结果',
+      loadFailed: '诊断读取失败，请点击刷新重试',
       statusOk: '数据链路正常',
       statusIssues: '发现 {{count}} 个待处理项',
       truncated: '结果已截断',

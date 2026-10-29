@@ -8,6 +8,10 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/warehouse/reports': 'warehouse.tabs.reports',
   '/warehouse/inbound': 'warehouse.tabs.inbound',
   '/warehouse/shipment': 'warehouse.tabs.shipment',
+  '/warehouse/production-material-handovers':
+    'warehouse.tabs.productionMaterialHandovers',
+  '/warehouse/production-material-handovers-guide':
+    'warehouse.productionMaterialHandoversGuide.title',
   '/warehouse/stocktake': 'warehouse.tabs.stocktake',
   '/warehouse/adjustments': 'warehouse.tabs.adjustments',
   '/warehouse-config': 'sidebar.items.warehouseConfig',
@@ -18,6 +22,10 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/warehouse-config/category': 'warehouse.tabs.category',
   '/mrp': 'sidebar.items.mrp',
   '/mrp/requirements': 'mrp.tabs.requirements',
+  '/mrp/requirements-guide': 'mrp.operationGuide.title',
+  '/mrp/production-material-issuance': 'mrp.productionMaterialIssuance.title',
+  '/mrp/production-material-issuance-guide':
+    'mrp.productionMaterialIssuanceGuide.title',
   '/purchase': 'sidebar.items.purchaseManagement',
   '/purchase/suppliers': 'purchase.tabs.suppliers',
   '/purchase/orders': 'purchase.tabs.orders',
@@ -96,6 +104,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/labs/experimental/tests': 'labExperimental.tabs.tests',
   '/labs/experimental/reports': 'labExperimental.tabs.reports',
   '/materials': 'sidebar.items.materialArchive',
+  '/materials/production-material-creation-guide':
+    'materialArchive.operationGuide.title',
   '/materials/all': 'materialArchive.layout.tabs.all',
   '/materials/assembly': 'materialArchive.layout.tabs.assembly',
   '/production-quality': 'sidebar.items.qualityOperations',
@@ -127,6 +137,10 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
     'productionOutsourcing.layout.tabs.partners',
   '/production-outsourcing/transfers':
     'productionOutsourcing.layout.tabs.transfers',
+  '/production-outsourcing/task-and-partner-operation-guide':
+    'productionOutsourcing.operationGuides.tasksAndPartners.title',
+  '/production-outsourcing/send-return-inspection-scanning-guide':
+    'productionOutsourcing.operationGuides.sendReturnInspection.title',
   '/equipment-tooling': 'sidebar.items.toolingAssets',
   '/equipment-tooling/overview': 'equipmentTooling.layout.tabs.overview',
   '/equipment-tooling/molds': 'equipmentTooling.layout.tabs.molds',
@@ -142,12 +156,16 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/tooling-furnaces/archive': 'toolingFurnaces.tabs.archive',
   '/tooling-furnaces/maintenance': 'toolingFurnaces.tabs.maintenance',
   '/personnel': 'sidebar.items.personnelCenter',
+  '/personnel/organization-and-account-operation-guide':
+    'orgPersonnel.operationGuide.title',
   '/personnel/org': 'orgPersonnel.tabs.org',
   '/personnel/employees': 'orgPersonnel.tabs.employees',
   '/personnel/accounts': 'orgPersonnel.tabs.accounts',
   '/personnel/rights': 'orgPersonnel.tabs.rights',
   '/personnel/architecture': 'productionShared.workArchitecture.title',
   '/attendance-management': 'sidebar.items.attendanceManagement',
+  '/personnel/attendance-management-operation-guide':
+    'orgPersonnel.attendanceOperationGuide.title',
   '/attendance-management/leave': 'orgPersonnel.tabs.leave',
   '/attendance-management/hall-of-fame': 'orgPersonnel.tabs.stats',
   '/attendance-management/devices': 'orgPersonnel.tabs.attendanceDevices',

@@ -1,35 +1,29 @@
 import { type AppLocale, translate } from '@/locales'
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import type { ProductionMaterialRequirementBomSelection } from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 import {
-  type MaterialRequirement,
-  type MrpStats,
-} from '../data/requirement-schema'
-
-type MrpRequirementsResponse = {
-  requirements: MaterialRequirement[]
-  stats: MrpStats
-  errorMessage?: string
-}
+  productionMaterialRequirementAnalysisResponseSchema,
+  type ProductionMaterialRequirementAnalysisResponse,
+} from '../contracts/production-material-requirement-analysis-api-dto'
+import { type MaterialRequirement } from '../data/requirement-schema'
 
 export const RequirementCoreService = {
   async getMrpRequirements(
-    selectedKeys: string[] = []
-  ): Promise<MrpRequirementsResponse> {
+    selectedKeys: string[] = [],
+    bomSelections: ProductionMaterialRequirementBomSelection[] = []
+  ): Promise<ProductionMaterialRequirementAnalysisResponse> {
     const params = new URLSearchParams()
     if (selectedKeys.length > 0) {
       params.set('selectedKeys', selectedKeys.join(','))
     }
+    if (bomSelections.length > 0) {
+      params.set('bomSelections', JSON.stringify(bomSelections))
+    }
 
     const query = params.toString()
     const endpoint = query ? `/mrp/requirements?${query}` : '/mrp/requirements'
-    const res = await apiFetch<MrpRequirementsResponse>(endpoint)
-    return ensureObjectResponse<
-      MrpRequirementsResponse & Record<string, unknown>
-    >(
-      res,
-      'RequirementCoreService.getMrpRequirements'
-    ) as MrpRequirementsResponse
+    const res = await apiFetch<unknown>(endpoint)
+    return productionMaterialRequirementAnalysisResponseSchema.parse(res)
   },
 
   getUniqueProductsSummary(

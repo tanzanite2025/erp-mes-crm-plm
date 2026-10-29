@@ -55,7 +55,7 @@ export const apsScheduling = {
       loadingFailed: 'Load failed: {{message}}',
       unknownError: 'Unknown error',
       createMissingSelection:
-        'Select an order line first and confirm that a cutting template has been matched automatically.',
+        'Select an order line and an applicable cutting template first.',
       createSuccess: 'Execution created: {{id}}',
       createFailed: 'Failed to create execution.',
       responseMissingId:
@@ -65,17 +65,17 @@ export const apsScheduling = {
       templateHintNoTemplate:
         'There is no available template for the current order line yet.',
       templateHintSingleTemplate:
-        'A template has been matched automatically by model and hole count.',
+        'A template has been matched automatically by model.',
       templateHintMultipleTemplate:
-        '{{count}} templates matched for the same model and hole count. The latest version is selected by default.',
+        '{{count}} templates are available for this model. Select the plan for this production run.',
       missingTemplateMessage:
-        'The current order line ({{productModel}} / {{holeCount}} holes) does not have an enabled cutting template yet. Please maintain it in "Cutting Plan" before issuing.',
+        'The current order-line model ({{productModel}}) does not have an enabled cutting template yet. Please maintain it in "Cutting Plan" before issuing.',
       openCuttingPlan: 'Open Cutting Plan',
     },
     planning: {
       kicker: 'Issuance Setup',
-      title: 'Order and Template Auto-Matching',
-      badge: 'Auto Match',
+      title: 'Order and Cutting Template Matching',
+      badge: 'Template Match',
       submit: 'Create Execution',
       submitting: 'Creating...',
       orderLabel: 'Sales Order',
@@ -83,7 +83,7 @@ export const apsScheduling = {
       lineLabel: 'Order Line',
       linePlaceholder: 'Select order line',
       templateLabel: 'Cutting Template',
-      templateWaiting: 'Waiting for auto match',
+      templateWaiting: 'Select a cutting template',
       dueDateLabel: 'Due Date',
       lineOption: 'Line {{lineNo}} | {{productModel}} | {{holeCount}} holes',
     },

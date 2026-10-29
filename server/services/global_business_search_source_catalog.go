@@ -76,7 +76,7 @@ var globalBusinessSearchSources = []globalBusinessSearchSource{
 	{
 		category: "material", table: "materials", codeColumn: "code", titleColumns: []string{"name", "code"},
 		searchColumns:       []string{"code", "name", "spec", "description"},
-		requiredPermissions: []string{authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse}, href: "/materials/all", parentTitle: "物料档案 / Materials",
+		requiredPermissions: []string{authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse}, href: "/materials/all", parentTitle: "生产物料档案 / Production Material Archive",
 	},
 	{
 		category: "product", table: "products", codeColumn: "sku", titleColumns: []string{"name", "sku"},

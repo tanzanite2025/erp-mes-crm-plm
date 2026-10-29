@@ -9,10 +9,10 @@ export function resolveCurrentCategoryLabel(
   category: MaterialCategory | undefined,
   options: OptionItem[],
   categoryLabels: Record<string, string>,
-  allLabel: string = 'All Materials',
+  productionMaterialsLabel: string = 'Production Materials',
   fallbackLabel: string = 'Material'
 ) {
-  if (!category || category === 'all') return allLabel
+  if (!category || category === 'all') return productionMaterialsLabel
   const opt = options.find((o) => o.value === category)
   return opt ? opt.label : categoryLabels[category] || fallbackLabel
 }

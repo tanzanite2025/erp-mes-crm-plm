@@ -255,7 +255,6 @@ export async function getCuttingIssuanceTemplates(): Promise<
       planName: plan.name,
       productModel: (plan.productName || plan.productCode || '').trim(),
       productCode: (plan.productCode || '').trim(),
-      holeCount: parseHoleCount(plan.holeCount),
       version: plan.revisionNo || `v${plan.version || 1}`,
       templateLineCount: plan.lines.length,
       updatedAt: plan.createdAt || '',

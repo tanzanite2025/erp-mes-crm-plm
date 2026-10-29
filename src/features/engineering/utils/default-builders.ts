@@ -20,6 +20,7 @@ export function createProductDraft(
     maxTirePressure: undefined,
     image: '',
     restrictions: [],
+    moldGroupId: '',
     moldGroup: '',
     description: '',
     status: 'Active',

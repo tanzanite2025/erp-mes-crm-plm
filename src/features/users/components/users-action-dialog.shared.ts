@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { type TranslationKey } from '@/locales'
+import { getNewUserPasswordPolicyError } from '@/features/auth/change-current-user-password/new-user-password-policy-validation'
 import { type Employee } from '@/features/org-personnel/data/schema'
 
 export type EmployeeOption = {
@@ -20,13 +21,23 @@ export const getFormSchema = (t: TranslateFn) =>
       lastName: z.string().min(1, t('users.validation.lastNameRequired')),
       username: z.string().min(1, t('users.validation.usernameRequired')),
       phoneNumber: z.string().optional().or(z.literal('')),
-      password: z.string().transform((pwd) => pwd.trim()),
-      confirmPassword: z.string().transform((pwd) => pwd.trim()),
+      password: z.string(),
+      confirmPassword: z.string(),
       isEdit: z.boolean(),
       employeeId: z.string().optional(),
       permissionPresetId: z.string().optional(),
       initialPermissionPresetId: z.string(),
       adminChallenge: z.string().transform((value) => value.trim()),
+    })
+    .superRefine((data, context) => {
+      if (data.isEdit && !data.password) return
+      const error = getNewUserPasswordPolicyError(data.password)
+      if (error)
+        context.addIssue({
+          code: 'custom',
+          path: ['password'],
+          message: t(`users.validation.${error}`),
+        })
     })
     .refine(
       (data) => {
@@ -48,36 +59,6 @@ export const getFormSchema = (t: TranslateFn) =>
       {
         message: t('users.validation.adminChallengeRequired'),
         path: ['adminChallenge'],
-      }
-    )
-    .refine(
-      ({ isEdit, password }) => {
-        if (isEdit && !password) return true
-        return password.length >= 8
-      },
-      {
-        message: t('users.validation.passwordMin'),
-        path: ['password'],
-      }
-    )
-    .refine(
-      ({ isEdit, password }) => {
-        if (isEdit && !password) return true
-        return /[a-z]/.test(password)
-      },
-      {
-        message: t('users.validation.passwordLower'),
-        path: ['password'],
-      }
-    )
-    .refine(
-      ({ isEdit, password }) => {
-        if (isEdit && !password) return true
-        return /\d/.test(password)
-      },
-      {
-        message: t('users.validation.passwordDigit'),
-        path: ['password'],
       }
     )
     .refine(

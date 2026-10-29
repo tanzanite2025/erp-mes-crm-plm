@@ -1,8 +1,17 @@
+import type { ProductionRouteStep } from '@/features/production-shared/data/production-route'
 import type { ProductionScanCommandAction } from '@/features/scan-platform/contracts/production-scan-command-api-dto'
 import type { ScanCaptureSource } from '@/features/scan-platform/core/types'
 import type { ExecuteProductionScanCommandInput } from '@/features/scan-platform/services/production-scan-command-service'
 
 export type ProductionExecutionCaptureMode = 'manual' | 'camera' | 'usb'
+
+export function formatProductionExecutionRouteStepName(
+  step?: ProductionRouteStep
+) {
+  return step
+    ? `${step.sequence}. ${step.processName || step.processCode || step.processStepId}`
+    : ''
+}
 
 export interface ProductionExecutionFormValues {
   productBarcode: string
@@ -14,7 +23,6 @@ export interface ProductionExecutionFormValues {
   processStepId: string
   targetRouteStepId: string
   targetProcessStepId: string
-  partnerId: string
   result: string
   notes: string
   fromHolderType: string
@@ -40,9 +48,10 @@ export function buildProductionExecutionCommandInput(
     routeId: values.routeId,
     routeStepId: values.routeStepId,
     processStepId: values.processStepId,
-    targetRouteStepId: values.targetRouteStepId,
-    targetProcessStepId: values.targetProcessStepId,
-    partnerId: values.partnerId,
+    targetRouteStepId:
+      values.action === 'REWORK' ? values.targetRouteStepId : '',
+    targetProcessStepId:
+      values.action === 'REWORK' ? values.targetProcessStepId : '',
     result: values.result,
     notes: values.notes,
     fromHolderType: values.fromHolderType,

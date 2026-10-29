@@ -80,6 +80,7 @@ export function buildProductCandidate(
     steerer: dto.steerer,
     image: dto.image,
     restrictions,
+    moldGroupId: dto.moldGroupId ?? '',
     moldGroup: dto.moldGroup,
     description: dto.description,
     engineeringSpecId: dto.engineeringSpecId,

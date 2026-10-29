@@ -62,4 +62,8 @@ export const bomCreationOperationGuideReferencePages = [
   { key: 'groups', href: '/product-structure/section-config' },
   { key: 'records', href: '/product-structure/bom-records' },
   { key: 'productGuide', href: '/engineering/product-creation-guide' },
+  {
+    key: 'materialGuide',
+    href: '/materials/production-material-creation-guide',
+  },
 ] as const

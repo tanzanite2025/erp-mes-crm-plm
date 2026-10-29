@@ -425,7 +425,8 @@ func ensureDefaultWarehouseCategories() {
 		if !existing.Active {
 			updates["active"] = true
 		}
-		if existing.Name == "" {
+		// 系统生产物料仓库按固定编码统一使用预置名称。
+		if existing.Name == "" || (category.Code == "MATERIAL" && existing.Name != category.Name) {
 			updates["name"] = category.Name
 		}
 		if existing.Description == "" && category.Description != "" {
@@ -434,7 +435,8 @@ func ensureDefaultWarehouseCategories() {
 		if existing.SortOrder == 0 {
 			updates["sort_order"] = category.SortOrder
 		}
-		if !existing.AllowInbound && !existing.AllowShipment && !existing.AllowStocktake &&
+		if category.Code != models.ProductionMaterialPendingConsumptionWarehouseCategoryCode &&
+			!existing.AllowInbound && !existing.AllowShipment && !existing.AllowStocktake &&
 			!existing.AllowPurchaseReceipt && !existing.DefaultForProductInbound &&
 			!existing.DefaultForMaterialInbound && !existing.DefaultForPurchaseReceipt {
 			updates["allow_inbound"] = category.AllowInbound
@@ -452,6 +454,10 @@ func ensureDefaultWarehouseCategories() {
 		if updateErr := DB.Model(&existing).Updates(updates).Error; updateErr != nil {
 			log.Fatal("[CRITICAL] Failed to align default warehouse category: ", updateErr)
 		}
+	}
+
+	if err := alignProductionMaterialPendingConsumptionWarehouseSystemCapabilities(DB); err != nil {
+		log.Fatal("[CRITICAL] Failed to align production material pending consumption warehouse capabilities: ", err)
 	}
 
 	ensureWarehouseCategoryDefaultFlag("default_for_product_inbound", "FINISHED")
@@ -1517,6 +1523,13 @@ func InitDB(dsn string) {
 		&models.PersonalRecordActionLog{},
 		&models.SalesOrder{},
 		&models.SalesOrderLine{},
+		&models.ProductionMaterialIssuanceDocument{},
+		&models.ProductionMaterialIssuanceSourceSnapshot{},
+		&models.ProductionMaterialIssuanceActiveSourceCoverage{},
+		&models.ProductionMaterialIssuanceCommandReceipt{},
+		&models.ProductionMaterialIssuanceWarehouseMovement{},
+		&models.ProductionMaterialIssuanceWarehouseMovementMaterial{},
+		&models.ProductionMaterialIssuanceOrderLineAllocation{},
 		&models.QuoteConversion{},
 		&models.SalesReturn{},
 		&models.SalesReturnLine{},
@@ -1568,6 +1581,7 @@ func InitDB(dsn string) {
 		&models.ProductTemplate{},
 		&models.ProductTemplateAttributeBinding{},
 		&models.ProductAttributeValue{},
+		&models.MoldGroup{},
 		&models.Mold{},
 		&models.Furnace{},
 		&models.MoldLoan{},
@@ -1674,6 +1688,9 @@ func InitDB(dsn string) {
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
+	}
+	if err := BackfillMoldGroupMasterIdentities(DB); err != nil {
+		log.Fatal("Failed to establish independent mold group references:", err)
 	}
 	if err := cancelReplacedWorkflowNotificationPayloadTasks(DB); err != nil {
 		log.Fatal("Failed to cut over notification outbox:", err)

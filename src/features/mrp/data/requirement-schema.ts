@@ -1,39 +1,8 @@
-export interface MaterialRequirement {
-  materialId: string
-  materialCode: string
-  materialName: string
-  materialSpec: string
-  section: string
-  totalRequired: number
-  inventoryQty: number
-  lockedQty: number
-  onWayPurchaseQty: number
-  wipQty: number
-  usableStock: number
-  totalSupply: number
-  effectiveGap: number
-  shortageGap: number
-  unit: string
-  sourceOrders: {
-    orderNo: string
-    customerName: string
-    qty: number
-    productName: string
-    lineNo: number
-    totalLines: number
-  }[]
-  hasBOM: boolean
-  packaging?: {
-    packUnit: string
-    factor: number
-    packQty: number
-    direction?: 'forward' | 'reverse'
-  }
-}
+import type { z } from 'zod'
+import type {
+  materialRequirementSchema,
+  mrpRequirementStatsSchema,
+} from '../contracts/production-material-requirement-analysis-api-dto'
 
-export interface MrpStats {
-  totalMaterials: number
-  missingBOMCount: number
-  activeOrderCount: number
-  analyzedModels: { modelName: string; totalQty: number }[]
-}
+export type MaterialRequirement = z.infer<typeof materialRequirementSchema>
+export type MrpStats = z.infer<typeof mrpRequirementStatsSchema>

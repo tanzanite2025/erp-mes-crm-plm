@@ -1,4 +1,5 @@
 export interface OutsourceOrderLineApiDTO {
+  registeredProductBarcodes?: string[]
   id?: string
   createdAt?: string
   updatedAt?: string

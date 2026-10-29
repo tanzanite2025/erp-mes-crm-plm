@@ -76,4 +76,38 @@ describe('sidebar nav active matching', () => {
       checkIsActive('/business-analysis/scrap', productionAnalysisItem)
     ).toBe(false)
   })
+
+  it('limits a landing entry with explicit tab paths while allowing its exact landing URL', () => {
+    const outsourceBusinessEntry: NavLink = {
+      id: 'production-outsourcing',
+      title: 'Outsourcing',
+      url: '/production-outsourcing',
+      activeMatches: [
+        '/production-outsourcing/orders',
+        '/production-outsourcing/transfers',
+      ],
+    }
+    expect(
+      checkIsActive('/production-outsourcing', outsourceBusinessEntry)
+    ).toBe(true)
+    expect(
+      checkIsActive('/production-outsourcing/', outsourceBusinessEntry)
+    ).toBe(true)
+    expect(
+      checkIsActive('/production-outsourcing/transfers', outsourceBusinessEntry)
+    ).toBe(true)
+    expect(
+      checkIsActive(
+        '/production-outsourcing/orders/order-1',
+        outsourceBusinessEntry
+      )
+    ).toBe(true)
+    expect(
+      checkIsActive(
+        '/production-outsourcing/task-and-partner-operation-guide',
+        outsourceBusinessEntry,
+        true
+      )
+    ).toBe(false)
+  })
 })

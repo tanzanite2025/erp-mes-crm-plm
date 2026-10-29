@@ -10,8 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { FormControl } from '@/components/ui/form'
+import { MoldGroupMasterLibrarySelectionDialog } from '@/features/equipment-tooling/components/mold-group-master-library-selection-dialog'
 import { MoldMasterLibraryGroupPreviewDialog } from '@/features/equipment-tooling/components/mold-master-library-group-preview-dialog'
-import { MoldMasterLibraryGroupSelectionDialog } from '@/features/equipment-tooling/components/mold-master-library-group-selection-dialog'
 import { productFormTypographyClassNames } from './product-form-typography.styles'
 
 export function ProductMoldMasterLibraryGroupSelectionField({
@@ -20,8 +20,8 @@ export function ProductMoldMasterLibraryGroupSelectionField({
   options,
 }: {
   value?: string
-  onValueChange: (groupName: string) => void
-  options: { label: string; value: string }[]
+  onValueChange: (groupId: string, groupName: string) => void
+  options: { label: string; value: string; active?: boolean }[]
 }) {
   const { locale } = useLanguage()
   const isChineseLocale = locale.startsWith('zh')
@@ -47,7 +47,11 @@ export function ProductMoldMasterLibraryGroupSelectionField({
                 )}
               >
                 {label ||
-                  value ||
+                  (value
+                    ? isChineseLocale
+                      ? '原分组已不可用'
+                      : 'Previous group unavailable'
+                    : '') ||
                   (isChineseLocale ? '选择模具分组…' : 'Select mold group…')}
               </span>
               <ChevronDown className='size-4 shrink-0 text-muted-foreground' />
@@ -60,21 +64,33 @@ export function ProductMoldMasterLibraryGroupSelectionField({
         >
           <div className='max-h-52 overflow-y-auto'>
             {options.length ? (
-              options.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onSelect={() => onValueChange(option.value)}
-                  className='text-[13px]'
-                >
-                  <Check
-                    className={cn(
-                      'size-4',
-                      option.value !== value && 'invisible'
-                    )}
-                  />
-                  <span className='min-w-0 break-words'>{option.label}</span>
-                </DropdownMenuItem>
-              ))
+              options
+                .filter(
+                  (option) => option.active !== false || option.value === value
+                )
+                .map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    disabled={option.active === false}
+                    onSelect={() => onValueChange(option.value, option.label)}
+                    className='text-[13px]'
+                  >
+                    <Check
+                      className={cn(
+                        'size-4',
+                        option.value !== value && 'invisible'
+                      )}
+                    />
+                    <span className='min-w-0 break-words'>
+                      {option.label}
+                      {option.active === false
+                        ? isChineseLocale
+                          ? '（已停用）'
+                          : ' (inactive)'
+                        : ''}
+                    </span>
+                  </DropdownMenuItem>
+                ))
             ) : (
               <p className='px-3 py-2 text-xs leading-5 text-muted-foreground'>
                 {isChineseLocale
@@ -84,6 +100,12 @@ export function ProductMoldMasterLibraryGroupSelectionField({
             )}
           </div>
           <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={!value}
+            onSelect={() => onValueChange('', '')}
+          >
+            {isChineseLocale ? '清除模具分组关联' : 'Clear mold group link'}
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={!value}
             onSelect={() => setIsPreviewOpen(true)}
@@ -106,18 +128,18 @@ export function ProductMoldMasterLibraryGroupSelectionField({
         </DropdownMenuContent>
       </DropdownMenu>
       {isLibraryOpen && (
-        <MoldMasterLibraryGroupSelectionDialog
+        <MoldGroupMasterLibrarySelectionDialog
           value={value}
           onClose={() => setIsLibraryOpen(false)}
-          onSelect={(groupName) => {
-            onValueChange(groupName)
+          onSelect={(groupId, groupName) => {
+            onValueChange(groupId, groupName)
             setIsLibraryOpen(false)
           }}
         />
       )}
       {isPreviewOpen && value && (
         <MoldMasterLibraryGroupPreviewDialog
-          groupName={value}
+          groupId={value}
           onClose={() => setIsPreviewOpen(false)}
         />
       )}

@@ -39,8 +39,9 @@ export const quickActions = {
         'Open warehouse shipment scanning mode directly for rapid outbound processing.',
     },
     warehouseStocktakeScan: {
-      title: 'Stocktake Scan',
-      description: 'Open PDA stocktake scanning mode directly.',
+      title: 'Full Inventory Stocktake Scan',
+      description:
+        'Open PDA full inventory stocktake scanning to record actual quantities for a stocktake task.',
     },
     personalWorkbenchPhoto: {
       title: 'Personal Photo',

@@ -35,9 +35,11 @@ func openEquipmentAssetTestDB(t *testing.T, withAuditTable bool) *gorm.DB {
 	})
 
 	schema := []string{
+		`CREATE TABLE mold_groups (id text PRIMARY KEY, name text NOT NULL UNIQUE, description text, active boolean NOT NULL DEFAULT true, version integer NOT NULL DEFAULT 1, created_by text, updated_by text, created_at datetime, updated_at datetime, deleted_at datetime)`,
+		`CREATE TABLE products (id text PRIMARY KEY, mold_group_id text, mold_group text, deleted_at datetime)`,
 		`CREATE TABLE molds (
 			id text PRIMARY KEY, sn text, name text, max_cycles integer, current_cycles integer,
-			maintenance_threshold integer, total_life_cycles integer, group_name text, status text,
+			maintenance_threshold integer, total_life_cycles integer, group_id text, group_name text, status text,
 			location text, description text, is_alerted boolean, last_checked_at datetime, image_url text,
 			created_by text, updated_by text, created_at datetime, updated_at datetime, deleted_at datetime
 		)`,
@@ -73,6 +75,9 @@ func openEquipmentAssetTestDB(t *testing.T, withAuditTable bool) *gorm.DB {
 		if err := testDB.Exec(statement).Error; err != nil {
 			t.Fatalf("create equipment test schema: %v", err)
 		}
+	}
+	if err := testDB.Exec("INSERT INTO mold_groups (id, name, active, version) VALUES (?, ?, true, 1)", "fd89b004-bcef-4c1a-ab91-f9c735586208", "Group A").Error; err != nil {
+		t.Fatal(err)
 	}
 	return testDB
 }

@@ -1,4 +1,9 @@
+import { attendanceManagementOperationGuide } from './attendance-management-operation-guide'
+import { organizationAndAccountOperationGuide } from './organization-and-account-operation-guide'
+
 export const orgPersonnel = {
+  operationGuide: organizationAndAccountOperationGuide,
+  attendanceOperationGuide: attendanceManagementOperationGuide,
   tabs: {
     org: '组织机构',
     employees: '人员管理',
@@ -283,6 +288,7 @@ export const orgPersonnel = {
     selectHint: '请从左侧树状图中选择一个机构进行管理',
     editData: '编辑资料',
     addChild: '新增子项',
+    addRoot: '新增一级单位',
     removeItem: '移除该项',
     manageLinks: '管理关联',
     manageDetail: '管理详情',

@@ -513,10 +513,16 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_equipment_mold_manage',
     label: '设备工装：管理模具',
-    desc: '允许创建或编辑模具资产。',
+    desc: '允许创建或编辑模具资产，以及维护模具分组。',
     category: 'action',
     parentId: 'menu_equipment',
-    routeBindings: ['POST /molds', 'PATCH /molds/:id'],
+    routeBindings: [
+      'POST /molds',
+      'PATCH /molds/:id',
+      'POST /mold-groups',
+      'PUT /mold-groups/:id',
+      'DELETE /mold-groups/:id',
+    ],
   },
   {
     id: 'action_equipment_mold_sync',
@@ -746,6 +752,75 @@ const orgActions: LegacyActionPermissionEntry[] = [
   },
 ]
 
+const productionMaterialIssuanceActions: LegacyActionPermissionEntry[] = [
+  {
+    id: 'action_production_material_issuance_view',
+    label: '生产领料：查看依据与单据',
+    desc: '结合生产业务访问核对订单行用料依据；结合生产或仓库访问查看全部领料单、冻结来源、领退进度及分配建议。不授予下发、撤回或仓库收发权限。',
+    category: 'action',
+    parentId: 'menu_mrp',
+    routeBindings: [
+      'GET /mrp/production-material-issuance/source-options',
+      'POST /mrp/production-material-issuance/source-preparation',
+      'POST /mrp/production-material-issuance/source-review',
+      'GET /mrp/production-material-issuance/active-order-progress',
+      'GET /mrp/production-material-issuance/documents',
+      'GET /mrp/production-material-issuance/documents/:id',
+      'GET /mrp/production-material-issuance/documents/:id/warehouse-review',
+      'POST /mrp/production-material-issuance/documents/:id/ordinary-allocation-suggestion',
+      'POST /mrp/production-material-issuance/documents/:id/material-batches',
+    ],
+  },
+  {
+    id: 'action_production_material_issuance_dispatch',
+    label: '生产领料：下发领料单',
+    desc: '在具有业务访问及领料查看权限时，按已核对依据建立冻结领料单和订单行覆盖；不确认仓库发料、不扣库存。',
+    category: 'action',
+    parentId: 'menu_mrp',
+    routeBindings: ['POST /mrp/production-material-issuance/dispatch'],
+  },
+  {
+    id: 'action_production_material_issuance_withdraw',
+    label: '生产领料：撤回领料单',
+    desc: '在具有业务访问及领料查看权限时，按单据版本及原因撤回无仓库执行事实的领料单，释放有效覆盖并保留历史。',
+    category: 'action',
+    parentId: 'menu_mrp',
+    routeBindings: [
+      'POST /mrp/production-material-issuance/documents/:id/withdraw',
+    ],
+  },
+  {
+    id: 'action_production_material_issuance_warehouse_issue',
+    label: '生产领料：仓库确认发料',
+    desc: '结合仓库访问及领料查看权限，按原单版本确认普通发料与订单行分配，原子移交库存；不授予补料、退料或销售出库权限。',
+    category: 'action',
+    parentId: 'menu_warehouse',
+    routeBindings: [
+      'POST /mrp/production-material-issuance/documents/:id/issue',
+    ],
+  },
+  {
+    id: 'action_production_material_issuance_warehouse_supplement',
+    label: '生产领料：仓库确认补料',
+    desc: '结合仓库访问及领料查看权限，按原单版本、明确归属和原因确认补料，允许超标准并保留差异；不授予普通发料或退料权限。',
+    category: 'action',
+    parentId: 'menu_warehouse',
+    routeBindings: [
+      'POST /mrp/production-material-issuance/documents/:id/supplement',
+    ],
+  },
+  {
+    id: 'action_production_material_issuance_warehouse_return',
+    label: '生产领料：仓库确认退料',
+    desc: '结合仓库访问及领料查看权限，按原单版本、原发料分配与原因确认退料，以原成本回仓；不授予发料、补料或销售退货权限。',
+    category: 'action',
+    parentId: 'menu_warehouse',
+    routeBindings: [
+      'POST /mrp/production-material-issuance/documents/:id/return',
+    ],
+  },
+]
+
 const productionActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_production_line_update',
@@ -874,6 +949,7 @@ export const ACTION_PERMISSION_CATALOG: Record<
   equipment: equipmentActions,
   org: orgActions,
   production: productionActions,
+  productionMaterialIssuance: productionMaterialIssuanceActions,
   cuttingEngine: cuttingEngineActions,
   approval: approvalActions,
 })

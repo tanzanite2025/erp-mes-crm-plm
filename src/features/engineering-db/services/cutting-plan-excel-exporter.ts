@@ -41,7 +41,6 @@ export async function generateCuttingPlanImportTemplate() {
     { header: '生效日期', key: 'effectiveDate', width: 14 },
     { header: '产品编码', key: 'productCode', width: 16 },
     { header: '产品型号*', key: 'productName', width: 22 },
-    { header: '孔数*', key: 'holeCount', width: 12 },
     { header: '碳丝型号', key: 'carbonFiberModel', width: 28 },
     { header: '树脂型号', key: 'resinModel', width: 18 },
     { header: 'RC含量', key: 'resinContentPercent', width: 12 },
@@ -57,10 +56,10 @@ export async function generateCuttingPlanImportTemplate() {
   headerRow.height = 26
   applyWorksheetHeaderRowStyle(headerRow, { fillColorArgb: 'FF0F172A' })
 
-  sheet.mergeCells('A2:P2')
+  sheet.mergeCells('A2:O2')
   const guideCell = sheet.getCell('A2')
   guideCell.value =
-    '导入说明：方案名称由“产品型号 + 孔数”自动生成，不需要填写名称列；每行必须填写尺寸库编码，并且该编码必须已在尺寸库中启用；黄色分组条请在“分组标记”列填 #BREAK。'
+    '导入说明：方案名称由产品型号自动生成，不需要填写名称列；每行必须填写尺寸库编码，并且该编码必须已在尺寸库中启用；黄色分组条请在“分组标记”列填 #BREAK。'
   guideCell.font = { bold: true, size: 10, color: { argb: 'FFB91C1C' } }
   guideCell.fill = {
     type: 'pattern',
@@ -85,27 +84,21 @@ export async function generateCuttingPlanImportTemplate() {
       fgColor: { argb: 'FFF8FAFC' },
     }
 
-    for (let col = 1; col <= 16; col += 1) {
+    for (let col = 1; col <= 15; col += 1) {
       row.getCell(col).border = EXCEL_LIGHT_THIN_BORDER
     }
 
-    for (let col = 2; col <= 16; col += 1) {
+    for (let col = 2; col <= 15; col += 1) {
       row.getCell(col).protection = { locked: false }
     }
 
-    row.getCell(7).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: ['"14,16,18,20,21,24,28,32"'],
-    }
-
-    row.getCell(15).dataValidation = {
+    row.getCell(14).dataValidation = {
       type: 'list',
       allowBlank: true,
       formulae: ['"#BREAK,BREAK,分组,分割,黄条"'],
     }
 
-    row.getCell(16).dataValidation = {
+    row.getCell(15).dataValidation = {
       type: 'list',
       allowBlank: true,
       formulae: ['"Draft,Active,Archived"'],

@@ -1,11 +1,15 @@
+import { productionMaterialHandoversOperationGuide } from './production-material-handovers-operation-guide'
+
 export const warehouse = {
+  productionMaterialHandoversGuide: productionMaterialHandoversOperationGuide,
   tabs: {
     stock: '库存清单',
     reports: '报表',
     inbound: '产品入库',
     shipment: '产品出货',
+    productionMaterialHandovers: '生产领退',
     category: '仓库基础配置',
-    stocktake: '物料盘点',
+    stocktake: '全库存盘点',
     adjustments: '调账记录',
   },
   reports: {
@@ -325,13 +329,13 @@ export const warehouse = {
     },
   },
   stocktake: {
-    title: '物料盘点审计中心',
-    subtitle: '库存盘点',
+    title: '全库存盘点审计中心',
+    subtitle: '全库存盘点 / 按所选库区创建盘点任务',
     autoFreeze: '创建即冻结',
-    initiate: '发起盘点',
+    initiate: '发起全库存盘点',
     createDialog: {
-      title: '新建盘点任务',
-      subtitle: '定义范围并冻结快照',
+      title: '新建全库存盘点任务',
+      subtitle: '选择盘点库区并冻结库存快照',
       sessionTitleLabel: '01. 任务标题',
       sessionTitlePlaceholder: '请输入任务说明...',
       scopeLabel: '02. 盘点范围',

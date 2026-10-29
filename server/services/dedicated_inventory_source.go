@@ -38,11 +38,11 @@ func isProductionOutsourceExecutionSourceType(raw string) bool {
 }
 
 func isDedicatedInventoryCategory(raw string) bool {
-	return normalizeDedicatedInventorySourceType(raw) == ProductionOutsourceInventoryCategory
+	return normalizeDedicatedInventorySourceType(raw) == ProductionOutsourceInventoryCategory || isProductionMaterialPendingConsumptionInventoryCategory(raw)
 }
 
 func isDedicatedInventoryExecutionSourceType(raw string) bool {
-	return isAfterSalesExecutionSourceType(raw) || isProductionOutsourceExecutionSourceType(raw)
+	return isAfterSalesExecutionSourceType(raw) || isProductionOutsourceExecutionSourceType(raw) || normalizeDedicatedInventorySourceType(raw) == DedicatedInventorySourceProductionMaterialIssuance
 }
 
 func normalizeDedicatedInventorySourceType(raw string) string {

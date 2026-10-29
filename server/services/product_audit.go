@@ -38,6 +38,7 @@ func productAuditSnapshot(product models.Product) map[string]any {
 		"steerer":                  strings.TrimSpace(product.Steerer),
 		"image":                    strings.TrimSpace(product.Image),
 		"restrictions":             restrictions,
+		"moldGroupId":              MoldGroupIDString(product.MoldGroupID),
 		"moldGroup":                strings.TrimSpace(product.MoldGroup),
 		"description":              strings.TrimSpace(product.Description),
 		"engineeringSpecId":        strings.TrimSpace(product.EngineeringSpecID),

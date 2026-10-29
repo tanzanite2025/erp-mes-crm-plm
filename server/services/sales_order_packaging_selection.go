@@ -237,9 +237,11 @@ func normalizeSalesOrderLinePackagingSelectionsTx(
 		return err
 	}
 
-	previousLineByNo := make(map[int]models.SalesOrderLine, len(previousLines))
+	previousLineByID := make(map[uint]models.SalesOrderLine, len(previousLines))
 	for _, line := range previousLines {
-		previousLineByNo[line.LineNo] = line
+		if line.ID != 0 {
+			previousLineByID[line.ID] = line
+		}
 	}
 
 	for index := range nextLines {
@@ -251,7 +253,7 @@ func normalizeSalesOrderLinePackagingSelectionsTx(
 		}
 
 		currentSelection := decodeSalesOrderLinePackagingSelection(currentLine.SelectedPackaging)
-		previousLine, hasPrevious := previousLineByNo[currentLine.LineNo]
+		previousLine, hasPrevious := previousLineByID[currentLine.ID]
 		previousSelection := decodeSalesOrderLinePackagingSelection(previousLine.SelectedPackaging)
 		productChanged := !hasPrevious || strings.TrimSpace(previousLine.ProductID) != productID
 		candidates := candidatesByProductID[productID]

@@ -233,6 +233,9 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 	var saved models.Product
 
 	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := LockMoldGroupDirectoryForReferenceMutation(tx); err != nil {
+			return err
+		}
 		issuedInput, err := issueProductIdentity(tx, input)
 		if err != nil {
 			return err
@@ -242,6 +245,18 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 		}
 
 		modelInput := toProductModel(issuedInput)
+		previousMoldGroupID := ""
+		if modelInput.ID != "" {
+			var existingReference models.Product
+			if err := tx.Select("id", "mold_group_id").First(&existingReference, "id = ?", modelInput.ID).Error; err != nil {
+				return err
+			}
+			previousMoldGroupID = MoldGroupIDString(existingReference.MoldGroupID)
+		}
+		modelInput.MoldGroupID, modelInput.MoldGroup, err = ResolveMoldGroupMasterReference(tx, issuedInput.MoldGroupID, issuedInput.MoldGroup, previousMoldGroupID)
+		if err != nil {
+			return err
+		}
 		modelInput.EngineeringSpecID = normalizeEngineeringSpecID(modelInput.EngineeringSpecID)
 		modelInput.AttributeValues = normalizeProductAttributeValues(modelInput.AttributeValues)
 		if err := validateAndLockProductLegacyAttributeFieldReferences(tx, &modelInput); err != nil {
@@ -277,6 +292,7 @@ func saveProductFromWriteInput(ctx context.Context, input ProductWriteInput, aud
 			emptyMasterLibraryReferenceUpdates := make(map[string]any)
 			if modelInput.MoldGroup == "" {
 				emptyMasterLibraryReferenceUpdates["mold_group"] = ""
+				emptyMasterLibraryReferenceUpdates["mold_group_id"] = nil
 			}
 			if modelInput.EngineeringSpecID == "" {
 				emptyMasterLibraryReferenceUpdates["engineering_spec_id"] = nil
@@ -364,6 +380,7 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 		"image",
 		"restrictions",
 		"moldGroup",
+		"moldGroupId",
 		"description",
 		"engineeringSpecId",
 		"attributeValues",
@@ -442,6 +459,8 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 			err = json.Unmarshal(valueRaw, &input.Restrictions)
 		case "moldGroup":
 			err = json.Unmarshal(valueRaw, &input.MoldGroup)
+		case "moldGroupId":
+			err = json.Unmarshal(valueRaw, &input.MoldGroupID)
 		case "description":
 			err = json.Unmarshal(valueRaw, &input.Description)
 		case "engineeringSpecId":
@@ -508,6 +527,11 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 		}
 	}
 
+	if _, hasIdentity := payload["moldGroupId"]; hasIdentity {
+		input.MoldGroup = ""
+	} else if _, hasLegacyName := payload["moldGroup"]; hasLegacyName {
+		input.MoldGroupID = ""
+	}
 	return input, nil
 }
 

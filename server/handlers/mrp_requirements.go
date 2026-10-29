@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -21,10 +22,22 @@ func GetMrpRequirementsHandler(c *gin.Context) {
 		}
 	}
 
+	var bomSelections []services.ProductionMaterialRequirementBOMSelection
+	if raw := strings.TrimSpace(c.Query("bomSelections")); raw != "" {
+		if err := json.Unmarshal([]byte(raw), &bomSelections); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid BOM selections"})
+			return
+		}
+	}
 	result, err := services.GetMrpRequirements(services.GetMrpRequirementsParams{
-		SelectedKeys: selectedKeys,
+		SelectedKeys:  selectedKeys,
+		BOMSelections: bomSelections,
 	})
 	if err != nil {
+		if errors.Is(err, services.ErrInvalidProductionMaterialRequirementSelection) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		if errors.Is(err, services.ErrBOMActiveConflict) {
 			c.JSON(http.StatusConflict, gin.H{"error": "[CRITICAL_BOM_SELECTION] " + err.Error()})
 			return

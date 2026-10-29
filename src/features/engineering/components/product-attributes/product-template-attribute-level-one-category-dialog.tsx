@@ -63,7 +63,7 @@ export function ProductTemplateAttributeLevelOneCategoryDialog({
       <DialogContent
         size='2xl'
         className={productTemplateAttributeCategoryDialogClasses.content}
-        closeButtonClassName='top-5 end-5 flex size-8 items-center justify-center rounded-full bg-muted/60'
+        closeButtonClassName='top-5 end-5'
       >
         <DialogHeader
           className={productTemplateAttributeCategoryDialogClasses.header}

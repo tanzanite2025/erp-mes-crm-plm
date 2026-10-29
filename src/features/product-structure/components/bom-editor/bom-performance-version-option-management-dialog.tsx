@@ -231,11 +231,7 @@ function BOMPerformanceVersionOptionManagementDialogSession({
         if (!mutationInProgressRef.current) onOpenChange(nextOpen)
       }}
     >
-      <DialogContent
-        size='6xl'
-        className={dialogClasses.content}
-        closeButtonClassName='top-4 end-4 flex size-8 items-center justify-center rounded-full bg-muted/60 hover:bg-muted'
-      >
+      <DialogContent size='6xl' className={dialogClasses.content}>
         <DialogHeader className={dialogClasses.header}>
           <DialogTitle className={dialogClasses.title}>
             <span className='flex size-9 shrink-0 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400'>

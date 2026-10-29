@@ -8,6 +8,7 @@ type SaveMoldRequest struct {
 	CurrentCycles        int     `json:"currentCycles"`
 	MaintenanceThreshold int     `json:"maintenanceThreshold"`
 	TotalLifeCycles      int     `json:"totalLifeCycles"`
+	GroupID              string  `json:"groupId"`
 	GroupName            string  `json:"groupName"`
 	Status               string  `json:"status"`
 	Location             string  `json:"location"`

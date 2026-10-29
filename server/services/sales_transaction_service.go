@@ -11,7 +11,7 @@
 //   - executeOrderDeliveryDateChangeTx 改交货日期
 //   - executeOrderNameChangeTx / executeOrderPurchaseOrderNoChangeTx /
 //     executeOrderRequirementsChangeTx / executeOrderCustomerChangeTx
-//                                       改头部单字段(各自一个事务,审计粒度细)
+//     改头部单字段(各自一个事务,审计粒度细)
 //   - executeOrderCancelTx              取消订单
 //   - executeOrderStatusTransitionTx    状态机转移
 //
@@ -29,7 +29,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"slices"
 	"strings"
 	"time"
 	"xdfc-server/models"
@@ -77,21 +76,15 @@ type SalesOrderSavePayload struct {
 }
 
 func salesOrderLineStructureChanged(previousLines []models.SalesOrderLine, nextLines []models.SalesOrderLine) bool {
-	previousLineNos := make([]int, 0, len(previousLines))
-	for _, line := range previousLines {
-		previousLineNos = append(previousLineNos, line.LineNo)
-	}
-	nextLineNos := make([]int, 0, len(nextLines))
-	for _, line := range nextLines {
-		nextLineNos = append(nextLineNos, line.LineNo)
-	}
-	slices.Sort(previousLineNos)
-	slices.Sort(nextLineNos)
-	if len(previousLineNos) != len(nextLineNos) {
+	if len(previousLines) != len(nextLines) {
 		return true
 	}
-	for index := range previousLineNos {
-		if previousLineNos[index] != nextLineNos[index] {
+	previousIDs := make(map[uint]bool, len(previousLines))
+	for _, line := range previousLines {
+		previousIDs[line.ID] = true
+	}
+	for _, line := range nextLines {
+		if line.ID == 0 || !previousIDs[line.ID] {
 			return true
 		}
 	}
@@ -102,13 +95,13 @@ func salesOrderPureLineAdd(previousLines []models.SalesOrderLine, nextLines []mo
 	if len(nextLines) <= len(previousLines) {
 		return false
 	}
-	previousByLineNo := make(map[int]models.SalesOrderLine, len(previousLines))
+	previousByID := make(map[uint]models.SalesOrderLine, len(previousLines))
 	for _, line := range previousLines {
-		previousByLineNo[line.LineNo] = line
+		previousByID[line.ID] = line
 	}
 	addedCount := 0
 	for _, line := range nextLines {
-		previousLine, ok := previousByLineNo[line.LineNo]
+		previousLine, ok := previousByID[line.ID]
 		if !ok {
 			addedCount++
 			continue
@@ -126,13 +119,13 @@ func salesOrderPureLineRemove(previousLines []models.SalesOrderLine, nextLines [
 	if len(nextLines) >= len(previousLines) {
 		return false
 	}
-	nextByLineNo := make(map[int]models.SalesOrderLine, len(nextLines))
+	nextByID := make(map[uint]models.SalesOrderLine, len(nextLines))
 	for _, line := range nextLines {
-		nextByLineNo[line.LineNo] = line
+		nextByID[line.ID] = line
 	}
 	removedCount := 0
 	for _, line := range previousLines {
-		nextLine, ok := nextByLineNo[line.LineNo]
+		nextLine, ok := nextByID[line.ID]
 		if !ok {
 			removedCount++
 			continue
@@ -175,6 +168,13 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	nextLines := nextOrder.Lines
 	if nextLines == nil {
 		nextLines = []models.SalesOrderLine{}
+	}
+	if err := validateAndAssignSalesOrderLineOwnershipForSave(current.ID, current.Lines, nextLines); err != nil {
+		return nil, err
+	}
+	preserveSalesOrderLineExecutionFactsByStableIdentity(current.Lines, nextLines)
+	if err := validateSalesOrderMutationAgainstActiveProductionMaterialCoverageTx(tx, &nextOrder); err != nil {
+		return nil, err
 	}
 	nextOrder.OrderNo, nextOrder.Barcode = salesorderidentity.ResolveSalesOrderIdentity(nextOrder.OrderNo, nextOrder.Barcode, current.OrderNo)
 	if nextOrder.OrderNo == "" {
@@ -295,6 +295,9 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	if err := normalizeSalesOrderLineProductFieldsForCustomerTx(tx, nextOrder.CustomerID, nextOrder.Lines); err != nil {
 		return nil, err
 	}
+	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextOrder.Lines); err != nil {
+		return nil, err
+	}
 
 	nextOrder.ID = current.ID
 	nextOrder.Version = current.Version + 1
@@ -303,10 +306,10 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 		nextOrder.Evidences = encodeOrderEvidences(payload.FinalData.Evidences)
 	}
 	recalculateSalesOrderAuthorityCosts(&nextOrder)
-	if err := tx.Model(current).Updates(nextOrder).Error; err != nil {
+	if err := tx.Model(current).Omit("Lines").Updates(nextOrder).Error; err != nil {
 		return nil, err
 	}
-	if err := tx.Model(current).Association("Lines").Replace(nextOrder.Lines); err != nil {
+	if err := persistSalesOrderLinesByStableIdentityTx(tx, current.ID, nextOrder.Lines); err != nil {
 		return nil, err
 	}
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
@@ -339,13 +342,16 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 		return nil, fmt.Errorf("%w: no line remove detected", ErrSalesTransactionInvalidPayload)
 	}
 
-	currentLineNos := make(map[int]models.SalesOrderLine, len(current.Lines))
+	currentLinesByID := make(map[uint]models.SalesOrderLine, len(current.Lines))
 	for _, line := range current.Lines {
-		currentLineNos[line.LineNo] = line
+		currentLinesByID[line.ID] = line
 	}
 
-	nextLines := make([]models.SalesOrderLine, 0, len(payload.Lines))
-	for _, lineReq := range payload.Lines {
+	nextLines, err := mapSalesOrderLineRequestsWithValidatedStableIdentities(current, payload.Lines)
+	if err != nil {
+		return nil, err
+	}
+	for index, lineReq := range payload.Lines {
 		if strings.TrimSpace(lineReq.ProductID) != "" {
 			var product models.Product
 			if err := tx.Where("id = ?", lineReq.ProductID).First(&product).Error; err != nil {
@@ -356,21 +362,21 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 			}
 		}
 
-		existing, ok := currentLineNos[lineReq.LineNo]
+		existing, ok := currentLinesByID[lineReq.ID]
 		if !ok {
 			return nil, fmt.Errorf("%w: line add detected during line remove", ErrSalesTransactionInvalidPayload)
 		}
 
-		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
-		mappedLine.ID = existing.ID
-		mappedLine.SelectedPackaging = currentLineNos[lineReq.LineNo].SelectedPackaging
+		mappedLine := nextLines[index]
+		mappedLine.SelectedPackaging = currentLinesByID[lineReq.ID].SelectedPackaging
+		existing.LineNo = mappedLine.LineNo
 		existingJSON, _ := json.Marshal(existing)
 		mappedJSON, _ := json.Marshal(mappedLine)
 		if string(existingJSON) != string(mappedJSON) {
 			return nil, fmt.Errorf("%w: existing lines changed during line remove", ErrSalesTransactionInvalidPayload)
 		}
 
-		nextLines = append(nextLines, mappedLine)
+		nextLines[index] = mappedLine
 	}
 
 	removedLineCount := len(current.Lines) - len(nextLines)
@@ -385,7 +391,7 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 	current.Lines = nextLines
 	recalculateSalesOrderAuthorityCosts(current)
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"quantity":   current.Quantity,
 		"amount":     current.Amount,
 		"updated_by": operator,
@@ -396,7 +402,7 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
-	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
+	if err := persistSalesOrderLinesByStableIdentityTx(tx, current.ID, nextLines); err != nil {
 		return nil, err
 	}
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
@@ -455,14 +461,17 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 		return nil, fmt.Errorf("%w: no line add detected", ErrSalesTransactionInvalidPayload)
 	}
 
-	currentLineNos := make(map[int]models.SalesOrderLine, len(current.Lines))
+	currentLinesByID := make(map[uint]models.SalesOrderLine, len(current.Lines))
 	for _, line := range current.Lines {
-		currentLineNos[line.LineNo] = line
+		currentLinesByID[line.ID] = line
 	}
 
-	nextLines := make([]models.SalesOrderLine, 0, len(payload.Lines))
+	nextLines, err := mapSalesOrderLineRequestsWithValidatedStableIdentities(current, payload.Lines)
+	if err != nil {
+		return nil, err
+	}
 	newLineCount := 0
-	for _, lineReq := range payload.Lines {
+	for index, lineReq := range payload.Lines {
 		if strings.TrimSpace(lineReq.ProductID) != "" {
 			var product models.Product
 			if err := tx.Where("id = ?", lineReq.ProductID).First(&product).Error; err != nil {
@@ -473,9 +482,8 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 			}
 		}
 
-		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
-		if existing, ok := currentLineNos[lineReq.LineNo]; ok {
-			mappedLine.ID = existing.ID
+		mappedLine := nextLines[index]
+		if existing, ok := currentLinesByID[lineReq.ID]; ok {
 			mappedLine.SelectedPackaging = existing.SelectedPackaging
 			existingJSON, _ := json.Marshal(existing)
 			mappedJSON, _ := json.Marshal(mappedLine)
@@ -485,7 +493,7 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 		} else {
 			newLineCount++
 		}
-		nextLines = append(nextLines, mappedLine)
+		nextLines[index] = mappedLine
 	}
 
 	if newLineCount == 0 {
@@ -495,7 +503,7 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 	for _, line := range current.Lines {
 		found := false
 		for _, nextLine := range nextLines {
-			if nextLine.LineNo == line.LineNo {
+			if nextLine.ID == line.ID {
 				found = true
 				break
 			}
@@ -512,7 +520,7 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 	current.Lines = nextLines
 	recalculateSalesOrderAuthorityCosts(current)
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"quantity":   current.Quantity,
 		"amount":     current.Amount,
 		"updated_by": operator,
@@ -523,7 +531,7 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
-	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
+	if err := persistSalesOrderLinesByStableIdentityTx(tx, current.ID, nextLines); err != nil {
 		return nil, err
 	}
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
@@ -582,16 +590,17 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 		return nil, fmt.Errorf("%w: line add/remove is not allowed in content change", ErrSalesTransactionInvalidPayload)
 	}
 
-	currentLineNos := make(map[int]struct{}, len(current.Lines))
-	currentLineByNo := make(map[int]models.SalesOrderLine, len(current.Lines))
+	currentLinesByID := make(map[uint]models.SalesOrderLine, len(current.Lines))
 	for _, line := range current.Lines {
-		currentLineNos[line.LineNo] = struct{}{}
-		currentLineByNo[line.LineNo] = line
+		currentLinesByID[line.ID] = line
 	}
 
-	nextLines := make([]models.SalesOrderLine, 0, len(payload.Lines))
+	nextLines, err := mapSalesOrderLineRequestsWithValidatedStableIdentities(current, payload.Lines)
+	if err != nil {
+		return nil, err
+	}
 	for _, lineReq := range payload.Lines {
-		if _, ok := currentLineNos[lineReq.LineNo]; !ok {
+		if _, ok := currentLinesByID[lineReq.ID]; !ok {
 			return nil, fmt.Errorf("%w: line add/remove is not allowed in content change", ErrSalesTransactionInvalidPayload)
 		}
 		if strings.TrimSpace(lineReq.ProductID) != "" {
@@ -603,11 +612,6 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 				}
 			}
 		}
-		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
-		if existing, ok := currentLineByNo[lineReq.LineNo]; ok {
-			mappedLine.ID = existing.ID
-		}
-		nextLines = append(nextLines, mappedLine)
 	}
 	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextLines); err != nil {
 		return nil, err
@@ -623,7 +627,7 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 	current.Lines = nextLines
 	recalculateSalesOrderAuthorityCosts(current)
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"quantity":   current.Quantity,
 		"amount":     current.Amount,
 		"updated_by": operator,
@@ -634,7 +638,7 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
-	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
+	if err := persistSalesOrderLinesByStableIdentityTx(tx, current.ID, nextLines); err != nil {
 		return nil, err
 	}
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
@@ -688,10 +692,9 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 		operator = "unknown"
 	}
 
-	nextLines := make([]models.SalesOrderLine, 0, len(payload.Lines))
-	currentLineByNo := make(map[int]models.SalesOrderLine, len(current.Lines))
-	for _, line := range current.Lines {
-		currentLineByNo[line.LineNo] = line
+	nextLines, err := mapSalesOrderLineRequestsWithValidatedStableIdentities(current, payload.Lines)
+	if err != nil {
+		return nil, err
 	}
 	for _, lineReq := range payload.Lines {
 		if strings.TrimSpace(lineReq.ProductID) != "" {
@@ -703,11 +706,6 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 				}
 			}
 		}
-		mappedLine := mapSalesOrderLineRequestToModel(lineReq)
-		if existing, ok := currentLineByNo[lineReq.LineNo]; ok {
-			mappedLine.ID = existing.ID
-		}
-		nextLines = append(nextLines, mappedLine)
 	}
 	if err := normalizeSalesOrderLinePackagingSelectionsTx(tx, current.Lines, nextLines); err != nil {
 		return nil, err
@@ -723,7 +721,7 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	current.Lines = nextLines
 	recalculateSalesOrderAuthorityCosts(current)
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"quantity":   current.Quantity,
 		"amount":     current.Amount,
 		"updated_by": operator,
@@ -734,7 +732,7 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
-	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
+	if err := persistSalesOrderLinesByStableIdentityTx(tx, current.ID, nextLines); err != nil {
 		return nil, err
 	}
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
@@ -807,6 +805,11 @@ func executeOrderClassificationTypeChangeTx(tx *gorm.DB, current *models.SalesOr
 	if !classificationChanged && !typeChanged && !barcodeChanged {
 		return nil, fmt.Errorf("%w: classification/type unchanged", ErrSalesTransactionInvalidPayload)
 	}
+	nextOrder := *current
+	nextOrder.Classification, nextOrder.Type = nextClassification, nextType
+	if err := validateSalesOrderMutationAgainstActiveProductionMaterialCoverageTx(tx, &nextOrder); err != nil {
+		return nil, err
+	}
 
 	updates := map[string]interface{}{
 		"classification": nextClassification,
@@ -818,7 +821,7 @@ func executeOrderClassificationTypeChangeTx(tx *gorm.DB, current *models.SalesOr
 		updates["barcode"] = nextBarcode
 	}
 
-	if err := tx.Model(current).Updates(updates).Error; err != nil {
+	if err := tx.Model(current).Omit("Lines").Updates(updates).Error; err != nil {
 		return nil, err
 	}
 	current.Classification = nextClassification
@@ -884,7 +887,7 @@ func executeOrderDeliveryDateChangeTx(tx *gorm.DB, current *models.SalesOrder, i
 		return nil, fmt.Errorf("%w: deliveryDate unchanged", ErrSalesTransactionInvalidPayload)
 	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"delivery_date": deliveryDate,
 		"updated_by":    operator,
 		"version":       current.Version + 1,
@@ -945,7 +948,7 @@ func executeOrderNameChangeTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 		return nil, fmt.Errorf("%w: orderName unchanged", ErrSalesTransactionInvalidPayload)
 	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"order_name": orderName,
 		"updated_by": operator,
 		"version":    current.Version + 1,
@@ -1006,7 +1009,7 @@ func executeOrderPurchaseOrderNoChangeTx(tx *gorm.DB, current *models.SalesOrder
 		return nil, fmt.Errorf("%w: purchaseOrderNo unchanged", ErrSalesTransactionInvalidPayload)
 	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"purchase_order_no": purchaseOrderNo,
 		"updated_by":        operator,
 		"version":           current.Version + 1,
@@ -1067,7 +1070,7 @@ func executeOrderRequirementsChangeTx(tx *gorm.DB, current *models.SalesOrder, i
 		return nil, fmt.Errorf("%w: requirements unchanged", ErrSalesTransactionInvalidPayload)
 	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"requirements": requirements,
 		"updated_by":   operator,
 		"version":      current.Version + 1,
@@ -1131,8 +1134,13 @@ func executeOrderCustomerChangeTx(tx *gorm.DB, current *models.SalesOrder, input
 	if customerName == strings.TrimSpace(current.CustomerName) && customerID == strings.TrimSpace(current.CustomerID) {
 		return nil, fmt.Errorf("%w: customer unchanged", ErrSalesTransactionInvalidPayload)
 	}
+	nextOrder := *current
+	nextOrder.CustomerID = customerID
+	if err := validateSalesOrderMutationAgainstActiveProductionMaterialCoverageTx(tx, &nextOrder); err != nil {
+		return nil, err
+	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"customer_name": customerName,
 		"customer_id":   customerID,
 		"updated_by":    operator,
@@ -1381,7 +1389,7 @@ func executeOrderLineClaimTx(tx *gorm.DB, current *models.SalesOrder, input Exec
 		return nil, fmt.Errorf("%w: target lines already claimed", ErrSalesTransactionInvalidPayload)
 	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"updated_by": operator,
 		"version":    current.Version + 1,
 	}).Error; err != nil {
@@ -1390,7 +1398,7 @@ func executeOrderLineClaimTx(tx *gorm.DB, current *models.SalesOrder, input Exec
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
-	if err := tx.Model(current).Association("Lines").Replace(current.Lines); err != nil {
+	if err := persistSalesOrderLineClaimFactsByStableIdentityTx(tx, current.ID, current.Lines); err != nil {
 		return nil, err
 	}
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
@@ -1445,9 +1453,12 @@ func executeOrderCancelTx(tx *gorm.DB, current *models.SalesOrder, input Execute
 	if guard := statemachine.CanCancelSalesOrder(*current); !guard.Allowed {
 		return nil, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, guard.Err())
 	}
+	if err := rejectSalesOrderRemovalWithActiveProductionMaterialCoverageTx(tx, current.ID); err != nil {
+		return nil, err
+	}
 
 	previousStatus := current.Status
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"status":      "Canceled",
 		"status_note": strings.TrimSpace(cancelPayload.Reason),
 		"updated_by":  operator,
@@ -1536,8 +1547,13 @@ func executeOrderStatusTransitionTx(tx *gorm.DB, current *models.SalesOrder, inp
 	}
 	status = string(normalizedStatus)
 	previousStatus := current.Status
+	nextOrder := *current
+	nextOrder.Status = status
+	if err := validateSalesOrderMutationAgainstActiveProductionMaterialCoverageTx(tx, &nextOrder); err != nil {
+		return nil, err
+	}
 
-	if err := tx.Model(current).Updates(map[string]interface{}{
+	if err := tx.Model(current).Omit("Lines").Updates(map[string]interface{}{
 		"status":      status,
 		"status_note": strings.TrimSpace(statusPayload.StatusNote),
 		"updated_by":  operator,

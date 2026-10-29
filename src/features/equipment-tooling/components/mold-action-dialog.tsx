@@ -41,7 +41,7 @@ import { useMoldDrawingsQuery } from '../hooks/use-mold-drawings-query'
 import { AssetService } from '../services/asset-service'
 import { MoldCoreService } from '../services/mold-core-service'
 import { ImageUpload } from './image-upload'
-import { MoldMasterLibraryGroupNameFormField } from './mold-master-library-group-name-form-field'
+import { MoldGroupMasterSelectionFormField } from './mold-group-master-selection-form-field'
 
 interface MoldActionDialogProps {
   open: boolean
@@ -52,8 +52,8 @@ interface MoldActionDialogProps {
     delta?: DeltaSet
   ) => void | Promise<void>
   editData?: Mold | null
-  initialGroupName?: string
-  requireGroupName?: boolean
+  initialGroupId?: string
+  requireGroupSelection?: boolean
 }
 
 const moldMasterLibraryInputClassName =
@@ -64,8 +64,8 @@ export function MoldActionDialog({
   onOpenChange,
   onConfirm,
   editData,
-  initialGroupName,
-  requireGroupName = false,
+  initialGroupId,
+  requireGroupSelection = false,
 }: MoldActionDialogProps) {
   const { t, locale } = useLanguage()
   const isChineseLocale = locale.startsWith('zh')
@@ -78,8 +78,8 @@ export function MoldActionDialog({
   const isBusy = isSavingMold || isUploadingMoldImage
   const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
   const defaultDraft = useMemo(
-    () => createMoldDraft(editData ?? { groupName: initialGroupName ?? '' }),
-    [editData, initialGroupName]
+    () => createMoldDraft(editData ?? { groupId: initialGroupId ?? '' }),
+    [editData, initialGroupId]
   )
 
   const { commit, deltaProxy, reset } = useDeltaTracker<Mold>(
@@ -122,10 +122,10 @@ export function MoldActionDialog({
       return
     }
 
-    const draft = createMoldDraft({ groupName: initialGroupName ?? '' })
+    const draft = createMoldDraft({ groupId: initialGroupId ?? '' })
     form.reset(draft)
     reset(draft)
-  }, [editData, form, open, reset, initialGroupName])
+  }, [editData, form, open, reset, initialGroupId])
 
   const onSubmit = async (data: MoldFormOutput) => {
     if (
@@ -135,12 +135,12 @@ export function MoldActionDialog({
     )
       return
 
-    data = { ...data, groupName: data.groupName?.trim() ?? '' }
-    if (requireGroupName && !data.groupName) {
-      form.setError('groupName', {
+    data = { ...data, groupId: data.groupId?.trim() ?? '' }
+    if (requireGroupSelection && !data.groupId) {
+      form.setError('groupId', {
         message: isChineseLocale
-          ? '请填写或选择分组名称，才能从产品中选用。'
-          : 'Enter or choose a group name to use this mold group for a product.',
+          ? '请选择所属分组，才能从产品中选用。'
+          : 'Choose a group to use this mold for a product.',
       })
       return
     }
@@ -332,7 +332,7 @@ export function MoldActionDialog({
               />
             </div>
 
-            <MoldMasterLibraryGroupNameFormField
+            <MoldGroupMasterSelectionFormField
               key={editData?.id ?? 'new-mold'}
               control={form.control}
               open={open}

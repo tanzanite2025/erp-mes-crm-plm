@@ -25,7 +25,7 @@ func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
-		query := c.Request.URL.RawQuery
+		query := redactAuthenticationCredentialsFromLoggedQueryString(c.Request.URL.RawQuery)
 		requestID := c.GetHeader("X-Request-ID")
 		if requestID == "" {
 			requestID = generateRequestID()
@@ -69,7 +69,7 @@ func Logger() gin.HandlerFunc {
 				Str("query", query).
 				Str("ip", c.ClientIP()).
 				Str("origin", c.GetHeader("Origin")).
-				Str("referer", c.Request.Referer()).
+				Str("referer", redactAuthenticationCredentialsFromLoggedReferer(c.Request.Referer())).
 				Dur("latency", latency).
 				Str("user_agent", c.Request.UserAgent()).
 				Msg("HTTP_ACCESS")

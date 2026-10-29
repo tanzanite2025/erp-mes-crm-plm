@@ -30,6 +30,7 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleExchangeRateConfig, EngineModule: AuditEngineModuleFinance, Integrated: true, DisplayName: "ExchangeRateConfig"},
 
 	{EntityKey: AuditModuleMold, EngineModule: AuditEngineModuleEquipment, Integrated: true, DisplayName: "Mold"},
+	{EntityKey: AuditModuleMoldGroup, EngineModule: AuditEngineModuleEquipment, Integrated: true, DisplayName: "MoldGroup"},
 	{EntityKey: AuditModuleFurnace, EngineModule: AuditEngineModuleEquipment, Integrated: true, DisplayName: "Furnace"},
 	{EntityKey: AuditModuleMaintenanceRecord, EngineModule: AuditEngineModuleEquipment, Integrated: true, DisplayName: "MaintenanceRecord"},
 	{EntityKey: AuditModuleMoldDrawing, EngineModule: AuditEngineModuleEquipment, Integrated: true, DisplayName: "MoldDrawing"},

@@ -1,9 +1,13 @@
 import { useAuthStore } from '@/stores/auth-store'
 import { apiFetch } from '@/lib/api-client'
+import { createApiClientError } from '@/lib/api-error'
 
 export const XDFC_EFFECTIVE_PERMISSIONS_EVENT =
   'xdfc_effective_permissions_updated'
-let inFlightProfileSync: Promise<string[]> | null = null
+let inFlightProfileSync: {
+  accessToken: string
+  promise: Promise<string[]>
+} | null = null
 
 type ProfilePayload = {
   id?: string
@@ -54,18 +58,41 @@ export async function processAndNotifyPermissions(
 }
 
 export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
-  if (inFlightProfileSync) return inFlightProfileSync
+  const requestAccessToken = useAuthStore.getState().accessToken
+  if (!requestAccessToken) {
+    throw createApiClientError({
+      kind: 'auth_required',
+      message: 'Sign in before synchronizing account identity.',
+      endpoint: '/auth/snapshot',
+    })
+  }
+  if (inFlightProfileSync?.accessToken === requestAccessToken)
+    return inFlightProfileSync.promise
 
-  inFlightProfileSync = (async () => {
+  const synchronization = (async () => {
     const profile = await apiFetch<ProfilePayload>('/auth/snapshot', {
       ignoreBreaker: true,
     })
-    const normalizedPermissions = await processAndNotifyPermissions(
+    const state = useAuthStore.getState()
+    if (state.accessToken !== requestAccessToken) {
+      throw createApiClientError({
+        kind: 'auth_required',
+        message: 'The identity response belongs to a previous sign-in session.',
+        endpoint: '/auth/snapshot',
+      })
+    }
+    const currentUser = state.user
+    if (currentUser && profile.id !== currentUser.id) {
+      throw createApiClientError({
+        kind: 'invalid_response',
+        message: 'The identity response does not match the signed-in account.',
+        endpoint: '/auth/snapshot',
+      })
+    }
+    // Do not yield between checking the session and updating identity.
+    const normalizedPermissions = toUniquePermissionIds(
       profile.permissions || []
     )
-
-    const state = useAuthStore.getState()
-    const currentUser = state.user
     if (currentUser) {
       const currentPermissions = toUniquePermissionIds(
         currentUser.permissions || []
@@ -105,13 +132,19 @@ export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
 
     state.setIsIdentitySynced(true)
 
-    return normalizedPermissions
+    return processAndNotifyPermissions(normalizedPermissions)
   })()
+  const pendingSynchronization = {
+    accessToken: requestAccessToken,
+    promise: synchronization,
+  }
+  inFlightProfileSync = pendingSynchronization
 
   try {
-    return await inFlightProfileSync
+    return await synchronization
   } finally {
-    inFlightProfileSync = null
+    if (inFlightProfileSync === pendingSynchronization)
+      inFlightProfileSync = null
   }
 }
 

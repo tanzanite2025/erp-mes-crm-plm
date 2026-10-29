@@ -28,7 +28,7 @@ export const approval = {
     inventory: '库存管理',
     trading: '购销管理',
     production: '生产协同',
-    materials: '物料档案',
+    materials: '生产物料档案',
   },
   actions: {
     quality_standard_review: '品质标准审批',

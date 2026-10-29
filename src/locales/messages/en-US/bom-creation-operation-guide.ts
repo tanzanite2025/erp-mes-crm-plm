@@ -266,5 +266,6 @@ export const bomCreationOperationGuide = {
     groups: 'View Group Configuration',
     records: 'View BOM Trace',
     productGuide: 'Read How to Create a Product',
+    materialGuide: 'Read How to Create a Production Material Record',
   },
 }

@@ -28,7 +28,7 @@ interface ProductBasicInfoProps {
   productTypes: ProductType[]
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
   specOptions: { label: string; value: string }[]
-  moldOptions: { label: string; value: string }[]
+  moldOptions: { label: string; value: string; active?: boolean }[]
   isEdit: boolean
   templateLabel?: string
 }
@@ -259,7 +259,7 @@ export function ProductBasicInfo({
             />
             <FormField
               control={form.control}
-              name='moldGroup'
+              name='moldGroupId'
               render={({ field }) => (
                 <FormItem className='min-w-0 space-y-0.5'>
                   <FormLabel
@@ -273,7 +273,12 @@ export function ProductBasicInfo({
                   <ProductMoldMasterLibraryGroupSelectionField
                     options={moldOptions}
                     value={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={(groupId, groupName) => {
+                      field.onChange(groupId)
+                      form.setValue('moldGroup', groupName, {
+                        shouldDirty: true,
+                      })
+                    }}
                   />
                   <FormMessage
                     className={productFormTypographyClassNames.helper}

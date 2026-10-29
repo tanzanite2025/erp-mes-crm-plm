@@ -38,6 +38,7 @@ function toOutsourceOrderLineContract(
 ): OutsourceOrderLine {
   return {
     id: String(dto.id ?? ''),
+    registeredProductBarcodes: dto.registeredProductBarcodes ?? [],
     createdAt: String(dto.createdAt ?? ''),
     updatedAt: String(dto.updatedAt ?? ''),
     outsourceOrderId: String(dto.outsourceOrderId ?? ''),

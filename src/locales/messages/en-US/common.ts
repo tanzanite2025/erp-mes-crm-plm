@@ -153,6 +153,36 @@ export const common = {
     items: 'Items',
   },
   auth: {
+    changePassword: {
+      title: 'Change password',
+      description:
+        'Changing your password signs out this device and your other devices. Sign in again with your new password.',
+      currentPassword: 'Current password',
+      newPassword: 'New password',
+      confirmPassword: 'Confirm new password',
+      submit: 'Change password',
+      policy:
+        'At least 8 characters, including a lowercase letter and a digit, at most 72 UTF-8 bytes, with no surrounding whitespace.',
+      selfServiceGuidance:
+        'To change your own password, choose Change password from your avatar menu and verify your current password.',
+      currentPasswordRequired: 'Enter your current password.',
+      currentPasswordIncorrect:
+        'Your current password is incorrect. Please try again.',
+      unchanged: 'Your new password must differ from your current password.',
+      rateLimited:
+        'Too many password change attempts. Please try again in 5 minutes.',
+      failed:
+        'The result could not be confirmed. If the network failed, try signing in with your new password first; contact your administrator if needed.',
+      success: 'Password changed. Please sign in with your new password.',
+    },
+    passwordRecovery: {
+      title: 'Forgot password',
+      description:
+        'Contact your system administrator to verify your identity and reset your password.',
+      explanation:
+        'Email and SMS recovery are currently unavailable. If you can still sign in, choose Change password from your avatar menu.',
+      backToSignIn: 'Back to sign in',
+    },
     signOutTitle: 'Sign out',
     signOutDescription:
       'Are you sure you want to sign out? You will need to sign in again to access your account.',

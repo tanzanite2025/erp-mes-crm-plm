@@ -32,6 +32,8 @@ type OutsourceOrderLineDTO struct {
 	ScrapQuantity    float64   `json:"scrapQuantity"`
 	Notes            string    `json:"notes"`
 	Version          int64     `json:"version"`
+
+	RegisteredProductBarcodes []string `json:"registeredProductBarcodes"`
 }
 
 type OutsourceOrderDTO struct {
@@ -109,6 +111,8 @@ func mapOutsourceOrderLineToDTO(line models.OutsourceOrderLine) OutsourceOrderLi
 		ScrapQuantity:    line.ScrapQuantity,
 		Notes:            line.Notes,
 		Version:          line.Version,
+
+		RegisteredProductBarcodes: append([]string{}, line.RegisteredProductBarcodes...),
 	}
 }
 

@@ -12,6 +12,7 @@ type User struct {
 	ID                 string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
 	Username           string         `gorm:"uniqueIndex;not null;size:100" json:"username"`
 	Password           string         `gorm:"not null" json:"-"` // 不在 JSON 中返回
+	PasswordVersion    int64          `gorm:"not null;default:0" json:"-"`
 	Email              string         `gorm:"size:255" json:"email"`
 	PhoneNumber        string         `gorm:"size:20" json:"phoneNumber"`
 	FirstName          string         `gorm:"size:50" json:"firstName"`

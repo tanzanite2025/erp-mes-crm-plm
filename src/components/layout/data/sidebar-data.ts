@@ -2,7 +2,7 @@
  * 全局侧边栏菜单数据源(三层结构: group → L1 子组 → L2 菜单项)。
  *
  * 此文件是侧边栏的"配置即代码"——所有侧边栏入口在这里定义:
- *   - navGroupConfigs: 顶级 group(资源管理 / 采销 / 生产 / 工程 / 仓储等)
+ *   - navGroupConfigs: 顶级 group(资源管理 / 组织人事 / 采销 / 生产 / 工程 / 仓储等)
  *   - 每个 group 下 1-N 个 L1 子组或可点击域入口
  *   - 三级菜单代表业务域入口,域内关联 TAB 在 features/<module>/tabs.ts 单独维护
  *
@@ -25,6 +25,7 @@ import {
   Cpu,
   Database,
   FileText,
+  FlaskConical,
   Gauge,
   House,
   ListChecks,
@@ -42,6 +43,14 @@ import {
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
 import { BUSINESS_ANALYSIS_DOMAIN_ROUTES } from '@/features/business-analysis/tabs'
 import { engineeringTabs } from '@/features/engineering/tab-config'
+import { getMaterialRouteTabs } from '@/features/material-archive/tab-config'
+import { getMrpTabs } from '@/features/mrp/tabs'
+import {
+  ATTENDANCE_MANAGEMENT_OPERATION_GUIDE_PATH,
+  getOrgPersonnelTabs,
+  ORGANIZATION_AND_ACCOUNT_OPERATION_GUIDE_PATH,
+} from '@/features/org-personnel/tabs'
+import { getProductionOutsourcingTabs } from '@/features/production-outsourcing/tabs'
 import type { NavGroup, NavNode, SidebarData } from '../types'
 
 type TranslateFn = (
@@ -171,6 +180,39 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     icon: CheckSquare,
     children: [
       {
+        id: 'production-handbook-group',
+        titleKey: 'sidebar.groups.productionHandbook',
+        icon: BookOpen,
+        children: [
+          {
+            id: 'part-requirements-handbook',
+            titleKey: 'mrp.operationGuide.title',
+            url: '/mrp/requirements-guide',
+            icon: BookOpen,
+          },
+          {
+            id: 'production-material-issuance-handbook',
+            titleKey: 'mrp.productionMaterialIssuanceGuide.title',
+            url: '/mrp/production-material-issuance-guide',
+            icon: BookOpen,
+          },
+          {
+            id: 'production-outsourcing-task-and-partner-handbook',
+            titleKey:
+              'productionOutsourcing.operationGuides.tasksAndPartners.title',
+            url: '/production-outsourcing/task-and-partner-operation-guide',
+            icon: BookOpen,
+          },
+          {
+            id: 'production-outsourcing-send-return-inspection-handbook',
+            titleKey:
+              'productionOutsourcing.operationGuides.sendReturnInspection.title',
+            url: '/production-outsourcing/send-return-inspection-scanning-guide',
+            icon: BookOpen,
+          },
+        ],
+      },
+      {
         id: 'planning-center-group',
         titleKey: 'sidebar.groups.planningCenter',
         icon: Calendar,
@@ -178,7 +220,8 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           {
             id: 'mrp',
             titleKey: 'sidebar.items.mrp',
-            url: '/mrp',
+            url: '/mrp/requirements',
+            activeMatches: getMrpTabs((key) => key).map((tab) => tab.href),
             icon: Gauge,
             permissionId: permissionIdForPath('/mrp'),
           },
@@ -221,9 +264,17 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'production-outsourcing',
             titleKey: 'sidebar.items.productionOutsourcing',
             url: '/production-outsourcing',
-            activeMatch: '/production-outsourcing',
+            activeMatches: getProductionOutsourcingTabs((key) => key).map(
+              (tab) => tab.href
+            ),
             icon: Truck,
-            permissionId: permissionIdForPath('/production-outsourcing'),
+            permissionId: [
+              permissionIdForPath('/production-outsourcing'),
+              'menu_prod_config',
+              'tab_production_outsourcing_orders',
+              'tab_production_outsourcing_partners',
+              'tab_production_outsourcing_transfers',
+            ],
           },
         ],
       },
@@ -459,6 +510,25 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     icon: Warehouse,
     children: [
       {
+        id: 'warehouse-logistics-handbook-group',
+        titleKey: 'sidebar.groups.warehouseLogisticsHandbook',
+        icon: BookOpen,
+        children: [
+          {
+            id: 'production-material-handovers-handbook',
+            titleKey: 'warehouse.productionMaterialHandoversGuide.title',
+            url: '/warehouse/production-material-handovers-guide',
+            icon: BookOpen,
+          },
+          {
+            id: 'production-material-creation-handbook',
+            titleKey: 'materialArchive.operationGuide.title',
+            url: '/materials/production-material-creation-guide',
+            icon: BookOpen,
+          },
+        ],
+      },
+      {
         id: 'warehouse-management-group',
         titleKey: 'sidebar.groups.warehouseManagement',
         icon: Warehouse,
@@ -473,7 +543,10 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           {
             id: 'material-archive',
             titleKey: 'sidebar.items.materialArchive',
-            url: '/materials',
+            url: '/materials/all',
+            activeMatches: getMaterialRouteTabs('zh-CN', (key) => key).map(
+              (tab) => tab.href
+            ),
             icon: Database,
             permissionId: permissionIdForPath('/materials'),
           },
@@ -486,42 +559,40 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: 'logistics-center',
+    titleKey: 'sidebar.groups.logisticsCenter',
+    icon: Truck,
+    children: [
       {
-        id: 'logistics-group',
-        titleKey: 'sidebar.groups.logisticsCenter',
+        id: 'logistics-config',
+        titleKey: 'sidebar.items.vehicleMatching',
+        url: '/logistics-config',
         icon: Truck,
-        children: [
-          {
-            id: 'logistics-config',
-            titleKey: 'sidebar.items.vehicleMatching',
-            url: '/logistics-config',
-            icon: Truck,
-            permissionId: permissionIdForPath('/logistics-config'),
-          },
-          {
-            id: 'logistics-loading-specs',
-            titleKey: 'sidebar.items.loadingSpecs',
-            url: '/logistics-loading-specs',
-            icon: Container,
-            permissionId: permissionIdForPath('/logistics-loading-specs'),
-          },
-          {
-            id: 'logistics-packaging-management',
-            titleKey: 'sidebar.items.packagingManagement',
-            url: '/logistics-packaging-management',
-            icon: Package,
-            permissionId: permissionIdForPath(
-              '/logistics-packaging-management'
-            ),
-          },
-          {
-            id: 'logistics-settings',
-            titleKey: 'sidebar.items.logisticsSettings',
-            url: '/logistics-settings',
-            icon: Sliders,
-            permissionId: permissionIdForPath('/logistics-settings'),
-          },
-        ],
+        permissionId: permissionIdForPath('/logistics-config'),
+      },
+      {
+        id: 'logistics-loading-specs',
+        titleKey: 'sidebar.items.loadingSpecs',
+        url: '/logistics-loading-specs',
+        icon: Container,
+        permissionId: permissionIdForPath('/logistics-loading-specs'),
+      },
+      {
+        id: 'logistics-packaging-management',
+        titleKey: 'sidebar.items.packagingManagement',
+        url: '/logistics-packaging-management',
+        icon: Package,
+        permissionId: permissionIdForPath('/logistics-packaging-management'),
+      },
+      {
+        id: 'logistics-settings',
+        titleKey: 'sidebar.items.logisticsSettings',
+        url: '/logistics-settings',
+        icon: Sliders,
+        permissionId: permissionIdForPath('/logistics-settings'),
       },
     ],
   },
@@ -563,15 +634,59 @@ const navGroupConfigs: SidebarGroupConfig[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: 'experimental-center-group',
+    titleKey: 'sidebar.groups.experimentalCenter',
+    icon: FlaskConical,
+    children: [
       {
-        id: 'org-personnel-group',
-        titleKey: 'sidebar.groups.orgPersonnel',
+        id: 'experimental-center',
+        titleKey: 'sidebar.groups.experimentalCenter',
+        url: '/labs/experimental',
+        icon: FlaskConical,
+        permissionId: permissionIdForPath('/labs/experimental'),
+      },
+    ],
+  },
+  {
+    id: 'org-personnel-group',
+    titleKey: 'sidebar.groups.orgPersonnel',
+    icon: Users,
+    children: [
+      {
+        id: 'org-personnel-handbook-group',
+        titleKey: 'sidebar.groups.orgPersonnelHandbook',
+        icon: BookOpen,
+        children: [
+          {
+            id: 'organization-and-account-operation-guide',
+            titleKey: 'orgPersonnel.operationGuide.title',
+            url: ORGANIZATION_AND_ACCOUNT_OPERATION_GUIDE_PATH,
+            icon: BookOpen,
+          },
+          {
+            id: 'attendance-management-operation-guide',
+            titleKey: 'orgPersonnel.attendanceOperationGuide.title',
+            url: ATTENDANCE_MANAGEMENT_OPERATION_GUIDE_PATH,
+            icon: BookOpen,
+          },
+        ],
+      },
+      {
+        id: 'org-personnel-management-group',
+        titleKey: 'sidebar.groups.orgPersonnelManagement',
         icon: Users,
         children: [
           {
             id: 'personnel-center',
             titleKey: 'sidebar.items.personnelCenter',
-            url: '/personnel',
+            url: '/personnel/org',
+            activeMatches: [
+              ...getOrgPersonnelTabs((key) => key).map((tab) => tab.href),
+              '/personnel/architecture',
+            ],
             icon: Users,
             permissionId: permissionIdForPath('/personnel'),
           },
@@ -582,20 +697,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             activeMatch: '/attendance-management',
             icon: Calendar,
             permissionId: permissionIdForPath('/attendance-management'),
-          },
-        ],
-      },
-      {
-        id: 'experimental-center-group',
-        titleKey: 'sidebar.groups.experimentalCenter',
-        icon: Cpu,
-        children: [
-          {
-            id: 'experimental-center',
-            titleKey: 'sidebar.groups.experimentalCenter',
-            url: '/labs/experimental',
-            icon: Cpu,
-            permissionId: permissionIdForPath('/labs/experimental'),
           },
         ],
       },

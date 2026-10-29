@@ -54,6 +54,8 @@ export function OrgMgmt() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add')
+  const [organizationCreationParentNode, setOrganizationCreationParentNode] =
+    useState<OrgNode | undefined>(undefined)
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
@@ -135,9 +137,10 @@ export function OrgMgmt() {
               variant='ghost'
               size='icon'
               className='size-8 rounded-full hover:bg-background'
+              aria-label={t('orgPersonnel.org.addRoot')}
               onClick={() => {
                 setDialogMode('add')
-                setSelectedNode(null)
+                setOrganizationCreationParentNode(undefined)
                 setDialogOpen(true)
               }}
             >
@@ -215,6 +218,9 @@ export function OrgMgmt() {
                       className='h-9 rounded-full border border-dashed border-muted-foreground/20 px-5 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-background'
                       onClick={() => {
                         setDialogMode('add')
+                        setOrganizationCreationParentNode(
+                          selectedNode || undefined
+                        )
                         setDialogOpen(true)
                       }}
                       disabled={!canCreateChild}
@@ -437,7 +443,7 @@ export function OrgMgmt() {
           dialogMode === 'edit' ? selectedNode || undefined : undefined
         }
         parentNode={
-          dialogMode === 'add' ? selectedNode || undefined : undefined
+          dialogMode === 'add' ? organizationCreationParentNode : undefined
         }
         onSubmit={handleOrgSubmit}
       />

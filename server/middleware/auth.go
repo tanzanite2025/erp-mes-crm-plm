@@ -36,7 +36,7 @@ func ParseJWTClaims(tokenString string) (jwt.MapClaims, error) {
 			return nil, jwt.ErrSignatureInvalid
 		}
 		return JwtSecret, nil
-	})
+	}, jwt.WithExpirationRequired())
 	if err != nil || !token.Valid {
 		return nil, jwt.ErrTokenInvalidClaims
 	}
@@ -95,7 +95,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if err := db.DB.Select("id", "username", "status", "employee_id", "permission_preset_id").Where("id = ?", userID).First(&user).Error; err != nil {
+		if err := db.DB.WithContext(c.Request.Context()).Select("id", "username", "status", "employee_id", "permission_preset_id", "password_version").Where("id = ?", userID).First(&user).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Account not found or inactive"})
 			c.Abort()
 			return
@@ -103,6 +103,13 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		if !strings.EqualFold(strings.TrimSpace(user.Status), "active") {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Account not found or inactive"})
+			c.Abort()
+			return
+		}
+
+		passwordVersion, versionError := PasswordVersionFromJWTClaims(claims)
+		if versionError != nil || passwordVersion != user.PasswordVersion {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Account credentials have expired; please sign in again", "code": "auth_password_version_expired"})
 			c.Abort()
 			return
 		}
@@ -116,6 +123,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		resolvedPermissions := accessSnapshot.Permissions
 
 		c.Set("userId", user.ID)
+		c.Set("passwordVersion", user.PasswordVersion)
+		credentialExpiration, _ := claims.GetExpirationTime() // ParseJWTClaims requires and validates exp.
+		c.Set("credentialExpiresAt", credentialExpiration.Time)
 		c.Set("username", user.Username)
 		c.Set("permissions", resolvedPermissions)
 		c.Set("status", user.Status)

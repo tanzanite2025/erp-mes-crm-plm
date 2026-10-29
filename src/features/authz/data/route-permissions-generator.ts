@@ -23,6 +23,23 @@ const HIDDEN_PAGE_PATHS = new Set(['/', '/dashboard'])
 // Authentication is still enforced by the parent authenticated route guard.
 const AUTHENTICATION_ONLY_ROUTE_PATHS = new Set(['/', '/home'])
 const ROUTE_PERMISSION_FALLBACK_OVERRIDES: Record<string, string[]> = {
+  '/production-outsourcing': [
+    'menu_prod_config',
+    'tab_production_outsourcing_orders',
+    'tab_production_outsourcing_partners',
+    'tab_production_outsourcing_transfers',
+    'tab_production_outsourcing_task_and_partner_operation_guide',
+    'tab_production_outsourcing_send_return_inspection_scanning_guide',
+  ],
+  '/production-outsourcing/task-and-partner-operation-guide': [
+    'menu_prod_config',
+    'tab_production_outsourcing_orders',
+    'tab_production_outsourcing_partners',
+  ],
+  '/production-outsourcing/send-return-inspection-scanning-guide': [
+    'menu_prod_config',
+    'tab_production_outsourcing_transfers',
+  ],
   '/personnel/accounts': ['user_view', 'perm_manage'],
   '/personnel/rights': ['perm_manage'],
 }
@@ -206,9 +223,9 @@ export class RoutePermissionsGenerator {
           return {
             path,
             permissionId,
-            fallbackPermissionIds: toUniqueIds([menuId]).filter(
-              (id) => id !== permissionId
-            ),
+            fallbackPermissionIds: toUniqueIds(
+              ROUTE_PERMISSION_FALLBACK_OVERRIDES[path] || [menuId]
+            ).filter((id) => id !== permissionId),
           }
         }
 

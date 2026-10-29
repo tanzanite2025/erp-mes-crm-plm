@@ -74,8 +74,15 @@ func SaveSalesOrderHandler(c *gin.Context) {
 		IP:       c.ClientIP(),
 	})
 	if err != nil {
+		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
+			return
+		}
 		if err == ErrVersionConflict || errors.Is(err, services.ErrSalesTransactionVersionConflict) {
 			respondVersionConflict(c)
+			return
+		}
+		if errors.Is(err, services.ErrSalesTransactionInvalidPayload) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to save sales order: " + err.Error()})
@@ -101,11 +108,16 @@ func PatchSalesOrderHandler(c *gin.Context) {
 		IP:       c.ClientIP(),
 	})
 	if err != nil {
+		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
+			return
+		}
 		switch {
 		case strings.Contains(err.Error(), "invalid sales order delta"):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case err == ErrVersionConflict || errors.Is(err, services.ErrSalesTransactionVersionConflict):
 			respondVersionConflict(c)
+		case errors.Is(err, services.ErrSalesTransactionInvalidPayload):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] sales order not found: " + id})
 		default:
@@ -121,6 +133,9 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 	id := c.Param("id")
 	err := services.DeleteSalesOrder(id)
 	if err != nil {
+		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
+			return
+		}
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] sales order not found: " + id})
@@ -151,7 +166,17 @@ func BulkSyncSalesOrdersHandler(c *gin.Context) {
 	}
 
 	if err := services.BulkSyncSalesOrders(input); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to bulk sync sales orders: " + err.Error()})
+		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
+			return
+		}
+		switch {
+		case errors.Is(err, services.ErrSalesTransactionVersionConflict):
+			respondVersionConflict(c)
+		case errors.Is(err, services.ErrSalesTransactionInvalidPayload):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to bulk sync sales orders: " + err.Error()})
+		}
 		return
 	}
 

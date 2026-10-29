@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/db"
@@ -140,7 +139,6 @@ type cuttingPlanSnapshot struct {
 	Name        string            `json:"name"`
 	ProductName string            `json:"productName"`
 	ProductCode string            `json:"productCode"`
-	HoleCount   string            `json:"holeCount"`
 	Status      string            `json:"status"`
 	RevisionNo  string            `json:"revisionNo"`
 	Lines       []json.RawMessage `json:"lines"`
@@ -165,14 +163,6 @@ func normalizeCuttingIssuanceStatus(value string) string {
 
 func normalizeCuttingModelKey(value string) string {
 	return strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(value), " ", ""))
-}
-
-func parseNonNegativeInt(raw string) int {
-	value, err := strconv.Atoi(strings.TrimSpace(raw))
-	if err != nil || value < 0 {
-		return 0
-	}
-	return value
 }
 
 func hasModelIntersection(valuesA []string, valuesB []string) bool {
@@ -281,15 +271,6 @@ func validateTemplateCompatibility(
 		return errors.New("template model does not match sales order line model")
 	}
 
-	templateHoleCount := parseNonNegativeInt(template.HoleCount)
-	if line.HoleCount > 0 {
-		if templateHoleCount <= 0 {
-			return errors.New("template holeCount is required for matched sales order line")
-		}
-		if templateHoleCount != line.HoleCount {
-			return errors.New("template holeCount does not match sales order line holeCount")
-		}
-	}
 	return nil
 }
 

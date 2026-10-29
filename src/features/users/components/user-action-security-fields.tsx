@@ -29,6 +29,7 @@ type UserActionSecurityFieldsProps = {
   isPasswordTouched: boolean
   canManagePermissionPresets: boolean
   requiresAdminChallenge: boolean
+  isCurrentUserAccount?: boolean
 }
 
 export function UserActionSecurityFields({
@@ -38,6 +39,7 @@ export function UserActionSecurityFields({
   isPasswordTouched,
   canManagePermissionPresets,
   requiresAdminChallenge,
+  isCurrentUserAccount = false,
 }: UserActionSecurityFieldsProps) {
   const { t } = useLanguage()
 
@@ -147,66 +149,74 @@ export function UserActionSecurityFields({
         />
       ) : null}
 
-      <FormField
-        control={form.control}
-        name='password'
-        render={({ field }) => (
-          <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-            <div className='col-span-2 flex flex-col items-end gap-0.5'>
-              <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                {t('users.dialogs.labels.password')}
-              </FormLabel>
-              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                SECURITY_CRED
-              </span>
-            </div>
-            <FormControl>
-              <PasswordInput
-                placeholder={
-                  isEdit
-                    ? t('users.dialogs.placeholders.passwordEdit')
-                    : t('users.dialogs.placeholders.passwordCreate')
-                }
-                containerClassName='col-span-4'
-                className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
-                {...field}
-              />
-            </FormControl>
-            <FormMessage className='col-span-4 col-start-3' />
-          </FormItem>
-        )}
-      />
+      {isCurrentUserAccount ? (
+        <p className='text-sm text-muted-foreground'>
+          {t('common.auth.changePassword.selfServiceGuidance')}
+        </p>
+      ) : (
+        <>
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
+                <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                  <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
+                    {t('users.dialogs.labels.password')}
+                  </FormLabel>
+                  <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+                    SECURITY_CRED
+                  </span>
+                </div>
+                <FormControl>
+                  <PasswordInput
+                    placeholder={
+                      isEdit
+                        ? t('users.dialogs.placeholders.passwordEdit')
+                        : t('users.dialogs.placeholders.passwordCreate')
+                    }
+                    containerClassName='col-span-4'
+                    className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className='col-span-4 col-start-3' />
+              </FormItem>
+            )}
+          />
 
-      <FormField
-        control={form.control}
-        name='confirmPassword'
-        render={({ field }) => (
-          <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-            <div className='col-span-2 flex flex-col items-end gap-0.5'>
-              <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
-                {t('users.dialogs.labels.confirm')}
-              </FormLabel>
-              <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
-                CRED_VERIFICATION
-              </span>
-            </div>
-            <FormControl>
-              <PasswordInput
-                disabled={!isPasswordTouched}
-                placeholder={
-                  isEdit
-                    ? t('users.dialogs.placeholders.confirmEdit')
-                    : t('users.dialogs.placeholders.confirmCreate')
-                }
-                containerClassName='col-span-4'
-                className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20 disabled:opacity-30'
-                {...field}
-              />
-            </FormControl>
-            <FormMessage className='col-span-4 col-start-3' />
-          </FormItem>
-        )}
-      />
+          <FormField
+            control={form.control}
+            name='confirmPassword'
+            render={({ field }) => (
+              <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
+                <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                  <FormLabel className='text-[11px] leading-none font-black tracking-tight text-muted-foreground/60'>
+                    {t('users.dialogs.labels.confirm')}
+                  </FormLabel>
+                  <span className='font-maple-ui text-[8px] leading-none font-black tracking-widest uppercase opacity-20'>
+                    CRED_VERIFICATION
+                  </span>
+                </div>
+                <FormControl>
+                  <PasswordInput
+                    disabled={!isPasswordTouched}
+                    placeholder={
+                      isEdit
+                        ? t('users.dialogs.placeholders.confirmEdit')
+                        : t('users.dialogs.placeholders.confirmCreate')
+                    }
+                    containerClassName='col-span-4'
+                    className='h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20 disabled:opacity-30'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className='col-span-4 col-start-3' />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
     </>
   )
 }

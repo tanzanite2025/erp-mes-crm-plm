@@ -13,6 +13,8 @@ const RECENT_VISIT_EXACT_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering-db': 'engineering.db.overview.title',
   '/materials/all': 'materialArchive.layout.tabs.all',
   '/materials/assembly': 'materialArchive.layout.tabs.assembly',
+  '/materials/production-material-creation-guide':
+    'materialArchive.operationGuide.title',
   '/quality/standards/new': 'quality.standards.workspace.editorCreateTitle',
   '/system-management': 'systemManagement.layout.tabs.status',
   '/warehouse': 'warehouse.tabs.stock',

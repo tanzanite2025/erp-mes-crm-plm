@@ -55,7 +55,12 @@ function getActiveTargets(item: NavItem): string[] {
   const activeMatch = item.activeMatch ? String(item.activeMatch) : undefined
   const activeMatches = item.activeMatches?.map(String) ?? []
 
-  return [itemUrl, activeMatch, ...activeMatches].filter(Boolean) as string[]
+  // An explicit list limits this entry to its declared business routes. The
+  // landing URL can share a parent with separate handbook pages.
+  return [
+    ...(activeMatches.length ? activeMatches : [itemUrl]),
+    activeMatch,
+  ].filter(Boolean) as string[]
 }
 
 export function withDynamicBadges(
@@ -77,9 +82,9 @@ export function checkIsActive(
   item: NavItem,
   mainNav = false
 ): boolean {
-  const selfActive = getActiveTargets(item).some((target) =>
-    isPathMatch(pathname, target)
-  )
+  const selfActive =
+    isExactPathMatch(pathname, item.url ? String(item.url) : undefined) ||
+    getActiveTargets(item).some((target) => isPathMatch(pathname, target))
   const childActive = !!item.children?.some((child) =>
     checkIsActive(pathname, child)
   )
@@ -87,6 +92,8 @@ export function checkIsActive(
   if (selfActive || childActive) {
     return true
   }
+
+  if (item.activeMatches?.length) return false
 
   const itemUrl = item.url ? String(item.url) : undefined
   return !!(
@@ -100,8 +107,9 @@ export function checkIsDirectlySelected(
   pathname: string,
   item: NavItem
 ): boolean {
-  return getActiveTargets(item).some((target) =>
-    isExactPathMatch(pathname, target)
+  return (
+    isExactPathMatch(pathname, item.url ? String(item.url) : undefined) ||
+    getActiveTargets(item).some((target) => isExactPathMatch(pathname, target))
   )
 }
 

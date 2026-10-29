@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { type TranslationKey } from '@/locales'
 import { type DeltaSet } from '@/lib/delta/types'
+import { getServerErrorPresentation } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { Button } from '@/components/ui/button'
@@ -225,7 +226,10 @@ export function EmployeeActionDialog({
       }
 
       onSaved?.(savedEmployee)
-    } catch {
+    } catch (error) {
+      form.setError('root', {
+        message: getServerErrorPresentation(error).message,
+      })
       return
     }
 
@@ -237,6 +241,7 @@ export function EmployeeActionDialog({
     <Dialog
       open={open}
       onOpenChange={(state) => {
+        if (form.formState.isSubmitting) return
         if (!state) {
           form.reset(defaultValues)
         }
@@ -267,6 +272,11 @@ export function EmployeeActionDialog({
             onSubmit={form.handleSubmit(onSubmitHandler)}
             className={`${hostedQuickActionDialogScrollableBodyClassName} px-6 py-5 md:px-8 md:py-6`}
           >
+            {form.formState.errors.root?.message && (
+              <p role='alert' className='mb-4 text-sm text-destructive'>
+                {form.formState.errors.root.message}
+              </p>
+            )}
             <div className='grid grid-cols-1 items-start gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-4'>
               {PERSONNEL_FORM_FIELDS.map((fieldConfig) => (
                 <FormField
@@ -358,6 +368,7 @@ export function EmployeeActionDialog({
 
         <DialogFooter className='shrink-0 border-t border-dashed border-muted/50 bg-muted/5 px-6 py-5 md:px-8'>
           <Button
+            disabled={form.formState.isSubmitting}
             type='submit'
             form='employee-form'
             className='h-11 w-full rounded-full px-8 text-sm font-semibold shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:w-auto'

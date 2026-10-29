@@ -1,8 +1,8 @@
 package models
 
 import (
-	"time"
 	"gorm.io/gorm"
+	"time"
 )
 
 // Mold 模具资产模型
@@ -14,7 +14,8 @@ type Mold struct {
 	CurrentCycles        int            `gorm:"default:0" json:"currentCycles"`
 	MaintenanceThreshold int            `gorm:"default:80000" json:"maintenanceThreshold"`
 	TotalLifeCycles      int            `gorm:"default:0" json:"totalLifeCycles"`
-	GroupName            string         `gorm:"size:100" json:"groupName"`
+	GroupID              *string        `gorm:"type:uuid;index" json:"groupId"`
+	GroupName            string         `gorm:"size:100" json:"groupName"`            // Display mirror; GroupID owns the association.
 	Status               string         `gorm:"size:50;default:'IDLE'" json:"status"` // 'IDLE','IN_USE','CHECKING','MAINTENANCE','RETIRED','LENT_OUT','BORROWED'
 	Location             string         `gorm:"size:255" json:"location"`
 	Description          string         `gorm:"type:text" json:"description"`
@@ -48,21 +49,21 @@ type Furnace struct {
 
 // MoldLoan 模具借还记录模型
 type MoldLoan struct {
-	ID                 string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
-	MoldID             string    `gorm:"type:uuid;index;not null" json:"moldId"`
-	MoldSN             string    `gorm:"size:100" json:"moldSn"`
-	MoldName           string    `gorm:"size:255" json:"moldName"`
-	FromFactory        string    `gorm:"size:255" json:"fromFactory"`
-	ToFactory          string    `gorm:"size:255" json:"toFactory"`
-	ContactPerson      string    `gorm:"size:100" json:"contactPerson"`
-	LoanDate           time.Time `json:"loanDate"`
-	ExpectedReturnDate time.Time `json:"expectedReturnDate"`
+	ID                 string     `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	MoldID             string     `gorm:"type:uuid;index;not null" json:"moldId"`
+	MoldSN             string     `gorm:"size:100" json:"moldSn"`
+	MoldName           string     `gorm:"size:255" json:"moldName"`
+	FromFactory        string     `gorm:"size:255" json:"fromFactory"`
+	ToFactory          string     `gorm:"size:255" json:"toFactory"`
+	ContactPerson      string     `gorm:"size:100" json:"contactPerson"`
+	LoanDate           time.Time  `json:"loanDate"`
+	ExpectedReturnDate time.Time  `json:"expectedReturnDate"`
 	ActualReturnDate   *time.Time `json:"actualReturnDate"`
-	Status             string    `gorm:"size:50;default:'ACTIVE'" json:"status"` // 'ACTIVE', 'RETURNED', 'OVERDUE'
-	Remarks            string    `gorm:"type:text" json:"remarks"`
-	PhotoURL           string    `json:"photoUrl"`
-	CreatedBy          string    `gorm:"size:100" json:"createdBy"`
-	CreatedAt          time.Time `json:"createdAt"`
+	Status             string     `gorm:"size:50;default:'ACTIVE'" json:"status"` // 'ACTIVE', 'RETURNED', 'OVERDUE'
+	Remarks            string     `gorm:"type:text" json:"remarks"`
+	PhotoURL           string     `json:"photoUrl"`
+	CreatedBy          string     `gorm:"size:100" json:"createdBy"`
+	CreatedAt          time.Time  `json:"createdAt"`
 }
 
 // EquipmentPartner 合作单位/厂区模型

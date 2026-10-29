@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import useDialogState from '@/hooks/use-dialog-state'
@@ -12,12 +13,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SignOutDialog } from '@/components/sign-out-dialog'
+import { ChangeCurrentUserPasswordDialog } from '@/features/auth/change-current-user-password/change-current-user-password-dialog'
 import { usePersonalWorkbenchBottomDrawerStore } from '@/features/personal-workbench/hooks/use-personal-workbench-bottom-drawer-store'
 
 export function ProfileDropdown() {
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
   const [open, setOpen] = useDialogState()
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
   const openPersonalWorkbenchBottomDrawer =
     usePersonalWorkbenchBottomDrawerStore(
       (state) => state.openPersonalWorkbenchBottomDrawer
@@ -77,6 +80,12 @@ export function ProfileDropdown() {
           </DropdownMenuItem>
           <DropdownMenuSeparator className='my-2 bg-border/70' />
           <DropdownMenuItem
+            className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+            onSelect={() => setIsChangePasswordOpen(true)}
+          >
+            {t('common.auth.changePassword.title')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
             className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-destructive focus:bg-destructive/10 focus:text-destructive'
             variant='destructive'
             onClick={() => setOpen(true)}
@@ -87,6 +96,10 @@ export function ProfileDropdown() {
       </DropdownMenu>
 
       <SignOutDialog open={!!open} onOpenChange={setOpen} />
+      <ChangeCurrentUserPasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+      />
     </>
   )
 }

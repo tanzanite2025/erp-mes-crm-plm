@@ -1,29 +1,21 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
-  ExternalLink,
   Layers,
   Package,
   ShoppingCart,
 } from 'lucide-react'
-import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { BottomFloatingActionBar } from '@/components/layout/bottom-floating-action-bar'
-import { BOMS_QUERY_KEY } from '@/features/product-structure/query-keys'
-import { bomService } from '@/features/product-structure/services/bom-service'
 import { type SalesOrder } from '@/features/trading/data/schema'
-import { RequirementStageAlert } from './requirement-stage-alert'
-
-const logger = createLogger('MRPSelectionTree')
 
 interface SelectionTreeProps {
   orders: SalesOrder[]
@@ -41,28 +33,6 @@ export function SelectionTree({
   const { t } = useLanguage()
   const [expandedOrders, setExpandedOrders] = useState<string[]>([])
   const [expandedProducts, setExpandedProducts] = useState<string[]>([])
-  const bomsQuery = useQuery({
-    queryKey: BOMS_QUERY_KEY,
-    queryFn: () => bomService.getBOMs(),
-    select: (data) => data.filter((bom) => bom.status === 'RELEASED'),
-  })
-  const boms = useMemo(() => bomsQuery.data ?? [], [bomsQuery.data])
-
-  const selectedMissingBomCount = selectedKeys.reduce((count, key) => {
-    const [orderNo, rawLineNo] = key.split('-')
-    const lineNo = Number(rawLineNo)
-    const order = orders.find((entry) => entry.orderNo === orderNo)
-    const line = order?.lines.find((entry) => entry.lineNo === lineNo)
-    if (!line) return count
-    const productBOM = boms.find((bom) => bom.productId === line.productId)
-    return productBOM ? count : count + 1
-  }, 0)
-
-  useEffect(() => {
-    if (!bomsQuery.error) return
-    logger.error('Failed to load BOMs from backend', bomsQuery.error)
-  }, [bomsQuery.error])
-
   const toggleOrder = (id: string) => {
     setExpandedOrders((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -192,9 +162,6 @@ export function SelectionTree({
                   const isProductSelected = selectedKeys.includes(selectionKey)
                   const isProductExpanded =
                     expandedProducts.includes(selectionKey)
-                  const productBOM = boms.find(
-                    (bom) => bom.productId === line.productId
-                  )
 
                   return (
                     <div
@@ -278,64 +245,9 @@ export function SelectionTree({
                       </div>
 
                       {isProductExpanded && (
-                        <div className='animate-in space-y-2 px-10 pb-3 duration-300 fade-in'>
-                          {!productBOM ? (
-                            <RequirementStageAlert
-                              tone='warning'
-                              title={t(
-                                'mrp.requirements.selectionTree.noBomTitle'
-                              )}
-                              description={t(
-                                'mrp.requirements.selectionTree.noBom'
-                              )}
-                            />
-                          ) : (
-                            <>
-                              <div className='mb-2 flex items-center justify-between text-[9px] font-black tracking-[0.2em] text-muted-foreground/30 uppercase'>
-                                {t(
-                                  'mrp.requirements.selectionTree.bomPreview',
-                                  { count: productBOM.items.length }
-                                )}
-                                <ExternalLink className='size-3 cursor-pointer transition-colors hover:text-primary' />
-                              </div>
-                              <div className='grid grid-cols-2 gap-2'>
-                                {productBOM.items
-                                  .slice(0, 4)
-                                  .map((item, index) => (
-                                    <div
-                                      key={index}
-                                      className='flex items-center justify-between gap-3 rounded-xl border border-muted/30 bg-white/50 p-2 shadow-sm'
-                                    >
-                                      <div className='flex min-w-0 flex-col'>
-                                        <span className='truncate text-[10px] font-black'>
-                                          {item.materialName}
-                                        </span>
-                                        <span className='text-[8px] font-bold text-muted-foreground/50 uppercase'>
-                                          {item.section ||
-                                            t(
-                                              'mrp.requirements.selectionTree.otherSection'
-                                            )}
-                                        </span>
-                                      </div>
-                                      <span className='text-[10px] font-black text-primary tabular-nums'>
-                                        {(
-                                          item.standardUsage * line.qty
-                                        ).toLocaleString()}
-                                      </span>
-                                    </div>
-                                  ))}
-                                {productBOM.items.length > 4 && (
-                                  <div className='col-span-2 rounded-lg bg-muted/10 py-1 text-center text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-                                    {t(
-                                      'mrp.requirements.selectionTree.moreComponents',
-                                      { count: productBOM.items.length - 4 }
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        <p className='px-10 pb-3 text-sm text-muted-foreground'>
+                          {t('mrp.requirements.selectionTree.basisReviewHint')}
+                        </p>
                       )}
                     </div>
                   )
@@ -359,11 +271,7 @@ export function SelectionTree({
                 })}
               </span>
               <span className='mt-1 text-[9px] font-bold tracking-widest text-slate-400 uppercase'>
-                {selectedMissingBomCount > 0
-                  ? t('mrp.requirements.selectionTree.blockedByMissingBom', {
-                      count: selectedMissingBomCount,
-                    })
-                  : t('mrp.requirements.selectionTree.analyzeReady')}
+                {t('mrp.requirements.selectionTree.analyzeReady')}
               </span>
             </div>
           </div>
@@ -377,7 +285,6 @@ export function SelectionTree({
             </button>
             <button
               onClick={onAnalyze}
-              disabled={selectedMissingBomCount > 0}
               className='h-10 rounded-2xl bg-white px-6 text-[11px] font-black text-[#0F172A] uppercase shadow-xl transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:hover:scale-100'
             >
               {t('mrp.requirements.selectionTree.analyze')}

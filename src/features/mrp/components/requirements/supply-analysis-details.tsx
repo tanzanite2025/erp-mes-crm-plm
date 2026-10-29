@@ -47,6 +47,7 @@ export function SupplyAnalysisDetails({
       icon: Truck,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
+      isPending: true,
     },
     {
       key: 'wip',
@@ -124,6 +125,12 @@ export function SupplyAnalysisDetails({
                 <div>
                   {t('mrp.requirements.list.formulaLinePurchase', {
                     purchase: item.onWayPurchaseQty,
+                  })}
+                </div>
+                <div>
+                  {t('mrp.requirements.list.formulaLineAllocated', {
+                    allocated: item.allocatedStockQty,
+                    unit: item.unit,
                   })}
                 </div>
                 <div>

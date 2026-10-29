@@ -45,7 +45,7 @@ export function ProductTemplateAttributeClassificationManagementDialog({
       <DialogContent
         size='6xl'
         className={productTemplateAttributeManagementDialogClasses.content}
-        closeButtonClassName='top-5 end-5 flex size-8 items-center justify-center rounded-full bg-muted/60 sm:top-6 sm:end-6'
+        closeButtonClassName='top-5 end-5 sm:top-6 sm:end-6'
       >
         <DialogHeader
           className={productTemplateAttributeManagementDialogClasses.header}

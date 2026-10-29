@@ -1,4 +1,9 @@
+import { attendanceManagementOperationGuide } from './attendance-management-operation-guide'
+import { organizationAndAccountOperationGuide } from './organization-and-account-operation-guide'
+
 export const orgPersonnel = {
+  operationGuide: organizationAndAccountOperationGuide,
+  attendanceOperationGuide: attendanceManagementOperationGuide,
   tabs: {
     org: 'Organization',
     employees: 'Employees',
@@ -299,6 +304,7 @@ export const orgPersonnel = {
     selectHint: 'Select an organization from the tree on the left to manage',
     editData: 'Edit Data',
     addChild: 'Add Child',
+    addRoot: 'Add level-1 organization',
     removeItem: 'Remove Item',
     manageLinks: 'Manage Links',
     manageDetail: 'Manage Details',

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { isNotFoundError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { createTechnicalSpecificationDocumentMasterLibraryListQueryOptions } from '@/features/engineering-db/queries/technical-specification-document-master-library-query-options'
-import { createMoldMasterLibraryGroupNamesQueryOptions } from '@/features/equipment-tooling/queries/mold-master-library-query-options'
+import { createMoldGroupMasterDirectoryQueryOptions } from '@/features/equipment-tooling/queries/mold-group-master-directory-query-options'
 import {
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
   PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
@@ -36,7 +36,7 @@ export function useProductFormInit({ open }: UseProductFormInitParams) {
   })
 
   const moldGroupsQuery = useQuery({
-    ...createMoldMasterLibraryGroupNamesQueryOptions(),
+    ...createMoldGroupMasterDirectoryQueryOptions(),
     enabled: open,
   })
 
@@ -59,7 +59,11 @@ export function useProductFormInit({ open }: UseProductFormInitParams) {
 
   const moldOptions = useMemo(() => {
     if (!moldGroupsQuery.data) return []
-    return moldGroupsQuery.data.map((group) => ({ label: group, value: group }))
+    return moldGroupsQuery.data.map((group) => ({
+      label: group.name,
+      value: group.id,
+      active: group.active,
+    }))
   }, [moldGroupsQuery.data])
   const specOptions = useMemo(() => {
     if (!specsQuery.data) return []

@@ -88,12 +88,15 @@ function buildSignInRedirectHref(): string {
   return `/sign-in?redirect=${encodeURIComponent(redirect)}`
 }
 
-function handleUnauthorizedSession(endpoint: string) {
+function handleUnauthorizedSession(
+  endpoint: string,
+  requestAccessToken: string
+) {
   if (typeof window === 'undefined') return
   if (isPublicEndpoint(endpoint)) return
+  // A response from before password change/sign-in belongs to that older session.
+  if (useAuthStore.getState().accessToken !== requestAccessToken) return
   if (unauthorizedRedirectInFlight) return
-
-  unauthorizedRedirectInFlight = true
   useAuthStore.getState().reset()
 
   if (
@@ -103,6 +106,7 @@ function handleUnauthorizedSession(endpoint: string) {
     return
   }
 
+  unauthorizedRedirectInFlight = true
   window.location.replace(buildSignInRedirectHref())
 }
 
@@ -276,7 +280,7 @@ export async function apiFetch<T>(
       }) as ApiFetchError
 
       if (response.status === 401) {
-        handleUnauthorizedSession(endpoint)
+        handleUnauthorizedSession(endpoint, token)
       }
 
       // 处理 CSRF 验证失败
@@ -427,7 +431,7 @@ export async function apiFetch<T>(
       ((normalizedError as ApiFetchError).status === 401 ||
         /invalid or expired token/i.test(normalizedError.message))
     ) {
-      handleUnauthorizedSession(endpoint)
+      handleUnauthorizedSession(endpoint, token)
     }
 
     throw normalizedError

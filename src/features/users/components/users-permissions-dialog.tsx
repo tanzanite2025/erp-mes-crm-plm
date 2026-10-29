@@ -37,7 +37,7 @@ export function UsersPermissionsDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        closeButtonClassName='end-3 top-3 flex size-9 items-center justify-center rounded-full border border-dashed border-muted/40 bg-background/85 text-muted-foreground/70 opacity-100 shadow-sm backdrop-blur-sm transition-all hover:bg-muted/80 hover:text-foreground active:scale-95 focus:ring-2 focus:ring-ring/40 focus:ring-offset-2 data-[state=open]:bg-background/85 data-[state=open]:text-muted-foreground/70 sm:end-4 sm:top-4 sm:size-10'
+        closeButtonClassName='end-3 top-3 sm:end-4 sm:top-4'
         className='top-0 left-0 h-svh max-h-svh w-screen max-w-screen translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-t-[32px] rounded-b-none border-none p-0 shadow-2xl sm:top-[50%] sm:left-[50%] sm:h-[calc(100svh-2rem)] sm:max-h-[calc(100svh-2rem)] sm:w-[96vw] sm:max-w-[1500px] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[32px]'
       >
         <DialogHeader className='border-b border-dashed border-muted/40 bg-muted/5 px-4 py-3 pe-12 text-left sm:px-6 sm:pe-16'>

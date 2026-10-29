@@ -49,6 +49,7 @@ const DEFAULT_LEAVE_FORM_VALUES: LeaveCreateForm = {
 interface LeaveActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSubmitted?: () => void
 }
 
 function toDateTimeLocalValue(isoValue: string): string {
@@ -66,6 +67,7 @@ function toIsoString(localValue: string): string {
 export function LeaveActionDialog({
   open,
   onOpenChange,
+  onSubmitted,
 }: LeaveActionDialogProps) {
   const { locale, t } = useLanguage()
   const form = useForm<LeaveCreateForm>({
@@ -107,7 +109,8 @@ export function LeaveActionDialog({
   const handleSubmitSuccess = useCallback(() => {
     onOpenChange(false)
     form.reset(DEFAULT_LEAVE_FORM_VALUES)
-  }, [form, onOpenChange])
+    onSubmitted?.()
+  }, [form, onOpenChange, onSubmitted])
 
   const {
     hasSelectedEmployee,
@@ -142,23 +145,37 @@ export function LeaveActionDialog({
     if (!valid) return
 
     const values = form.getValues()
-    await previewLeaveRequest({
-      ...values,
-      startTime: toIsoString(values.startTime),
-      endTime: toIsoString(values.endTime),
-    })
+    try {
+      await previewLeaveRequest({
+        ...values,
+        startTime: toIsoString(values.startTime),
+        endTime: toIsoString(values.endTime),
+      })
+    } catch {
+      // The mutation displays the error; keep the form available for correction.
+    }
   }
 
   const handleSubmit = async (values: LeaveCreateForm) => {
-    await submitLeaveRequest({
-      ...values,
-      startTime: toIsoString(values.startTime),
-      endTime: toIsoString(values.endTime),
-    })
+    if (isSubmitting || isPreviewing) return
+    try {
+      await submitLeaveRequest({
+        ...values,
+        startTime: toIsoString(values.startTime),
+        endTime: toIsoString(values.endTime),
+      })
+    } catch {
+      // Submission failure preserves the draft and must not trigger navigation.
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!isSubmitting) onOpenChange(nextOpen)
+      }}
+    >
       <DialogContent className='w-[95vw] overflow-hidden rounded-3xl border-dashed p-0 sm:max-w-[560px]'>
         <div className='relative space-y-6 p-6 md:p-8'>
           <DialogHeader className='text-left'>
@@ -186,6 +203,7 @@ export function LeaveActionDialog({
                     </FormLabel>
                     <FormControl>
                       <Combobox
+                        modal
                         variant='industrial'
                         value={field.value}
                         onValueChange={field.onChange}
@@ -336,6 +354,7 @@ export function LeaveActionDialog({
               variant='outline'
               className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
               onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
             >
               {t('orgPersonnel.leaveMgmt.actionDialog.close')}
             </Button>
@@ -362,7 +381,12 @@ export function LeaveActionDialog({
                 type='submit'
                 form='leave-action-form'
                 className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
-                disabled={!hasSelectedEmployee(employeeId) || isSubmitting}
+                disabled={
+                  !hasSelectedEmployee(employeeId) ||
+                  isSubmitting ||
+                  isPreviewing ||
+                  form.formState.isSubmitting
+                }
               >
                 {isSubmitting ? (
                   <Loader2 className='size-4 animate-spin' />

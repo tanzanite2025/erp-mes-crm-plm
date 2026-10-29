@@ -104,6 +104,7 @@ func moldAuditSnapshot(mold models.Mold) map[string]any {
 		"currentCycles":        mold.CurrentCycles,
 		"maintenanceThreshold": mold.MaintenanceThreshold,
 		"totalLifeCycles":      mold.TotalLifeCycles,
+		"groupId":              MoldGroupIDString(mold.GroupID),
 		"groupName":            mold.GroupName,
 		"status":               mold.Status,
 		"location":             mold.Location,
@@ -186,6 +187,7 @@ func moldSaveUpdates(input SaveMoldRequest, operator string, lastCheckedAt *time
 		"maintenance_threshold": input.MaintenanceThreshold,
 		"total_life_cycles":     input.TotalLifeCycles,
 		"group_name":            input.GroupName,
+		"group_id":              OptionalMoldGroupIDPointer(input.GroupID),
 		"status":                input.Status,
 		"location":              input.Location,
 		"description":           input.Description,
@@ -209,6 +211,9 @@ func (s *EquipmentAssetService) SaveMold(ctx context.Context, input SaveMoldRequ
 
 	var saved models.Mold
 	err := s.transaction(ctx, func(tx *gorm.DB) error {
+		if err := LockMoldGroupDirectoryForReferenceMutation(tx); err != nil {
+			return err
+		}
 		id := strings.TrimSpace(input.ID)
 		isCreate := id == ""
 		if isCreate {
@@ -216,6 +221,14 @@ func (s *EquipmentAssetService) SaveMold(ctx context.Context, input SaveMoldRequ
 		}
 		var existing models.Mold
 		err := tx.Where("id = ?", id).First(&existing).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		groupID, groupName, referenceError := ResolveMoldGroupMasterReference(tx, input.GroupID, input.GroupName, MoldGroupIDString(existing.GroupID))
+		if referenceError != nil {
+			return referenceError
+		}
+		input.GroupID, input.GroupName = MoldGroupIDString(groupID), groupName
 		if err == nil {
 			before := moldAuditSnapshot(existing)
 			if err := tx.Model(&existing).Updates(moldSaveUpdates(input, operator, lastCheckedAt)).Error; err != nil {
@@ -242,6 +255,7 @@ func (s *EquipmentAssetService) SaveMold(ctx context.Context, input SaveMoldRequ
 			MaintenanceThreshold: input.MaintenanceThreshold,
 			TotalLifeCycles:      input.TotalLifeCycles,
 			GroupName:            input.GroupName,
+			GroupID:              groupID,
 			Status:               input.Status,
 			Location:             input.Location,
 			Description:          input.Description,
@@ -263,7 +277,7 @@ func (s *EquipmentAssetService) SaveMold(ctx context.Context, input SaveMoldRequ
 }
 
 func parseMoldPatch(delta map[string]json.RawMessage) (map[string]any, error) {
-	if err := validateSupportedTopLevelDeltaKeys(delta, "sn", "name", "groupName", "status", "location", "description", "imageUrl", "maxCycles", "currentCycles", "maintenanceThreshold", "totalLifeCycles", "isAlerted", "lastCheckedAt"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(delta, "sn", "name", "groupId", "groupName", "status", "location", "description", "imageUrl", "maxCycles", "currentCycles", "maintenanceThreshold", "totalLifeCycles", "isAlerted", "lastCheckedAt"); err != nil {
 		return nil, err
 	}
 	updates := make(map[string]any, len(delta))
@@ -273,12 +287,14 @@ func parseMoldPatch(delta map[string]json.RawMessage) (map[string]any, error) {
 			return nil, err
 		}
 		switch key {
-		case "sn", "name", "groupName", "status", "location", "description", "imageUrl":
+		case "sn", "name", "groupId", "groupName", "status", "location", "description", "imageUrl":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
-			if key == "groupName" {
+			if key == "groupId" {
+				updates["group_id"] = value
+			} else if key == "groupName" {
 				updates["group_name"] = value
 			} else if key == "imageUrl" {
 				updates["image_url"] = value
@@ -316,11 +332,27 @@ func (s *EquipmentAssetService) PatchMold(ctx context.Context, id string, delta 
 	operator := equipmentOperator(ctx)
 	var saved models.Mold
 	err = s.transaction(ctx, func(tx *gorm.DB) error {
+		if err := LockMoldGroupDirectoryForReferenceMutation(tx); err != nil {
+			return err
+		}
 		var existing models.Mold
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", strings.TrimSpace(id)).First(&existing).Error; err != nil {
 			return err
 		}
 		before := moldAuditSnapshot(existing)
+		if rawID, hasID := updates["group_id"]; hasID {
+			resolvedID, resolvedName, referenceError := ResolveMoldGroupMasterReference(tx, rawID.(string), "", MoldGroupIDString(existing.GroupID))
+			if referenceError != nil {
+				return referenceError
+			}
+			updates["group_id"], updates["group_name"] = resolvedID, resolvedName
+		} else if rawName, hasName := updates["group_name"]; hasName {
+			resolvedID, resolvedName, referenceError := ResolveMoldGroupMasterReference(tx, "", rawName.(string), MoldGroupIDString(existing.GroupID))
+			if referenceError != nil {
+				return referenceError
+			}
+			updates["group_id"], updates["group_name"] = resolvedID, resolvedName
+		}
 		updates["updated_by"] = operator
 		updates["updated_at"] = time.Now()
 		if err := tx.Model(&existing).Updates(updates).Error; err != nil {
@@ -360,6 +392,9 @@ func (s *EquipmentAssetService) UpdateMoldTelemetry(ctx context.Context, id stri
 func (s *EquipmentAssetService) BulkSyncMolds(ctx context.Context, molds []models.Mold) error {
 	operator := equipmentOperator(ctx)
 	return s.transaction(ctx, func(tx *gorm.DB) error {
+		if err := LockMoldGroupDirectoryForReferenceMutation(tx); err != nil {
+			return err
+		}
 		for index := range molds {
 			item := molds[index]
 			if strings.TrimSpace(item.ID) == "" {
@@ -368,6 +403,17 @@ func (s *EquipmentAssetService) BulkSyncMolds(ctx context.Context, molds []model
 			var existing models.Mold
 			err := tx.Where("id = ?", item.ID).First(&existing).Error
 			operation := "CREATE"
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			if item.GroupID == nil && item.GroupName == "" {
+				item.GroupID, item.GroupName = existing.GroupID, existing.GroupName
+			}
+			resolvedID, resolvedName, referenceError := ResolveMoldGroupMasterReference(tx, MoldGroupIDString(item.GroupID), item.GroupName, MoldGroupIDString(existing.GroupID))
+			if referenceError != nil {
+				return referenceError
+			}
+			item.GroupID, item.GroupName = resolvedID, resolvedName
 			var before map[string]any
 			if err == nil {
 				operation = "BULK_SYNC"

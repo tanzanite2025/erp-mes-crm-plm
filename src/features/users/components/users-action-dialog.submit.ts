@@ -25,8 +25,8 @@ export function buildUserDelta(params: {
   draft.lastName = values.lastName.trim()
   draft.permissionPresetId = values.permissionPresetId?.trim() || ''
 
-  if (values.password && values.password.trim()) {
-    draft.password = values.password.trim()
+  if (values.password) {
+    draft.password = values.password
   }
 
   return tracker.commit()
@@ -41,7 +41,7 @@ export function buildUserCreatePayload(params: {
 
   return {
     username: values.username.trim(),
-    password: values.password.trim(),
+    password: values.password,
     phoneNumber: values.phoneNumber?.trim() || '',
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
@@ -67,7 +67,7 @@ export function buildUserReplacePayload(params: {
 
   return {
     username: values.username.trim(),
-    password: values.password.trim() || undefined,
+    password: values.password || undefined,
     phoneNumber: values.phoneNumber?.trim() || '',
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),

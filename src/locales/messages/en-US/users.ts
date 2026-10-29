@@ -190,6 +190,11 @@ export const users = {
     usernameRequired: 'Username is required.',
     passwordRequired: 'Password is required.',
     passwordMin: 'Password must be at least 8 characters.',
+    passwordByteLimit:
+      'Your password is too long. Please shorten it and try again.',
+    passwordWhitespace: 'Password must not have surrounding whitespace.',
+    passwordFormat:
+      'This password contains unsupported characters or formatting. Choose another password.',
     passwordLower: 'Password must contain at least one lowercase letter.',
     passwordDigit: 'Password must contain at least one digit.',
     passwordMismatch: 'Passwords do not match.',

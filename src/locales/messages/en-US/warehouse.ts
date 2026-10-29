@@ -1,11 +1,15 @@
+import { productionMaterialHandoversOperationGuide } from './production-material-handovers-operation-guide'
+
 export const warehouse = {
+  productionMaterialHandoversGuide: productionMaterialHandoversOperationGuide,
   tabs: {
+    productionMaterialHandovers: 'Production handovers',
     stock: 'Stock List',
     reports: 'Reports',
     inbound: 'Product Inbound',
     shipment: 'Product Shipment',
     category: 'Warehouse Base Setup',
-    stocktake: 'Stocktake',
+    stocktake: 'Full Inventory Stocktake',
     adjustments: 'Adjustment Logs',
   },
   reports: {
@@ -326,13 +330,13 @@ export const warehouse = {
     },
   },
   stocktake: {
-    title: 'Inventory Stocktake Audit Center',
-    subtitle: 'Inventory Stocktake',
+    title: 'Full Inventory Stocktake Audit Center',
+    subtitle: 'Full inventory stocktake / Create tasks for the selected area',
     autoFreeze: 'Auto freeze on create',
-    initiate: 'Initiate Count',
+    initiate: 'Start Full Inventory Stocktake',
     createDialog: {
-      title: 'New Stocktake Task',
-      subtitle: 'Define scope and freeze snapshot',
+      title: 'New Full Inventory Stocktake Task',
+      subtitle: 'Select an area and freeze its inventory snapshot',
       sessionTitleLabel: '01. Task Title',
       sessionTitlePlaceholder: 'Enter task description...',
       scopeLabel: '02. Audit Scope',

@@ -7,7 +7,7 @@ import {
 
 function sanitizeSalesOrderDeltaLines(
   lines: unknown,
-  baselineAmountsByLineNo: Map<number, number>
+  baselineAmountsByLineId: Map<number, number>
 ) {
   if (!Array.isArray(lines)) {
     return lines
@@ -19,12 +19,11 @@ function sanitizeSalesOrderDeltaLines(
     }
 
     const lineRecord = line as Record<string, unknown>
-    const lineNoValue = lineRecord.lineNo
-    const lineNo =
-      typeof lineNoValue === 'number' ? lineNoValue : Number(lineNoValue)
-    const baselineAmount = Number.isFinite(lineNo)
-      ? (baselineAmountsByLineNo.get(lineNo) ?? 0)
-      : 0
+    const lineId = lineRecord.id
+    const baselineAmount =
+      typeof lineId === 'number'
+        ? (baselineAmountsByLineId.get(lineId) ?? 0)
+        : 0
 
     return {
       ...lineRecord,
@@ -65,14 +64,16 @@ export function sanitizeSalesOrderDelta(
     return sanitizedDelta
   }
 
-  const baselineAmountsByLineNo = new Map(
-    (order.lines ?? []).map((line) => [line.lineNo, Number(line.amount) || 0])
+  const baselineAmountsByLineId = new Map(
+    (order.lines ?? [])
+      .filter((line) => line.id !== undefined)
+      .map((line) => [line.id!, Number(line.amount) || 0])
   )
   const linesDelta = sanitizedDelta.lines
 
   sanitizedDelta.lines = {
     o: linesDelta.o,
-    n: sanitizeSalesOrderDeltaLines(linesDelta.n, baselineAmountsByLineNo),
+    n: sanitizeSalesOrderDeltaLines(linesDelta.n, baselineAmountsByLineId),
   }
 
   return sanitizedDelta

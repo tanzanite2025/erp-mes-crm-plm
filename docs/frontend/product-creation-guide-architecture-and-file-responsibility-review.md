@@ -1,5 +1,7 @@
 # 产品建档向导架构与文件职责梳理
 
+指南、知识问答、字段帮助及正式业务文档的统一内容边界见[知识库、操作指南与业务文档职责契约](../architecture/knowledge-base-operation-guides-and-business-document-source-ownership-boundaries.md)。产品指南保留步骤编排，技术规范继续由工程主库管理；后续知识入口使用解释与来源链接，不复制文档或接管预览。
+
 核查日期：2026-10-22；技术规范与模具主库架构回溯更新于 2026-10-23（第 12、13 节）。
 
 范围：`/engineering/product-creation-guide` 说明页、产品管理与手册之间的入口、HOME 共用建档入口、四步向导、第二步分类／基础型号弹窗，以及它们直接使用的表单、查询和保存模块。
@@ -227,17 +229,17 @@ flowchart TD
 
 普通产品表单和向导第三步共用同一个工艺字段。下拉可以直接选已有规范，也可以查看当前规范，或打开主库弹窗搜索、查看及新增。工程管理 `/engineering-db/specs` 始终是唯一文档主库，产品只存 `engineeringSpecId`；此入口不建立产品专属文档副本。
 
-| 文件 | 职责 |
-| --- | --- |
-| `engineering/components/product/product-engineering-technical-specification-selection-field.tsx` | 产品工艺下拉与弹窗开关；确认后只更新产品草稿字段 |
-| `engineering-db/components/technical-specification-document-library-selection-dialog.tsx` | 主库全量读取、搜索、选择、新增入口和选用前核对 |
-| `engineering-db/components/technical-specification-document-preview-dialog.tsx` | 按 ID 读取主库详情、显示修订号及附件；PDF/Excel 预览、Word 下载 |
-| `engineering-db/components/spec-action-dialog.tsx` | 主库及产品入口共用的规范编辑器；上传或保存期间防重复提交，失败保留草稿 |
-| `engineering-db/hooks/use-technical-specification-document-write-actions.ts` | 共用创建／修改、主库查询缓存刷新 |
-| `engineering-db/queries/technical-specification-document-master-library-query-options.ts` | 主库列表／详情的查询键与刷新策略；产品表单、主库页和选择弹窗共用 |
-| `engineering-db/services/specs-service.ts` | 技术规范主库 HTTP 契约，顶层名称、身份、修订号和保存版本的权威映射 |
-| `engineering-db/services/technical-specification-document-source-file-upload-service.ts` | 调用现有服务器附件服务，支持 PDF、xlsx、docx |
-| `server/services/engineering_technical_specification_document_validation_and_product_reference.go` | 主库校验、服务器身份分配及产品引用校验与事务锁 |
+| 文件                                                                                               | 职责                                                                   |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `engineering/components/product/product-engineering-technical-specification-selection-field.tsx`   | 产品工艺下拉与弹窗开关；确认后只更新产品草稿字段                       |
+| `engineering-db/components/technical-specification-document-library-selection-dialog.tsx`          | 主库全量读取、搜索、选择、新增入口和选用前核对                         |
+| `engineering-db/components/technical-specification-document-preview-dialog.tsx`                    | 按 ID 读取主库详情、显示修订号及附件；PDF/Excel 预览、Word 下载        |
+| `engineering-db/components/spec-action-dialog.tsx`                                                 | 主库及产品入口共用的规范编辑器；上传或保存期间防重复提交，失败保留草稿 |
+| `engineering-db/hooks/use-technical-specification-document-write-actions.ts`                       | 共用创建／修改、主库查询缓存刷新                                       |
+| `engineering-db/queries/technical-specification-document-master-library-query-options.ts`          | 主库列表／详情的查询键与刷新策略；产品表单、主库页和选择弹窗共用       |
+| `engineering-db/services/specs-service.ts`                                                         | 技术规范主库 HTTP 契约，顶层名称、身份、修订号和保存版本的权威映射     |
+| `engineering-db/services/technical-specification-document-source-file-upload-service.ts`           | 调用现有服务器附件服务，支持 PDF、xlsx、docx                           |
+| `server/services/engineering_technical_specification_document_validation_and_product_reference.go` | 主库校验、服务器身份分配及产品引用校验与事务锁                         |
 
 新增文档、确认选用、保存产品分别生效：新增成功即入主库；取消选用不会删除已入库文档，也不改变产品原关联；确认选用后仍需保存产品。新增和上传失败都保留当前产品草稿。新增沿用管理权限，后端继续强制权限校验。列表读取失败显示重试提示，不能当作“暂无文档”；修订版本使用 `revisionNo`，保存次数 `version` 仅用于并发校验。所有主库入口共用现有变更记录，已被产品引用的文档禁止删除。历史浏览器本地附件无法跨电脑读取，需要重新上传至服务器。
 
@@ -260,33 +262,33 @@ flowchart TD
 
 本轮验证：8 个前端测试文件共 59 项通过；10 项真实 PostgreSQL HTTP、并发引用与服务器附件测试通过，新增覆盖清空说明、保存 `false`、错误字段类型和拒绝写入后的事务一致性。全项目 TypeScript 构建、改动模块 ESLint 和格式检查通过。此前浏览器验证的范围保留于上一段，本轮未重复执行视觉验证。当前核查范围内未发现其他数据链路断点；不将此结论扩大为全项目不存在问题。
 
-
 ## 13. 第三步关联模具分组：复用设备工装模具主库
 
-普通产品表单和建档第三步共用关联模具分组字段。下拉既能选择已有组名，也能查看当前组内模具，或打开主库弹窗搜索、查看、选用及新增；无需关闭产品草稿再前往其他页面查找。
+普通产品表单和建档第三步共用关联模具分组字段。下拉既能选择已有分组，也能查看当前组内模具，或打开主库弹窗搜索、查看、选用及新增；无需关闭产品草稿再前往其他页面查找。
 
-现有分组来自模具记录的 `groupName` 汇总，不是独立分组表。产品仍保存 `moldGroup` 组名，关联整个分组，组内记录各代表一副具体模具。新增入口复用设备工装的模具编辑器，填写已有或新组名并保存真实模具；不新建产品域专属模具库，不为创建组名生成虚假模具。产品入口的新增模具须填写组名才能供分组选用，设备工装中的普通模具建档仍允许不分组。
+分组由设备工装的独立 `mold_groups` 主档维护，模具以 `groupId`、产品以 `moldGroupId` 关联；名称仅用于显示。分组可以先独立建立，随后录入模具。分组管理提供新增、编辑、启停、引用数量及删除保护；改名不改变关联身份，停用保留已有引用并禁止新增关联。产品入口新增模具必须选择分组，普通资产建档仍允许暂不分组。
 
-新增模具、确认选用分组、保存产品分别生效：模具保存成功即进入设备工装主库；取消选用会保留该模具，产品原分组保持；确认选用只改产品草稿；产品保存时才持久化分组关联。确认前重新读取主库组名，已消失的分组或读取失败不能直接回写产品。
+新增分组、新增模具、确认选用分组、保存产品分别生效：分组与模具保存成功即进入设备工装主库；取消选用保留已创建的主档，产品原分组保持；确认选用只改产品草稿；保存产品才持久化分组 ID。确认前重新读取主档，以稳定 ID 核对存在且启用，并采用最新显示名称；读取失败不能回写产品。
 
-| 文件 | 职责 |
-| --- | --- |
-| `engineering/components/product/product-mold-master-library-group-selection-field.tsx` | 产品字段与弹窗开关，确认后更新产品草稿 |
-| `equipment-tooling/components/mold-master-library-group-selection-dialog.tsx` | 全量读取、按分组或模具搜索、查看／新增入口与选用前核对 |
-| `equipment-tooling/components/mold-master-library-group-preview-dialog.tsx` | 查看组内具体模具编号、名称、状态、库位和寿命信息 |
-| `equipment-tooling/components/mold-master-library-group-name-form-field.tsx` | 模具组名目录的加载／失败重试、已有选择与手填切换、草稿展示；不提交模具或产品 |
-| `equipment-tooling/components/mold-action-dialog.tsx` | 设备工装与产品入口共用的真实模具编辑器；等保存成功后关闭，失败保留草稿 |
-| `equipment-tooling/hooks/use-mold-master-library-create-action.ts` | 新增模具到原主库、采用服务器返回记录并刷新共享目录 |
-| `equipment-tooling/mold-master-library-query-keys.ts`、`queries/mold-master-library-query-options.ts`、`queries/invalidate-mold-master-library-queries-after-write.ts` | 统一模具／全量选用目录／组名的缓存标识、查询配置与写后刷新 |
-| `equipment-tooling/services/mold-core-service.ts`、`services/mold-transaction-service.ts` | 复用既有 GET／POST /molds 与 /molds/group-names 接口，不另建保存路径 |
+| 文件                                                                                                                                                                                                                           | 职责                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `engineering/components/product/product-mold-master-library-group-selection-field.tsx`                                                                                                                                         | 产品字段与弹窗开关，确认后更新产品草稿                                    |
+| `equipment-tooling/components/mold-group-master-library-selection-dialog.tsx`                                                                                                                                                  | 全量读取、按分组或模具搜索、查看／新增入口与选用前核对                    |
+| `equipment-tooling/components/mold-group-master-management-dialog.tsx`、`components/mold-group-master-editor-dialog.tsx`                                                                                                       | 独立主档管理、名称与说明编辑、启停、引用计数及删除保护                    |
+| `equipment-tooling/components/mold-master-library-group-preview-dialog.tsx`                                                                                                                                                    | 查看组内具体模具编号、名称、状态、库位和寿命信息                          |
+| `equipment-tooling/components/mold-group-master-selection-form-field.tsx`                                                                                                                                                      | 独立分组目录加载、失败重试、ID 选择及就地新建／管理入口；不提交模具或产品 |
+| `equipment-tooling/components/mold-action-dialog.tsx`                                                                                                                                                                          | 设备工装与产品入口共用的真实模具编辑器；等保存成功后关闭，失败保留草稿    |
+| `equipment-tooling/hooks/use-mold-master-library-create-action.ts`                                                                                                                                                             | 新增模具到原主库、采用服务器返回记录并刷新共享目录                        |
+| `equipment-tooling/mold-master-library-query-keys.ts`、`queries/mold-master-library-query-options.ts`、`queries/mold-group-master-directory-query-options.ts`、`queries/invalidate-mold-master-library-queries-after-write.ts` | 统一模具、分组主档、全量选用目录的缓存标识、查询配置与写后刷新            |
+| `equipment-tooling/services/mold-group-master-service.ts`、`services/mold-core-service.ts`、`services/mold-transaction-service.ts`                                                                                             | `/mold-groups` 负责分组主档；原 `/molds` 路径保存具体模具                 |
 
-主库选择与查看使用 `/molds?options=true` 读取全部记录，避免默认 50 条分页漏掉分组。产品表单和模具编辑器改用同一组名查询；从主库或产品入口保存模具后，共享缓存统一失效。读取失败与空主库分别提示，未填写组名的模具不出现在分组选项中。新增权限沿用 `action_equipment_mold_manage`，服务器仍使用现有设备工装读取及模具写入权限。
+主库选择与查看使用 `/molds?options=true` 读取全部具体模具，分组目录独立读取 `/mold-groups`，因此空分组不会消失。产品表单和模具编辑器使用同一主档查询；分组或模具写入后统一刷新分组、模具和产品缓存。读取失败与空目录分别提示。分组读写沿用设备工装读取和 `action_equipment_mold_manage` 权限。详见 [模具分组主档、稳定引用与迁移契约](../architecture/mold-group-master-directory-stable-identity-product-bindings-and-legacy-migration.md)。
 
 复用前补齐了原模具弹窗的异步保存边界：调用方返回并等待真实保存 Promise；重复提交、上传或保存期间关闭均受保护；上传失败后同一文件可重试；子表单提交阻止事件冒泡，避免触发外层产品保存。弹窗采用统一 85vh 高度、桌面 896px 宽度和固定底部操作区；标签 12px、控件及占位文字 13px、胶囊按钮。窄屏搜索框单独占满一行；Chrome 109 使用模具域局部浮层兼容样式。
 
-验证：10 个前端相关测试文件共 69 项通过；1 项真实 PostgreSQL HTTP 测试覆盖超过默认分页数量的模具全量读取、新增模具后分组可选、产品关联保存读回及两侧审计。现代 Chromium 与 Chrome 109 均完成已有分组选用、组内查看、搜索、新增失败重试、取消选用保留主库记录、确认只更新产品草稿及最终保存流程，并检查上传失败后同一文件重试、上传期间防误操作及删除草稿图片不触发保存。中英文、1440／390 像素视口、空库／读取失败和只读权限均已核对，截图经视觉检查。浏览器验证使用内存主库、上传及产品保存替身，数据库验证使用独立 schema；全项目 TypeScript 构建、改动模块 ESLint、格式和差异检查通过。`drawing-mgmt.tsx` 仅调整查询键导入，保留该文件原有的两条 Hook 警告。
+历史验证（下述为原组名方案的记录，当前契约以上述 ID 主档及迁移文档为准）：10 个前端相关测试文件共 69 项通过；1 项真实 PostgreSQL HTTP 测试覆盖超过默认分页数量的模具全量读取、新增模具后分组可选、产品关联保存读回及两侧审计。现代 Chromium 与 Chrome 109 均完成已有分组选用、组内查看、搜索、新增失败重试、取消选用保留主库记录、确认只更新产品草稿及最终保存流程，并检查上传失败后同一文件重试、上传期间防误操作及删除草稿图片不触发保存。中英文、1440／390 像素视口、空库／读取失败和只读权限均已核对，截图经视觉检查。浏览器验证使用内存主库、上传及产品保存替身，数据库验证使用独立 schema；全项目 TypeScript 构建、改动模块 ESLint、格式和差异检查通过。`drawing-mgmt.tsx` 仅调整查询键导入，保留该文件原有的两条 Hook 警告。
 
-### 13.1 模具主库关联的职责与数据链路回溯（2026-10-23）
+### 13.1 历史回溯：原组名关联方案（2026-10-23，已由独立分组主档替代）
 
 本轮按“产品字段 → 主库选用 → 模具建档 → 缓存刷新 → 产品创建／编辑 → 数据库读回 → 审计”核对，修复了以下问题：
 

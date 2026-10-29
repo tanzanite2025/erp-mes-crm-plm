@@ -54,11 +54,7 @@ export function TemplateEditorDialog({
         if (!isSaving) onOpenChange(nextOpen)
       }}
     >
-      <DialogContent
-        size='full'
-        className={dialogClasses.content}
-        closeButtonClassName='top-4 end-4 flex size-8 items-center justify-center rounded-full hover:bg-muted/40'
-      >
+      <DialogContent size='full' className={dialogClasses.content}>
         <DialogHeader className={dialogClasses.header}>
           {wizardHeader}
           <DialogTitle className={dialogClasses.title}>

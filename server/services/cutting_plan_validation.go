@@ -61,7 +61,6 @@ type cuttingPlanPayload struct {
 	ProductID                 string                   `json:"productId"`
 	ProductCode               string                   `json:"productCode"`
 	ProductName               string                   `json:"productName"`
-	HoleCount                 string                   `json:"holeCount"`
 	DocumentNo                string                   `json:"documentNo"`
 	RevisionNo                string                   `json:"revisionNo"`
 	EffectiveDate             string                   `json:"effectiveDate"`
@@ -138,7 +137,6 @@ func normalizeCuttingPlanPayload(payload *cuttingPlanPayload) {
 	payload.ProductID = strings.TrimSpace(payload.ProductID)
 	payload.ProductCode = strings.TrimSpace(payload.ProductCode)
 	payload.ProductName = strings.TrimSpace(payload.ProductName)
-	payload.HoleCount = strings.TrimSpace(payload.HoleCount)
 	payload.DocumentNo = strings.TrimSpace(payload.DocumentNo)
 	payload.RevisionNo = strings.TrimSpace(payload.RevisionNo)
 	payload.EffectiveDate = strings.TrimSpace(payload.EffectiveDate)
@@ -197,9 +195,6 @@ func validateCuttingPlanPayload(tx *gorm.DB, payload *cuttingPlanPayload) error 
 	if payload.ProductID == "" {
 		return &CuttingPlanValidationError{Message: "裁纱单必须绑定产品型号"}
 	}
-	if payload.HoleCount == "" {
-		return &CuttingPlanValidationError{Message: "裁纱单必须填写孔数"}
-	}
 	if len(payload.Lines) == 0 {
 		return &CuttingPlanValidationError{Message: "裁纱单至少需要一条裁片明细"}
 	}
@@ -214,9 +209,9 @@ func validateCuttingPlanPayload(tx *gorm.DB, payload *cuttingPlanPayload) error 
 	payload.ProductCode = strings.TrimSpace(product.SKU)
 	payload.ProductName = strings.TrimSpace(product.Name)
 
-	payload.Name = buildValidatedCuttingPlanName(payload.ProductName, payload.ProductCode, payload.HoleCount)
+	payload.Name = buildValidatedCuttingPlanName(payload.ProductName, payload.ProductCode)
 	if payload.Name == "" {
-		return &CuttingPlanValidationError{Message: "裁纱单名称生成失败，请检查产品型号和孔数"}
+		return &CuttingPlanValidationError{Message: "裁纱单名称生成失败，请检查产品型号"}
 	}
 
 	if payload.PrepregSpecID != "" {
@@ -328,13 +323,12 @@ func normalizeCuttingPlanStatus(raw string) string {
 	}
 }
 
-func buildValidatedCuttingPlanName(productName string, productCode string, holeCount string) string {
+func buildValidatedCuttingPlanName(productName string, productCode string) string {
 	model := firstNonEmptyCuttingPlanValue(strings.TrimSpace(productName), strings.TrimSpace(productCode))
-	hole := strings.TrimSpace(holeCount)
-	if model == "" || hole == "" {
+	if model == "" {
 		return ""
 	}
-	return model + "-" + hole + "孔裁纱单"
+	return model + "-裁纱单"
 }
 
 func normalizeCuttingPlanStringList(values []string) []string {

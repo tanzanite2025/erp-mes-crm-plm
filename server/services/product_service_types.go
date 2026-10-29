@@ -37,6 +37,7 @@ type SaveProductAPIRequest struct {
 	Steerer           string                            `json:"steerer"`
 	Image             string                            `json:"image"`
 	Restrictions      []string                          `json:"restrictions"`
+	MoldGroupID       string                            `json:"moldGroupId"`
 	MoldGroup         string                            `json:"moldGroup"`
 	Description       string                            `json:"description"`
 	EngineeringSpecID string                            `json:"engineeringSpecId"`
@@ -76,6 +77,7 @@ type ProductWriteInput struct {
 	Steerer           string
 	Image             string
 	Restrictions      []string
+	MoldGroupID       string
 	MoldGroup         string
 	Description       string
 	EngineeringSpecID string
@@ -166,6 +168,7 @@ func toProductWriteInput(input SaveProductAPIRequest) ProductWriteInput {
 		Steerer:           input.Steerer,
 		Image:             input.Image,
 		Restrictions:      append([]string(nil), input.Restrictions...),
+		MoldGroupID:       input.MoldGroupID,
 		MoldGroup:         input.MoldGroup,
 		Description:       input.Description,
 		EngineeringSpecID: input.EngineeringSpecID,
@@ -218,6 +221,7 @@ func toProductModel(input ProductWriteInput) models.Product {
 		Steerer:           input.Steerer,
 		Image:             input.Image,
 		Restrictions:      encodeProductJSONBytes(input.Restrictions),
+		MoldGroupID:       OptionalMoldGroupIDPointer(input.MoldGroupID),
 		MoldGroup:         input.MoldGroup,
 		Description:       input.Description,
 		EngineeringSpecID: input.EngineeringSpecID,
@@ -257,6 +261,7 @@ func toProductAPIRequest(model models.Product) SaveProductAPIRequest {
 		Steerer:           model.Steerer,
 		Image:             model.Image,
 		Restrictions:      restrictions,
+		MoldGroupID:       MoldGroupIDString(model.MoldGroupID),
 		MoldGroup:         model.MoldGroup,
 		Description:       model.Description,
 		EngineeringSpecID: model.EngineeringSpecID,

@@ -48,6 +48,7 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleTaxRate:               {authz.MenuSettings, authz.MenuTrading},
 	services.AuditModuleExchangeRateConfig:    {authz.MenuSettings, authz.MenuTrading},
 	services.AuditModuleMold:                  {authz.MenuEquipment},
+	services.AuditModuleMoldGroup:             {authz.MenuEquipment},
 	services.AuditModuleFurnace:               {authz.MenuEquipment},
 	services.AuditModuleMaintenanceRecord:     {authz.MenuEquipment},
 	services.AuditModuleMoldDrawing:           {authz.MenuEquipment},

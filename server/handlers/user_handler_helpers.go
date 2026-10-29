@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"strings"
 	"xdfc-server/authz"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
+	"xdfc-server/security"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var allowedUserStatuses = map[string]struct{}{
@@ -21,24 +20,8 @@ func isProtectedUserAccount(user models.User) bool {
 	return user.IsSystemProtected()
 }
 
-func isLikelyBcryptHash(value string) bool {
-	return strings.HasPrefix(value, "$2a$") || strings.HasPrefix(value, "$2b$") || strings.HasPrefix(value, "$2y$")
-}
-
 func hashUserPassword(raw string) (string, error) {
-	plain := strings.TrimSpace(raw)
-	if plain == "" {
-		return "", errors.New("password cannot be empty")
-	}
-	if isLikelyBcryptHash(plain) {
-		return "", errors.New("password must be plain text")
-	}
-
-	hashed, err := bcrypt.GenerateFromPassword([]byte(plain), 11)
-	if err != nil {
-		return "", err
-	}
-	return string(hashed), nil
+	return security.HashNewUserPasswordWithValidation(raw)
 }
 
 func hasContextPermission(c *gin.Context, required string) bool {

@@ -35,6 +35,7 @@ type PlanningSelectionSectionProps = {
   templateMatchHint?: string
   onOrderIdChange: (value: string) => void
   onLineNoChange: (value: string) => void
+  onTemplateIdChange: (value: string) => void
   onCreateExecution: () => void
 }
 
@@ -53,12 +54,9 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
     templateMatchHint,
     onOrderIdChange,
     onLineNoChange,
+    onTemplateIdChange,
     onCreateExecution,
   } = props
-
-  const selectedTemplate = templates.find(
-    (template) => template.id === templateId
-  )
 
   return (
     <section className={`${APS_PRIMARY_SECTION_CLASS} p-3`}>
@@ -162,16 +160,26 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
           <p className={APS_KICKER_CLASS}>
             {t('apsScheduling.cuttingIssuance.planning.templateLabel')}
           </p>
-          <div
-            className={`${APS_INPUT_CLASS} flex items-center gap-2 px-3 text-sm`}
+          <Select
+            value={templateId}
+            onValueChange={onTemplateIdChange}
+            disabled={isLoading || templates.length <= 1}
           >
-            <Lock className='size-4 shrink-0 text-muted-foreground' />
-            <span className='truncate font-semibold'>
-              {selectedTemplate
-                ? `${selectedTemplate.planName} (${selectedTemplate.version})`
-                : t('apsScheduling.cuttingIssuance.planning.templateWaiting')}
-            </span>
-          </div>
+            <SelectTrigger className={`${APS_INPUT_CLASS} w-full`}>
+              <SelectValue
+                placeholder={t(
+                  'apsScheduling.cuttingIssuance.planning.templateWaiting'
+                )}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.planName} ({template.version})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className='space-y-0.5'>

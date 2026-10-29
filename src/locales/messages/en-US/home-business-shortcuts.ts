@@ -32,9 +32,14 @@ export const home = {
     quality:
       'Maintain quality standards and carry out inspections, audits and quality operations.',
     warehouseAndLogistics:
-      'Manage inventory, receipts, shipments, stocktakes, packaging and logistics settings.',
-    assets:
-      'Manage equipment, tooling, maintenance, personnel and laboratory work.',
+      'Manage warehouses, material records, inventory, receipts, shipments and stocktakes.',
+    logistics:
+      'Manage vehicle matching, loading specifications, packaging and logistics settings.',
+    assets: 'Manage equipment, tooling, furnaces and maintenance.',
+    experimentalCenter:
+      'Manage R&D lab equipment, test projects, performance validation and lab reports.',
+    orgPersonnel:
+      'Manage organizational structure, employee records, account permissions and attendance.',
     finance: 'Maintain financial settings and handle settlements.',
     messagesAndApproval:
       'Handle approvals and review business messages and execution records.',

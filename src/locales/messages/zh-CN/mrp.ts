@@ -1,12 +1,27 @@
+import { partRequirementsOperationGuide } from './part-requirements-operation-guide'
+import { productionMaterialIssuance } from './production-material-issuance'
+import { productionMaterialIssuanceOperationGuide } from './production-material-issuance-operation-guide'
+import { productionMaterialRequirementBomBasisReview } from './production-material-requirement-bom-basis-review'
+
 export const mrp = {
+  operationGuide: partRequirementsOperationGuide,
+  productionMaterialIssuance,
+  productionMaterialIssuanceGuide: productionMaterialIssuanceOperationGuide,
   tabs: {
     title: 'MRP',
     requirements: '\u6599\u53f7\u9700\u6c42',
   },
   requirements: {
+    orderLoading: {
+      loading: '正在加载全部可分析订单…',
+      failedTitle: '订单范围加载失败',
+      failedDescription: '当前列表不能作为完整分析范围，请重新加载后再选单。',
+      retry: '重新加载订单',
+    },
+    basisReview: productionMaterialRequirementBomBasisReview,
     pageTitle: 'MRP 技术需求聚合',
     pageDescription:
-      '基于 BOM 架构的物料需求分析：实时库存对冲、缺料预警与供应商交期协同',
+      '根据所选销售订单与已发布生产 BOM 汇总物料需求，并与库存比较预计缺口',
     helperText:
       '请选择下方销售订单及明细后执行分析，查看合并后的物料需求清单与层级分布。',
     analyze: '聚合分析',
@@ -28,7 +43,7 @@ export const mrp = {
       exportSuccessDescription: '物料需求下发单已生成',
       exportFailed: '导出失败',
       exportFailedDescription: '生成 Excel 文件时发生错误',
-      realtimeNotice: '实时数据：已同步最新 BOM 与订单',
+      realtimeNotice: '分析时数据快照：订单、BOM 或库存变更后请重新分析',
       shareLink: '生成仓库共享链接',
     },
     tabs: {
@@ -54,20 +69,22 @@ export const mrp = {
       shortageOnly: '仅看缺料',
       empty: '未找到匹配的物料需求',
       items: '{{count}} 项',
-      packagingAtLeast: '>= {{count}} {{unit}}',
+      packagingAtLeast: '总需求包装 {{count}} {{unit}}',
       groupedOrders: '按层级与关联订单聚合',
-      usableStockHint: '现存 {{inventory}} / 锁定 {{locked}}',
-      totalSupplyLabel: '有效供应',
+      usableStockHint: '现存 {{inventory}} / 有效占用 {{locked}}',
+      totalSupplyLabel: '本组有效供应',
       pendingIntegration: '待接入',
-      pendingIntegrationHint: '生产模块对接后自动同步',
+      pendingIntegrationHint: '尚未接入，暂不计入供应',
+      formulaLineAllocated: '本组分配 {{allocated}} {{unit}}（分析预览）',
       formulaTitle: '计算公式',
-      formulaLineUsable: '(实物库存 {{inventory}} - 待检锁定 {{locked}})',
+      formulaLineUsable:
+        '现存 {{inventory}} / 有效占用 {{locked}}，按批次核对可用量',
       formulaLinePurchase: '+ 采购在途 {{purchase}}',
       formulaLineWip: '+ 生产在制 {{wip}}',
       formulaLineTotal: '= {{total}} {{unit}}',
       buckets: {
         inventory: '实物库存',
-        locked: '待检锁定',
+        locked: '有效占用',
         purchase: '采购在途',
         wip: '生产在制',
       },
@@ -89,18 +106,13 @@ export const mrp = {
       sourceOrders: '{{count}} 个关联订单',
     },
     selectionTree: {
+      basisReviewHint:
+        '这里只选择订单范围；分析时统一核对生产 BOM、性能版本和重量，多份适用配方需要明确选择。',
       productCodeLabel: '料号',
       productModelLabel: '型号',
       orderLines: '{{count}} 个明细型号',
       deliveryDate: '交期：{{date}}',
-      noBom: '该产品尚未配置可用 BOM，当前无法进入物料分析。',
-      noBomTitle: '选择前阻断：缺少可用 BOM',
-      bomPreview: 'BOM 构成预览（{{count}} 项）',
-      otherSection: '其他',
-      moreComponents: '+ {{count}} 个更多关键组件',
       selectedCount: '已选中 {{count}} 个生产项',
-      blockedByMissingBom:
-        '{{count}} 个已选生产项缺少可用 BOM，需先修复后再分析',
       analyzeReady: '准备进行物料聚合计算',
       cancel: '取消',
       analyze: '分析需求',
@@ -139,7 +151,8 @@ export const mrp = {
       packagingFormulaForward: '1 {{packUnit}} = {{factor}} {{unit}}',
       packagingFormulaReverse: '1 {{unit}} = {{factor}} {{packUnit}}',
       shortageEnough: '充足',
-      shortageWithPack: '{{gap}} {{unit}}（约 {{packQty}} {{packUnit}}）',
+      shortageWithPack:
+        '{{gap}} {{unit}}（总需求包装 {{packQty}} {{packUnit}}）',
       issueDept: '制定单位：购销决策中心',
       recipientInfo:
         '收文单位：采购、物控、备料、生产现场各1份（注：本报表已含实时库存差额）',

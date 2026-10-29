@@ -6,10 +6,10 @@ import {
   useState,
   type PointerEvent,
 } from 'react'
-import { NotebookPen, X } from 'lucide-react'
+import { NotebookPen } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePersonalWorkbenchBottomDrawerStore } from '../hooks/use-personal-workbench-bottom-drawer-store'
 import { PersonalWorkbenchBottomDrawerRecordsAndWorkspaceContent } from './personal-workbench-bottom-drawer-records-and-workspace-content'
@@ -197,16 +197,10 @@ export function PersonalWorkbenchBottomDrawer() {
             </div>
           </div>
 
-          <Button
-            type='button'
+          <FloatingSurfaceCloseButton
             aria-label='关闭个人记录底部抽屉'
-            variant='ghost'
-            size='icon'
-            className='size-8 rounded-full'
             onClick={closePersonalWorkbenchBottomDrawerAndResetDragState}
-          >
-            <X className='size-4' />
-          </Button>
+          />
         </div>
       </div>
 

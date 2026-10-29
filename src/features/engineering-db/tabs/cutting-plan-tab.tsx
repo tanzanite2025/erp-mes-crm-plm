@@ -108,7 +108,6 @@ export function CuttingPlanTab() {
         plan.name,
         plan.productCode,
         plan.productName,
-        plan.holeCount,
         plan.documentNo,
         plan.carbonFiberModel,
         plan.resinModel,
@@ -199,9 +198,6 @@ export function CuttingPlanTab() {
     switch (firstIssue.kind) {
       case 'missing_product_binding':
         toast.error(t('engineering.cuttingPlan.toasts.productRequired'))
-        return
-      case 'missing_hole_count':
-        toast.error(t('engineering.cuttingPlan.toasts.holeCountRequired'))
         return
       case 'name_generate_failed':
         toast.error(t('engineering.cuttingPlan.toasts.nameGenerateFailed'))
@@ -409,11 +405,7 @@ export function CuttingPlanTab() {
                     <Info
                       icon={FileSpreadsheet}
                       label={t('engineering.cuttingPlan.fields.product')}
-                      value={
-                        plan.holeCount
-                          ? `${plan.productName || plan.productCode || '--'} / ${t('engineering.cuttingPlan.values.holeCount', { count: plan.holeCount })}`
-                          : plan.productName || plan.productCode || '--'
-                      }
+                      value={plan.productName || plan.productCode || '--'}
                     />
                     <Info
                       icon={CalendarDays}

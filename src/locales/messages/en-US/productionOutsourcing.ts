@@ -1,4 +1,26 @@
+import { productionOutsourcingOperationGuides } from './production-outsourcing-task-partner-and-scanning-operation-guides'
+
 export const productionOutsourcing = {
+  operationGuides: productionOutsourcingOperationGuides,
+  barcodeRegistration: {
+    title: 'Line barcode registration (optional)',
+    entry: 'Barcodes (optional · {{count}})',
+    optionalExplanation:
+      'Scan or type a barcode and press Enter to add it to this line. Registration may be empty or incomplete and need not match the task quantity. Saving does not send, return, or advance production.',
+    scanPlaceholder: 'Scan a barcode and press Enter',
+    add: 'Add',
+    count: '{{count}} registered barcodes (not sent quantity)',
+    empty:
+      'No barcodes registered. You can add them later; task release is unaffected.',
+    duplicate: 'This barcode is already registered on this line.',
+    invalidBarcode:
+      'Barcodes cannot exceed 120 characters or contain control characters.',
+    limit: 'A line can register up to 1000 barcodes.',
+    remove: 'Remove barcode {{barcode}}',
+    saved: 'Line barcode registration saved',
+    processUnbound: 'Process not specified',
+    pickRegistered: 'Choose a registered barcode or scan directly',
+  },
   layout: {
     tabs: {
       orders: 'Outsource Tasks',
@@ -83,10 +105,10 @@ export const productionOutsourcing = {
       createTitle: 'New outsource task',
       editTitle: 'Edit outsource task',
       description:
-        'The first version establishes the outsource task link. Send, return, inspection, and barcode status will be wired into execution pages later.',
+        'Enter the source, partner and quantity first. After release, select a line in Send/Return Inspection to optionally register barcodes.',
       linesTitle: 'Outsource lines',
       linesDescription:
-        'Each line represents the outsourced quantity for one product/process. Future barcode transfer and inspection will reference these lines.',
+        'Each line identifies a product and outsourced quantity. Barcode registration, send, return and inspection refer to this line.',
       statusLocked:
         'Status is advanced by release, send, return, and inspection actions, not by direct form editing.',
     },
@@ -109,9 +131,23 @@ export const productionOutsourcing = {
     },
   },
   execution: {
+    review: {
+      read: 'Read barcode and review',
+      currentProcess: 'Current barcode process',
+      available: 'Maximum available for this barcode',
+      inspectionDestination: 'After inspection confirmation: {{process}}',
+      routeCompleted: 'Route completed',
+      sendEffect:
+        'Confirmation transfers custody to the outsource partner. The process stays unchanged.',
+      returnEffect:
+        'Confirmation returns custody to the factory. Inspection determines the next process.',
+      confirmSend: 'Confirm outsource send',
+      confirmReturn: 'Confirm outsource return',
+      confirmInspection: 'Confirm inspection',
+    },
     title: 'Outsource Send/Return Inspection',
     description:
-      'Record product barcode send, return, and return inspection by outsource task line. Inspection results advance the barcode production operation state.',
+      'Select a task line to optionally register barcodes or handle send, return and inspection. Send and return record custody; inspection results determine process advancement.',
     searchPlaceholder: 'Search task no, source no, customer, or partner',
     empty: 'No executable outsource tasks',
     stats: {
@@ -123,6 +159,7 @@ export const productionOutsourcing = {
     diagnostics: {
       title: 'Operations diagnostics',
       loading: 'Reading diagnostics',
+      loadFailed: 'Could not read diagnostics. Refresh to try again.',
       statusOk: 'Data chain is healthy',
       statusIssues: '{{count}} item(s) need attention',
       truncated: 'Results truncated',

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
-import { XIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot='sheet' {...props} />
@@ -64,15 +64,15 @@ function SheetContent({
             'inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top',
           side === 'bottom' &&
             'inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
-          className
+          className,
+          '[&>[data-slot=sheet-header]]:pe-14'
         )}
         {...props}
         data-mobile-floating-surface='sheet'
       >
         {children}
-        <SheetPrimitive.Close className='absolute end-4 top-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary'>
-          <XIcon className='size-4' />
-          <span className='sr-only'>Close</span>
+        <SheetPrimitive.Close data-slot='sheet-close' asChild>
+          <FloatingSurfaceCloseButton className='absolute end-4 top-4 z-50' />
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>

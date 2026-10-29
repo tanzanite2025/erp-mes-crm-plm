@@ -1,14 +1,17 @@
+import { productionMaterialCreationOperationGuide } from './production-material-creation-operation-guide'
+
 export const materialArchive = {
+  operationGuide: productionMaterialCreationOperationGuide,
   layout: {
-    title: 'Material Resource Center',
+    title: 'Production Material Archive',
     description:
-      'A digital governance workspace for in-house materials, semi-finished goods, and raw material specifications',
+      'Maintain codes, specifications, units, and categories for materials associated with the built-in Production Material Warehouse',
     manageCategories: 'Manage Material Categories',
     categoryDialogTitle: 'Material Category Management',
     categoryDialogDescription:
       'Add, edit, or remove category tags for material archives here.',
     tabs: {
-      all: 'All Materials',
+      all: 'Production Materials',
       assembly: 'Assembly Rules',
     },
   },
@@ -136,7 +139,7 @@ export const materialArchive = {
     confirm: 'Save Material Archive',
   },
   excel: {
-    allMaterials: 'All Materials',
+    allMaterials: 'Production Materials',
     maintenanceSheetName: 'Material Maintenance',
     fileName: 'Material_Maintenance_{{category}}_{{date}}.xlsx',
     headers: {

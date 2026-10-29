@@ -96,6 +96,9 @@ type OutsourceOrderLine struct {
 	Version          int64                 `gorm:"default:1" json:"version"`
 	Transfers        []OutsourceTransfer   `gorm:"foreignKey:OutsourceOrderLineID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"transfers,omitempty"`
 	Inspections      []OutsourceInspection `gorm:"foreignKey:OutsourceOrderLineID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"inspections,omitempty"`
+
+	// Optional registration identifies planned products; it creates no execution facts.
+	RegisteredProductBarcodes []string `gorm:"serializer:json;type:text" json:"registeredProductBarcodes"`
 }
 
 func (OutsourceOrderLine) TableName() string {

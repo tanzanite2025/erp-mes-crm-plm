@@ -65,7 +65,7 @@ export function ModuleTabbedLayout({
       <Main
         fixed
         className={cn(
-          'flex-1 overflow-y-auto pt-0 pb-5 [scrollbar-gutter:stable_both-edges]',
+          'relative flex-1 overflow-y-auto pt-0 pb-5 [scrollbar-gutter:stable_both-edges]',
           mainClassName
         )}
       >

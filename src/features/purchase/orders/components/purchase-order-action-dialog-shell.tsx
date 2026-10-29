@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { Calculator, ClipboardList, Loader2, X } from 'lucide-react'
+import { Calculator, ClipboardList, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FloatingSurfaceCloseButton } from '@/components/ui/floating-surface-close-button'
 
 interface PurchaseOrderActionDialogShellProps {
   open: boolean
@@ -62,14 +63,10 @@ export function PurchaseOrderActionDialogShell({
                 </DialogDescription>
               </DialogHeader>
             </div>
-            <Button
-              variant='ghost'
-              size='icon'
+            <FloatingSurfaceCloseButton
               onClick={() => onOpenChange(false)}
-              className='size-8 shrink-0 rounded-full sm:hidden'
-            >
-              <X className='size-4' />
-            </Button>
+              className='sm:hidden'
+            />
           </div>
           <div className='flex min-w-0 shrink-0 items-center justify-between gap-2.5 pl-8 sm:justify-end sm:pl-0'>
             {headerAccessory ? (
@@ -77,14 +74,10 @@ export function PurchaseOrderActionDialogShell({
                 {headerAccessory}
               </div>
             ) : null}
-            <Button
-              variant='ghost'
-              size='icon'
+            <FloatingSurfaceCloseButton
               onClick={() => onOpenChange(false)}
-              className='hidden size-8 shrink-0 rounded-full sm:inline-flex'
-            >
-              <X className='size-4' />
-            </Button>
+              className='hidden sm:inline-flex'
+            />
           </div>
         </div>
 

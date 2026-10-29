@@ -32,7 +32,7 @@ export const approval = {
     inventory: 'Inventory',
     trading: 'Trading',
     production: 'Production',
-    materials: 'Materials',
+    materials: 'Production Material Archive',
   },
   actions: {
     quality_standard_review: 'Quality standard review',

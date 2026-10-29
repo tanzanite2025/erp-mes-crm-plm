@@ -1,12 +1,28 @@
+import { partRequirementsOperationGuide } from './part-requirements-operation-guide'
+import { productionMaterialIssuance } from './production-material-issuance'
+import { productionMaterialIssuanceOperationGuide } from './production-material-issuance-operation-guide'
+import { productionMaterialRequirementBomBasisReview } from './production-material-requirement-bom-basis-review'
+
 export const mrp = {
+  operationGuide: partRequirementsOperationGuide,
+  productionMaterialIssuance,
+  productionMaterialIssuanceGuide: productionMaterialIssuanceOperationGuide,
   tabs: {
     title: 'MRP',
     requirements: 'Part Requirements',
   },
   requirements: {
+    orderLoading: {
+      loading: 'Loading all eligible orders…',
+      failedTitle: 'Could not load the order scope',
+      failedDescription:
+        'The current list is incomplete. Reload before selecting orders for analysis.',
+      retry: 'Reload orders',
+    },
+    basisReview: productionMaterialRequirementBomBasisReview,
     pageTitle: 'Material Demand Analysis',
     pageDescription:
-      'Order-driven material requirement analysis and workload projection',
+      'Aggregate selected sales orders with released manufacturing BOMs and compare demand with inventory',
     helperText:
       'Select sales orders and line items below, then analyze demand to review the merged material list and hierarchy distribution.',
     analyze: 'Analyze Demand',
@@ -32,7 +48,8 @@ export const mrp = {
       exportFailed: 'Export failed',
       exportFailedDescription:
         'An error occurred while generating the Excel file',
-      realtimeNotice: 'Realtime data: latest BOM and orders are synced',
+      realtimeNotice:
+        'Analysis snapshot: analyze again after order, BOM, or inventory changes',
       shareLink: 'Generate a share link for warehouse',
     },
     tabs: {
@@ -58,22 +75,23 @@ export const mrp = {
       shortageOnly: 'Shortage Only',
       empty: 'No matching material requirements',
       items: '{{count}} items',
-      packagingAtLeast: '>= {{count}} {{unit}}',
+      packagingAtLeast: 'Total-demand packs: {{count}} {{unit}}',
       groupedOrders: 'Grouped by hierarchy and linked orders',
-      usableStockHint: 'On-hand {{inventory}} / Locked {{locked}}',
-      totalSupplyLabel: 'Effective Supply',
+      usableStockHint: 'On hand {{inventory}} / active reservations {{locked}}',
+      totalSupplyLabel: 'Effective supply for this group',
       pendingIntegration: 'Pending Integration',
-      pendingIntegrationHint:
-        'Will sync automatically after the production module is connected',
+      pendingIntegrationHint: 'Not connected; excluded from supply',
+      formulaLineAllocated:
+        'Allocated to this group: {{allocated}} {{unit}} (analysis preview)',
       formulaTitle: 'Calculation Formula',
       formulaLineUsable:
-        '(On-hand {{inventory}} - Locked for inspection {{locked}})',
+        'On hand {{inventory}} / active reservations {{locked}}; availability checked per batch',
       formulaLinePurchase: '+ Purchase in transit {{purchase}}',
       formulaLineWip: '+ Work in progress {{wip}}',
       formulaLineTotal: '= {{total}} {{unit}}',
       buckets: {
         inventory: 'On-hand Inventory',
-        locked: 'Inspection Lock',
+        locked: 'Active reservations',
         purchase: 'Purchase In Transit',
         wip: 'Work In Progress',
       },
@@ -95,19 +113,13 @@ export const mrp = {
       sourceOrders: '{{count}} linked orders',
     },
     selectionTree: {
+      basisReviewHint:
+        'Select the order scope here. Analysis checks manufacturing BOMs, performance variants and weight, and requests a choice when multiple recipes qualify.',
       orderLines: '{{count}} line items',
       deliveryDate: 'Due: {{date}}',
       productCodeLabel: 'ID',
       productModelLabel: 'Model',
-      noBom:
-        'No usable BOM is configured for this product. Material analysis cannot continue.',
-      noBomTitle: 'Blocked before analysis: missing usable BOM',
-      bomPreview: 'BOM Preview ({{count}} items)',
-      otherSection: 'Other',
-      moreComponents: '+ {{count}} more key components',
       selectedCount: '{{count}} production items selected',
-      blockedByMissingBom:
-        '{{count}} selected production items are missing a usable BOM and must be fixed before analysis',
       analyzeReady: 'Ready for aggregated material analysis',
       cancel: 'Cancel',
       analyze: 'Analyze Demand',
@@ -147,7 +159,8 @@ export const mrp = {
       packagingFormulaForward: '1 {{packUnit}} = {{factor}} {{unit}}',
       packagingFormulaReverse: '1 {{unit}} = {{factor}} {{packUnit}}',
       shortageEnough: 'Sufficient',
-      shortageWithPack: '{{gap}} {{unit}} (about {{packQty}} {{packUnit}})',
+      shortageWithPack:
+        '{{gap}} {{unit}} (total-demand packs: {{packQty}} {{packUnit}})',
       issueDept: 'Issued by: Sales & Procurement Decision Center',
       recipientInfo:
         'Recipients: Purchasing, Material Control, Material Prep, Production Site (1 copy each). Note: realtime inventory variance included.',

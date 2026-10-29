@@ -67,7 +67,7 @@ func CreateUserHandler(c *gin.Context) {
 
 	hashedPassword, err := hashUserPassword(req.Password)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] password must be plain text and non-empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		return
 	}
 

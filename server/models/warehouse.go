@@ -25,6 +25,16 @@ func (WarehouseCategory) TableName() string {
 // DefaultWarehouseCategories 预置基础库区。
 var DefaultWarehouseCategories = []WarehouseCategory{
 	{
+		Name:           "生产待耗用物料",
+		Code:           ProductionMaterialPendingConsumptionWarehouseCategoryCode,
+		Description:    "生产领料移交后的物料保管去向，保留批次和成本；仅由生产领退专用事务写入，不代表已经消耗",
+		IsSystem:       true,
+		SortOrder:      94,
+		AllowInbound:   true,
+		AllowShipment:  true,
+		AllowStocktake: false,
+	},
+	{
 		Name:                     "成品仓库",
 		Code:                     "FINISHED",
 		IsSystem:                 true,
@@ -35,8 +45,9 @@ var DefaultWarehouseCategories = []WarehouseCategory{
 		DefaultForProductInbound: true,
 	},
 	{
-		Name:                      "物料仓库",
+		Name:                      "生产物料仓库",
 		Code:                      "MATERIAL",
+		Description:               "系统内置生产用料库存仓，用于存放生产所需物料，承接采购收料、物料入库和库存管理",
 		IsSystem:                  true,
 		SortOrder:                 2,
 		AllowInbound:              true,

@@ -21,6 +21,10 @@ describe('API request cancellation and search failure isolation', () => {
     vi.stubGlobal('fetch', requestFetchMock)
     requestFetchMock.mockReset()
     apiRequestTestState.session.accessToken = 'request-test-token'
+    apiRequestTestState.session.reset.mockReset()
+    apiRequestTestState.session.reset.mockImplementation(() => {
+      apiRequestTestState.session.accessToken = ''
+    })
     ;({ apiFetch } = await import('./api-client'))
   })
   afterEach(() => {
@@ -188,6 +192,50 @@ describe('API request cancellation and search failure isolation', () => {
       })
     ).rejects.toMatchObject({ kind: 'auth_required' })
     expect(requestFetchMock).not.toHaveBeenCalled()
+  })
+
+  it('does not sign out a newer session when an old request returns 401', async () => {
+    vi.stubGlobal('window', {
+      location: { pathname: '/sign-in', replace: vi.fn() },
+    })
+    let resolveOldRequest!: (response: Response) => void
+    requestFetchMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOldRequest = resolve
+      })
+    )
+    const oldRequest = apiFetch('/auth/snapshot')
+    const rejectedOldRequest = expect(oldRequest).rejects.toMatchObject({
+      status: 401,
+    })
+    apiRequestTestState.session.accessToken = 'new-password-sign-in-token'
+    resolveOldRequest(
+      new Response('{"code":"auth_password_version_expired"}', { status: 401 })
+    )
+    await rejectedOldRequest
+    expect(apiRequestTestState.session.reset).not.toHaveBeenCalled()
+    expect(window.location.replace).not.toHaveBeenCalled()
+    expect(apiRequestTestState.session.accessToken).toBe(
+      'new-password-sign-in-token'
+    )
+  })
+
+  it('resets the matching expired session and handles another session expiring on the sign-in page', async () => {
+    vi.stubGlobal('window', {
+      location: { pathname: '/sign-in', replace: vi.fn() },
+    })
+    requestFetchMock.mockImplementation(
+      async () => new Response('{}', { status: 401 })
+    )
+    await expect(apiFetch('/auth/snapshot')).rejects.toMatchObject({
+      status: 401,
+    })
+    expect(apiRequestTestState.session.reset).toHaveBeenCalledTimes(1)
+    apiRequestTestState.session.accessToken = 'another-expired-token'
+    await expect(apiFetch('/auth/snapshot')).rejects.toMatchObject({
+      status: 401,
+    })
+    expect(apiRequestTestState.session.reset).toHaveBeenCalledTimes(2)
   })
 
   it('does not count cancelled error bodies as failed application requests', async () => {

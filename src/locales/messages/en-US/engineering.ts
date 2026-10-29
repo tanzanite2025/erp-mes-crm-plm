@@ -245,11 +245,9 @@ export const engineering = {
       lines: 'Cut Lines',
     },
     placeholders: {
-      search:
-        'Search plan, document no., product, hole count, or carbon fiber model',
-      generatedName: 'Auto-generated from product model + hole count',
+      search: 'Search plan, document no., product, or carbon fiber model',
+      generatedName: 'Auto-generated from product model',
       selectProduct: 'Select product engineering model',
-      selectHoleCount: 'Select shared hole-count source',
       documentNo: 'e.g. XD2603028',
       revisionNo: 'A1',
       selectEffectiveDate: 'Select effective date',
@@ -277,7 +275,6 @@ export const engineering = {
       lineCount: 'Cut Lines',
       planName: 'Plan Name',
       productModel: 'Product Model',
-      holeCount: 'Hole Count',
       documentNo: 'Document No.',
       revisionNo: 'Revision',
       status: 'Status',
@@ -341,9 +338,7 @@ export const engineering = {
       saveUpdated: 'Cutting plan updated',
       deleteSuccess: 'Cutting plan deleted',
       productRequired: 'Please select or match a product model first',
-      holeCountRequired: 'Please select a hole count first',
-      nameGenerateFailed:
-        'Failed to generate plan name. Check product model and hole count.',
+      nameGenerateFailed: 'Failed to generate plan name. Check product model.',
       emptyLines: 'Add at least one cut line before saving or exporting.',
       conflict:
         'This cutting plan was updated elsewhere. Refresh and try again.',
@@ -379,7 +374,6 @@ export const engineering = {
     },
     values: {
       lineCount: '{{count}} lines',
-      holeCount: '{{count}} holes',
     },
   },
   masterData: {

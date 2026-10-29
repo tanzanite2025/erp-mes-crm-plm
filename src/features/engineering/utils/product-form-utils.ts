@@ -42,6 +42,7 @@ export function buildDefaultProductValues(
     maxTirePressure: undefined,
     image: '',
     restrictions: [],
+    moldGroupId: '',
     moldGroup: '',
     description: '',
     status: 'Active',

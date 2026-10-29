@@ -227,7 +227,6 @@ export function useCuttingIssuancePageState() {
     selectedLine && compatibleTemplates.length === 0
       ? t('apsScheduling.cuttingIssuance.feedback.missingTemplateMessage', {
           productModel: selectedLine.productModel,
-          holeCount: selectedLine.holeCount || '--',
         })
       : null
 
@@ -244,6 +243,19 @@ export function useCuttingIssuancePageState() {
     createExecutionMutation.mutate()
   }
 
+  const updateSelectedOrderAndResetCuttingTemplate = (nextOrderId: string) => {
+    setOrderId(nextOrderId)
+    setLineNo('')
+    setTemplateId('')
+  }
+
+  const updateSelectedOrderLineAndResetCuttingTemplate = (
+    nextLineNo: string
+  ) => {
+    setLineNo(nextLineNo)
+    setTemplateId('')
+  }
+
   return {
     orders,
     executions,
@@ -254,10 +266,11 @@ export function useCuttingIssuancePageState() {
     selectedOrder,
     compatibleTemplates,
     orderId,
-    setOrderId,
+    setOrderId: updateSelectedOrderAndResetCuttingTemplate,
     lineNo,
-    setLineNo,
+    setLineNo: updateSelectedOrderLineAndResetCuttingTemplate,
     templateId,
+    setTemplateId,
     headerStatus,
     templateMatchHint,
     missingTemplateMessage,

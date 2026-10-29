@@ -32,6 +32,7 @@ type ProductApiDTO struct {
 	Steerer                  string                        `json:"steerer,omitempty"`
 	Image                    string                        `json:"image,omitempty"`
 	Restrictions             []string                      `json:"restrictions"`
+	MoldGroupID              string                        `json:"moldGroupId,omitempty"`
 	MoldGroup                string                        `json:"moldGroup,omitempty"`
 	Description              string                        `json:"description,omitempty"`
 	EngineeringSpecID        string                        `json:"engineeringSpecId,omitempty"`
@@ -46,10 +47,10 @@ type ProductApiDTO struct {
 	TemplateResolutionSource string                        `json:"templateResolutionSource,omitempty"`
 	TemplateResolutionError  string                        `json:"templateResolutionError,omitempty"`
 	// --- MasterDataControl 嵌套命名空间（唯一输出格式） ---
-	MasterDataControl        *MasterDataControlDTO         `json:"masterDataControl,omitempty"`
-	CreatedAt                any                           `json:"createdAt"`
-	UpdatedAt                any                           `json:"updatedAt"`
-	Version                  int                           `json:"version"`
+	MasterDataControl *MasterDataControlDTO `json:"masterDataControl,omitempty"`
+	CreatedAt         any                   `json:"createdAt"`
+	UpdatedAt         any                   `json:"updatedAt"`
+	Version           int                   `json:"version"`
 }
 
 type ProductListPageApiDTO struct {

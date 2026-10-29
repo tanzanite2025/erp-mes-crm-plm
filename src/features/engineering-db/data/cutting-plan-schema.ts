@@ -59,7 +59,6 @@ export const cuttingPlanSchema = z.object({
   productId: z.string().optional(),
   productCode: z.string().optional(),
   productName: z.string().optional(),
-  holeCount: z.string().optional(),
   documentNo: z.string().optional(),
   revisionNo: z.string().optional(),
   effectiveDate: z.string().optional(),
@@ -92,7 +91,6 @@ export type CuttingPlanLineAuthorityIssue = {
 export type CuttingPlanPreparationIssue =
   | CuttingPlanLineAuthorityIssue
   | { kind: 'missing_product_binding' }
-  | { kind: 'missing_hole_count' }
   | { kind: 'empty_lines' }
   | { kind: 'name_generate_failed' }
 
@@ -111,7 +109,6 @@ export const EMPTY_CUTTING_PLAN_INPUT: CuttingPlanInput = {
   productId: '',
   productCode: '',
   productName: '',
-  holeCount: '',
   documentNo: '',
   revisionNo: 'A1',
   effectiveDate: '',
@@ -254,10 +251,6 @@ export function collectCuttingPlanPreparationIssues(
     issues.push({ kind: 'missing_product_binding' })
   }
 
-  if (!plan.holeCount?.trim()) {
-    issues.push({ kind: 'missing_hole_count' })
-  }
-
   if ((plan.lines || []).length === 0) {
     issues.push({ kind: 'empty_lines' })
   }
@@ -265,7 +258,6 @@ export function collectCuttingPlanPreparationIssues(
   const generatedName = buildCuttingPlanName({
     productName: plan.productName,
     productCode: plan.productCode,
-    holeCount: plan.holeCount,
   })
   if (!generatedName) {
     issues.push({ kind: 'name_generate_failed' })
@@ -332,12 +324,10 @@ export function normalizeCuttingPlan(plan: unknown): CuttingPlan {
 export function buildCuttingPlanName(params: {
   productName?: string
   productCode?: string
-  holeCount?: string
 }): string {
   const model = params.productName?.trim() || params.productCode?.trim() || ''
-  const holeCount = params.holeCount?.trim() || ''
-  if (!model || !holeCount) return ''
-  return `${model}-${holeCount}孔裁纱单`
+  if (!model) return ''
+  return `${model}-裁纱单`
 }
 
 export function buildCuttingPlanInput(
@@ -347,7 +337,6 @@ export function buildCuttingPlanInput(
   const generatedName = buildCuttingPlanName({
     productName: plan.productName,
     productCode: plan.productCode,
-    holeCount: plan.holeCount,
   })
 
   return cuttingPlanInputSchema.parse({
@@ -357,7 +346,6 @@ export function buildCuttingPlanInput(
     productId: plan.productId?.trim() || '',
     productCode: plan.productCode?.trim() || '',
     productName: plan.productName?.trim() || '',
-    holeCount: plan.holeCount?.trim() || '',
     documentNo: plan.documentNo?.trim() || '',
     effectiveDate: plan.effectiveDate?.trim() || '',
     carbonFiberModel: plan.carbonFiberModel?.trim() || '',

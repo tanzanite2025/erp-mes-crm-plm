@@ -37,6 +37,8 @@ interface ComboboxProps {
   disabled?: boolean
   isLoading?: boolean
   variant?: 'default' | 'industrial'
+  /** Enable inside modal dialogs so wheel and touch scrolling reach the popup. */
+  modal?: boolean
 }
 
 export function Combobox({
@@ -51,6 +53,7 @@ export function Combobox({
   disabled,
   isLoading,
   variant = 'default',
+  modal = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState('')
@@ -71,7 +74,7 @@ export function Combobox({
   }, [options, deferredSearch])
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={modal}>
       <PopoverTrigger asChild>
         {variant === 'industrial' ? (
           <Button

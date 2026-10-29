@@ -1,5 +1,7 @@
 # BOM 说明指南：内容、导航与职责边界
 
+指南解释、字段帮助与知识搜索的来源复用，以及正式文档采用描述与原模块链接的规则，统一见[知识库、操作指南与业务文档职责契约](../architecture/knowledge-base-operation-guides-and-business-document-source-ownership-boundaries.md)。本文继续承接 BOM 指南自身；知识搜索的指南主题接入尚未实施。
+
 ## 范围与入口
 
 路由为 `/engineering/bom-creation-guide`，位于“产品管理 → 产品操作手册 → 如何建立 BOM”，与“如何建立产品”同级。沿用产品手册的页面样式，业务实现由 `features/product-structure` 独立承接。
@@ -65,25 +67,25 @@
 
 以下路径除特别注明外，相对 `src/`：
 
-| 文件 | 职责 |
-| --- | --- |
-| `features/product-structure/pages/bom-creation-operation-guide-page.tsx` | 说明页布局、章节切换、正文滚动、帮助内容与独立草稿入口的组合；不承担保存编排 |
-| `features/product-structure/components/bom-creation-guide/bom-creation-guide-chapter-operation-instructions.tsx` | 各阅读章节的操作小步骤展示 |
-| `features/engineering/components/product-and-bom-field-responsibility-explanations.tsx` | 两份指南共用的职责说明及录入区简短提示，只负责展示 |
-| `features/product-structure/components/bom-creation-guide/product-and-bom-responsibility-guide-with-business-entry-actions.tsx` | 组合产品页面链接权限与既有 BOM 草稿入口 |
-| `locales/messages/{zh-CN,en-US}/product-and-bom-field-responsibility-guidance.ts` | 两份指南及产品、BOM、模板编辑区的共用职责文案 |
-| `features/product-structure/components/bom-creation-guide/bom-creation-guide-draft-entry.tsx` | 业务访问权限、主动打开、延迟加载、保存结果提示 |
-| `features/product-structure/components/bom-creation-guide/bom-creation-guide-draft-dialog.tsx` | 组合现有 BOM 编辑器与写入 Hook，承接新建草稿或保存并发布，防止重复提交 |
-| `features/product-structure/components/bom-field-business-meaning-help-popover.tsx` | 可复用的只读业务说明内容和问号弹层 |
-| `features/product-structure/data/bom-field-business-meaning-help-topic-definitions.ts` | 业务说明主题与内容顺序，不持有表单状态 |
-| `locales/messages/{zh-CN,en-US}/bom-field-business-meaning-help.ts` | 字段含义、填写方法与生命周期的独立文案 |
-| `features/product-structure/data/bom-creation-operation-guide-section-definitions.ts` | 固定阅读顺序、内容条目键、相关页面地址 |
-| `locales/messages/{zh-CN,en-US}/bom-creation-operation-guide.ts` | 独立中英文解释文案，通过现有 engineering 文案入口挂载 |
-| `features/product-structure/bom-creation-operation-guide-tab-config.ts` | 说明页自己的模块标签定义 |
-| `routes/_authenticated/engineering/bom-creation-guide.tsx` 和 `.lazy.tsx` | 路由声明与延迟加载 |
-| `routes/_authenticated/engineering/route.tsx` | 两份指南各自选用独立标签并约束阅读区高度，其他工程页面继续使用各自标签和布局 |
-| `components/layout/data/sidebar-data.ts` | 同级手册菜单入口 |
-| `features/authz/data/route-permission-labels.ts` | 权限与最近访问使用的页面名称 |
+| 文件                                                                                                                            | 职责                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `features/product-structure/pages/bom-creation-operation-guide-page.tsx`                                                        | 说明页布局、章节切换、正文滚动、帮助内容与独立草稿入口的组合；不承担保存编排 |
+| `features/product-structure/components/bom-creation-guide/bom-creation-guide-chapter-operation-instructions.tsx`                | 各阅读章节的操作小步骤展示                                                   |
+| `features/engineering/components/product-and-bom-field-responsibility-explanations.tsx`                                         | 两份指南共用的职责说明及录入区简短提示，只负责展示                           |
+| `features/product-structure/components/bom-creation-guide/product-and-bom-responsibility-guide-with-business-entry-actions.tsx` | 组合产品页面链接权限与既有 BOM 草稿入口                                      |
+| `locales/messages/{zh-CN,en-US}/product-and-bom-field-responsibility-guidance.ts`                                               | 两份指南及产品、BOM、模板编辑区的共用职责文案                                |
+| `features/product-structure/components/bom-creation-guide/bom-creation-guide-draft-entry.tsx`                                   | 业务访问权限、主动打开、延迟加载、保存结果提示                               |
+| `features/product-structure/components/bom-creation-guide/bom-creation-guide-draft-dialog.tsx`                                  | 组合现有 BOM 编辑器与写入 Hook，承接新建草稿或保存并发布，防止重复提交       |
+| `features/product-structure/components/bom-field-business-meaning-help-popover.tsx`                                             | 可复用的只读业务说明内容和问号弹层                                           |
+| `features/product-structure/data/bom-field-business-meaning-help-topic-definitions.ts`                                          | 业务说明主题与内容顺序，不持有表单状态                                       |
+| `locales/messages/{zh-CN,en-US}/bom-field-business-meaning-help.ts`                                                             | 字段含义、填写方法与生命周期的独立文案                                       |
+| `features/product-structure/data/bom-creation-operation-guide-section-definitions.ts`                                           | 固定阅读顺序、内容条目键、相关页面地址                                       |
+| `locales/messages/{zh-CN,en-US}/bom-creation-operation-guide.ts`                                                                | 独立中英文解释文案，通过现有 engineering 文案入口挂载                        |
+| `features/product-structure/bom-creation-operation-guide-tab-config.ts`                                                         | 说明页自己的模块标签定义                                                     |
+| `routes/_authenticated/engineering/bom-creation-guide.tsx` 和 `.lazy.tsx`                                                       | 路由声明与延迟加载                                                           |
+| `routes/_authenticated/engineering/route.tsx`                                                                                   | 两份指南各自选用独立标签并约束阅读区高度，其他工程页面继续使用各自标签和布局 |
+| `components/layout/data/sidebar-data.ts`                                                                                        | 同级手册菜单入口                                                             |
+| `features/authz/data/route-permission-labels.ts`                                                                                | 权限与最近访问使用的页面名称                                                 |
 
 增加路由后按现有脚本生成路由树、认证路由目录、前后端权限契约；新页面权限为 `tab_engineering_bom_creation_guide`，继续使用现有 `menu_engineering` 的模块权限投影规则。
 
