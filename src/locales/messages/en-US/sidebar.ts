@@ -17,6 +17,7 @@ export const sidebar = {
     warehouseLogistics: 'Warehouse Management',
     warehouseLogisticsHandbook: 'Warehouse Management Handbook',
     purchaseAndSales: 'Purchase & Sales',
+    purchaseAndSalesHandbook: 'Purchasing and sales guides',
     purchaseManagement: 'Purchase Management',
     productManagement: 'Product Management',
     productHandbook: 'Product Handbook',

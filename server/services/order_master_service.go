@@ -7,6 +7,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/salesorderidentity"
+	statemachine "xdfc-server/services/state_machine"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -223,6 +224,13 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 		order.OrderNo = order.Barcode
 	}
 	if order.ID == "" {
+		if order.Status == "" {
+			order.Status = "Pending"
+		}
+		if status := statemachine.NormalizeSalesOrderStatus(order.Status); status != statemachine.SalesOrderStatusDraft && status != statemachine.SalesOrderStatusPending {
+			return fmt.Errorf("%w: 新建订单不能预设生产或履约进度", ErrSalesTransactionInvalidPayload)
+		}
+		order.Status = string(statemachine.NormalizeSalesOrderStatus(order.Status))
 		if order.OrderNo == "" {
 			return fmt.Errorf("sales order orderNo is required")
 		}
@@ -238,6 +246,13 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	var existing models.SalesOrder
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").Where("id = ?", order.ID).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if order.Status == "" {
+				order.Status = "Pending"
+			}
+			if status := statemachine.NormalizeSalesOrderStatus(order.Status); status != statemachine.SalesOrderStatusDraft && status != statemachine.SalesOrderStatusPending {
+				return fmt.Errorf("%w: 新建订单不能预设生产或履约进度", ErrSalesTransactionInvalidPayload)
+			}
+			order.Status = string(statemachine.NormalizeSalesOrderStatus(order.Status))
 			if order.OrderNo == "" {
 				return fmt.Errorf("sales order orderNo is required")
 			}
@@ -304,6 +319,9 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	}
 	if order.Status == "" {
 		order.Status = existing.Status
+	}
+	if order.Status != existing.Status {
+		return fmt.Errorf("%w: 批量同步不能修改业务进度，请使用确认或作废动作", ErrSalesTransactionInvalidPayload)
 	}
 	if order.StatusNote == "" {
 		order.StatusNote = existing.StatusNote

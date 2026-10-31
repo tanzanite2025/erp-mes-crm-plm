@@ -9,6 +9,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/salesorderidentity"
+	statemachine "xdfc-server/services/state_machine"
 	"xdfc-server/services/trading_audit"
 
 	"github.com/google/uuid"
@@ -240,6 +241,14 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 }
 
 func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operator, ip string) (*models.SalesOrder, error) {
+	status := statemachine.NormalizeSalesOrderStatus(input.Status)
+	if status == "" {
+		status = statemachine.SalesOrderStatusPending
+	}
+	if status != statemachine.SalesOrderStatusDraft && status != statemachine.SalesOrderStatusPending {
+		return nil, fmt.Errorf("%w: 新订单只能保存为草稿或已确认待处理，生产进度由实际业务更新", ErrSalesTransactionInvalidPayload)
+	}
+	input.Status = string(status)
 	var created models.SalesOrder
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if strings.TrimSpace(input.ID) == "" {

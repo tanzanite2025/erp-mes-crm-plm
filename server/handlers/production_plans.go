@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -80,22 +81,23 @@ func SaveProductionPlanHandler(c *gin.Context) {
 			}
 		}
 
-		if plan.OrderID != "" {
-			var order models.SalesOrder
-			if err := tx.First(&order, "id = ?", plan.OrderID).Error; err != nil {
-				return gorm.ErrRecordNotFound
-			}
+		var previousPlanSource *models.ProductionPlan
+		if hasPreviousPlan {
+			previousPlanSource = &previousPlan
+		}
+		if err := services.ValidateProductionPlanSalesOrderSourceTx(tx, &plan, previousPlanSource); err != nil {
+			return err
 		}
 
 		if plan.ID != "" {
-			if err := tx.Model(&plan).Omit("CreatedAt", "Tasks").Updates(&plan).Error; err != nil {
+			if err := tx.Model(&plan).Omit("CreatedAt", "Tasks", "SalesOrder").Updates(&plan).Error; err != nil {
 				return err
 			}
 			if err := tx.Model(&plan).Association("Tasks").Replace(plan.Tasks); err != nil {
 				return err
 			}
 		} else {
-			if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&plan).Error; err != nil {
+			if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Omit("SalesOrder").Save(&plan).Error; err != nil {
 				return err
 			}
 		}
@@ -122,11 +124,14 @@ func SaveProductionPlanHandler(c *gin.Context) {
 			}
 		}
 		plan = savedPlan
-
-		return nil
+		return services.SynchronizeSalesOrderProductionPlanAndTaskProgressTx(tx, savedPlan.OrderID)
 	})
 
 	if err != nil {
+		if errors.Is(err, services.ErrSalesTransactionInvalidPayload) || errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 保存生产计划失败: " + err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存生产计划失败: " + err.Error()})
 		return
 	}

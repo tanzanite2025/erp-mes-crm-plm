@@ -54,6 +54,36 @@ type GlobalSearchNavigationKeywordAlias = {
 
 const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
   {
+    href: '/purchase/purchase-operation-guide',
+    labelKeys: ['purchase.operationGuide.title'],
+    keywords: [
+      '采购指南',
+      '采购流程',
+      '采购下单',
+      '收货入库',
+      '采购退货',
+      '应付付款',
+      'purchase guide',
+      'purchasing handbook',
+    ],
+    pinyin: 'cgczzn',
+  },
+  {
+    href: '/trading/sales-operation-guide',
+    labelKeys: ['trading.operationGuide.title'],
+    keywords: [
+      '销售指南',
+      '销售流程',
+      '销售下单',
+      '交付跟进',
+      '退换货',
+      '应收收款',
+      'sales guide',
+      'sales handbook',
+    ],
+    pinyin: 'xsczzn',
+  },
+  {
     href: '/warehouse/production-material-handovers-guide',
     labelKeys: ['warehouse.productionMaterialHandoversGuide.title'],
     keywords: [

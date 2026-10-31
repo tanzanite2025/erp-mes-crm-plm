@@ -1,4 +1,7 @@
+import { purchaseOperationGuide } from './purchase-operation-guide'
+
 export const purchase = {
+  operationGuide: purchaseOperationGuide,
   tabs: {
     payables: 'Payables',
   },

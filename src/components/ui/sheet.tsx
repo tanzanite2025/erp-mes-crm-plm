@@ -45,9 +45,11 @@ function SheetContent({
   className,
   children,
   side = 'right',
+  showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left'
+  showCloseButton?: boolean
 }) {
   return (
     <SheetPortal>
@@ -65,15 +67,17 @@ function SheetContent({
           side === 'bottom' &&
             'inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
           className,
-          '[&>[data-slot=sheet-header]]:pe-14'
+          showCloseButton && '[&>[data-slot=sheet-header]]:pe-14'
         )}
         {...props}
         data-mobile-floating-surface='sheet'
       >
         {children}
-        <SheetPrimitive.Close data-slot='sheet-close' asChild>
-          <FloatingSurfaceCloseButton className='absolute end-4 top-4 z-50' />
-        </SheetPrimitive.Close>
+        {showCloseButton && (
+          <SheetPrimitive.Close data-slot='sheet-close' asChild>
+            <FloatingSurfaceCloseButton className='absolute end-4 top-4 z-50' />
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </SheetPortal>
   )

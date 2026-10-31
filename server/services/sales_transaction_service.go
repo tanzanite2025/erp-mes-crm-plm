@@ -270,6 +270,12 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 		derivedPayload, _ := json.Marshal(SalesOrderStatusTransitionPayload{Status: payload.FinalData.Status, StatusNote: payload.FinalData.StatusNote, Operator: operator})
 		return executeOrderStatusTransitionTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentStatusTransition, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
 	}
+	if nextOrder.Status == "" {
+		nextOrder.Status = current.Status
+	}
+	if nextOrder.Status != current.Status {
+		return nil, fmt.Errorf("%w: 订单编辑不能修改业务进度，请使用确认或作废动作", ErrSalesTransactionInvalidPayload)
+	}
 
 	if isPurchaseOrderNoOnlyChange {
 		derivedPayload, _ := json.Marshal(SalesOrderPurchaseOrderNoChangePayload{PurchaseOrderNo: payload.FinalData.PurchaseOrderNo, Operator: operator})
@@ -1334,6 +1340,9 @@ func executeSalesOrderTransactionTx(tx *gorm.DB, input ExecuteSalesOrderTransact
 }
 
 func executeOrderLineClaimTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
+	if !statemachine.IsSalesOrderStatusEligibleForProduction(current.Status) {
+		return nil, fmt.Errorf("%w: 只有已确认且尚未完成的订单可以认领", ErrSalesTransactionInvalidPayload)
+	}
 	claimPayload, err := parseSalesOrderLineClaimPayload(input.Payload)
 	if err != nil {
 		return nil, err
@@ -1452,6 +1461,9 @@ func executeOrderCancelTx(tx *gorm.DB, current *models.SalesOrder, input Execute
 
 	if guard := statemachine.CanCancelSalesOrder(*current); !guard.Allowed {
 		return nil, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, guard.Err())
+	}
+	if err := rejectSalesOrderCancellationWithActiveProductionPlansTx(tx, current.ID); err != nil {
+		return nil, err
 	}
 	if err := rejectSalesOrderRemovalWithActiveProductionMaterialCoverageTx(tx, current.ID); err != nil {
 		return nil, err

@@ -23,6 +23,17 @@ export const tradingSalesOrder = {
     lineProductMissing: '订单第 {{lineNo}} 行未绑定产品，无法保存订单行快照。',
   },
   detail: {
+    readingLayout: {
+      description: '查看订单概览、产品明细与操作记录。',
+      recordInformation: '单据标识与人员信息',
+      lineNumber: '第 {{lineNo}} 项',
+      productDetails: '产品规格与外观',
+      fulfillment: '发运进度',
+      documentsAndProcess: '工艺与图纸',
+      shippedQuantity: '已发运 / 订购数量',
+      productCode: '产品编码',
+      fullActivity: '查看完整操作记录',
+    },
     backToList: '返回台账',
     activities: '操作历史',
     summary: '订单概览',
@@ -113,6 +124,11 @@ export const tradingSalesOrder = {
     },
   },
   master: {
+    productSummary: {
+      title: '产品型号 / 规格',
+      empty: '暂无产品明细',
+      unknownProduct: '未填写产品型号',
+    },
     fulfillmentCalculatedInUI: '履约进度由前端实时聚合预览',
     filters: {
       status: '状态',

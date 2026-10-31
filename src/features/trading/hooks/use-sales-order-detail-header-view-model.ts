@@ -1,4 +1,5 @@
 import type { TranslationKey } from '@/locales'
+import { isSalesOrderStatusEligibleForProduction } from '../data/sales-order-production-source-eligibility'
 import type { SalesOrder } from '../data/schema'
 import type { SalesOrderStatusCommandPayload } from './use-sales-order-detail-actions'
 
@@ -25,7 +26,8 @@ export function useSalesOrderDetailHeaderViewModel({
   activeCommandTitle,
   t,
 }: UseSalesOrderDetailHeaderViewModelParams) {
-  const showClaimBanner = isClaimAction && order.status === 'Pending'
+  const showClaimBanner =
+    isClaimAction && isSalesOrderStatusEligibleForProduction(order.status)
   const commandTitle =
     activeCommandTitle || t('tradingSalesOrder.detail.claimFallback')
 
@@ -33,22 +35,10 @@ export function useSalesOrderDetailHeaderViewModel({
     showClaimBanner,
     commandTitle,
     canSubmitPending: hasAvailableAction(order, 'submitPending'),
-    canStartScheduling: hasAvailableAction(order, 'startScheduling'),
-    canStartProduction: hasAvailableAction(order, 'startProduction'),
-    canMarkDone: hasAvailableAction(order, 'markDone'),
     canCancel: hasAvailableAction(order, 'cancel'),
     submitPendingPayload: {
       status: 'Pending',
     } as SalesOrderStatusCommandPayload,
-    startSchedulingPayload: {
-      status: 'Scheduling' as const,
-      statusNote: t('tradingSalesOrder.detail.schedulingTriggered'),
-    } satisfies SalesOrderStatusCommandPayload,
-    startProductionPayload: {
-      status: 'InProgress' as const,
-      statusNote: t('tradingSalesOrder.detail.productionTriggered'),
-    } satisfies SalesOrderStatusCommandPayload,
-    markDonePayload: { status: 'Done' } as SalesOrderStatusCommandPayload,
     cancelPayload: { status: 'Canceled' } as SalesOrderStatusCommandPayload,
     cancelConfirmText: t('tradingSalesOrder.detail.cancelConfirm'),
   }

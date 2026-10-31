@@ -1,12 +1,4 @@
-import {
-  CalendarClock,
-  CheckCircle,
-  FileCheck,
-  Play,
-  Printer,
-  Settings2,
-  XCircle,
-} from 'lucide-react'
+import { FileCheck, Printer, Settings2, XCircle } from 'lucide-react'
 import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -42,14 +34,8 @@ export function SalesOrderDetailHeader({
     showClaimBanner,
     commandTitle,
     canSubmitPending,
-    canStartScheduling,
-    canStartProduction,
-    canMarkDone,
     canCancel,
     submitPendingPayload,
-    startSchedulingPayload,
-    startProductionPayload,
-    markDonePayload,
     cancelPayload,
     cancelConfirmText,
   } = useSalesOrderDetailHeaderViewModel({
@@ -60,96 +46,73 @@ export function SalesOrderDetailHeader({
   })
 
   return (
-    <div className='relative overflow-hidden rounded-xl border border-dashed border-primary/15 bg-muted/5 px-4 py-2 shadow-inner backdrop-blur-md'>
-      <div className='absolute top-0 left-0 h-full w-1 bg-primary/80' />
-      <div className='flex flex-wrap items-center gap-2 pl-2'>
-        <h3 className='text-[18px] leading-none font-black tracking-tight uppercase'>
-          {order.orderNo}
-        </h3>
-        <SalesOrderStatusBadge status={order.status} />
-        <div className='mx-1 h-4 border-l border-dashed border-muted-foreground/20' />
-        <div className='min-w-0 flex-1 truncate text-[13px] font-black tracking-tight text-foreground'>
-          {order.customerName}
+    <header className='min-w-0 space-y-2'>
+      <div className='flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
+        <div className='flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1'>
+          <div className='flex min-w-0 flex-wrap items-center gap-3'>
+            <h2 className='text-lg leading-7 font-semibold tracking-tight [overflow-wrap:anywhere]'>
+              {order.orderNo}
+            </h2>
+            <SalesOrderStatusBadge status={order.status} />
+          </div>
+          <p className='text-sm leading-6 [overflow-wrap:anywhere]'>
+            <span className='mr-2 text-muted-foreground'>
+              {t('tradingSalesOrder.detail.info.customerName')}
+            </span>
+            {order.customerName || '—'}
+          </p>
         </div>
-        {canSubmitPending && (
+        <div className='flex min-w-0 flex-wrap items-center gap-2 lg:max-w-2xl lg:justify-end'>
+          {canSubmitPending && (
+            <Button
+              size='sm'
+              className='min-h-9 gap-2 rounded-lg px-3 text-sm font-medium'
+              onClick={() => onMutateStatus(submitPendingPayload)}
+            >
+              <FileCheck className='size-3.5' />
+              {t('tradingSalesOrder.detail.submitPending')}
+            </Button>
+          )}
+          {canCancel && (
+            <Button
+              size='sm'
+              variant='ghost'
+              className='min-h-9 gap-2 rounded-lg px-3 text-sm font-medium text-destructive hover:bg-destructive/10'
+              onClick={async () => {
+                if (!(await requestApplicationConfirmation(cancelConfirmText)))
+                  return
+                onMutateStatus(cancelPayload)
+              }}
+            >
+              <XCircle className='size-3.5' />
+              {t('tradingSalesOrder.detail.cancelOrder')}
+            </Button>
+          )}
           <Button
             size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-amber-500 px-2 text-[10px] font-black text-white uppercase hover:bg-amber-600'
-            onClick={() => onMutateStatus(submitPendingPayload)}
+            variant='outline'
+            className='min-h-9 gap-2 rounded-lg px-3 text-sm font-medium'
+            onClick={handlePrint}
           >
-            <FileCheck className='size-3.5' />
-            {t('tradingSalesOrder.detail.submitPending')}
+            <Printer className='size-3.5' />
+            {printLabel}
           </Button>
-        )}
-        {canStartScheduling && (
-          <Button
-            size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-violet-500 px-2 text-[10px] font-black text-white uppercase shadow-lg shadow-violet-500/20 hover:bg-violet-600'
-            onClick={() => onMutateStatus(startSchedulingPayload)}
-          >
-            <CalendarClock className='size-3.5' />
-            {t('tradingSalesOrder.detail.startScheduling')}
-          </Button>
-        )}
-        {canStartProduction && (
-          <Button
-            size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-primary px-2 text-[10px] font-black text-white uppercase shadow-lg shadow-primary/20 hover:bg-primary/90'
-            onClick={() => onMutateStatus(startProductionPayload)}
-          >
-            <Play className='size-3.5' />
-            {t('tradingSalesOrder.detail.startProduction')}
-          </Button>
-        )}
-        {canMarkDone && (
-          <Button
-            size='sm'
-            className='h-7 gap-1.5 rounded-lg bg-emerald-500 px-2 text-[10px] font-black text-white uppercase hover:bg-emerald-600'
-            onClick={() => onMutateStatus(markDonePayload)}
-          >
-            <CheckCircle className='size-3.5' />
-            {t('tradingSalesOrder.detail.markDone')}
-          </Button>
-        )}
-        {canCancel && (
-          <Button
-            size='sm'
-            variant='ghost'
-            className='h-7 gap-1.5 rounded-lg px-2 text-[10px] font-black text-destructive uppercase hover:bg-destructive/10'
-            onClick={async () => {
-              if (!(await requestApplicationConfirmation(cancelConfirmText)))
-                return
-              onMutateStatus(cancelPayload)
-            }}
-          >
-            <XCircle className='size-3.5' />
-            {t('tradingSalesOrder.detail.cancelOrder')}
-          </Button>
-        )}
-        <Button
-          size='sm'
-          variant='outline'
-          className='h-7 gap-1.5 rounded-lg border border-dashed px-2 text-[10px] font-black uppercase'
-          onClick={handlePrint}
-        >
-          <Printer className='size-3.5' />
-          {printLabel}
-        </Button>
+        </div>
       </div>
 
       {showClaimBanner && (
-        <div className='mt-1.5 flex animate-in items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 slide-in-from-top-1'>
-          <div className='flex items-center gap-1.5'>
-            <Settings2 className='animate-spin-slow size-3 text-primary' />
-            <span className='text-[10px] font-black tracking-wide text-primary uppercase'>
+        <div className='space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3'>
+          <div className='flex items-start gap-2'>
+            <Settings2 className='mt-1 size-4 shrink-0 text-primary' />
+            <span className='text-sm leading-6 font-medium text-primary'>
               {t('tradingSalesOrder.detail.pendingInstruction')}: {commandTitle}
             </span>
           </div>
-          <p className='text-[10px] font-bold text-muted-foreground'>
+          <p className='text-sm leading-6 [overflow-wrap:anywhere] text-muted-foreground'>
             {activeCommandContent}
           </p>
         </div>
       )}
-    </div>
+    </header>
   )
 }

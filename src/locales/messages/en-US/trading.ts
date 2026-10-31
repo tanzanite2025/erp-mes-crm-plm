@@ -1,4 +1,7 @@
+import { salesOperationGuide } from './sales-operation-guide'
+
 export const trading = {
+  operationGuide: salesOperationGuide,
   tabs: {
     title: 'Trading Management',
     customers: 'Customers',

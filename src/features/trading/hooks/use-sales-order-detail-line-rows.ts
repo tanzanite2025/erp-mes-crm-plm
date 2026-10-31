@@ -1,9 +1,6 @@
 import { useMemo } from 'react'
+import { useLanguage } from '@/context/language-provider'
 import type { SalesOrder, SalesOrderLine } from '../data/schema'
-import {
-  resolveSalesOrderLineDisplaySubtitle,
-  resolveSalesOrderLineDisplayTitle,
-} from '../utils/sales-order-line-display'
 
 export interface SalesOrderLineRow {
   key: string
@@ -28,13 +25,23 @@ export interface SalesOrderLineRow {
 }
 
 export function useSalesOrderDetailLineRows(order: SalesOrder) {
+  const { t } = useLanguage()
   return useMemo<SalesOrderLineRow[]>(() => {
     return order.lines.map((line) => {
       const deliveredQty = line.deliveredQty || 0
       const deliveredRatio = line.qty ? Math.min(1, deliveredQty / line.qty) : 0
       const deliveredPercent = Math.min(100, deliveredRatio * 100)
-      const displayTitle = resolveSalesOrderLineDisplayTitle(line)
-      const displaySubtitle = resolveSalesOrderLineDisplaySubtitle(line)
+      const displayTitle =
+        line.productDisplayTitleSnapshot?.trim() ||
+        line.productDisplayFullLabelSnapshot?.trim() ||
+        line.productModel.trim() ||
+        line.productCode.trim() ||
+        t('tradingSalesOrder.packagingPreview.unknownProduct')
+      const displaySubtitle =
+        line.productDisplaySubtitleSnapshot?.trim() ||
+        line.engineeringSpecNameSnapshot?.trim() ||
+        line.specification.trim() ||
+        '—'
 
       return {
         key: `${order.id}-${line.lineNo}`,
@@ -57,9 +64,10 @@ export function useSalesOrderDetailLineRows(order: SalesOrder) {
         holeCountLabel:
           line.holeCount !== undefined ? String(line.holeCount) : '',
         quantityLabel: line.qty.toLocaleString(),
-        modelCodeSnapshotLabel: line.modelCodeSnapshot || '',
+        modelCodeSnapshotLabel:
+          line.modelCodeSnapshot || line.productModel || '',
         holePrefixSnapshotLabel: line.holePrefixSnapshot || '',
       }
     })
-  }, [order.id, order.lines])
+  }, [order.id, order.lines, t])
 }

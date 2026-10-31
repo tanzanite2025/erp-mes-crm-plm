@@ -20,6 +20,7 @@ export interface ProductionPlanCommand {
   id?: string
   orderNo?: string
   orderId?: string
+  salesOrderLineId?: number
   productId?: string
   productName?: string
   quantity?: number

@@ -23,6 +23,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -145,12 +146,13 @@ type cuttingPlanSnapshot struct {
 }
 
 type salesOrderLineSnapshot struct {
-	OrderNo      string
-	LineNo       int
-	ProductModel string
-	ProductCode  string
-	HoleCount    int
-	Quantity     float64
+	SalesOrderLineID uint
+	OrderNo          string
+	LineNo           int
+	ProductModel     string
+	ProductCode      string
+	HoleCount        int
+	Quantity         float64
 }
 
 func normalizeCuttingIssuanceStatus(value string) string {
@@ -188,7 +190,7 @@ func hasModelIntersection(valuesA []string, valuesB []string) bool {
 
 func loadSalesOrderLineSnapshot(tx *gorm.DB, req CreateCuttingIssuanceExecutionRequest, lock bool) (*salesOrderLineSnapshot, error) {
 	var order models.SalesOrder
-	query := tx.Preload("Lines").Where("id = ?", req.OrderID)
+	query := applySalesOrderRecordScope(tx.Preload("Lines")).Where("id = ?", req.OrderID)
 	if lock {
 		query = query.Clauses(clause.Locking{Strength: "UPDATE"})
 	}
@@ -201,16 +203,20 @@ func loadSalesOrderLineSnapshot(tx *gorm.DB, req CreateCuttingIssuanceExecutionR
 	if strings.TrimSpace(order.OrderNo) != req.OrderNo {
 		return nil, errors.New("orderNo does not match orderId")
 	}
+	if order.IsDeleted || !statemachine.IsSalesOrderStatusEligibleForProduction(order.Status) {
+		return nil, fmt.Errorf("%w: 裁纱只能选择已确认且尚未完成的销售订单", ErrSalesTransactionInvalidPayload)
+	}
 
 	for _, line := range order.Lines {
 		if line.LineNo == req.SalesOrderLineNo {
 			return &salesOrderLineSnapshot{
-				OrderNo:      strings.TrimSpace(order.OrderNo),
-				LineNo:       line.LineNo,
-				ProductModel: strings.TrimSpace(line.ProductModel),
-				ProductCode:  strings.TrimSpace(line.ProductCode),
-				HoleCount:    line.HoleCount,
-				Quantity:     line.Qty,
+				SalesOrderLineID: line.ID,
+				OrderNo:          strings.TrimSpace(order.OrderNo),
+				LineNo:           line.LineNo,
+				ProductModel:     strings.TrimSpace(line.ProductModel),
+				ProductCode:      strings.TrimSpace(line.ProductCode),
+				HoleCount:        line.HoleCount,
+				Quantity:         line.Qty,
 			}, nil
 		}
 	}
@@ -500,12 +506,13 @@ func CreateCuttingIssuanceExecution(
 		}
 
 		plan := models.ProductionPlan{
-			OrderNo:     req.OrderNo,
-			OrderID:     req.OrderID,
-			ProductID:   req.ProductID,
-			ProductName: req.ProductModel,
-			Quantity:    req.Quantity,
-			Status:      req.Status,
+			SalesOrderLineID: lineSnapshot.SalesOrderLineID,
+			OrderNo:          req.OrderNo,
+			OrderID:          req.OrderID,
+			ProductID:        req.ProductID,
+			ProductName:      req.ProductModel,
+			Quantity:         req.Quantity,
+			Status:           req.Status,
 		}
 		if err := tx.Create(&plan).Error; err != nil {
 			return err
@@ -571,7 +578,7 @@ func CreateCuttingIssuanceExecution(
 		if err := tx.Preload("Batches").Where("id = ?", record.ID).First(&created).Error; err != nil {
 			return err
 		}
-		return nil
+		return SynchronizeSalesOrderProductionPlanAndTaskProgressTx(tx, req.OrderID)
 	})
 	if err != nil {
 		return CuttingIssuanceExecutionResponse{}, err

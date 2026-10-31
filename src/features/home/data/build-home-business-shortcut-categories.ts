@@ -56,6 +56,10 @@ const productStartingPointUrls = [
 ]
 
 const homeBusinessShortcutDescriptionKeys: Record<string, TranslationKey> = {
+  '/purchase/purchase-operation-guide':
+    'purchase.operationGuide.shortcutDescription',
+  '/trading/sales-operation-guide':
+    'trading.operationGuide.shortcutDescription',
   '/warehouse/production-material-handovers-guide':
     'warehouse.productionMaterialHandoversGuide.shortcutDescription',
   '/production-outsourcing/task-and-partner-operation-guide':

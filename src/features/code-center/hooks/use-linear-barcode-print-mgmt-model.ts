@@ -35,6 +35,10 @@ import {
 } from '@/features/code-center/utils/linear-barcode-print-result-builder'
 import { LINEAR_BARCODE_INVENTORY_QUERY_KEY } from '@/features/print-mgmt/query-keys'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
+import {
+  SALES_ORDER_PRODUCTION_SOURCE_STATUSES,
+  isSalesOrderStatusEligibleForProduction,
+} from '@/features/trading/data/sales-order-production-source-eligibility'
 import { getSalesStatusLabel } from '@/features/trading/data/sales-status'
 import type {
   SalesOrder,
@@ -46,15 +50,12 @@ import {
 } from '@/features/trading/sales'
 
 export const LINEAR_BARCODE_PRINTABLE_SALES_ORDER_STATUSES: readonly SalesOrderStatus[] =
-  ['Scheduling']
+  SALES_ORDER_PRODUCTION_SOURCE_STATUSES
 
 export function isLinearBarcodePrintableSalesOrder(
   order: Pick<SalesOrder, 'status'> | null | undefined
 ) {
-  return Boolean(
-    order &&
-    LINEAR_BARCODE_PRINTABLE_SALES_ORDER_STATUSES.includes(order.status)
-  )
+  return Boolean(order && isSalesOrderStatusEligibleForProduction(order.status))
 }
 
 function formatSerialRange(execution: LinearBarcodePrintExecutionResult) {

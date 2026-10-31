@@ -51,6 +51,14 @@ import {
   ORGANIZATION_AND_ACCOUNT_OPERATION_GUIDE_PATH,
 } from '@/features/org-personnel/tabs'
 import { getProductionOutsourcingTabs } from '@/features/production-outsourcing/tabs'
+import {
+  getPurchaseTabs,
+  PURCHASE_OPERATION_GUIDE_PATH,
+} from '@/features/purchase/tabs'
+import {
+  getTradingTabs,
+  SALES_OPERATION_GUIDE_PATH,
+} from '@/features/trading/tabs'
 import type { NavGroup, NavNode, SidebarData } from '../types'
 
 type TranslateFn = (
@@ -131,6 +139,25 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     icon: ShoppingBag,
     children: [
       {
+        id: 'purchase-and-sales-handbook-group',
+        titleKey: 'sidebar.groups.purchaseAndSalesHandbook',
+        icon: BookOpen,
+        children: [
+          {
+            id: 'purchase-operation-handbook',
+            titleKey: 'purchase.operationGuide.title',
+            url: PURCHASE_OPERATION_GUIDE_PATH,
+            icon: BookOpen,
+          },
+          {
+            id: 'sales-operation-handbook',
+            titleKey: 'trading.operationGuide.title',
+            url: SALES_OPERATION_GUIDE_PATH,
+            icon: BookOpen,
+          },
+        ],
+      },
+      {
         id: 'purchase-management-group',
         titleKey: 'sidebar.groups.purchaseManagement',
         icon: HandCoins,
@@ -139,6 +166,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'purchase-management',
             titleKey: 'sidebar.items.purchaseManagement',
             url: '/purchase',
+            activeMatches: getPurchaseTabs((key) => key).map((tab) => tab.href),
             icon: Truck,
             permissionId: permissionIdForPath('/purchase'),
           },
@@ -153,6 +181,7 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'sales-management',
             titleKey: 'sidebar.items.salesManagement',
             url: '/trading',
+            activeMatches: getTradingTabs((key) => key).map((tab) => tab.href),
             icon: ShoppingBag,
             permissionId: permissionIdForPath('/trading'),
           },

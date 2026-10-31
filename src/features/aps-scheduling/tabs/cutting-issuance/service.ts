@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import { CuttingPlanService } from '@/features/engineering-db/services/cutting-plan-service'
+import { SALES_ORDER_PRODUCTION_SOURCE_STATUSES } from '@/features/trading/data/sales-order-production-source-eligibility'
 import { type SalesOrder } from '@/features/trading/data/schema'
 import { getSalesOrders } from '@/features/trading/sales/services/sales-query-service'
 import type {
@@ -141,7 +142,7 @@ async function loadAllSchedulableSalesOrders(): Promise<SalesOrder[]> {
       page,
       pageSize: SALES_ORDER_PAGE_SIZE,
       withLines: true,
-      status: ['Draft', 'Pending', 'InProgress'],
+      status: [...SALES_ORDER_PRODUCTION_SOURCE_STATUSES],
     })
 
     items.push(...response.items)

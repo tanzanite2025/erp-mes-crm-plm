@@ -137,10 +137,10 @@ export function SalesOrderPackagingEntryView({
 
   const content = (
     <div
-      className={`flex h-full w-full flex-col rounded-[24px] border border-dashed p-3 text-left transition-colors ${stateMeta.surfaceClassName}`}
+      className={`flex h-full w-full min-w-0 flex-col rounded-2xl border border-dashed p-3 text-left transition-colors ${stateMeta.surfaceClassName}`}
     >
-      <div className='flex items-start justify-between gap-3'>
-        <div className='min-w-0'>
+      <div className='flex flex-wrap items-start justify-between gap-3'>
+        <div className='min-w-0 flex-1 basis-32'>
           <div className='flex items-center gap-2'>
             <Boxes className='size-4 text-primary' />
             <h3 className='text-sm font-black tracking-tighter'>
@@ -148,7 +148,7 @@ export function SalesOrderPackagingEntryView({
             </h3>
           </div>
         </div>
-        <div className='flex items-start gap-1.5'>
+        <div className='flex shrink-0 items-start gap-1.5'>
           <span
             className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[8px] font-black tracking-widest uppercase ${stateMeta.badgeClassName}`}
           >
@@ -188,7 +188,7 @@ export function SalesOrderPackagingEntryView({
 
   if (!target) {
     return (
-      <div className='flex h-full flex-col rounded-[24px] border border-dashed border-muted/40 bg-background/80 px-3 py-2.5'>
+      <div className='flex h-full min-w-0 flex-col rounded-2xl border border-dashed border-muted/40 bg-background/80 px-3 py-2.5'>
         <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
           <TriangleAlert className='size-3' />
           暂无可配置包装入口
@@ -209,7 +209,7 @@ export function SalesOrderPackagingEntryView({
             type='button'
             variant='ghost'
             data-order-row-action='true'
-            className='h-full w-full rounded-[24px] p-0 hover:bg-transparent'
+            className='h-full w-full min-w-0 rounded-2xl p-0 hover:bg-transparent'
             onClick={(event) => {
               event.stopPropagation()
             }}

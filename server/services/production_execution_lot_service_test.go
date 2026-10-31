@@ -39,6 +39,7 @@ func createProductionExecutionLotTestSchema(t *testing.T, database *gorm.DB) {
 
 	require.NoError(t, database.Exec(`
 		CREATE TABLE production_plans (
+			sales_order_line_id INTEGER,
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
 			updated_at DATETIME,

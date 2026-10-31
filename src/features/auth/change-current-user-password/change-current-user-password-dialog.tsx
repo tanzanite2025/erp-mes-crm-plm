@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
+import { KeyRound, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +16,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import {
+  buildHostedQuickActionDialogContentClassName,
+  hostedQuickActionDialogScrollableBodyClassName,
+} from '@/components/hosted-quick-action-dialog.styles'
 import { PasswordInput } from '@/components/password-input'
 import { changeCurrentAuthenticatedUserPassword } from './change-current-user-password-api-service'
 import { getNewUserPasswordPolicyError } from './new-user-password-policy-validation'
@@ -23,6 +29,23 @@ type ChangeCurrentUserPasswordDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+const changeCurrentUserPasswordDialogClasses = buildActionDialogShellClasses({
+  content: 'flex flex-col gap-0 sm:max-w-xl',
+  header: 'border-muted/50 bg-muted/5 p-6 text-start sm:p-8',
+  body: 'p-6 sm:p-8',
+  title: 'flex items-center gap-2 text-lg',
+  description:
+    'text-xs leading-relaxed font-bold tracking-normal normal-case opacity-70',
+  footer: 'shrink-0 border-muted/50',
+})
+
+const changeCurrentUserPasswordFieldClassName =
+  'grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-x-6'
+const changeCurrentUserPasswordLabelClassName =
+  'text-[11px] font-black tracking-tight text-muted-foreground sm:justify-end'
+const changeCurrentUserPasswordInputClassName =
+  'h-11 rounded-2xl border-none bg-muted/50 px-4 pr-12 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
 
 export function ChangeCurrentUserPasswordDialog({
   open,
@@ -130,21 +153,47 @@ function OpenCurrentUserPasswordChangeDialog({
         if (!isSubmitting) onOpenChange(nextOpen)
       }}
     >
-      <DialogContent size='md' showCloseButton={!isSubmitting}>
-        <DialogHeader>
-          <DialogTitle>{t('common.auth.changePassword.title')}</DialogTitle>
-          <DialogDescription>
+      <DialogContent
+        className={buildHostedQuickActionDialogContentClassName(
+          changeCurrentUserPasswordDialogClasses.content
+        )}
+        showCloseButton={!isSubmitting}
+      >
+        <DialogHeader className={changeCurrentUserPasswordDialogClasses.header}>
+          <DialogTitle className={changeCurrentUserPasswordDialogClasses.title}>
+            <KeyRound
+              className='size-5 shrink-0 text-primary'
+              aria-hidden='true'
+            />
+            {t('common.auth.changePassword.title')}
+          </DialogTitle>
+          <DialogDescription
+            className={changeCurrentUserPasswordDialogClasses.description}
+          >
             {t('common.auth.changePassword.description')}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submitCurrentUserPasswordChange} className='grid gap-4'>
-          <fieldset disabled={isSubmitting} className='grid gap-4'>
-            <div className='grid gap-2'>
-              <Label htmlFor='change-current-user-current-password'>
+        <form
+          id='change-current-user-password-form'
+          onSubmit={submitCurrentUserPasswordChange}
+          data-mobile-floating-surface-scroll-body
+          className={cn(
+            hostedQuickActionDialogScrollableBodyClassName,
+            changeCurrentUserPasswordDialogClasses.body,
+            'space-y-6'
+          )}
+        >
+          <fieldset disabled={isSubmitting} className='grid min-w-0 gap-6'>
+            <div className={changeCurrentUserPasswordFieldClassName}>
+              <Label
+                htmlFor='change-current-user-current-password'
+                className={changeCurrentUserPasswordLabelClassName}
+              >
                 {t('common.auth.changePassword.currentPassword')}
               </Label>
               <PasswordInput
                 id='change-current-user-current-password'
+                className={changeCurrentUserPasswordInputClassName}
                 autoComplete='current-password'
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
@@ -155,12 +204,16 @@ function OpenCurrentUserPasswordChangeDialog({
                 }
               />
             </div>
-            <div className='grid gap-2'>
-              <Label htmlFor='change-current-user-new-password'>
+            <div className={changeCurrentUserPasswordFieldClassName}>
+              <Label
+                htmlFor='change-current-user-new-password'
+                className={changeCurrentUserPasswordLabelClassName}
+              >
                 {t('common.auth.changePassword.newPassword')}
               </Label>
               <PasswordInput
                 id='change-current-user-new-password'
+                className={changeCurrentUserPasswordInputClassName}
                 autoComplete='new-password'
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
@@ -168,17 +221,21 @@ function OpenCurrentUserPasswordChangeDialog({
               />
               <p
                 id='change-current-user-password-policy'
-                className='text-xs text-muted-foreground'
+                className='text-[11px] leading-relaxed text-muted-foreground sm:col-start-2'
               >
                 {t('common.auth.changePassword.policy')}
               </p>
             </div>
-            <div className='grid gap-2'>
-              <Label htmlFor='change-current-user-confirm-password'>
+            <div className={changeCurrentUserPasswordFieldClassName}>
+              <Label
+                htmlFor='change-current-user-confirm-password'
+                className={changeCurrentUserPasswordLabelClassName}
+              >
                 {t('common.auth.changePassword.confirmPassword')}
               </Label>
               <PasswordInput
                 id='change-current-user-confirm-password'
+                className={changeCurrentUserPasswordInputClassName}
                 autoComplete='new-password'
                 value={confirmNewPassword}
                 onChange={(event) => setConfirmNewPassword(event.target.value)}
@@ -189,28 +246,34 @@ function OpenCurrentUserPasswordChangeDialog({
             <p
               id='change-current-user-password-error'
               role='alert'
-              className='text-sm text-destructive'
+              className='rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-xs leading-relaxed font-bold text-destructive'
             >
               {errorMessage}
             </p>
           )}
-          <DialogFooter>
-            <Button
-              type='button'
-              variant='outline'
-              disabled={isSubmitting}
-              onClick={() => onOpenChange(false)}
-            >
-              {t('common.actions.cancel')}
-            </Button>
-            <Button type='submit' disabled={isSubmitting}>
-              {isSubmitting && (
-                <Loader2 className='size-4 animate-spin' aria-hidden='true' />
-              )}
-              {t('common.auth.changePassword.submit')}
-            </Button>
-          </DialogFooter>
         </form>
+        <DialogFooter className={changeCurrentUserPasswordDialogClasses.footer}>
+          <Button
+            type='button'
+            variant='ghost'
+            disabled={isSubmitting}
+            onClick={() => onOpenChange(false)}
+            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
+          >
+            {t('common.actions.cancel')}
+          </Button>
+          <Button
+            type='submit'
+            form='change-current-user-password-form'
+            disabled={isSubmitting}
+            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all active:scale-95'
+          >
+            {isSubmitting && (
+              <Loader2 className='size-4 animate-spin' aria-hidden='true' />
+            )}
+            {t('common.auth.changePassword.submit')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

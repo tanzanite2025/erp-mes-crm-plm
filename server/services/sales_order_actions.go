@@ -7,9 +7,6 @@ import (
 
 var salesOrderAvailableActionOrder = []statemachine.SalesOrderAction{
 	statemachine.SalesOrderActionSubmitPending,
-	statemachine.SalesOrderActionStartScheduling,
-	statemachine.SalesOrderActionStartProduction,
-	statemachine.SalesOrderActionMarkDone,
 	statemachine.SalesOrderActionCancel,
 	statemachine.SalesOrderActionCreateReturn,
 }

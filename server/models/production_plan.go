@@ -7,17 +7,18 @@ import (
 // ProductionPlan 生产主计划模型
 type ProductionPlan struct {
 	BaseModel
-	OrderNo     string           `gorm:"size:50;index;not null" json:"orderNo"`
-	OrderID     string           `gorm:"type:uuid;index" json:"orderId"`
-	SalesOrder  *SalesOrder      `gorm:"foreignKey:OrderID" json:"salesOrder,omitempty"`
-	ProductID   string           `gorm:"type:uuid;index" json:"productId"`
-	ProductName string           `gorm:"size:255" json:"productName"`
-	Quantity    float64          `gorm:"not null" json:"quantity"`
-	Status      string           `gorm:"size:20;default:'SCHEDULED'" json:"status"` // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELED
-	StartDate   *time.Time       `json:"startDate"`
-	EndDate     *time.Time       `json:"endDate"`
-	Tasks       []ProductionTask `gorm:"foreignKey:PlanID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"tasks"`
-	Notes       string           `gorm:"type:text" json:"notes"`
+	OrderNo          string           `gorm:"size:50;index;not null" json:"orderNo"`
+	OrderID          string           `gorm:"type:uuid;index" json:"orderId"`
+	SalesOrderLineID uint             `gorm:"index" json:"salesOrderLineId,omitempty"`
+	SalesOrder       *SalesOrder      `gorm:"foreignKey:OrderID" json:"salesOrder,omitempty"`
+	ProductID        string           `gorm:"type:uuid;index" json:"productId"`
+	ProductName      string           `gorm:"size:255" json:"productName"`
+	Quantity         float64          `gorm:"not null" json:"quantity"`
+	Status           string           `gorm:"size:20;default:'SCHEDULED'" json:"status"` // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELED
+	StartDate        *time.Time       `json:"startDate"`
+	EndDate          *time.Time       `json:"endDate"`
+	Tasks            []ProductionTask `gorm:"foreignKey:PlanID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"tasks"`
+	Notes            string           `gorm:"type:text" json:"notes"`
 }
 
 // ProductionTask 生产工单/任务 (明细级)

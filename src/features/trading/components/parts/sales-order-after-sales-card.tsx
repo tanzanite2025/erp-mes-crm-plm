@@ -108,7 +108,7 @@ export function SalesOrderAfterSalesCard({
   return (
     <div
       className={cn(
-        'relative flex h-full overflow-hidden rounded-[24px] border border-dashed p-3 transition-colors',
+        'relative flex h-full min-w-0 overflow-hidden rounded-2xl border border-dashed p-3 transition-colors',
         meta.surfaceClassName
       )}
     >

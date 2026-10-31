@@ -307,6 +307,9 @@ func recordProductionOperationExecutionTx(
 		return productionOperationExecutionRecordResult{}, fmt.Errorf("failed to update product barcode last event: %w", err)
 	}
 	state.LastEventID = event.ID
+	if err := SynchronizeSalesOrderProductionProgressFromExecutionLotTx(tx, normalized.ExecutionLotID); err != nil {
+		return productionOperationExecutionRecordResult{}, err
+	}
 
 	return productionOperationExecutionRecordResult{
 		Operation:  operation,

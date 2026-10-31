@@ -15,7 +15,7 @@ export function SalesOrderStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${meta.color}`}
+      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs leading-5 font-medium ${meta.color}`}
     >
       {getSalesStatusLabel(status, t)}
     </span>

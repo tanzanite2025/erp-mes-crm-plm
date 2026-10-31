@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Loader2, ShoppingCart } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import type { SalesOrder } from '../data/schema'
@@ -15,6 +14,7 @@ import { SalesOrderPackagingEntry } from './parts/sales-order-packaging-entry'
 import { SalesOrderPackagingProfileDialogBridge } from './parts/sales-order-packaging-profile-dialog-bridge'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderCanceledSection } from './sales-order-canceled-section'
+import { SalesOrderCardScrollArea } from './sales-order-card-scroll-area'
 import type { SalesOrderFeatureCardFactory } from './sales-order-card/sales-order-card-types'
 import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderListToolbar } from './sales-order-list-toolbar'
@@ -121,7 +121,7 @@ export function SalesOrderList() {
 
   return (
     <div className='flex min-h-0 flex-1 animate-in gap-6 overflow-hidden duration-700 fade-in'>
-      <div className='flex min-h-0 w-full flex-col gap-5 transition-all duration-500'>
+      <div className='flex min-h-0 w-full min-w-0 flex-col gap-5 transition-all duration-500'>
         <SalesOrderListToolbar
           searchTerm={controller.searchTerm}
           onSearchTermChange={controller.setSearchTerm}
@@ -143,29 +143,27 @@ export function SalesOrderList() {
         />
 
         <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden'>
-          <ScrollArea className='min-h-0 flex-1'>
-            <div className='space-y-3 pr-1'>
-              {controller.isRefreshingList ? (
-                <div className='flex items-center justify-end gap-2 rounded-full border border-dashed border-primary/20 bg-primary/5 px-3 py-1.5 text-[9px] font-black tracking-widest text-primary/70 uppercase'>
-                  <Loader2 className='size-3 animate-spin' />
-                  刷新中
-                </div>
-              ) : null}
+          <SalesOrderCardScrollArea className='min-h-0 flex-1'>
+            {controller.isRefreshingList ? (
+              <div className='flex items-center justify-end gap-2 rounded-full border border-dashed border-primary/20 bg-primary/5 px-3 py-1.5 text-[9px] font-black tracking-widest text-primary/70 uppercase'>
+                <Loader2 className='size-3 animate-spin' />
+                刷新中
+              </div>
+            ) : null}
 
-              <SalesOrderMaster
-                orders={controller.primaryOrders}
-                selectedId={controller.selectedId || undefined}
-                onSelect={controller.handleOpenDetail}
-                onPreassembleScan={
-                  controller.preassemble.handleOpenPreassembleScan
-                }
-                onViewReceivable={handleViewReceivable}
-                onEdit={controller.handleEditOrder}
-                onDelete={controller.handleDeleteOrder}
-                getFeatureCards={getOrderFeatureCards}
-              />
-            </div>
-          </ScrollArea>
+            <SalesOrderMaster
+              orders={controller.primaryOrders}
+              selectedId={controller.selectedId || undefined}
+              onSelect={controller.handleOpenDetail}
+              onPreassembleScan={
+                controller.preassemble.handleOpenPreassembleScan
+              }
+              onViewReceivable={handleViewReceivable}
+              onEdit={controller.handleEditOrder}
+              onDelete={controller.handleDeleteOrder}
+              getFeatureCards={getOrderFeatureCards}
+            />
+          </SalesOrderCardScrollArea>
 
           <SalesOrderCanceledSection
             shouldLoadCanceledSection={controller.shouldLoadCanceledSection}

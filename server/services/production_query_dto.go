@@ -17,19 +17,20 @@ type ProductionTaskResponse struct {
 }
 
 type ProductionPlanResponse struct {
-	ID          string                   `json:"id"`
-	CreatedAt   time.Time                `json:"createdAt"`
-	UpdatedAt   time.Time                `json:"updatedAt"`
-	OrderNo     string                   `json:"orderNo"`
-	OrderID     string                   `json:"orderId"`
-	ProductID   string                   `json:"productId"`
-	ProductName string                   `json:"productName"`
-	Quantity    float64                  `json:"quantity"`
-	Status      string                   `json:"status"`
-	StartDate   *time.Time               `json:"startDate"`
-	EndDate     *time.Time               `json:"endDate"`
-	Notes       string                   `json:"notes"`
-	Tasks       []ProductionTaskResponse `json:"tasks"`
+	ID               string                   `json:"id"`
+	CreatedAt        time.Time                `json:"createdAt"`
+	UpdatedAt        time.Time                `json:"updatedAt"`
+	OrderNo          string                   `json:"orderNo"`
+	OrderID          string                   `json:"orderId"`
+	SalesOrderLineID uint                     `json:"salesOrderLineId,omitempty"`
+	ProductID        string                   `json:"productId"`
+	ProductName      string                   `json:"productName"`
+	Quantity         float64                  `json:"quantity"`
+	Status           string                   `json:"status"`
+	StartDate        *time.Time               `json:"startDate"`
+	EndDate          *time.Time               `json:"endDate"`
+	Notes            string                   `json:"notes"`
+	Tasks            []ProductionTaskResponse `json:"tasks"`
 }
 
 type ProductionPlansListResponse struct {

@@ -37,8 +37,9 @@ func RecalculateSalesOrderStatusTx(tx *gorm.DB, salesOrderID string) (models.Sal
 			desiredStatus = "InProgress"
 		} else if nextStatus == "Draft" {
 			desiredStatus = "Draft"
-		} else if nextStatus == "Scheduling" {
-			desiredStatus = "Scheduling"
+		} else if order.Lines[i].Status == "Scheduling" || order.Lines[i].Status == "InProgress" {
+			// Production progress belongs to this stable line, not every line in the order.
+			desiredStatus = order.Lines[i].Status
 		}
 
 		if order.Lines[i].Status != desiredStatus {

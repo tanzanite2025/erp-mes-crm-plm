@@ -119,10 +119,10 @@ var (
 	defaultKnowledgeBaseEntries = []knowledgeEntryInput{
 		{
 			ID:        "kb-sales-order-scheduling",
-			Title:     "销售订单为什么要进入排产中",
+			Title:     "销售订单确认后如何进入生产准备",
 			Category:  "status",
-			Summary:   "排产中是销售订单进入一维码打印、MRP 和仓储备货前的闭环状态。",
-			Content:   "销售订单从待处理进入排产中后，代表订单已经被确认并进入生产准备链路。一维码打印只选择排产中的订单，避免草稿、待处理或已作废订单被误打印。",
+			Summary:   "确认后的有效订单可直接用于 MRP、裁纱和一维码预打，无需手工进入排产。",
+			Content:   "MRP、裁纱和一维码预打允许选择待处理、排产中和生产中的有效销售订单，排除草稿、已完成、已作废和报价。认领只分配责任；MRP 分析和预打条码不推进订单状态。真实生产计划创建后进入排产中，计划或工单开工后进入生产中，全部发货后完成订单。已有生产计划应先撤销未执行计划再作废订单，已开工订单不能直接作废。",
 			Keywords:  []string{"销售订单", "排产中", "一维码打印", "作废订单", "状态机"},
 			RoutePath: "/code-center/linear-barcode/print",
 		},

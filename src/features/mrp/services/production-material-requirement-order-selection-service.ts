@@ -1,3 +1,4 @@
+import { SALES_ORDER_PRODUCTION_SOURCE_STATUSES } from '@/features/trading/data/sales-order-production-source-eligibility'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import { getSalesOrders } from '@/features/trading/sales'
 
@@ -12,7 +13,7 @@ export async function loadAllActiveSalesOrdersForProductionMaterialRequirementSe
       page,
       pageSize: 200,
       withLines: true,
-      status: ['Pending', 'Scheduling', 'InProgress'],
+      status: [...SALES_ORDER_PRODUCTION_SOURCE_STATUSES],
     })
     if (expectedTotal !== undefined && response.total !== expectedTotal)
       throw new Error(

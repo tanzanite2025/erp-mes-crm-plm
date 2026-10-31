@@ -2,13 +2,14 @@ package services
 
 import (
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"gorm.io/gorm"
 )
 
 // Shared scope for requirement analysis and issuance progress; quotations are not production orders.
 func applyProductionMaterialRequirementActiveOrderScope(database *gorm.DB) *gorm.DB {
-	return applySalesOrderRecordScope(database).Where("sales_orders.status IN ?", []string{"Pending", "Scheduling", "InProgress"})
+	return applySalesOrderRecordScope(database).Where("sales_orders.status IN ?", statemachine.SalesOrderProductionSourceStatuses())
 }
 
 func readProductionMaterialRequirementActiveOrders(database *gorm.DB) ([]models.SalesOrder, error) {

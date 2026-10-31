@@ -27,6 +27,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/mrp/production-material-issuance-guide':
     'mrp.productionMaterialIssuanceGuide.title',
   '/purchase': 'sidebar.items.purchaseManagement',
+  '/purchase/purchase-operation-guide': 'purchase.operationGuide.title',
   '/purchase/suppliers': 'purchase.tabs.suppliers',
   '/purchase/orders': 'purchase.tabs.orders',
   '/purchase/logistics': 'purchase.tabs.logistics',
@@ -45,6 +46,7 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/cutting-operations/size-inventory':
     'commandMenu.items.cuttingSizeInventory',
   '/trading': 'sidebar.items.salesManagement',
+  '/trading/sales-operation-guide': 'trading.operationGuide.title',
   '/trading/customers': 'trading.tabs.customers',
   '/trading/sales-orders': 'trading.tabs.salesOrders',
   '/trading/sales-returns': 'trading.tabs.salesReturns',

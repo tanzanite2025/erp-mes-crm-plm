@@ -14,6 +14,8 @@ interface AuditStampProps {
   module?: AuditModuleValue
   targetId?: string
   showTimelineButton?: boolean
+  presentation?: 'compact' | 'detail'
+  labels?: { created: string; updated: string; timeline: string }
 }
 
 /**
@@ -30,6 +32,8 @@ export function AuditStamp({
   module,
   targetId,
   showTimelineButton = true,
+  presentation = 'compact',
+  labels,
 }: AuditStampProps) {
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   // 仅当传入了 module 和 targetId 时才启用可交互模式
@@ -46,19 +50,41 @@ export function AuditStamp({
     <div
       className={cn(
         'flex flex-col gap-1.5 border-l border-dashed border-muted-foreground/20 pl-4 transition-all duration-300',
-        'group/audit font-maple-ui text-[9px] tracking-tighter uppercase opacity-50 hover:opacity-100',
+        'group/audit font-maple-ui',
+        presentation === 'detail'
+          ? 'min-w-0 gap-3 text-sm leading-6 [overflow-wrap:anywhere]'
+          : 'text-[9px] tracking-tighter uppercase opacity-50 hover:opacity-100',
         isInteractive && 'hover:border-primary/50',
         className
       )}
     >
       {/* Created Trace */}
-      <div className='flex items-center gap-2'>
-        <span className='font-black text-primary/60'>CREATED:</span>
+      <div
+        className={cn(
+          'flex items-center gap-2',
+          presentation === 'detail' && 'flex-wrap'
+        )}
+      >
+        <span
+          className={
+            presentation === 'detail'
+              ? 'font-medium text-muted-foreground'
+              : 'font-black text-primary/60'
+          }
+        >
+          {labels?.created || 'CREATED'}:
+        </span>
         <span className='font-medium text-foreground/80'>
           {formattedCreatedAt}
         </span>
         <div className='size-0.5 rounded-full bg-muted-foreground/30' />
-        <span className='font-black text-slate-500'>
+        <span
+          className={
+            presentation === 'detail'
+              ? 'text-muted-foreground'
+              : 'font-black text-slate-500'
+          }
+        >
           @{auditUtils.formatOperatorName(createdBy)}
         </span>
         {isInteractive && showTimelineButton && (
@@ -68,8 +94,11 @@ export function AuditStamp({
               event.stopPropagation()
               setIsTimelineOpen(true)
             }}
-            className='ms-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/20 bg-primary/8 text-primary transition-colors hover:bg-primary/15'
-            aria-label='Open data timeline'
+            className={cn(
+              'ms-1 inline-flex shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/8 text-primary transition-colors hover:bg-primary/15',
+              presentation === 'detail' ? 'size-8' : 'size-5'
+            )}
+            aria-label={labels?.timeline || 'Open data timeline'}
           >
             <History className='size-3' />
           </button>
@@ -78,13 +107,32 @@ export function AuditStamp({
 
       {/* Updated Trace (Only if exists and different from creation) */}
       {formattedUpdatedAt && updatedAt !== createdAt && (
-        <div className='flex animate-in items-center gap-2 fade-in slide-in-from-left-1'>
-          <span className='font-black text-amber-600/60'>UPDATED:</span>
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            presentation === 'detail' && 'flex-wrap'
+          )}
+        >
+          <span
+            className={
+              presentation === 'detail'
+                ? 'font-medium text-muted-foreground'
+                : 'font-black text-amber-600/60'
+            }
+          >
+            {labels?.updated || 'UPDATED'}:
+          </span>
           <span className='font-medium text-foreground/80'>
             {formattedUpdatedAt}
           </span>
           <div className='size-0.5 rounded-full bg-muted-foreground/30' />
-          <span className='font-black text-slate-500'>
+          <span
+            className={
+              presentation === 'detail'
+                ? 'text-muted-foreground'
+                : 'font-black text-slate-500'
+            }
+          >
             @{auditUtils.formatOperatorName(updatedBy)}
           </span>
         </div>

@@ -30,8 +30,11 @@ export function SalesOrderDetailActivity({
   })
 
   return (
-    <div className='animate-in space-y-3 rounded-xl border border-dashed border-muted/40 bg-muted/5 p-3 duration-500 slide-in-from-bottom-2'>
-      <div className='relative space-y-3'>
+    <section className='flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:p-4 lg:flex-row lg:items-baseline'>
+      <h2 className='shrink-0 text-base font-semibold'>
+        {t('tradingSalesOrder.detail.activityTitle')}
+      </h2>
+      <div className='relative min-w-0 flex-1 space-y-3'>
         <AuditStamp
           module={AUDIT_MODULES.salesOrder}
           targetId={order.id}
@@ -39,15 +42,21 @@ export function SalesOrderDetailActivity({
           createdAt={order.createdAt}
           updatedBy={order.updatedBy}
           updatedAt={order.updatedAt}
-          className='border-primary/10'
+          className='gap-x-6 gap-y-1 border-0 p-0 sm:flex-row sm:flex-wrap sm:items-center'
+          presentation='detail'
+          labels={{
+            created: t('tradingSalesOrder.detail.createdRecord'),
+            updated: t('tradingSalesOrder.detail.info.updatedBy'),
+            timeline: t('tradingSalesOrder.detail.readingLayout.fullActivity'),
+          }}
         />
 
         {canDelete && (
-          <div className='flex justify-end border-t border-dashed border-muted-foreground/10 pt-3'>
+          <div className='flex justify-end border-t border-border pt-4'>
             <Button
               variant='ghost'
               size='sm'
-              className='h-8 gap-2 rounded-full border border-destructive/10 px-5 text-[10px] font-black tracking-wide text-destructive uppercase transition-all hover:bg-destructive/10'
+              className='min-h-9 gap-2 rounded-lg border border-destructive/20 px-4 text-sm font-medium text-destructive hover:bg-destructive/10'
               onClick={handleHardDelete}
             >
               <Trash2 className='size-3.5' />
@@ -56,6 +65,6 @@ export function SalesOrderDetailActivity({
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }

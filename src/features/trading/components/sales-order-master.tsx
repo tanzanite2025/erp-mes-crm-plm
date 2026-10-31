@@ -14,6 +14,7 @@ import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
 import type { SalesOrder } from '../data/schema'
 import { isSalesOrderPreassembleScanAllowed } from '../utils/sales-order-preassemble'
+import { SalesOrderProductModelSummary } from './parts/sales-order-product-model-summary'
 import { SalesOrderQuantitySummaryCard } from './parts/sales-order-quantity-packaging-cell'
 import type {
   SalesOrderCardSection,
@@ -57,7 +58,7 @@ function SalesOrderInfoCard({
 }: SalesOrderInfoCardProps) {
   return (
     <div
-      className={`relative flex h-full overflow-hidden rounded-[24px] border border-dashed border-muted/40 bg-background/80 p-3 transition-colors ${
+      className={`relative flex h-full min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-muted/20 p-3 transition-colors ${
         className ?? ''
       }`}
     >
@@ -146,7 +147,7 @@ export function SalesOrderMaster({
           </p>
         </div>
       ) : (
-        <div className='flex min-w-0 flex-col gap-3'>
+        <div className='flex min-w-0 flex-col gap-5'>
           {orders.map((order) => {
             const active = order.id === selectedId
             const canPreassembleScan = isSalesOrderPreassembleScanAllowed(order)
@@ -169,14 +170,14 @@ export function SalesOrderMaster({
             return (
               <article
                 key={order.id}
-                className={`group animate-in rounded-[28px] border border-dashed p-2.5 transition-all duration-200 fade-in slide-in-from-left-2 sm:p-3 ${
+                className={`group min-w-0 overflow-hidden rounded-3xl border bg-card text-card-foreground shadow-sm transition-[border-color,box-shadow] duration-200 ${
                   active
-                    ? 'border-primary/30 bg-card shadow-xl ring-2 ring-primary/20'
-                    : 'border-muted/50 bg-card shadow-sm'
+                    ? 'border-primary/60 ring-2 ring-primary/15 ring-inset'
+                    : 'border-primary/20 hover:border-primary/35 hover:shadow-md'
                 }`}
               >
-                <div className='flex flex-col gap-3'>
-                  <div className='flex flex-col gap-2.5 border-b border-dashed border-muted/40 pb-3 xl:flex-row xl:items-center xl:justify-between'>
+                <div className='flex min-w-0 flex-col'>
+                  <div className='flex min-w-0 flex-col gap-2.5 border-b border-border bg-muted/60 p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between'>
                     <div className='min-w-0 space-y-2.5'>
                       <div className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2'>
                         <span className='min-w-0 truncate text-lg font-black tracking-tighter text-foreground uppercase'>
@@ -257,7 +258,7 @@ export function SalesOrderMaster({
 
                         <div
                           data-order-row-action='true'
-                          className='grid shrink-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1.5 rounded-[22px] border border-dashed border-muted/40 bg-background/70 p-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] xl:flex xl:flex-wrap xl:justify-end xl:rounded-[20px] xl:p-1'
+                          className='grid min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-1.5 rounded-[22px] border border-dashed border-muted/40 bg-background/70 p-1.5 xl:flex xl:flex-wrap xl:justify-end xl:rounded-[20px] xl:p-1'
                         >
                           <Button
                             type='button'
@@ -274,7 +275,7 @@ export function SalesOrderMaster({
                             variant='ghost'
                             disabled={!canPreassembleScan}
                             data-order-row-action='true'
-                            className='col-span-2 h-9 w-full justify-center rounded-full px-3 text-[10px] font-black tracking-widest xl:col-span-1 xl:h-8 xl:w-auto'
+                            className='col-span-2 min-h-9 w-full justify-center rounded-full px-3 text-[10px] leading-5 font-black tracking-widest whitespace-normal xl:col-span-1 xl:h-8 xl:w-auto'
                             onClick={() => {
                               if (!canPreassembleScan) return
                               openScanPreassemble(order)
@@ -303,7 +304,7 @@ export function SalesOrderMaster({
                                   variant='ghost'
                                   size='icon'
                                   data-order-row-action='true'
-                                  className='h-9 w-full rounded-full hover:bg-muted xl:h-8 xl:w-8'
+                                  className='col-start-2 row-start-1 h-9 w-full rounded-full hover:bg-muted xl:h-8 xl:w-8'
                                 >
                                   <MoreHorizontal className='size-4' />
                                 </Button>
@@ -350,20 +351,24 @@ export function SalesOrderMaster({
                     ) : null}
                   </div>
 
-                  <div className='grid items-stretch gap-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.55fr)_minmax(0,1.55fr)]'>
-                    <SalesOrderInfoCard
-                      label={t(
-                        'tradingSalesOrder.master.columns.totalQuantity'
-                      )}
-                    >
-                      <SalesOrderQuantitySummaryCard order={order} />
-                    </SalesOrderInfoCard>
+                  <div className='min-w-0 space-y-4 p-4 sm:p-5'>
+                    <SalesOrderProductModelSummary lines={order.lines} />
 
-                    {featureCards.map((featureCard) => (
-                      <div key={featureCard.id} className='h-full'>
-                        {featureCard.render()}
-                      </div>
-                    ))}
+                    <div className='grid items-stretch gap-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.55fr)_minmax(0,1.55fr)]'>
+                      <SalesOrderInfoCard
+                        label={t(
+                          'tradingSalesOrder.master.columns.totalQuantity'
+                        )}
+                      >
+                        <SalesOrderQuantitySummaryCard order={order} />
+                      </SalesOrderInfoCard>
+
+                      {featureCards.map((featureCard) => (
+                        <div key={featureCard.id} className='h-full min-w-0'>
+                          {featureCard.render()}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </article>

@@ -17,6 +17,7 @@ export const sidebar = {
     warehouseLogistics: '仓储管理',
     warehouseLogisticsHandbook: '仓储管理操作手册',
     purchaseAndSales: '购销管理',
+    purchaseAndSalesHandbook: '购销操作指南',
     purchaseManagement: '采购管理',
     productManagement: '产品管理',
     productHandbook: '产品操作手册',

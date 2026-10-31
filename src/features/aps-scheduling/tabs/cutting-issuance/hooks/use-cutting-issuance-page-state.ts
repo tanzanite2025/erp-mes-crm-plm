@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { CUTTING_ISSUANCE_QUERY_KEYS } from '../constants'
 import {
   createCuttingIssuanceExecution,
@@ -130,6 +131,9 @@ export function useCuttingIssuancePageState() {
         })
       )
       await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tradingQueryKeys.salesOrdersRoot(),
+        }),
         queryClient.invalidateQueries({
           queryKey: CUTTING_ISSUANCE_QUERY_KEYS.executions,
         }),

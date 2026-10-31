@@ -6,6 +6,18 @@ type TranslateFn = (
   params?: Record<string, string | number>
 ) => string
 
+export const SALES_OPERATION_GUIDE_PATH = '/trading/sales-operation-guide'
+
+export function getSalesOperationGuideTabs(t: TranslateFn): TabItem[] {
+  return [
+    {
+      key: 'sales-operation-guide',
+      label: t('trading.operationGuide.title'),
+      href: SALES_OPERATION_GUIDE_PATH,
+    },
+  ]
+}
+
 /** @deprecated Use getTradingTabs(t) instead */
 export const tradingTabs: TabItem[] = [
   { key: 'customers', label: '', href: '/trading/customers' },

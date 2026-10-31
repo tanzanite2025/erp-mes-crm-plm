@@ -1,8 +1,8 @@
 ﻿import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { type SalesOrder } from '../data/schema'
+import { SalesOrderCardScrollArea } from './sales-order-card-scroll-area'
 import type { SalesOrderFeatureCardFactory } from './sales-order-card/sales-order-card-types'
 import { SalesOrderMaster } from './sales-order-master'
 
@@ -65,21 +65,19 @@ export function SalesOrderCanceledSection({
       </div>
 
       {showCanceledSection ? (
-        <ScrollArea className='max-h-[42vh]'>
-          <div className='pr-1'>
-            <SalesOrderMaster
-              orders={canceledOrders}
-              selectedId={selectedId}
-              section='canceled'
-              onSelect={onSelect}
-              onPreassembleScan={onPreassembleScan}
-              onViewReceivable={onViewReceivable}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              getFeatureCards={getFeatureCards}
-            />
-          </div>
-        </ScrollArea>
+        <SalesOrderCardScrollArea className='max-h-[42vh] [&>[data-slot=scroll-area-viewport]]:max-h-[42vh]'>
+          <SalesOrderMaster
+            orders={canceledOrders}
+            selectedId={selectedId}
+            section='canceled'
+            onSelect={onSelect}
+            onPreassembleScan={onPreassembleScan}
+            onViewReceivable={onViewReceivable}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            getFeatureCards={getFeatureCards}
+          />
+        </SalesOrderCardScrollArea>
       ) : null}
 
       {showCanceledSection && canceledTotal > pageSize ? (

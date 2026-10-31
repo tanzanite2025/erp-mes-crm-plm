@@ -78,6 +78,13 @@ export function useSalesOrderDetailSummaryViewModel({
         value: `${order.quantity?.toLocaleString() || 0} PCS`,
       },
       {
+        label: t('tradingSalesOrder.detail.info.customerPo'),
+        value: order.purchaseOrderNo,
+      },
+    ]
+
+    const recordInfoRows = [
+      {
         label: t('tradingSalesOrder.detail.info.createdBy'),
         value:
           auditUtils.formatOperatorName(order.createdBy) ||
@@ -90,10 +97,6 @@ export function useSalesOrderDetailSummaryViewModel({
           t('tradingSalesOrder.detail.info.originalVersion'),
       },
       {
-        label: t('tradingSalesOrder.detail.info.customerPo'),
-        value: order.purchaseOrderNo,
-      },
-      {
         label: t('tradingSalesOrder.detail.info.barcode'),
         value: order.barcode,
       },
@@ -102,6 +105,7 @@ export function useSalesOrderDetailSummaryViewModel({
 
     return {
       infoRows,
+      recordInfoRows,
       requirementsText:
         order.requirements || t('tradingSalesOrder.detail.requirementsEmpty'),
       evidences: order.evidences || [],

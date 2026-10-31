@@ -60,7 +60,7 @@ export function SalesOrderDetail({
     return (
       <div className='flex h-full min-h-[400px] flex-col items-center justify-center space-y-3 opacity-50'>
         <Loader2 className='size-8 animate-spin text-primary' />
-        <p className='text-[10px] font-black tracking-widest uppercase'>
+        <p className='text-sm leading-6'>
           {t('tradingSalesOrder.detail.loading')}
         </p>
       </div>
@@ -73,7 +73,7 @@ export function SalesOrderDetail({
         <div className='flex size-12 animate-pulse items-center justify-center rounded-full bg-muted'>
           <span className='text-xl'>?</span>
         </div>
-        <span className='text-[10px] font-black tracking-widest uppercase'>
+        <span className='text-sm leading-6'>
           {t('tradingSalesOrder.detail.empty')}
         </span>
       </div>

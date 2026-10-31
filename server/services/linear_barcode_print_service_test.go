@@ -8,6 +8,7 @@ import (
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -56,7 +57,7 @@ func TestCreateLinearBarcodeBatchPersistsUniqueInventoryItems(t *testing.T) {
 		t.Fatalf("open sqlite: %v", err)
 	}
 	schemaStatements := []string{
-		`CREATE TABLE sales_orders (id text PRIMARY KEY, order_no text, status text, evidences blob, created_at datetime, updated_at datetime, deleted_at datetime)`,
+		`CREATE TABLE sales_orders (id text PRIMARY KEY, order_no text, status text, type text, classification text, evidences blob, created_at datetime, updated_at datetime, deleted_at datetime)`,
 		`CREATE TABLE sales_order_lines (id integer PRIMARY KEY AUTOINCREMENT, sales_order_id text, line_no integer, product_id text, model_code_snapshot text, appearance_barcode_code_snapshot text, hole_prefix_snapshot text, hole_count integer, qty real, uom text)`,
 		`CREATE TABLE print_batches (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, batch_no text UNIQUE, template_name text, product_id text, bom_id text, start_sn text, end_sn text, full_code text, sales_order_id text, sales_order_line_no integer, quantity integer, activated_count integer, status text, expires_at datetime, version integer)`,
 		`CREATE TABLE linear_barcode_inventory_items (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, batch_id text, product_id text, sales_order_id text, sales_order_line_no integer, code text UNIQUE, serial_number text, status text, expires_at datetime, bound_at datetime, version integer)`,
@@ -80,7 +81,7 @@ func TestCreateLinearBarcodeBatchPersistsUniqueInventoryItems(t *testing.T) {
 		"INSERT INTO sales_orders (id, order_no, status, evidences) VALUES (?, ?, ?, ?)",
 		orderID,
 		"SO-TEST-001",
-		"Scheduling",
+		"Pending",
 		[]byte("[]"),
 	).Error; err != nil {
 		t.Fatalf("create sales order: %v", err)
@@ -100,6 +101,21 @@ func TestCreateLinearBarcodeBatchPersistsUniqueInventoryItems(t *testing.T) {
 		t.Fatalf("create sales order line: %v", err)
 	}
 	batchDate := time.Now().Format("20060102")
+	for _, status := range []string{"Draft", "Done", "Canceled"} {
+		require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("id = ?", orderID).Update("status", status).Error)
+		_, err := CreateLinearBarcodeBatch(CreateLinearBarcodeBatchRequest{SalesOrderID: orderID, SalesOrderLineNo: 1, Quantity: 1})
+		require.ErrorIs(t, err, ErrLinearBarcodeOrderNotPrintable)
+	}
+	require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("id = ?", orderID).Updates(map[string]any{"status": "Pending", "classification": " quote "}).Error)
+	_, err = CreateLinearBarcodeBatch(CreateLinearBarcodeBatchRequest{SalesOrderID: orderID, SalesOrderLineNo: 1, Quantity: 1})
+	require.ErrorIs(t, err, ErrLinearBarcodeSalesOrderNotFound)
+	require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("id = ?", orderID).Updates(map[string]any{"classification": "", "type": "QUOTE"}).Error)
+	_, err = CreateLinearBarcodeBatch(CreateLinearBarcodeBatchRequest{SalesOrderID: orderID, SalesOrderLineNo: 1, Quantity: 1})
+	require.ErrorIs(t, err, ErrLinearBarcodeSalesOrderNotFound)
+	require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("id = ?", orderID).Update("type", "").Error)
+	var rejectedInventoryCount int64
+	require.NoError(t, testDB.Model(&models.LinearBarcodeInventoryItem{}).Count(&rejectedInventoryCount).Error)
+	require.Zero(t, rejectedInventoryCount)
 	existingBatchNo := "P" + batchDate + "-009"
 	if err := testDB.Exec(
 		"INSERT INTO print_batches (id, batch_no, template_name, quantity, status, version) VALUES (?, ?, ?, ?, ?, ?)",
@@ -200,5 +216,13 @@ func TestCreateLinearBarcodeBatchPersistsUniqueInventoryItems(t *testing.T) {
 	}
 	if scrappedCount != 1 {
 		t.Fatalf("expected 1 scrapped item, got %d", scrappedCount)
+	}
+	for _, status := range []string{"Scheduling", "InProgress"} {
+		require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("id = ?", orderID).Update("status", status).Error)
+		_, err := CreateLinearBarcodeBatch(CreateLinearBarcodeBatchRequest{SalesOrderID: orderID, SalesOrderLineNo: 1, Quantity: 1})
+		require.NoError(t, err)
+		var order models.SalesOrder
+		require.NoError(t, testDB.First(&order, "id = ?", orderID).Error)
+		require.Equal(t, status, order.Status)
 	}
 }

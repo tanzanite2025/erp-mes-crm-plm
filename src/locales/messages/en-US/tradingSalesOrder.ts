@@ -26,6 +26,18 @@ export const tradingSalesOrder = {
       'Line {{lineNo}} is not bound to a product, so the order line snapshot cannot be saved.',
   },
   detail: {
+    readingLayout: {
+      description:
+        'Review the order summary, product lines, and activity records.',
+      recordInformation: 'Record identifiers and operators',
+      lineNumber: 'Item {{lineNo}}',
+      productDetails: 'Specifications and appearance',
+      fulfillment: 'Shipment progress',
+      documentsAndProcess: 'Process and drawings',
+      shippedQuantity: 'Shipped / ordered quantity',
+      productCode: 'Product code',
+      fullActivity: 'View full activity history',
+    },
     backToList: 'Back to Ledger',
     activities: 'Activity Log',
     summary: 'Order Summary',
@@ -127,6 +139,11 @@ export const tradingSalesOrder = {
     },
   },
   master: {
+    productSummary: {
+      title: 'Product models / specifications',
+      empty: 'No product line items',
+      unknownProduct: 'Product model not specified',
+    },
     fulfillmentCalculatedInUI: 'Fulfillment preview derived in UI',
     filters: {
       status: 'Status',

@@ -24,19 +24,20 @@ func mapProductionPlanToResponse(plan models.ProductionPlan) ProductionPlanRespo
 		tasks = append(tasks, mapProductionTaskToResponse(task))
 	}
 	return ProductionPlanResponse{
-		ID:          plan.ID,
-		CreatedAt:   plan.CreatedAt,
-		UpdatedAt:   plan.UpdatedAt,
-		OrderNo:     plan.OrderNo,
-		OrderID:     plan.OrderID,
-		ProductID:   plan.ProductID,
-		ProductName: plan.ProductName,
-		Quantity:    plan.Quantity,
-		Status:      plan.Status,
-		StartDate:   plan.StartDate,
-		EndDate:     plan.EndDate,
-		Notes:       plan.Notes,
-		Tasks:       tasks,
+		ID:               plan.ID,
+		CreatedAt:        plan.CreatedAt,
+		UpdatedAt:        plan.UpdatedAt,
+		OrderNo:          plan.OrderNo,
+		OrderID:          plan.OrderID,
+		SalesOrderLineID: plan.SalesOrderLineID,
+		ProductID:        plan.ProductID,
+		ProductName:      plan.ProductName,
+		Quantity:         plan.Quantity,
+		Status:           plan.Status,
+		StartDate:        plan.StartDate,
+		EndDate:          plan.EndDate,
+		Notes:            plan.Notes,
+		Tasks:            tasks,
 	}
 }
 

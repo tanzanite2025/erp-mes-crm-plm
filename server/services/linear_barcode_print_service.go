@@ -11,6 +11,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/numbering"
+	statemachine "xdfc-server/services/state_machine"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -273,13 +274,13 @@ func CreateLinearBarcodeBatch(input CreateLinearBarcodeBatchRequest) (CreateLine
 		now := time.Now()
 
 		var order models.SalesOrder
-		if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).Where("id = ?", input.SalesOrderID).First(&order).Error; err != nil {
+		if err := applySalesOrderRecordScope(tx.Clauses(clause.Locking{Strength: "SHARE"})).Where("id = ?", input.SalesOrderID).First(&order).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrLinearBarcodeSalesOrderNotFound
 			}
 			return err
 		}
-		if order.Status != "Scheduling" {
+		if order.IsDeleted || !statemachine.IsSalesOrderStatusEligibleForProduction(order.Status) {
 			return ErrLinearBarcodeOrderNotPrintable
 		}
 

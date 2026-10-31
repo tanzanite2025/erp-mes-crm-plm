@@ -37,6 +37,7 @@ const (
 	SalesOrderDenyReturnStatus         = "SALES_ORDER_RETURN_STATUS_NOT_ALLOWED"
 	SalesOrderDenyReturnQuantity       = "SALES_ORDER_RETURN_QUANTITY_EXCEEDS_DELIVERED"
 	SalesOrderDenyReturnNothing        = "SALES_ORDER_RETURN_NOTHING_AVAILABLE"
+	SalesOrderDenyDerivedStatus        = "SALES_ORDER_STATUS_REQUIRES_BUSINESS_FACTS"
 )
 
 type SalesOrderStatusDefinition struct {
@@ -101,6 +102,9 @@ func CanTransitionSalesOrderStatus(currentRaw string, targetRaw string) GuardRes
 	if current == target {
 		return Deny(SalesOrderDenyStatusUnchanged, "status unchanged")
 	}
+	if target == SalesOrderStatusScheduling || target == SalesOrderStatusInProgress || target == SalesOrderStatusDone {
+		return Deny(SalesOrderDenyDerivedStatus, "排产与生产进度由生产计划和工单更新，订单完成由实际发货履约确认")
+	}
 
 	switch current {
 	case SalesOrderStatusDraft:
@@ -108,15 +112,11 @@ func CanTransitionSalesOrderStatus(currentRaw string, targetRaw string) GuardRes
 			return Allow()
 		}
 	case SalesOrderStatusPending:
-		if target == SalesOrderStatusScheduling || target == SalesOrderStatusCanceled {
+		if target == SalesOrderStatusCanceled {
 			return Allow()
 		}
 	case SalesOrderStatusScheduling:
-		if target == SalesOrderStatusInProgress || target == SalesOrderStatusCanceled {
-			return Allow()
-		}
-	case SalesOrderStatusInProgress:
-		if target == SalesOrderStatusDone {
+		if target == SalesOrderStatusCanceled {
 			return Allow()
 		}
 	}
