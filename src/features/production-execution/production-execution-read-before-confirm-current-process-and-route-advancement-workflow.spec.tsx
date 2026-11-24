@@ -118,6 +118,7 @@ const productionExecutionWorkflowTestRoute: ProductionRoute = {
   name: '产品生产路线',
   productId: '',
   productName: '',
+  scopeType: 'BRANCH_DEFAULT',
   description: '',
   version: 1,
   status: 'PUBLISHED',

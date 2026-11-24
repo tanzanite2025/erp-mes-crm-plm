@@ -19,4 +19,10 @@ export const productionResourceQueryKeys = {
     'routes',
     'bom-branches',
   ],
+  routeSalesOrderLineCandidates: (productId: string): QueryKey => [
+    'production-shared',
+    'routes',
+    'sales-order-line-candidates',
+    productId,
+  ],
 } as const

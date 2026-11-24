@@ -25,6 +25,7 @@ function createRouteRevision(
     bomOwnerCustomerId: '',
     bomOwnerCustomerName: '',
     bomVersionLevel: 'standard',
+    scopeType: 'BRANCH_DEFAULT',
     description: `修订 ${revisionNo} 的说明`,
     version: 1,
     status: 'PUBLISHED',

@@ -10,14 +10,28 @@ import type {
   ProductionMessageApiDTO,
   ProductionRouteApiDTO,
   ProductionRouteBOMBranchesResponseApiDTO,
+  ProductionRouteSalesOrderLineCandidatesResponseApiDTO,
   ProductionRoutesResponseApiDTO,
 } from '../contracts/production-resource-api-dto'
 import type {
   ProductionRoute,
   ProductionRouteBOMBranch,
+  ProductionRouteSalesOrderLineCandidate,
 } from '../data/production-route'
 
 export const productionRoutesService = {
+  getSalesOrderLineCandidates: async (
+    productId: string
+  ): Promise<ProductionRouteSalesOrderLineCandidate[]> => {
+    const response = await apiFetch<ProductionRouteSalesOrderLineCandidatesResponseApiDTO>(
+      `/production/routes/sales-order-line-candidates?productId=${encodeURIComponent(productId)}`
+    )
+    const checked = ensureObjectResponse<
+      ProductionRouteSalesOrderLineCandidatesResponseApiDTO & Record<string, unknown>
+    >(response, 'productionRoutesService.getSalesOrderLineCandidates')
+    return checked.items || []
+  },
+
   getBOMBranches: async (): Promise<ProductionRouteBOMBranch[]> => {
     const response = await apiFetch<ProductionRouteBOMBranchesResponseApiDTO>(
       '/production/routes/bom-branches'

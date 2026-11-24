@@ -20,28 +20,28 @@
 
 ### 2.2 Route / Process
 
-订单需要映射到生产域的已发布工艺路线 `ProductionRoute`，路线步骤使用 `ProductionRouteStep`，至少包含：
+订单需要映射到生产域的已发布工艺路线修订 `ProductionRoute`，路线步骤使用 `ProductionRouteStep`。当前路线模型包含：
 
-- `ProductionLine` / `LineSegment`
-- `ProcessStep` 作业项目
-- `sequence` 工序顺序
-- `estimatedMinutes` 每道工序耗时
-- `executionMode` 本厂或委外执行方式
-- `qualityGate` 质量关卡
-- 是否必须按顺序执行
-- 是否允许跨线
+- `branchOperationId`：该 MBOM 分支独立维护的工序身份
+- `sequence`：路线工序顺序
+- `estimatedMinutes`：每道路线工序的预计耗时
+- `executionMode`：本厂或委外执行方式
+- `qualityGate`、质检路由及交接要求
+
+路线家族按稳定 MBOM 分支及适用范围绑定。适用范围为分支默认或销售订单明细：`ProductionPlan.SalesOrderLineID` 存在时精确匹配该明细及计划 MBOM 分支；没有时使用该分支默认路线。明细范围缺少已发布路线时拒绝排产，不回退默认路线。计划首次进入 `SCHEDULED` 时绑定其匹配范围当前已发布修订；同一销售明细拆分的多个计划分别按各自排产时的当前修订绑定，已绑定计划不因后续发布而改变。阶段 G 已实现，详见[生产脑图与生产路线分阶段设计](../生产脑图产品BOM分支绑定与生产路线分阶段修正设计.md)。
 
 工程 BOM 的 `BOMSection` 只负责物料分类，不是 APS 的工段或工序来源。BOM 物料和路线步骤之间如果需要表达领料或消耗点，应通过独立的物料与工艺步骤关联，不应根据 `BOMItem.section` 猜测生产路线。
 
 ### 2.3 Production Resource
 
-资源用于表达排产依赖的生产能力，至少包含：
+APS 资源模型属于后续设计，目前尚未与产线脑图绑定，也不能把当前拓扑节点视为已建成的产能资源。未来资源模型需表达排产依赖的生产能力，至少包含：
 
-- 产线
-- L2/L3 生产结构节点
+- 产线或工作中心
 - 设备
 - 人员
 - 可用工时
+
+实际扫码地点由生产域 `ProductionWorkLocation` 单独表达；地点身份不等于产线、MBOM 分支、工序或路线步骤。资源与路线步骤之间的能力、时间及可选资源约束需要单独定义。
 
 ### 2.4 Calendar
 

@@ -79,6 +79,7 @@ export interface ProductionRouteStepApiDTO {
   routeId?: string
   sequence: number
   branchOperationId: string
+  processLibraryId?: string
   branchOperationName?: string
   executionMode: string
   qualityGate: string
@@ -112,10 +113,30 @@ export interface ProductionRouteApiDTO {
   bomOwnerCustomerId?: string
   bomOwnerCustomerName?: string
   bomVersionLevel?: string
+  scopeType: 'BRANCH_DEFAULT' | 'SALES_ORDER_LINE'
+  salesOrderLineId?: number
+  salesOrderNo?: string
+  salesOrderLineNo?: number
   description?: string
   version: number
   status: string
   steps: ProductionRouteStepApiDTO[]
+}
+
+export interface ProductionRouteSalesOrderLineCandidateApiDTO {
+  id: number
+  salesOrderId: string
+  salesOrderNo: string
+  customerName: string
+  lineNo: number
+  productId: string
+  productModel: string
+  productCode: string
+  specification: string
+}
+
+export interface ProductionRouteSalesOrderLineCandidatesResponseApiDTO {
+  items: ProductionRouteSalesOrderLineCandidateApiDTO[]
 }
 
 export interface ProductionRouteBOMBranchApiDTO {

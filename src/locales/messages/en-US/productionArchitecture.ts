@@ -68,7 +68,7 @@ export const productionArchitecture = {
   routes: {
     title: 'Production Routes',
     description:
-      'Maintain product L3 order and execution mode. Routes reference configured L2 + L3 nodes from the line mindmap without editing line topology.',
+      'Maintain operation order for an effective production MBOM branch. Routes can apply by default to the branch or to one sales order line, with operations selected from the process library.',
     searchPlaceholder: 'Search route code, name, or product...',
     add: 'New Production Route',
     empty: 'No production routes',
@@ -79,6 +79,12 @@ export const productionArchitecture = {
       unspecifiedVersion: 'Unspecified performance version',
       noneAvailable: 'No released and effective manufacturing BOM branches',
     },
+    scopeTypes: {
+      branchDefault: 'MBOM branch default route',
+      salesOrderLine: 'Sales order line route',
+    },
+    salesOrderLineOption: '{{orderNo}} · line {{lineNo}} · {{productModel}}',
+    salesOrderLineScope: 'For {{orderNo}} · line {{lineNo}}',
     stepCount: '{{count}} process steps',
     moreSteps: '{{count}} more steps',
     history: {
@@ -116,8 +122,8 @@ export const productionArchitecture = {
       add: 'Add Step',
       empty: 'No route steps yet. Add the first L3 step.',
       noBranchSelected: 'Select a valid production MBOM branch first.',
-      process: 'Select L3',
-      noProcess: 'No active L3 operations are available for this MBOM branch.',
+      process: 'Select process',
+      noProcess: 'No active process library entries are available.',
       minutes: 'Minutes',
       transfer: 'Transfer after completion',
       transferShort: 'Transfer required',
@@ -140,6 +146,11 @@ export const productionArchitecture = {
       productBranch: 'Product BOM Branch',
       productBranchPlaceholder:
         'Select the manufacturing BOM branch by product, version and ownership',
+      scope: 'Applies to',
+      salesOrderLine: 'Sales order line',
+      salesOrderLinePlaceholder:
+        'Select an order line for the product in this MBOM branch',
+      noSalesOrderLines: 'No sales order lines are available for this product',
       description: 'Description',
       minutesShort: 'min',
     },

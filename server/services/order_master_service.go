@@ -206,6 +206,9 @@ func DeleteSalesOrder(id string) error {
 		if err := rejectSalesOrderDeletionWithIssuedProductCodeInventoryTx(tx, order.ID); err != nil {
 			return err
 		}
+		if err := rejectSalesOrderDeletionWithProductionLineReferencesTx(tx, order.ID); err != nil {
+			return err
+		}
 		if err := tx.Model(&order).Omit("Lines").Update("version", order.Version+1).Error; err != nil {
 			return err
 		}

@@ -59,6 +59,8 @@ func (GormProductionRepository) SaveProductionRoute(database *gorm.DB, route *mo
 		"bom_owner_customer_id":   route.BOMOwnerCustomerID,
 		"bom_owner_customer_name": route.BOMOwnerCustomerName,
 		"bom_version_level":       route.BOMVersionLevel,
+		"scope_type":              route.ScopeType,
+		"sales_order_line_id":     route.SalesOrderLineID,
 		"description":             route.Description,
 		"version":                 route.Version,
 		"status":                  route.Status,

@@ -74,6 +74,9 @@ func SaveSalesOrderHandler(c *gin.Context) {
 		IP:       c.ClientIP(),
 	})
 	if err != nil {
+		if respondToProductionReferencedSalesOrderLine(c, err) {
+			return
+		}
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}
@@ -111,6 +114,9 @@ func PatchSalesOrderHandler(c *gin.Context) {
 		IP:       c.ClientIP(),
 	})
 	if err != nil {
+		if respondToProductionReferencedSalesOrderLine(c, err) {
+			return
+		}
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}
@@ -139,6 +145,9 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 	id := c.Param("id")
 	err := services.DeleteSalesOrder(id)
 	if err != nil {
+		if respondToProductionReferencedSalesOrderLine(c, err) {
+			return
+		}
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}
@@ -175,6 +184,9 @@ func BulkSyncSalesOrdersHandler(c *gin.Context) {
 	}
 
 	if err := services.BulkSyncSalesOrders(input); err != nil {
+		if respondToProductionReferencedSalesOrderLine(c, err) {
+			return
+		}
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}

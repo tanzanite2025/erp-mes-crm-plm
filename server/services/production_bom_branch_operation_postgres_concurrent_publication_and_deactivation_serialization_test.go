@@ -57,7 +57,7 @@ func TestProductionRoutePostgresDraftSaveLocksFamilyBeforeRevision(t *testing.T)
 	require.NoError(t, database.Model(&models.ProductionRoute{}).Where("id = ?", fixture.route.ID).Update("status", "DRAFT").Error)
 
 	var route models.ProductionRoute
-	require.NoError(t, database.Preload("Steps").First(&route, "id = ?", fixture.route.ID).Error)
+	require.NoError(t, database.Preload("Steps").Preload("Steps.BranchOperation").First(&route, "id = ?", fixture.route.ID).Error)
 	request := SaveProductionRouteRequest{Route: mapProductionRouteToDTO(route), Operator: "test"}
 	locked := database.Begin()
 	require.NoError(t, locked.Error)

@@ -1757,8 +1757,14 @@ func InitDB(dsn string) {
 	if err := EnsureProductionExecutionRequestReplayIntegrity(DB); err != nil {
 		log.Fatal("Failed to enforce production execution replay integrity:", err)
 	}
+	if err := EnsureProductionRouteFamilyScopeIntegrity(DB); err != nil {
+		log.Fatal("Failed to establish production route family scopes:", err)
+	}
 	if err := EnsureProductionRouteFamilyRevisionIntegrity(DB); err != nil {
 		log.Fatal("Failed to establish production route revision families:", err)
+	}
+	if err := EnsureProductionBOMBranchOperationProcessLibraryIdentity(DB); err != nil {
+		log.Fatal("Failed to establish production branch operation process library identities:", err)
 	}
 	if err := EnsureIndependentPieceworkPayrollStorageContract(DB); err != nil {
 		log.Fatal("Failed to enforce independent payroll storage contract:", err)

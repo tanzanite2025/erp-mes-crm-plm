@@ -17,14 +17,16 @@ func TestEnsureProductionRouteFamilyRevisionIntegrityBackfillsAndPreservesPublis
 		`CREATE TABLE production_route_families (
 			id TEXT PRIMARY KEY, created_at DATETIME, updated_at DATETIME, deleted_at DATETIME,
 			code TEXT NOT NULL UNIQUE, product_id TEXT NOT NULL, bom_owner_type TEXT NOT NULL,
-			bom_owner_customer_id TEXT NOT NULL DEFAULT '', bom_version_level TEXT NOT NULL DEFAULT '', current_revision_id TEXT
+			bom_owner_customer_id TEXT NOT NULL DEFAULT '', bom_version_level TEXT NOT NULL DEFAULT '',
+			scope_type TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT', sales_order_line_id INTEGER, current_revision_id TEXT
 		)`,
 		`CREATE TABLE production_routes (
 			id TEXT PRIMARY KEY, created_at DATETIME, updated_at DATETIME, deleted_at DATETIME,
 			route_family_id TEXT, revision_no INTEGER NOT NULL DEFAULT 0, based_on_route_id TEXT,
 			code TEXT NOT NULL, name TEXT NOT NULL, product_id TEXT NOT NULL, product_sku TEXT, product_name TEXT,
 			bom_owner_type TEXT NOT NULL, bom_owner_customer_id TEXT NOT NULL DEFAULT '', bom_owner_customer_name TEXT,
-			bom_version_level TEXT NOT NULL DEFAULT '', description TEXT, version INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL
+			bom_version_level TEXT NOT NULL DEFAULT '', scope_type TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT', sales_order_line_id INTEGER,
+			description TEXT, version INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL
 		)`,
 		`CREATE UNIQUE INDEX idx_production_routes_code ON production_routes (code)`,
 		`CREATE TABLE production_route_steps (
@@ -45,7 +47,8 @@ func TestEnsureProductionRouteFamilyRevisionIntegrityBackfillsAndPreservesPublis
 		`CREATE TABLE production_bom_branch_operations (
 			id TEXT PRIMARY KEY, created_at DATETIME, updated_at DATETIME, deleted_at DATETIME, product_id TEXT NOT NULL,
 			bom_owner_type TEXT NOT NULL, bom_owner_customer_id TEXT NOT NULL DEFAULT '', bom_version_level TEXT NOT NULL DEFAULT '',
-			name TEXT NOT NULL, description TEXT, sort_order INTEGER NOT NULL DEFAULT 0, is_active BOOLEAN NOT NULL DEFAULT true
+			name TEXT NOT NULL, description TEXT, sort_order INTEGER NOT NULL DEFAULT 0, is_active BOOLEAN NOT NULL DEFAULT true,
+			process_library_id TEXT NOT NULL DEFAULT ''
 		)`,
 		`INSERT INTO production_routes (id, created_at, code, name, product_id, bom_owner_type, bom_version_level, version, status)
 			VALUES ('route-r1', '2026-01-01 00:00:00', 'ROUTE-R1', '路线旧版', 'product-g24', 'INTERNAL', 'standard', 1, 'DRAFT'),
@@ -59,6 +62,7 @@ func TestEnsureProductionRouteFamilyRevisionIntegrityBackfillsAndPreservesPublis
 		require.NoError(t, database.Exec(statement).Error)
 	}
 
+	require.NoError(t, EnsureProductionRouteFamilyScopeIntegrity(database))
 	require.NoError(t, EnsureProductionRouteFamilyRevisionIntegrity(database))
 
 	var family models.ProductionRouteFamily

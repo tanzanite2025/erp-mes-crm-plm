@@ -49,6 +49,7 @@ describe('production execution form utils', () => {
       name: 'Test route',
       productId: '',
       productName: '',
+      scopeType: 'BRANCH_DEFAULT',
       description: '',
       version: 1,
       status: 'PUBLISHED',

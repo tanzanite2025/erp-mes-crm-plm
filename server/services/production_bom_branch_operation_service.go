@@ -122,7 +122,7 @@ func (service *ProductionService) SaveProductionBOMBranchOperationSelection(
 					BaseModel: models.BaseModel{ID: uuid.NewString()},
 					ProductID: identity.ProductID, BOMOwnerType: identity.BOMOwnerType,
 					BOMOwnerCustomerID: identity.BOMOwnerCustomerID, BOMVersionLevel: identity.BOMVersionLevel,
-					Name: libraryStep.Name, Description: libraryStep.Description, SortOrder: sortOrder, IsActive: true,
+					Name: libraryStep.Name, Description: libraryStep.Description, SortOrder: sortOrder, IsActive: true, ProcessLibraryID: libraryID,
 				}
 				if err := tx.Create(&operation).Error; err != nil {
 					return err
@@ -142,11 +142,12 @@ func (service *ProductionService) SaveProductionBOMBranchOperationSelection(
 					return err
 				}
 				operation := operationByID[selection.BranchOperationID]
-				if err := tx.Model(&operation).Updates(map[string]any{"sort_order": sortOrder, "is_active": true}).Error; err != nil {
+				if err := tx.Model(&operation).Updates(map[string]any{"sort_order": sortOrder, "is_active": true, "process_library_id": libraryID}).Error; err != nil {
 					return err
 				}
 				operation.SortOrder = sortOrder
 				operation.IsActive = true
+				operation.ProcessLibraryID = libraryID
 				operationByID[operation.ID] = operation
 			}
 		}

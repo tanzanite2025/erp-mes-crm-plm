@@ -569,6 +569,15 @@ func seedOutsourceExecutionOrder(t *testing.T, database *gorm.DB, status string)
 		UOM:          "PCS",
 	}).Error)
 	seedProductionScanRoute(t, database, "route-1", "process-a", "process-b")
+	var route models.ProductionRoute
+	require.NoError(t, database.First(&route, "id = ?", "route-1").Error)
+	lineID := uint(1001)
+	require.NoError(t, database.Model(&models.ProductionRoute{}).
+		Where("id = ?", route.ID).
+		Updates(map[string]any{"scope_type": productionRouteScopeSalesOrderLine, "sales_order_line_id": lineID}).Error)
+	require.NoError(t, database.Model(&models.ProductionRouteFamily{}).
+		Where("id = ?", route.RouteFamilyID).
+		Updates(map[string]any{"scope_type": productionRouteScopeSalesOrderLine, "sales_order_line_id": lineID}).Error)
 	require.NoError(t, database.Exec(
 		"INSERT INTO products (id, sku, name, status) VALUES (?, ?, ?, ?)",
 		"product-1", "P-1", "产品一", "ACTIVE",

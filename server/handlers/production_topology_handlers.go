@@ -161,6 +161,15 @@ func GetProductionRouteBOMBranchesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.ProductionRouteBOMBranchesResponse{Items: branches})
 }
 
+func GetProductionRouteSalesOrderLineCandidatesHandler(c *gin.Context) {
+	candidates, err := services.ListProductionRouteSalesOrderLineCandidates(c.Query("productId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, services.ProductionRouteSalesOrderLineCandidatesResponse{Items: candidates})
+}
+
 func SaveProductionBOMBranchOperationHandler(c *gin.Context) {
 	var input services.SaveProductionBOMBranchOperationHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {

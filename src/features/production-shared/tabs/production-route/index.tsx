@@ -62,7 +62,7 @@ export function ProductionRouteMgmt() {
     if (!search) {
       return true
     }
-    return `${route.code} ${route.name} ${route.productSKU || ''} ${route.productName} ${route.bomVersionLevel || ''}`
+    return `${route.code} ${route.name} ${route.productSKU || ''} ${route.productName} ${route.bomVersionLevel || ''} ${route.salesOrderNo || ''} ${route.salesOrderLineNo || ''}`
       .toLowerCase()
       .includes(search)
   })
@@ -253,6 +253,16 @@ export function ProductionRouteMgmt() {
                 <p className='line-clamp-2 text-xs font-medium text-muted-foreground'>
                   {route.description ||
                     t('productionArchitecture.routes.noDescription')}
+                </p>
+                <p className='text-xs font-semibold text-foreground/75'>
+                  {route.scopeType === 'SALES_ORDER_LINE'
+                    ? t('productionArchitecture.routes.salesOrderLineScope', {
+                        orderNo: route.salesOrderNo || route.salesOrderLineId || '',
+                        lineNo: route.salesOrderLineNo || '',
+                      })
+                    : t(
+                        'productionArchitecture.routes.scopeTypes.branchDefault'
+                      )}
                 </p>
               </CardHeader>
               <CardContent className='space-y-3'>

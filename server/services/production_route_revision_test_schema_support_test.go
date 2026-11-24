@@ -22,10 +22,10 @@ func migrateProductionRouteRevisionTestSchema(t *testing.T, database *gorm.DB, i
 			bom_owner_type TEXT NOT NULL,
 			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
 			bom_version_level TEXT NOT NULL DEFAULT '',
+			scope_type TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT',
+			sales_order_line_id INTEGER,
 			current_revision_id TEXT
 		)`,
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_production_route_family_branch
-			ON production_route_families (product_id, bom_owner_type, bom_owner_customer_id, bom_version_level)`,
 	}
 	for _, statement := range statements {
 		require.NoError(t, database.Exec(statement).Error)
@@ -33,8 +33,11 @@ func migrateProductionRouteRevisionTestSchema(t *testing.T, database *gorm.DB, i
 	addProductionRouteRevisionTestColumn(t, database, "production_routes", "route_family_id", "TEXT")
 	addProductionRouteRevisionTestColumn(t, database, "production_routes", "revision_no", "INTEGER NOT NULL DEFAULT 0")
 	addProductionRouteRevisionTestColumn(t, database, "production_routes", "based_on_route_id", "TEXT")
+	addProductionRouteRevisionTestColumn(t, database, "production_routes", "scope_type", "TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT'")
+	addProductionRouteRevisionTestColumn(t, database, "production_routes", "sales_order_line_id", "INTEGER")
 	addProductionRouteRevisionTestColumn(t, database, "production_route_steps", "branch_operation_name_snapshot", "TEXT NOT NULL DEFAULT ''")
 	addProductionRouteRevisionTestColumn(t, database, "production_route_steps", "branch_operation_description_snapshot", "TEXT")
+	addProductionRouteRevisionTestColumn(t, database, "production_bom_branch_operations", "process_library_id", "TEXT NOT NULL DEFAULT ''")
 	if includeProductionPlan {
 		addProductionRouteRevisionTestColumn(t, database, "production_plans", "production_route_revision_id", "TEXT")
 		addProductionRouteRevisionTestColumn(t, database, "production_plans", "production_route_revision_no", "INTEGER NOT NULL DEFAULT 0")
@@ -57,19 +60,29 @@ func createProductionRouteRevisionTestRecord(t *testing.T, database *gorm.DB, ro
 }
 
 func saveProductionRouteRevisionTestRecord(database *gorm.DB, route models.ProductionRoute) (models.ProductionRoute, error) {
+	if route.ScopeType == "" {
+		route.ScopeType = productionRouteScopeBranchDefault
+	}
 	routeID := route.ID
 	if routeID == "" {
 		routeID = uuid.NewString()
 		route.ID = routeID
 	}
 	var routeFamily models.ProductionRouteFamily
-	err := database.Where(
-		"product_id = ? AND UPPER(bom_owner_type) = ? AND COALESCE(bom_owner_customer_id, '') = ? AND COALESCE(bom_version_level, '') = ?",
+	query := database.Where(
+		"product_id = ? AND UPPER(bom_owner_type) = ? AND COALESCE(bom_owner_customer_id, '') = ? AND COALESCE(bom_version_level, '') = ? AND scope_type = ?",
 		route.ProductID,
 		route.BOMOwnerType,
 		route.BOMOwnerCustomerID,
 		route.BOMVersionLevel,
-	).First(&routeFamily).Error
+		route.ScopeType,
+	)
+	if route.ScopeType == productionRouteScopeBranchDefault {
+		query = query.Where("sales_order_line_id IS NULL")
+	} else {
+		query = query.Where("sales_order_line_id = ?", productionRouteSalesOrderLineID(route.SalesOrderLineID))
+	}
+	err := query.First(&routeFamily).Error
 	if err == gorm.ErrRecordNotFound {
 		routeFamily = models.ProductionRouteFamily{
 			BaseModel:          models.BaseModel{ID: uuid.NewString()},
@@ -78,6 +91,8 @@ func saveProductionRouteRevisionTestRecord(database *gorm.DB, route models.Produ
 			BOMOwnerType:       route.BOMOwnerType,
 			BOMOwnerCustomerID: route.BOMOwnerCustomerID,
 			BOMVersionLevel:    route.BOMVersionLevel,
+			ScopeType:          route.ScopeType,
+			SalesOrderLineID:   productionRouteSalesOrderLineIDPointer(productionRouteSalesOrderLineID(route.SalesOrderLineID)),
 		}
 		if err := database.Create(&routeFamily).Error; err != nil {
 			return models.ProductionRoute{}, err
@@ -89,6 +104,8 @@ func saveProductionRouteRevisionTestRecord(database *gorm.DB, route models.Produ
 	}
 
 	route.RouteFamilyID = routeFamily.ID
+	route.ScopeType = routeFamily.ScopeType
+	route.SalesOrderLineID = routeFamily.SalesOrderLineID
 	if route.RevisionNo <= 0 {
 		if err := database.Model(&models.ProductionRoute{}).
 			Where("route_family_id = ?", routeFamily.ID).

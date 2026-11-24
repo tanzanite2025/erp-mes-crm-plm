@@ -16,6 +16,7 @@ type ProductionRouteStepDTO struct {
 	RouteID                    string          `json:"routeId"`
 	Sequence                   int             `json:"sequence"`
 	BranchOperationID          string          `json:"branchOperationId"`
+	ProcessLibraryID           string          `json:"processLibraryId"`
 	BranchOperationName        string          `json:"branchOperationName"`
 	BranchOperationDescription string          `json:"branchOperationDescription"`
 	ExecutionMode              string          `json:"executionMode"`
@@ -43,6 +44,10 @@ type ProductionRouteDTO struct {
 	BOMOwnerCustomerID   string                   `json:"bomOwnerCustomerId"`
 	BOMOwnerCustomerName string                   `json:"bomOwnerCustomerName"`
 	BOMVersionLevel      string                   `json:"bomVersionLevel"`
+	ScopeType            string                   `json:"scopeType"`
+	SalesOrderLineID     uint                     `json:"salesOrderLineId,omitempty"`
+	SalesOrderNo         string                   `json:"salesOrderNo,omitempty"`
+	SalesOrderLineNo     int                      `json:"salesOrderLineNo,omitempty"`
 	Description          string                   `json:"description"`
 	Version              int64                    `json:"version"`
 	Status               string                   `json:"status"`
@@ -57,6 +62,10 @@ func mapProductionRouteStepToDTO(step models.ProductionRouteStep, published bool
 	branchOperationID := strings.TrimSpace(step.BranchOperationID)
 	branchOperationName := ""
 	branchOperationDescription := ""
+	processLibraryID := strings.TrimSpace(step.ProcessLibraryID)
+	if step.BranchOperation != nil && processLibraryID == "" {
+		processLibraryID = strings.TrimSpace(step.BranchOperation.ProcessLibraryID)
+	}
 	if published {
 		branchOperationName = strings.TrimSpace(step.BranchOperationNameSnapshot)
 		branchOperationDescription = step.BranchOperationDescriptionSnapshot
@@ -72,6 +81,7 @@ func mapProductionRouteStepToDTO(step models.ProductionRouteStep, published bool
 		RouteID:                    step.RouteID,
 		Sequence:                   step.Sequence,
 		BranchOperationID:          branchOperationID,
+		ProcessLibraryID:           processLibraryID,
 		BranchOperationName:        branchOperationName,
 		BranchOperationDescription: branchOperationDescription,
 		ExecutionMode:              step.ExecutionMode,
@@ -93,6 +103,7 @@ func mapProductionRouteStepDTOToModel(step ProductionRouteStepDTO) models.Produc
 		RouteID:           step.RouteID,
 		Sequence:          step.Sequence,
 		BranchOperationID: strings.TrimSpace(step.BranchOperationID),
+		ProcessLibraryID:  strings.TrimSpace(step.ProcessLibraryID),
 		ExecutionMode:     step.ExecutionMode,
 		QualityGate:       step.QualityGate,
 		QualityRouting:    datatypes.JSON(cloneRawMessage(step.QualityRouting)),
@@ -108,6 +119,16 @@ func mapProductionRouteToDTO(route models.ProductionRoute) ProductionRouteDTO {
 		steps = append(steps, mapProductionRouteStepToDTO(step, strings.EqualFold(route.Status, productionRouteStatusPublished)))
 	}
 	isCurrentRevision := route.RouteFamily != nil && strings.TrimSpace(route.RouteFamily.CurrentRevisionID) == strings.TrimSpace(route.ID)
+
+	scopeType := strings.ToUpper(strings.TrimSpace(route.ScopeType))
+	salesOrderLineID := uint(0)
+	if route.SalesOrderLineID != nil {
+		salesOrderLineID = *route.SalesOrderLineID
+	}
+	if route.RouteFamily != nil {
+		scopeType = strings.ToUpper(strings.TrimSpace(route.RouteFamily.ScopeType))
+		salesOrderLineID = productionRouteFamilySalesOrderLineID(*route.RouteFamily)
+	}
 
 	return ProductionRouteDTO{
 		ID:                   route.ID,
@@ -126,6 +147,8 @@ func mapProductionRouteToDTO(route models.ProductionRoute) ProductionRouteDTO {
 		BOMOwnerCustomerID:   route.BOMOwnerCustomerID,
 		BOMOwnerCustomerName: route.BOMOwnerCustomerName,
 		BOMVersionLevel:      route.BOMVersionLevel,
+		ScopeType:            scopeType,
+		SalesOrderLineID:     salesOrderLineID,
 		Description:          route.Description,
 		Version:              route.Version,
 		Status:               route.Status,
@@ -172,6 +195,8 @@ func mapProductionRouteDTOToModel(route ProductionRouteDTO) models.ProductionRou
 		BOMOwnerCustomerID:   route.BOMOwnerCustomerID,
 		BOMOwnerCustomerName: route.BOMOwnerCustomerName,
 		BOMVersionLevel:      route.BOMVersionLevel,
+		ScopeType:            strings.ToUpper(strings.TrimSpace(route.ScopeType)),
+		SalesOrderLineID:     productionRouteSalesOrderLineIDPointer(route.SalesOrderLineID),
 		Description:          route.Description,
 		Version:              route.Version,
 		Status:               route.Status,

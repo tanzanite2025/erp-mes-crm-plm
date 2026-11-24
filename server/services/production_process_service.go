@@ -103,6 +103,17 @@ func validateProductionProcessLibraryEntryReferences(database *gorm.DB, processL
 	if selectionCount > 0 {
 		return fmt.Errorf("%w: process library entry %s is selected by an MBOM branch", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
 	}
+	if database.Migrator().HasTable(&models.ProductionBOMBranchOperation{}) {
+		var operationCount int64
+		if err := database.Model(&models.ProductionBOMBranchOperation{}).
+			Where("process_library_id = ?", processLibraryID).
+			Count(&operationCount).Error; err != nil {
+			return err
+		}
+		if operationCount > 0 {
+			return fmt.Errorf("%w: process library entry %s is used by a production route", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
+		}
+	}
 	return nil
 }
 

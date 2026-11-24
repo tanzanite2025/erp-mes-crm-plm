@@ -16,6 +16,12 @@ type productionRouteFamilyMigrationBranch struct {
 	bomVersionLevel    string
 }
 
+type productionRouteFamilyMigrationScope struct {
+	branch           productionRouteFamilyMigrationBranch
+	scopeType        string
+	salesOrderLineID uint
+}
+
 func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 	if database == nil || !database.Migrator().HasTable(&models.ProductionRoute{}) || !database.Migrator().HasTable(&models.ProductionPlan{}) {
 		return nil
@@ -36,7 +42,8 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 			return fmt.Errorf("failed to load production routes for revision migration: %w", err)
 		}
 
-		familiesByBranch := make(map[productionRouteFamilyMigrationBranch]models.ProductionRouteFamily)
+		familiesByScope := make(map[productionRouteFamilyMigrationScope]models.ProductionRouteFamily)
+		familiesByID := make(map[string]models.ProductionRouteFamily)
 		revisionCounts := make(map[string]int)
 		lastRevisionByFamily := make(map[string]string)
 		for _, route := range routes {
@@ -50,32 +57,70 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 				return fmt.Errorf("production route %s has an incomplete MBOM branch identity", route.ID)
 			}
 
-			family, exists := familiesByBranch[branch]
-			if !exists {
-				if err := tx.Where(
-					"product_id = ? AND UPPER(bom_owner_type) = ? AND COALESCE(bom_owner_customer_id, '') = ? AND COALESCE(bom_version_level, '') = ?",
-					branch.productID, branch.bomOwnerType, branch.bomOwnerCustomerID, branch.bomVersionLevel,
-				).First(&family).Error; err != nil {
-					if err != gorm.ErrRecordNotFound {
-						return fmt.Errorf("failed to find production route family: %w", err)
-					}
-					family = models.ProductionRouteFamily{
-						BaseModel:          models.BaseModel{ID: uuid.NewString()},
-						Code:               strings.TrimSpace(route.Code),
-						ProductID:          branch.productID,
-						BOMOwnerType:       branch.bomOwnerType,
-						BOMOwnerCustomerID: branch.bomOwnerCustomerID,
-						BOMVersionLevel:    branch.bomVersionLevel,
-					}
-					if family.Code == "" {
-						family.Code = "route-" + strings.ReplaceAll(family.ID, "-", "")[:12]
-					}
-					if err := tx.Create(&family).Error; err != nil {
-						return fmt.Errorf("failed to create production route family for %s: %w", route.ID, err)
+			scopeType := productionRouteScopeTypeForMigration(route.ScopeType)
+			salesOrderLineID := routeFamilyMigrationSalesOrderLineID(route.SalesOrderLineID)
+			family := models.ProductionRouteFamily{}
+			if routeFamilyID := strings.TrimSpace(route.RouteFamilyID); routeFamilyID != "" {
+				var exists bool
+				family, exists = familiesByID[routeFamilyID]
+				if !exists {
+					if err := tx.First(&family, "id = ?", routeFamilyID).Error; err != nil {
+						return fmt.Errorf("failed to load route family %s for revision %s: %w", routeFamilyID, route.ID, err)
 					}
 				}
-				familiesByBranch[branch] = family
+				scopeType = productionRouteScopeTypeForMigration(family.ScopeType)
+				salesOrderLineID = routeFamilyMigrationFamilySalesOrderLineID(family)
+			} else {
+				scopeKey := productionRouteFamilyMigrationScope{
+					branch: branch, scopeType: scopeType, salesOrderLineID: salesOrderLineID,
+				}
+				var exists bool
+				family, exists = familiesByScope[scopeKey]
+				if !exists {
+					query := tx.Where(
+						"product_id = ? AND UPPER(bom_owner_type) = ? AND COALESCE(bom_owner_customer_id, '') = ? AND COALESCE(bom_version_level, '') = ? AND scope_type = ?",
+						branch.productID, branch.bomOwnerType, branch.bomOwnerCustomerID, branch.bomVersionLevel, scopeType,
+					)
+					if scopeType == "BRANCH_DEFAULT" {
+						query = query.Where("sales_order_line_id IS NULL")
+					} else {
+						query = query.Where("sales_order_line_id = ?", salesOrderLineID)
+					}
+					if err := query.First(&family).Error; err != nil {
+						if err != gorm.ErrRecordNotFound {
+							return fmt.Errorf("failed to find production route family: %w", err)
+						}
+						family = models.ProductionRouteFamily{
+							BaseModel:          models.BaseModel{ID: uuid.NewString()},
+							Code:               strings.TrimSpace(route.Code),
+							ProductID:          branch.productID,
+							BOMOwnerType:       branch.bomOwnerType,
+							BOMOwnerCustomerID: branch.bomOwnerCustomerID,
+							BOMVersionLevel:    branch.bomVersionLevel,
+							ScopeType:          scopeType,
+							SalesOrderLineID:   routeFamilyMigrationSalesOrderLineIDPointer(salesOrderLineID),
+						}
+						if family.Code == "" {
+							family.Code = "route-" + strings.ReplaceAll(family.ID, "-", "")[:12]
+						}
+						if err := tx.Create(&family).Error; err != nil {
+							return fmt.Errorf("failed to create production route family for %s: %w", route.ID, err)
+						}
+					}
+				}
 			}
+			if family.ProductID != branch.productID ||
+				strings.ToUpper(strings.TrimSpace(family.BOMOwnerType)) != branch.bomOwnerType ||
+				strings.TrimSpace(family.BOMOwnerCustomerID) != branch.bomOwnerCustomerID ||
+				strings.TrimSpace(family.BOMVersionLevel) != branch.bomVersionLevel ||
+				productionRouteScopeTypeForMigration(family.ScopeType) != scopeType ||
+				routeFamilyMigrationFamilySalesOrderLineID(family) != salesOrderLineID {
+				return fmt.Errorf("production route %s scope does not match its route family", route.ID)
+			}
+			familiesByScope[productionRouteFamilyMigrationScope{
+				branch: branch, scopeType: scopeType, salesOrderLineID: salesOrderLineID,
+			}] = family
+			familiesByID[family.ID] = family
 
 			if strings.TrimSpace(route.RouteFamilyID) == "" || route.RevisionNo <= 0 {
 				revisionCounts[family.ID]++
@@ -86,10 +131,12 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 					basedOnRouteID = previousRevisionID
 				}
 				if err := tx.Model(&models.ProductionRoute{}).Where("id = ?", route.ID).Updates(map[string]interface{}{
-					"route_family_id":   route.RouteFamilyID,
-					"revision_no":       route.RevisionNo,
-					"based_on_route_id": basedOnRouteID,
-					"code":              family.Code,
+					"route_family_id":     route.RouteFamilyID,
+					"revision_no":         route.RevisionNo,
+					"based_on_route_id":   basedOnRouteID,
+					"code":                family.Code,
+					"scope_type":          scopeType,
+					"sales_order_line_id": routeFamilyMigrationSalesOrderLineIDPointer(salesOrderLineID),
 				}).Error; err != nil {
 					return fmt.Errorf("failed to assign revision identity to production route %s: %w", route.ID, err)
 				}
@@ -101,7 +148,10 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 			if strings.EqualFold(strings.TrimSpace(route.Status), "PUBLISHED") {
 				family.CurrentRevisionID = route.ID
 			}
-			familiesByBranch[branch] = family
+			familiesByScope[productionRouteFamilyMigrationScope{
+				branch: branch, scopeType: scopeType, salesOrderLineID: salesOrderLineID,
+			}] = family
+			familiesByID[family.ID] = family
 			if strings.EqualFold(strings.TrimSpace(route.Status), "PUBLISHED") {
 				if err := backfillProductionRouteStepSnapshotsTx(tx, route.ID); err != nil {
 					return err
@@ -109,7 +159,7 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 			}
 		}
 
-		for _, family := range familiesByBranch {
+		for _, family := range familiesByID {
 			if family.CurrentRevisionID == "" {
 				continue
 			}
@@ -131,7 +181,13 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 					bomOwnerCustomerID: strings.TrimSpace(plan.BOMOwnerCustomerID),
 					bomVersionLevel:    strings.TrimSpace(plan.BOMVersionLevel),
 				}
-				family, exists := familiesByBranch[branch]
+				scopeType := "BRANCH_DEFAULT"
+				if plan.SalesOrderLineID != 0 {
+					scopeType = "SALES_ORDER_LINE"
+				}
+				family, exists := familiesByScope[productionRouteFamilyMigrationScope{
+					branch: branch, scopeType: scopeType, salesOrderLineID: plan.SalesOrderLineID,
+				}]
 				if !exists || strings.TrimSpace(family.CurrentRevisionID) == "" {
 					continue
 				}
@@ -154,6 +210,24 @@ func EnsureProductionRouteFamilyRevisionIntegrity(database *gorm.DB) error {
 		}
 		return nil
 	})
+}
+
+func routeFamilyMigrationSalesOrderLineIDPointer(id uint) *uint {
+	if id == 0 {
+		return nil
+	}
+	return &id
+}
+
+func routeFamilyMigrationSalesOrderLineID(id *uint) uint {
+	if id == nil {
+		return 0
+	}
+	return *id
+}
+
+func routeFamilyMigrationFamilySalesOrderLineID(family models.ProductionRouteFamily) uint {
+	return routeFamilyMigrationSalesOrderLineID(family.SalesOrderLineID)
 }
 
 func backfillProductionRouteStepSnapshotsTx(tx *gorm.DB, routeID string) error {

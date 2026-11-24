@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { GitBranch, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { ProductionBOMBranchOperation } from '../../data/production-line'
+import type { ProductionProcessStep } from '../../data/production-process'
+import { productionResourceQueryKeys } from '../../data/production-resource-query-keys'
+import { useProductionProcessesQuery } from '../../hooks/use-production-resources'
+import { productionRoutesService } from '../../services/production-routes-service'
 import {
   getProductionRouteBOMBranchIdentityKey,
   type ProductionRoute,
@@ -86,6 +90,10 @@ function createDraftRoute(routes: ProductionRoute[]): ProductionRoute {
     bomOwnerCustomerId: '',
     bomOwnerCustomerName: '',
     bomVersionLevel: '',
+    scopeType: 'BRANCH_DEFAULT',
+    salesOrderLineId: undefined,
+    salesOrderNo: undefined,
+    salesOrderLineNo: undefined,
     description: '',
     version: 1,
     status: 'DRAFT',
@@ -97,15 +105,16 @@ function createDraftRoute(routes: ProductionRoute[]): ProductionRoute {
 
 function createRouteStep(
   sequence: number,
-  operation?: ProductionBOMBranchOperation
+  process?: ProductionProcessStep
 ): ProductionRouteStep {
   const now = new Date().toISOString()
   return {
     id: crypto.randomUUID(),
     routeId: '',
     sequence,
-    branchOperationId: operation?.id ?? '',
-    branchOperationName: operation?.name ?? '',
+    branchOperationId: '',
+    processLibraryId: process?.id ?? '',
+    branchOperationName: process?.name ?? '',
     executionMode: 'IN_HOUSE',
     qualityGate: 'NONE',
     qualityRouting: undefined,
@@ -135,6 +144,7 @@ export function ProductionRouteDialog({
     route ? { ...route, steps: [...route.steps] } : createDraftRoute(routes)
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const processesQuery = useProductionProcessesQuery({ enabled: open })
 
   useEffect(() => {
     if (!open) {
@@ -166,19 +176,28 @@ export function ProductionRouteDialog({
       branch,
     ])
   )
-  const selectedBOMBranch = branchByIdentityKey.get(selectedBOMBranchKey)
-  const branchOperations = useMemo(() => {
-    return (selectedBOMBranch?.branchOperations ?? [])
-      .filter((operation) => operation.isActive)
-      .sort(
-        (left, right) =>
-          left.sortOrder - right.sortOrder ||
-          left.name.localeCompare(right.name)
-      )
-  }, [selectedBOMBranch])
-  const branchOperationById = new Map(
-    branchOperations.map((operation) => [operation.id, operation])
+  const processes = useMemo(
+    () =>
+      (processesQuery.data ?? [])
+        .filter((process) => process.isActive !== false)
+        .sort(
+          (left, right) =>
+            (left.sortOrder ?? 0) - (right.sortOrder ?? 0) ||
+            left.name.localeCompare(right.name)
+        ),
+    [processesQuery.data]
   )
+  const processById = new Map(processes.map((process) => [process.id, process]))
+  const orderLineCandidatesQuery = useQuery({
+    queryKey: productionResourceQueryKeys.routeSalesOrderLineCandidates(
+      draft.productId
+    ),
+    queryFn: () =>
+      productionRoutesService.getSalesOrderLineCandidates(draft.productId),
+    enabled:
+      open && draft.scopeType === 'SALES_ORDER_LINE' && Boolean(draft.productId),
+  })
+  const orderLineCandidates = orderLineCandidatesQuery.data ?? []
 
   const updateRoute = <TKey extends keyof ProductionRoute>(
     key: TKey,
@@ -200,19 +219,50 @@ export function ProductionRouteDialog({
     }))
   }
 
-  const handleBranchOperationChange = (stepId: string, operationId: string) => {
-    const operation = branchOperationById.get(operationId)
+  const handleProcessLibraryChange = (stepId: string, processLibraryId: string) => {
+    const process = processById.get(processLibraryId)
     setDraft((current) => ({
       ...current,
       steps: current.steps.map((step) =>
         step.id === stepId
           ? {
               ...step,
-              branchOperationId: operation?.id ?? '',
-              branchOperationName: operation?.name ?? '',
+              branchOperationId: '',
+              processLibraryId: process?.id ?? '',
+              branchOperationName: process?.name ?? '',
             }
           : step
       ),
+    }))
+  }
+
+  const handleRouteScopeChange = (scopeType: ProductionRoute['scopeType']) => {
+    setDraft((current) => ({
+      ...current,
+      scopeType,
+      salesOrderLineId:
+        scopeType === 'SALES_ORDER_LINE' ? current.salesOrderLineId : undefined,
+      salesOrderNo:
+        scopeType === 'SALES_ORDER_LINE' ? current.salesOrderNo : undefined,
+      salesOrderLineNo:
+        scopeType === 'SALES_ORDER_LINE'
+          ? current.salesOrderLineNo
+          : undefined,
+    }))
+  }
+
+  const handleSalesOrderLineChange = (candidateID: string) => {
+    const candidate = orderLineCandidates.find(
+      (line) => String(line.id) === candidateID
+    )
+    if (!candidate) {
+      return
+    }
+    setDraft((current) => ({
+      ...current,
+      salesOrderLineId: candidate.id,
+      salesOrderNo: candidate.salesOrderNo,
+      salesOrderLineNo: candidate.lineNo,
     }))
   }
 
@@ -231,6 +281,9 @@ export function ProductionRouteDialog({
       bomOwnerCustomerId: branch.bomOwnerCustomerId,
       bomOwnerCustomerName: branch.bomOwnerCustomerName,
       bomVersionLevel: branch.bomVersionLevel,
+      salesOrderLineId: undefined,
+      salesOrderNo: undefined,
+      salesOrderLineNo: undefined,
       steps:
         getProductionRouteBOMBranchIdentityKey(current) === branchIdentityKey
           ? current.steps
@@ -290,7 +343,7 @@ export function ProductionRouteDialog({
       ...current,
       steps: [
         ...current.steps,
-        createRouteStep(current.steps.length + 1, branchOperations[0]),
+        createRouteStep(current.steps.length + 1, processes[0]),
       ],
     }))
   }
@@ -332,14 +385,19 @@ export function ProductionRouteDialog({
   }
 
   const handleSave = async () => {
-    if (!draft.name.trim() || !draft.code.trim() || draft.steps.length === 0) {
+    if (
+      !draft.name.trim() ||
+      !draft.code.trim() ||
+      draft.steps.length === 0 ||
+      (draft.scopeType === 'SALES_ORDER_LINE' && !draft.salesOrderLineId)
+    ) {
       return
     }
     if (!selectedBOMBranchKey) {
       return
     }
     const steps = rebuildStepSequence(draft.steps).filter(
-      (step) => step.branchOperationId
+      (step) => step.processLibraryId
     )
     if (steps.length !== draft.steps.length) {
       return
@@ -406,7 +464,7 @@ export function ProductionRouteDialog({
             </label>
           </div>
 
-          <div className='grid gap-4 md:grid-cols-[1.2fr_0.8fr]'>
+          <div className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-2'>
               <Label>
                 {t('productionArchitecture.routes.fields.productBranch')}
@@ -446,6 +504,75 @@ export function ProductionRouteDialog({
                 </SelectContent>
               </Select>
             </div>
+            <div className='space-y-2'>
+              <Label>{t('productionArchitecture.routes.fields.scope')}</Label>
+              <Select
+                value={draft.scopeType}
+                onValueChange={(value) =>
+                  handleRouteScopeChange(
+                    value as ProductionRoute['scopeType']
+                  )
+                }
+                disabled={Boolean(route)}
+              >
+                <SelectTrigger className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='BRANCH_DEFAULT'>
+                    {t('productionArchitecture.routes.scopeTypes.branchDefault')}
+                  </SelectItem>
+                  <SelectItem value='SALES_ORDER_LINE'>
+                    {t('productionArchitecture.routes.scopeTypes.salesOrderLine')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className='grid gap-4 md:grid-cols-2'>
+            {draft.scopeType === 'SALES_ORDER_LINE' ? (
+              <div className='space-y-2'>
+                <Label>
+                  {t('productionArchitecture.routes.fields.salesOrderLine')}
+                </Label>
+                <Select
+                  value={draft.salesOrderLineId?.toString() || undefined}
+                  onValueChange={handleSalesOrderLineChange}
+                  disabled={Boolean(route) || orderLineCandidatesQuery.isLoading}
+                >
+                  <SelectTrigger className='w-full'>
+                    <SelectValue
+                      placeholder={t(
+                        'productionArchitecture.routes.fields.salesOrderLinePlaceholder'
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orderLineCandidates.map((candidate) => (
+                      <SelectItem
+                        key={candidate.id}
+                        value={String(candidate.id)}
+                      >
+                        {t('productionArchitecture.routes.salesOrderLineOption', {
+                          orderNo: candidate.salesOrderNo,
+                          lineNo: candidate.lineNo,
+                          productModel:
+                            candidate.productModel || candidate.productCode,
+                        })}
+                      </SelectItem>
+                    ))}
+                    {orderLineCandidates.length === 0 ? (
+                      <SelectItem value='NO_ORDER_LINE' disabled>
+                        {t(
+                          'productionArchitecture.routes.fields.noSalesOrderLines'
+                        )}
+                      </SelectItem>
+                    ) : null}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             <label className='space-y-2'>
               <Label>
                 {t('productionArchitecture.routes.fields.description')}
@@ -474,9 +601,7 @@ export function ProductionRouteDialog({
                 type='button'
                 size='sm'
                 onClick={addStep}
-                disabled={
-                  !selectedBOMBranchKey || branchOperations.length === 0
-                }
+                disabled={!selectedBOMBranchKey || processes.length === 0}
                 className='rounded-full'
               >
                 <Plus className='mr-2 size-4' />
@@ -488,7 +613,7 @@ export function ProductionRouteDialog({
               <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
                 {t('productionArchitecture.routes.steps.noBranchSelected')}
               </div>
-            ) : branchOperations.length === 0 ? (
+            ) : processes.length === 0 ? (
               <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
                 {t('productionArchitecture.routes.steps.noProcess')}
               </div>
@@ -499,8 +624,8 @@ export function ProductionRouteDialog({
             ) : (
               <div className='space-y-2'>
                 {draft.steps.map((step, index) => {
-                  const hasActiveOperation = branchOperationById.has(
-                    step.branchOperationId
+                  const hasActiveProcess = processById.has(
+                    step.processLibraryId || ''
                   )
                   return (
                     <div
@@ -512,9 +637,9 @@ export function ProductionRouteDialog({
                         {index + 1}
                       </div>
                       <Select
-                        value={step.branchOperationId || 'NO_OPERATION'}
+                        value={step.processLibraryId || 'NO_PROCESS'}
                         onValueChange={(value) =>
-                          handleBranchOperationChange(step.id, value)
+                          handleProcessLibraryChange(step.id, value)
                         }
                       >
                         <SelectTrigger className='w-full'>
@@ -525,15 +650,17 @@ export function ProductionRouteDialog({
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {!hasActiveOperation && step.branchOperationId ? (
-                            <SelectItem value={step.branchOperationId} disabled>
-                              {step.branchOperationName ||
-                                step.branchOperationId}
+                          {!hasActiveProcess && step.processLibraryId ? (
+                            <SelectItem
+                              value={step.processLibraryId}
+                              disabled
+                            >
+                              {step.branchOperationName || step.processLibraryId}
                             </SelectItem>
                           ) : null}
-                          {branchOperations.map((operation) => (
-                            <SelectItem key={operation.id} value={operation.id}>
-                              {operation.name}
+                          {processes.map((process) => (
+                            <SelectItem key={process.id} value={process.id}>
+                              {process.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -713,7 +840,10 @@ export function ProductionRouteDialog({
                 !draft.name.trim() ||
                 !draft.code.trim() ||
                 !selectedBOMBranchKey ||
-                draft.steps.length === 0
+                draft.steps.length === 0 ||
+                draft.steps.some((step) => !step.processLibraryId) ||
+                (draft.scopeType === 'SALES_ORDER_LINE' &&
+                  !draft.salesOrderLineId)
               }
             >
               {isSubmitting

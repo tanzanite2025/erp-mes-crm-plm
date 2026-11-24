@@ -11,7 +11,5 @@ type ProductionBOMBranchOperation struct {
 	Description        string `gorm:"type:text" json:"description"`
 	SortOrder          int    `gorm:"not null;default:0" json:"sortOrder"`
 	IsActive           bool   `gorm:"not null;default:true" json:"isActive"`
-	// ProcessLibraryID is populated from the explicit branch selection relation.
-	// It is intentionally not stored on the execution identity row.
-	ProcessLibraryID string `gorm:"-" json:"processLibraryId,omitempty"`
+	ProcessLibraryID   string `gorm:"size:36;index" json:"processLibraryId,omitempty"`
 }

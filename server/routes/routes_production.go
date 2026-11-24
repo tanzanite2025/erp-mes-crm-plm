@@ -37,6 +37,7 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.DELETE("/lines/:id", adminOnly, handlers.DeleteProductionLineHandler)
 		productionGroup.GET("/routes", handlers.GetProductionRoutesHandler)
 		productionGroup.GET("/routes/bom-branches", handlers.GetProductionRouteBOMBranchesHandler)
+		productionGroup.GET("/routes/sales-order-line-candidates", handlers.GetProductionRouteSalesOrderLineCandidatesHandler)
 		productionGroup.GET("/work-locations", handlers.GetProductionWorkLocationsHandler)
 		productionGroup.POST("/work-locations", productionRouteManage, handlers.SaveProductionWorkLocationHandler)
 		productionGroup.POST("/branch-operations", adminOnly, handlers.SaveProductionBOMBranchOperationHandler)

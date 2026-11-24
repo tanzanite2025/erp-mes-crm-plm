@@ -82,7 +82,8 @@ func newProductionTopologyL1TemplateTestService(t *testing.T) (*ProductionServic
 			name TEXT NOT NULL,
 			description TEXT,
 			sort_order INTEGER NOT NULL DEFAULT 0,
-			is_active BOOLEAN NOT NULL DEFAULT 1
+			is_active BOOLEAN NOT NULL DEFAULT 1,
+			process_library_id TEXT NOT NULL DEFAULT ''
 		)`,
 		`CREATE TABLE process_steps (
 			id TEXT PRIMARY KEY,

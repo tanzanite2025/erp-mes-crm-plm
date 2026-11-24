@@ -36,6 +36,9 @@ func ExecuteSalesOrderTransactionHandler(c *gin.Context) {
 		IP:              c.ClientIP(),
 	})
 	if err != nil {
+		if respondToProductionReferencedSalesOrderLine(c, err) {
+			return
+		}
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}

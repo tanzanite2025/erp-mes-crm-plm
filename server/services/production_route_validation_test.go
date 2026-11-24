@@ -21,9 +21,9 @@ func TestValidateProductionRouteDTORequiresTransferForOutsource(t *testing.T) {
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			BranchOperationID: "branch-operation-1",
-			ExecutionMode:     "OUTSOURCE_REQUIRED",
-			QualityGate:       "NONE",
+			ProcessLibraryID: "process-1",
+			ExecutionMode:    "OUTSOURCE_REQUIRED",
+			QualityGate:      "NONE",
 		}},
 	}
 
@@ -44,7 +44,7 @@ func TestValidateProductionRouteDTORequiresStepsBeforePublish(t *testing.T) {
 	}
 }
 
-func TestValidateProductionRouteDTORequiresAtLeastOneBranchOperation(t *testing.T) {
+func TestValidateProductionRouteDTORequiresAtLeastOneStep(t *testing.T) {
 	route := ProductionRouteDTO{
 		Code:   "route-001",
 		Name:   "Standard Route",
@@ -56,7 +56,7 @@ func TestValidateProductionRouteDTORequiresAtLeastOneBranchOperation(t *testing.
 	}
 }
 
-func TestValidateProductionRouteDTORequiresBranchOperationIdentity(t *testing.T) {
+func TestValidateProductionRouteDTORequiresProcessLibraryIdentity(t *testing.T) {
 	route := ProductionRouteDTO{
 		Code:   "route-001",
 		Name:   "Standard Route",
@@ -68,7 +68,7 @@ func TestValidateProductionRouteDTORequiresBranchOperationIdentity(t *testing.T)
 	}
 
 	if err := validateProductionRouteDTO(route); err == nil {
-		t.Fatal("expected a route step without branchOperationId to be rejected")
+		t.Fatal("expected a route step without processLibraryId to be rejected")
 	}
 }
 
@@ -77,9 +77,9 @@ func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 		Code: " route-001 ",
 		Name: " Standard Route ",
 		Steps: []ProductionRouteStepDTO{{
-			BranchOperationID: " branch-operation-1 ",
-			ExecutionMode:     "in_house",
-			QualityGate:       "",
+			ProcessLibraryID: " process-1 ",
+			ExecutionMode:    "in_house",
+			QualityGate:      "",
 		}},
 	})
 
@@ -91,6 +91,9 @@ func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 	}
 	if route.Steps[0].Sequence != 1 {
 		t.Fatalf("expected default sequence 1, got %d", route.Steps[0].Sequence)
+	}
+	if route.Steps[0].ProcessLibraryID != "process-1" {
+		t.Fatalf("expected trimmed process library identity, got %q", route.Steps[0].ProcessLibraryID)
 	}
 	if route.Steps[0].ExecutionMode != "IN_HOUSE" {
 		t.Fatalf("expected normalized execution mode, got %q", route.Steps[0].ExecutionMode)
@@ -104,17 +107,17 @@ func TestNormalizeProductionRouteDTOCanonicalizesQualityRouting(t *testing.T) {
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{
 			{
-				ID:                "step-a",
-				BranchOperationID: "branch-operation-1",
-				ExecutionMode:     "IN_HOUSE",
-				QualityGate:       "REQUIRED",
-				QualityRouting:    json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
+				ID:               "step-a",
+				ProcessLibraryID: "process-1",
+				ExecutionMode:    "IN_HOUSE",
+				QualityGate:      "REQUIRED",
+				QualityRouting:   json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
 			},
 			{
-				ID:                "step-b",
-				BranchOperationID: "branch-operation-2",
-				ExecutionMode:     "IN_HOUSE",
-				QualityGate:       "NONE",
+				ID:               "step-b",
+				ProcessLibraryID: "process-2",
+				ExecutionMode:    "IN_HOUSE",
+				QualityGate:      "NONE",
 			},
 		},
 	})
@@ -138,11 +141,11 @@ func TestValidateProductionRouteDTORejectsQualityRoutingOutsideRoute(t *testing.
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			ID:                "step-a",
-			BranchOperationID: "branch-operation-1",
-			ExecutionMode:     "IN_HOUSE",
-			QualityGate:       "REQUIRED",
-			QualityRouting:    json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
+			ID:               "step-a",
+			ProcessLibraryID: "process-1",
+			ExecutionMode:    "IN_HOUSE",
+			QualityGate:      "REQUIRED",
+			QualityRouting:   json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
 		}},
 	}
 
@@ -157,11 +160,11 @@ func TestValidateProductionRouteDTORejectsProcessStepQualityTargets(t *testing.T
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			ID:                "step-a",
-			BranchOperationID: "branch-operation-a",
-			ExecutionMode:     "IN_HOUSE",
-			QualityGate:       "REQUIRED",
-			QualityRouting:    json.RawMessage(`{"REWORK":{"targetProcessStepId":"legacy-process"}}`),
+			ID:               "step-a",
+			ProcessLibraryID: "process-a",
+			ExecutionMode:    "IN_HOUSE",
+			QualityGate:      "REQUIRED",
+			QualityRouting:   json.RawMessage(`{"REWORK":{"targetProcessStepId":"legacy-process"}}`),
 		}},
 	}
 

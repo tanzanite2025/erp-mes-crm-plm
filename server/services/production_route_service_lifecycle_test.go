@@ -203,8 +203,8 @@ func seedProductionRouteLifecycleReferences(t *testing.T, database *gorm.DB) {
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`, "bom-g24-internal", "product-g24", models.BOMTypeMBOM, models.BOMStatusReleased, "INTERNAL", "", "std").Error)
 	require.NoError(t, database.Create(&[]models.ProductionBOMBranchOperation{
-		{BaseModel: models.BaseModel{ID: "branch-operation-outer"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", Name: "G24外圈", SortOrder: 1, IsActive: true},
-		{BaseModel: models.BaseModel{ID: "branch-operation-forming"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", Name: "成型", SortOrder: 2, IsActive: true},
+		{BaseModel: models.BaseModel{ID: "branch-operation-outer"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", Name: "G24外圈", SortOrder: 1, IsActive: true, ProcessLibraryID: "library-outer"},
+		{BaseModel: models.BaseModel{ID: "branch-operation-forming"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", Name: "成型", SortOrder: 2, IsActive: true, ProcessLibraryID: "library-forming"},
 	}).Error)
 	require.NoError(t, database.Create(&[]models.ProcessStep{
 		{BaseModel: models.BaseModel{ID: "library-outer"}, Code: "OUTER", Name: "G24外圈", IsActive: true},
@@ -225,6 +225,7 @@ func productionRouteLifecycleDTO(status string, branchOperationID string) Produc
 		ProductName:     "G24",
 		BOMOwnerType:    "INTERNAL",
 		BOMVersionLevel: "std",
+		ScopeType:       productionRouteScopeBranchDefault,
 		Description:     "G24 标准生产路线",
 		Version:         1,
 		Status:          status,
@@ -232,11 +233,19 @@ func productionRouteLifecycleDTO(status string, branchOperationID string) Produc
 			ID:                "route-g24-step-outer",
 			Sequence:          1,
 			BranchOperationID: branchOperationID,
+			ProcessLibraryID:  productionRouteLifecycleProcessLibraryID(branchOperationID),
 			ExecutionMode:     "IN_HOUSE",
 			QualityGate:       "NONE",
 			EstimatedMinutes:  10,
 		}},
 	}
+}
+
+func productionRouteLifecycleProcessLibraryID(branchOperationID string) string {
+	if branchOperationID == "branch-operation-forming" {
+		return "library-forming"
+	}
+	return "library-outer"
 }
 
 func TestListProductionRouteBOMBranchesReturnsCurrentStableBranches(t *testing.T) {
@@ -365,6 +374,7 @@ func TestProductionRouteRevisionCopiesPublishedSnapshotAndKeepsHistoryImmutable(
 		ID:                "route-g24-step-forming",
 		Sequence:          2,
 		BranchOperationID: "branch-operation-forming",
+		ProcessLibraryID:  "library-forming",
 		ExecutionMode:     "IN_HOUSE",
 		QualityGate:       "OPTIONAL",
 		EstimatedMinutes:  15,
@@ -482,6 +492,7 @@ func TestSaveProductionRouteAllowsDraftEditAndRemovesDraftStep(t *testing.T) {
 		ID:                "temp-route-g24-step-forming",
 		Sequence:          1,
 		BranchOperationID: "branch-operation-forming",
+		ProcessLibraryID:  "library-forming",
 		ExecutionMode:     "IN_HOUSE",
 		QualityGate:       "NONE",
 		EstimatedMinutes:  12,

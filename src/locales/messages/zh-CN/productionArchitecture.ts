@@ -65,7 +65,7 @@ export const productionArchitecture = {
   routes: {
     title: '生产路线',
     description:
-      '维护产品的 L3 顺序和执行方式。路线只引用产线脑图已配置的 L2 + L3，不直接修改产线拓扑。',
+      '按有效生产 MBOM 分支维护工序顺序，可配置分支默认路线或销售订单明细专用路线。工序直接从工序库选择。',
     searchPlaceholder: '搜索路线编号、名称或产品...',
     add: '新增生产路线',
     empty: '暂无生产路线',
@@ -76,6 +76,12 @@ export const productionArchitecture = {
       unspecifiedVersion: '未指定性能版本',
       noneAvailable: '暂无已发布且有效的生产 BOM 分支',
     },
+    scopeTypes: {
+      branchDefault: 'MBOM 分支默认路线',
+      salesOrderLine: '销售订单明细专用路线',
+    },
+    salesOrderLineOption: '{{orderNo}} · 明细 {{lineNo}} · {{productModel}}',
+    salesOrderLineScope: '适用于 {{orderNo}} · 明细 {{lineNo}}',
     stepCount: '共 {{count}} 道工序',
     moreSteps: '还有 {{count}} 道工序',
     history: {
@@ -111,8 +117,8 @@ export const productionArchitecture = {
       add: '新增步骤',
       empty: '还没有路线步骤，可以先新增第一道 L3。',
       noBranchSelected: '请先选择有效生产 MBOM 分支。',
-      process: '选择 L3',
-      noProcess: '该 MBOM 分支暂无启用的 L3 工序。',
+      process: '选择工序',
+      noProcess: '暂无启用的工序库工序。',
       minutes: '预计分钟',
       transfer: '完成后需要转移',
       transferShort: '需转移',
@@ -133,6 +139,10 @@ export const productionArchitecture = {
       status: '状态',
       productBranch: '产品 BOM 分支',
       productBranchPlaceholder: '选择产品、性能版本和归属对应的生产 BOM 分支',
+      scope: '适用范围',
+      salesOrderLine: '销售订单明细',
+      salesOrderLinePlaceholder: '选择产品与当前 MBOM 分支一致的订单明细',
+      noSalesOrderLines: '该产品暂无可选择的销售订单明细',
       description: '说明',
       minutesShort: '分钟',
     },

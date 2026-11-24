@@ -73,12 +73,13 @@ func createProductionPlanMBOMBranchPostgresFixture(t *testing.T) productionPlanM
 		require.NoError(t, database.Exec(`INSERT INTO boms (id, product_id, bom_type, status, owner_type, version_level)
 			VALUES (?, ?, 'MBOM', 'RELEASED', 'INTERNAL', ?)`, uuid.NewString(), productID, performanceVersion).Error)
 	}
-	operation := models.ProductionBOMBranchOperation{
-		ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", Name: "裁切", IsActive: true,
-	}
-	require.NoError(t, database.Create(&operation).Error)
 	processLibrary := models.ProcessStep{Code: "PLAN-BRANCH-CUT", Name: "裁切", IsActive: true}
 	require.NoError(t, database.Create(&processLibrary).Error)
+	operation := models.ProductionBOMBranchOperation{
+		ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", Name: "裁切", IsActive: true,
+		ProcessLibraryID: processLibrary.ID,
+	}
+	require.NoError(t, database.Create(&operation).Error)
 	require.NoError(t, database.Create(&models.ProductionBOMBranchOperationProcessLibrarySelection{
 		ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard",
 		BranchOperationID: operation.ID, ProcessLibraryID: processLibrary.ID,
