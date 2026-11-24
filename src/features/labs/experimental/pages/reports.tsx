@@ -84,7 +84,7 @@ export function LabReportsPage() {
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/30 transition-colors group-focus-within:text-primary' />
           <Input
             placeholder={t('labExperimental.reports.searchPlaceholder')}
-            className='h-11 w-full rounded-full border-none bg-muted/40 pl-11 text-[10px] font-black tracking-widest uppercase shadow-inner transition-all focus:bg-background'
+            className='h-11 w-full rounded-full border-none bg-muted/40 pl-11 shadow-inner transition-all focus:bg-background'
           />
         </div>
       </div>

@@ -16,7 +16,6 @@ export const productionOutsourcing = {
     limit: '单条明细最多登记1000条条码。',
     remove: '移除条码 {{barcode}}',
     saved: '明细条码登记已保存',
-    processUnbound: '未指定工序',
     pickRegistered: '从已登记条码中选择（也可直接扫码）',
   },
   layout: {
@@ -86,9 +85,6 @@ export const productionOutsourcing = {
       specification: '规格',
       quantity: '数量',
       uom: '单位',
-      segmentName: '工段/L2',
-      processName: '当前工序',
-      processCode: '工序编码',
       lineNotes: '明细备注',
       notes: '任务备注',
     },
@@ -97,7 +93,6 @@ export const productionOutsourcing = {
       source: '请选择来源单据',
       sourceLine: '请选择要委外的订单明细',
       partner: '请选择委外单位',
-      segmentName: '可选，后续接产线脑图',
     },
     dialog: {
       createTitle: '新增委外任务',
@@ -129,6 +124,8 @@ export const productionOutsourcing = {
     review: {
       read: '读取条码并核对',
       currentProcess: '条码当前工序',
+      cycle: '委外周期 {{value}}',
+      inspectionRound: '检验轮次 {{value}}',
       available: '该条码本次最多可办理',
       inspectionDestination: '确认检验后：{{process}}',
       routeCompleted: '路线完成',

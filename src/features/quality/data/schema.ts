@@ -17,29 +17,36 @@ const standardStatusSchema = z.union([
   z.enum(['草稿', '待审核', '审批通过', '已驳回', '已发布', '已归档']),
 ])
 
-export const levelConfigSchema = z.object({
-  level: z.enum(['A', 'B', 'C', 'S']),
-  tolerance: z.number().optional(),
-  deviationMinExclusive: z.number().optional(),
-  min: z.number().optional(),
-  max: z.number().optional(),
-  errorCodeLower: z.string().optional(),
-  errorCodeUpper: z.string().optional(),
-})
+export const levelConfigSchema = z
+  .object({
+    level: z
+      .string()
+      .trim()
+      .min(1)
+      .refine((name) => [...name].length <= 40, '等级名称不能超过 40 个字符'),
+    lowerTolerance: z.number().finite().nonnegative(),
+    upperTolerance: z.number().finite().nonnegative(),
+    result: z.enum(['PASS', 'FAIL']),
+  })
+  .strict()
 
 export type LevelConfig = z.infer<typeof levelConfigSchema>
 
-export const standardItemSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1, '请输入检验项目'),
-  order: z.number().int().default(1),
-  centerValue: z.number().optional(),
-  levels: z.array(levelConfigSchema),
-  formula: z.string().optional(),
-  unit: z.string().optional(),
-  isRequired: z.boolean().default(true),
-  remarks: z.string().optional(),
-})
+export const standardItemSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().min(1, '请输入检验项目'),
+    inspectionStageId: z.string().min(1),
+    inspectionStageName: z.string().min(1),
+    order: z.number().int().default(1),
+    centerValue: z.number().finite(),
+    gradingMode: z.literal('DEVIATION_BANDS'),
+    levels: z.array(levelConfigSchema).min(1).max(20),
+    unit: z.string().min(1),
+    isRequired: z.boolean().default(true),
+    remarks: z.string().optional(),
+  })
+  .strict()
 
 export type StandardItem = z.infer<typeof standardItemSchema>
 

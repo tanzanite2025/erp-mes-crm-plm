@@ -2,7 +2,7 @@ import { Clock3, Info, ShieldCheck, User } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
-import type { Standard } from '../data/schema'
+import type { QualityStandardListSummary } from '../adapters/quality-standard-api-adapter'
 import {
   formatQualityActorName,
   formatQualityDateTime,
@@ -13,7 +13,7 @@ import {
 import { StandardPreviewInfoCard } from './standard-preview-info-card'
 
 interface StandardPreviewAuditPanelProps {
-  standard: Standard
+  standard: QualityStandardListSummary
 }
 
 export function StandardPreviewAuditPanel({

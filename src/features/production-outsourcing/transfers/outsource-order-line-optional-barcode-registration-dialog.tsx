@@ -119,9 +119,7 @@ export function OutsourceOrderLineOptionalBarcodeRegistrationDialog({
             </p>
             <p className='mt-1 text-muted-foreground'>
               {t('productionOutsourcing.orders.fields.quantity')}:{' '}
-              {line.quantity} {line.uom} ·{' '}
-              {line.processName ||
-                t('productionOutsourcing.barcodeRegistration.processUnbound')}
+              {line.quantity} {line.uom}
             </p>
           </div>
           <p className='text-sm text-muted-foreground'>

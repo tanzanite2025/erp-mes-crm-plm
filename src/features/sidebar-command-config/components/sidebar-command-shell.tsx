@@ -8,7 +8,9 @@ export function SidebarCommandShell({ children }: PropsWithChildren) {
 
   return (
     <ModuleTabbedLayout tabs={getSidebarCommandTabs(t)}>
-      <div className='flex min-h-0 flex-col gap-8 p-1 md:p-2'>{children}</div>
+      <div className='flex min-h-0 min-w-0 shrink-0 flex-col gap-8 p-1 md:p-2'>
+        {children}
+      </div>
     </ModuleTabbedLayout>
   )
 }

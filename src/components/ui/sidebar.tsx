@@ -1,15 +1,17 @@
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { type VariantProps, cva } from 'class-variance-authority'
-import { PanelLeftIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, PanelLeftIcon } from 'lucide-react'
 import { getCookie, setCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -27,7 +29,8 @@ const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH =
   'calc(var(--sidebar-primary-width, 10rem) + var(--sidebar-secondary-visible-width, 15rem))'
-const SIDEBAR_WIDTH_MOBILE = 'min(82vw, 18rem)'
+const SIDEBAR_WIDTH_MOBILE =
+  'min(calc(100vw - 3rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), 22rem)'
 const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
 
@@ -187,6 +190,7 @@ function Sidebar({
   collapsible?: 'offcanvas' | 'icon' | 'none'
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { t } = useLanguage()
 
   if (isMobile) {
     return (
@@ -195,19 +199,48 @@ function Sidebar({
           data-sidebar='sidebar'
           data-slot='sidebar'
           data-mobile='true'
-          className='w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden'
+          className='h-svh w-(--sidebar-width) gap-0 overflow-visible bg-sidebar p-0 text-sidebar-foreground'
           style={
             {
               '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
             } as React.CSSProperties
           }
           side={side}
+          showCloseButton={false}
         >
           <SheetHeader className='sr-only'>
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{t('sidebar.navigation.categories')}</SheetTitle>
+            <SheetDescription>
+              {t('sidebar.navigation.mobileDescription')}
+            </SheetDescription>
           </SheetHeader>
-          <div className='flex h-full w-full flex-col'>{children}</div>
+          <div className='flex h-full min-h-0 w-full flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'>
+            {children}
+          </div>
+          <div
+            data-sidebar='mobile-dismiss-rail'
+            className={cn(
+              'absolute inset-y-0 flex w-12 items-center justify-center',
+              side === 'left' ? 'start-full' : 'end-full'
+            )}
+          >
+            <SheetClose asChild>
+              <Button
+                type='button'
+                variant='secondary'
+                size='icon'
+                aria-label={t('sidebar.navigation.collapseSidebar')}
+                title={t('sidebar.navigation.collapseSidebar')}
+                className='h-16 w-11 rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+              >
+                {side === 'left' ? (
+                  <ChevronLeft className='size-6' aria-hidden='true' />
+                ) : (
+                  <ChevronRight className='size-6' aria-hidden='true' />
+                )}
+              </Button>
+            </SheetClose>
+          </div>
         </SheetContent>
       </Sheet>
     )
@@ -504,9 +537,9 @@ const sidebarMenuButtonVariants = cva(
           'bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]',
       },
       size: {
-        default: 'h-7 text-sm',
-        sm: 'h-6.5 text-xs',
-        lg: 'h-10 text-sm group-data-[collapsible=icon]:p-0!',
+        default: 'h-8 text-[15px]',
+        sm: 'h-7 text-[13px]',
+        lg: 'h-10 text-[15px] group-data-[collapsible=icon]:p-0!',
       },
     },
     defaultVariants: {
@@ -713,8 +746,8 @@ function SidebarMenuSubButton({
       data-active={isActive}
       className={cn(
         'relative flex h-7 w-full min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2.5 text-sidebar-foreground/72 ring-sidebar-ring outline-hidden transition-all before:absolute before:top-1 before:bottom-1 before:left-0 before:w-0.5 before:rounded-full before:bg-orange-500 before:opacity-0 before:transition-opacity hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent/35 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:border-zinc-950 data-[active=true]:bg-zinc-950 data-[active=true]:text-white data-[active=true]:shadow-sm data-[active=true]:before:opacity-100 [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-inherit',
-        size === 'sm' && 'text-[11px] font-black tracking-tight',
-        size === 'md' && 'text-[12px] font-black tracking-tight',
+        size === 'sm' && 'text-[12px] font-black tracking-tight',
+        size === 'md' && 'text-[13px] font-black tracking-tight',
         'group-data-[collapsible=icon]:hidden',
         className
       )}

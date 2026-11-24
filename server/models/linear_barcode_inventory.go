@@ -8,6 +8,7 @@ type LinearBarcodeInventoryItem struct {
 	Batch            *PrintBatch `gorm:"foreignKey:BatchID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	ProductID        string      `gorm:"type:uuid;not null;index" json:"productId"`
 	SalesOrderID     string      `gorm:"type:uuid;not null;index" json:"salesOrderId"`
+	SalesOrderLineID uint        `gorm:"not null;default:0;index" json:"-"`
 	SalesOrderLineNo int         `gorm:"not null;index" json:"salesOrderLineNo"`
 	Code             string      `gorm:"size:15;not null;uniqueIndex" json:"code"`
 	SerialNumber     string      `gorm:"size:4;not null;index" json:"serialNumber"`

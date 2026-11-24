@@ -20,12 +20,8 @@ export interface ExecuteProductionScanCommandInput {
   idempotencyKey?: string
   executionRound?: number
   productBarcode: string
-  executionLotId?: string
-  routeId?: string
-  routeStepId?: string
-  processStepId?: string
+  productionWorkLocationId?: string
   targetRouteStepId?: string
-  targetProcessStepId?: string
   executionMode?: string
   partnerId?: string
   action?: ProductionScanCommandAction | string
@@ -57,12 +53,8 @@ export interface ProductionScanCommandError extends Error {
 }
 
 const REQUEST_FIELD_NAMES = [
-  'executionLotId',
-  'routeId',
-  'routeStepId',
-  'processStepId',
+  'productionWorkLocationId',
   'targetRouteStepId',
-  'targetProcessStepId',
   'executionMode',
   'partnerId',
   'result',

@@ -57,7 +57,7 @@ export function PersonalWorkbenchWorkspaceView({
         <Button
           type='button'
           variant='outline'
-          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
+          className='h-8 rounded-full px-3 md:h-9 md:px-4'
           onClick={() => {
             setEditingItemId(null)
             setEditorType('note')
@@ -69,7 +69,7 @@ export function PersonalWorkbenchWorkspaceView({
         </Button>
         <Button
           type='button'
-          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
+          className='h-8 rounded-full px-3 md:h-9 md:px-4'
           onClick={() => {
             setEditingItemId(null)
             setEditorType('link')

@@ -81,7 +81,7 @@ export function CalendarView({ onDateClick }: CalendarViewProps) {
               variant='outline'
               size='sm'
               onClick={() => setCurrentMonth(today)}
-              className='h-8 flex-1 rounded-full border-dashed border-primary/30 px-3 text-[8px] font-black tracking-widest text-primary uppercase transition-all hover:bg-primary/5 sm:flex-none md:px-4 md:text-[9px]'
+              className='h-8 flex-1 rounded-full border-dashed border-primary/30 px-3 text-primary transition-all hover:bg-primary/5 sm:flex-none md:px-4'
             >
               {t('dashboard.page.calendar.view.today')}
             </Button>

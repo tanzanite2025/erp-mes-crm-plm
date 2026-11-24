@@ -200,7 +200,7 @@ export function LabEquipmentPage() {
                 setPendingParentId(undefined)
                 setIsDialogOpen(true)
               }}
-              className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase transition-all hover:border-primary hover:bg-primary hover:text-white active:scale-95'
+              className='h-12 rounded-full border-2 border-dashed px-10 transition-all hover:border-primary hover:bg-primary hover:text-white active:scale-95'
             >
               {t('labExperimental.equipment.initializeFirstDomain')}
             </Button>

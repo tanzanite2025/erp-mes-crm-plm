@@ -15,7 +15,7 @@ import type { ProductionRoute } from '@/features/production-shared/data/producti
 import { ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace } from './production-execution-barcode-review-and-explicit-operation-workspace'
 
 const productionExecutionWorkflowTestDependencies = vi.hoisted(() => ({
-  readCurrentProcess: vi.fn(),
+  readLifecycleHistory: vi.fn(),
   executeConfirmedOperation: vi.fn(),
   identity: {
     user: {
@@ -36,10 +36,10 @@ vi.mock('@/stores/auth-store', () => ({
   ) => select(productionExecutionWorkflowTestDependencies.identity),
 }))
 vi.mock(
-  './services/production-execution-product-barcode-current-process-query-service',
+  './services/production-execution-product-barcode-lifecycle-history-query-service',
   () => ({
-    queryProductionExecutionProductBarcodeCurrentProcess:
-      productionExecutionWorkflowTestDependencies.readCurrentProcess,
+    queryProductionExecutionProductBarcodeLifecycleHistory:
+      productionExecutionWorkflowTestDependencies.readLifecycleHistory,
   })
 )
 vi.mock(
@@ -64,6 +64,23 @@ vi.mock('@/features/production-shared/hooks/use-production-resources', () => ({
     isError: productionExecutionWorkflowTestDependencies.routesFailed,
   }),
 }))
+vi.mock(
+  '@/features/production-shared/services/production-work-location-catalog-query-service',
+  () => ({
+    productionWorkLocationCatalogQueryKey: ['production', 'work-locations'],
+    queryProductionWorkLocationCatalog: () =>
+      Promise.resolve([
+        {
+          id: 'location-1',
+          code: 'TEST-LOCATION',
+          name: '测试作业地点',
+          description: '',
+          isActive: true,
+          version: 1,
+        },
+      ]),
+  })
+)
 vi.mock('@/components/camera-scan-input', () => ({
   CameraScanInput: () => null,
 }))
@@ -93,23 +110,25 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 const productionExecutionWorkflowTestRoute: ProductionRoute = {
   id: 'route-1',
+  routeFamilyId: 'route-family-1',
+  revisionNo: 1,
+  basedOnRouteId: '',
+  isCurrentRevision: true,
   code: 'R001',
   name: '产品生产路线',
   productId: '',
   productName: '',
-  productTemplateId: '',
   description: '',
   version: 1,
   status: 'PUBLISHED',
   createdAt: '',
   updatedAt: '',
-  steps: ['裁切', '缝制', '包装'].map((processName, index) => ({
+  steps: ['裁切', '缝制', '包装'].map((branchOperationName, index) => ({
     id: `step-${index + 1}`,
     routeId: 'route-1',
     sequence: index + 1,
-    segmentId: '',
-    processStepId: `process-${index + 1}`,
-    processName,
+    branchOperationId: `operation-${index + 1}`,
+    branchOperationName,
     executionMode: 'IN_HOUSE',
     qualityGate: 'NONE',
     estimatedMinutes: 0,
@@ -122,8 +141,8 @@ const productionExecutionWorkflowTestRecordedState = {
   productName: '测试产品',
   routeId: 'route-1',
   routeStepId: 'step-1',
-  currentProcessStepId: 'process-1',
-  currentProcessStep: { id: 'process-1', code: 'CUT', name: '裁切' },
+  currentBranchOperationId: 'operation-1',
+  currentBranchOperation: { id: 'operation-1', code: 'CUT', name: '裁切' },
   status: 'IN_PROGRESS',
 }
 const productionExecutionWorkflowTestCompletionResponse = {
@@ -132,23 +151,52 @@ const productionExecutionWorkflowTestCompletionResponse = {
   state: {
     ...productionExecutionWorkflowTestRecordedState,
     routeStepId: 'step-2',
-    currentProcessStepId: 'process-2',
-    currentProcessStep: { id: 'process-2', code: 'SEW', name: '缝制' },
+    currentBranchOperationId: 'operation-2',
+    currentBranchOperation: { id: 'operation-2', code: 'SEW', name: '缝制' },
     status: 'NOT_STARTED',
   },
   progress: {
     executedRouteStepId: 'step-1',
-    executedProcessStepId: 'process-1',
+    executedBranchOperationId: 'operation-1',
     advanced: true,
     routeCompleted: false,
   },
   transferEvents: [],
 }
 
+function productionExecutionWorkflowLifecyclePage(
+  state: typeof productionExecutionWorkflowTestRecordedState | null
+) {
+  if (!state) return null
+  return {
+    currentState: {
+      id: 'state-1',
+      productId: 'product-1',
+      lastEventId: 'event-1',
+      startedAt: '',
+      completedAt: '',
+      updatedAt: '2026-11-13T09:00:00Z',
+      ...state,
+    },
+    stateEvents: [],
+    stateEventTotal: 0,
+    operationExecutions: [],
+    operationExecutionTotal: 0,
+    transferEvents: [],
+    transferEventTotal: 0,
+    limit: 50,
+    offset: 0,
+  }
+}
+
 beforeEach(() => {
-  productionExecutionWorkflowTestDependencies.readCurrentProcess
+  productionExecutionWorkflowTestDependencies.readLifecycleHistory
     .mockReset()
-    .mockResolvedValue(productionExecutionWorkflowTestRecordedState)
+    .mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage(
+        productionExecutionWorkflowTestRecordedState
+      )
+    )
   productionExecutionWorkflowTestDependencies.executeConfirmedOperation
     .mockReset()
     .mockResolvedValue(productionExecutionWorkflowTestCompletionResponse)
@@ -177,7 +225,8 @@ function renderProductionExecutionBarcodeReviewWorkflow() {
 }
 
 async function readProductionExecutionWorkflowTestBarcode(
-  barcode = 'PRODUCT-001'
+  barcode = 'PRODUCT-001',
+  selectWorkLocation = true
 ) {
   fireEvent.change(screen.getByLabelText('产品一维码'), {
     target: { value: barcode },
@@ -185,19 +234,27 @@ async function readProductionExecutionWorkflowTestBarcode(
   fireEvent.keyDown(screen.getByLabelText('产品一维码'), { key: 'Enter' })
   await waitFor(() =>
     expect(
-      productionExecutionWorkflowTestDependencies.readCurrentProcess
-    ).toHaveBeenCalledWith(barcode, expect.any(AbortSignal))
+      productionExecutionWorkflowTestDependencies.readLifecycleHistory
+    ).toHaveBeenCalledWith(barcode, 0, expect.any(AbortSignal))
   )
+  if (selectWorkLocation) {
+    await screen.findByRole('option', {
+      name: 'TEST-LOCATION · 测试作业地点',
+    })
+    fireEvent.change(screen.getByLabelText('实际作业地点'), {
+      target: { value: 'location-1' },
+    })
+  }
 }
 
 describe('production execution product review and explicit confirmation', () => {
   it('distinguishes a rework transfer from normal advancement in the confirmed result', async () => {
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockResolvedValue(
-      {
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage({
         ...productionExecutionWorkflowTestRecordedState,
         routeStepId: 'step-2',
-        currentProcessStepId: 'process-2',
-      }
+        currentBranchOperationId: 'operation-2',
+      })
     )
     productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mockResolvedValue(
       {
@@ -232,18 +289,17 @@ describe('production execution product review and explicit confirmation', () => 
       expect.objectContaining({
         action: 'REWORK',
         targetRouteStepId: 'step-1',
-        targetProcessStepId: 'process-1',
       })
     )
   })
 
   it('previews and confirms route completion at the final process', async () => {
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockResolvedValue(
-      {
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage({
         ...productionExecutionWorkflowTestRecordedState,
         routeStepId: 'step-3',
-        currentProcessStepId: 'process-3',
-      }
+        currentBranchOperationId: 'operation-3',
+      })
     )
     productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mockResolvedValue(
       {
@@ -251,12 +307,12 @@ describe('production execution product review and explicit confirmation', () => 
         state: {
           ...productionExecutionWorkflowTestRecordedState,
           routeStepId: 'step-3',
-          currentProcessStepId: 'process-3',
+          currentBranchOperationId: 'operation-3',
           status: 'COMPLETED',
         },
         progress: {
           executedRouteStepId: 'step-3',
-          executedProcessStepId: 'process-3',
+          executedBranchOperationId: 'operation-3',
           advanced: false,
           routeCompleted: true,
         },
@@ -290,8 +346,10 @@ describe('production execution product review and explicit confirmation', () => 
     await waitFor(() =>
       expect(screen.getByLabelText('产品一维码')).toHaveValue('')
     )
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockResolvedValue(
-      productionExecutionWorkflowTestCompletionResponse.state
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage(
+        productionExecutionWorkflowTestCompletionResponse.state
+      )
     )
     await readProductionExecutionWorkflowTestBarcode()
     const preview = screen.getByRole('region', {
@@ -299,11 +357,134 @@ describe('production execution product review and explicit confirmation', () => 
     })
     await within(preview).findByText('3. 包装')
     expect(
-      productionExecutionWorkflowTestDependencies.readCurrentProcess
-    ).toHaveBeenCalledTimes(2)
+      productionExecutionWorkflowTestDependencies.readLifecycleHistory
+    ).toHaveBeenCalledTimes(3)
     expect(
       productionExecutionWorkflowTestDependencies.executeConfirmedOperation
     ).toHaveBeenCalledTimes(1)
+  })
+
+  it('groups lifecycle facts by operation and loads older pages without losing current process state', async () => {
+    const firstPage = {
+      ...productionExecutionWorkflowLifecyclePage({
+        ...productionExecutionWorkflowTestRecordedState,
+        routeStepId: 'step-2',
+        currentBranchOperationId: 'operation-2',
+        status: 'NOT_STARTED',
+      }),
+      currentState: {
+        ...productionExecutionWorkflowLifecyclePage(
+          productionExecutionWorkflowTestRecordedState
+        )!.currentState,
+        routeStepId: 'step-2',
+        currentBranchOperationId: 'operation-2',
+        status: 'NOT_STARTED',
+        lastEventId: 'event-current',
+      },
+      stateEvents: [
+        {
+          id: 'event-current',
+          stateId: 'state-1',
+          operationId: 'operation-current',
+          productBarcode: 'PRODUCT-001',
+          eventType: 'TRANSFER',
+          fromProcessStepId: 'operation-1',
+          toProcessStepId: 'operation-2',
+          routeId: 'route-1',
+          routeStepId: 'step-2',
+          operator: '测试操作员',
+          payloadSnapshot: '{}',
+          occurredAt: '2026-11-13T09:00:00Z',
+        },
+      ],
+      stateEventTotal: 51,
+      operationExecutions: [
+        {
+          id: 'operation-current',
+          productBarcode: 'PRODUCT-001',
+          routeId: 'route-1',
+          routeStepId: 'step-1',
+          branchOperationId: 'operation-1',
+          action: 'COMPLETE',
+          result: 'PASS',
+          notes: '首道工序完成',
+          operator: '测试操作员',
+          createdAt: '2026-11-13T09:00:00Z',
+          startedAt: '',
+          completedAt: '2026-11-13T09:00:00Z',
+        },
+      ],
+      operationExecutionTotal: 51,
+      transferEvents: [
+        {
+          id: 'transfer-current',
+          productBarcode: 'PRODUCT-001',
+          operationId: 'operation-current',
+          transferType: 'ROUTE_ADVANCE',
+          routeId: 'route-1',
+          fromRouteStepId: 'step-1',
+          toRouteStepId: 'step-2',
+          fromProcessStepId: 'operation-1',
+          toProcessStepId: 'operation-2',
+          operator: '测试操作员',
+          occurredAt: '2026-11-13T09:00:00Z',
+        },
+      ],
+      transferEventTotal: 51,
+    }
+    const olderPage = {
+      ...productionExecutionWorkflowLifecyclePage(
+        productionExecutionWorkflowTestRecordedState
+      )!,
+      offset: 50,
+      stateEvents: [],
+      operationExecutions: [
+        {
+          id: 'operation-older',
+          productBarcode: 'PRODUCT-001',
+          routeId: 'route-1',
+          routeStepId: 'step-1',
+          branchOperationId: 'operation-1',
+          action: 'START',
+          operator: '旧操作员',
+          createdAt: '2026-11-14T09:00:00Z',
+        },
+      ],
+      transferEvents: [],
+    }
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(olderPage)
+
+    renderProductionExecutionBarcodeReviewWorkflow()
+    await readProductionExecutionWorkflowTestBarcode()
+    const lifecycle = screen.getByRole('region', {
+      name: '产品码生产生命周期记录',
+    })
+    await within(lifecycle).findByText('完工过站')
+    expect(
+      within(lifecycle).getByText('当前生产状态对应事件')
+    ).toBeInTheDocument()
+    expect(
+      within(lifecycle).getByText(/工序过站: 1\. 裁切/)
+    ).toBeInTheDocument()
+    expect(within(lifecycle).getByText(/结果: PASS/)).toBeInTheDocument()
+    expect(within(lifecycle).getByText('状态事件: 51')).toBeInTheDocument()
+    expect(within(lifecycle).getByText('工序操作: 51')).toBeInTheDocument()
+    expect(within(lifecycle).getByText('流转记录: 51')).toBeInTheDocument()
+
+    fireEvent.click(
+      within(lifecycle).getByRole('button', {
+        name: '加载更早的生产记录',
+      })
+    )
+    await within(lifecycle).findByText(/操作员: 旧操作员/)
+    expect(lifecycle.querySelector('ol')?.firstElementChild).toHaveTextContent(
+      '当前生产状态对应事件'
+    )
+    expect(
+      productionExecutionWorkflowTestDependencies.readLifecycleHistory
+    ).toHaveBeenNthCalledWith(2, 'PRODUCT-001', 50, expect.any(AbortSignal))
   })
 
   it('brings the reviewed process into view after a scan on small screens', async () => {
@@ -335,8 +516,6 @@ describe('production execution product review and explicit confirmation', () => 
     })
     expect(within(preview).getByText('1. 裁切')).toBeInTheDocument()
     expect(within(preview).getByText('2. 缝制')).toBeInTheDocument()
-    expect(screen.getByLabelText('生产路线')).toBeDisabled()
-    expect(screen.getByLabelText('本次办理工序')).toBeDisabled()
     expect(screen.queryByLabelText('委外单位')).not.toBeInTheDocument()
     expect(
       productionExecutionWorkflowTestDependencies.executeConfirmedOperation
@@ -349,14 +528,17 @@ describe('production execution product review and explicit confirmation', () => 
         expect.objectContaining({
           productBarcode: 'PRODUCT-001',
           action: 'COMPLETE',
-          routeId: 'route-1',
-          routeStepId: 'step-1',
-          processStepId: 'process-1',
           targetRouteStepId: '',
-          targetProcessStepId: '',
         })
       )
     )
+    const submittedCommand =
+      productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mock
+        .calls[0][0]
+    expect(submittedCommand).not.toHaveProperty('executionLotId')
+    expect(submittedCommand).not.toHaveProperty('routeId')
+    expect(submittedCommand).not.toHaveProperty('routeStepId')
+    expect(submittedCommand).not.toHaveProperty('branchOperationId')
     const result = screen.getByRole('region', { name: '最近一次办理结果' })
     expect(
       productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mock
@@ -376,28 +558,58 @@ describe('production execution product review and explicit confirmation', () => 
     })
     fireEvent.click(screen.getByRole('button', { name: '模拟扫码完成' }))
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: '确认工序开工' })).toBeEnabled()
+      expect(
+        screen.getByRole('button', { name: '确认工序开工' })
+      ).toBeDisabled()
     )
     expect(
-      productionExecutionWorkflowTestDependencies.readCurrentProcess
+      await screen.findByText(/当前工序已处于加工中，不能重复开工/)
+    ).toBeInTheDocument()
+    expect(
+      productionExecutionWorkflowTestDependencies.readLifecycleHistory
     ).toHaveBeenCalled()
     expect(
       productionExecutionWorkflowTestDependencies.executeConfirmedOperation
     ).not.toHaveBeenCalled()
   })
 
+  it('requires explicit rework before starting a completed process again', async () => {
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage({
+        ...productionExecutionWorkflowTestRecordedState,
+        status: 'COMPLETED',
+      })
+    )
+    renderProductionExecutionBarcodeReviewWorkflow()
+    await readProductionExecutionWorkflowTestBarcode()
+
+    expect(screen.getByRole('button', { name: '确认工序开工' })).toBeDisabled()
+    expect(
+      await screen.findByText(/工序已经完成，不能再次开工/)
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /退回返工\s*指定目标/ }))
+    fireEvent.change(await screen.findByLabelText('返工目标'), {
+      target: { value: 'step-1' },
+    })
+    expect(
+      screen.getByRole('button', { name: '确认转入返工工序' })
+    ).toBeEnabled()
+  })
+
   it('disables execution immediately when a barcode changes and ignores the previous barcode response', async () => {
     let resolveOldBarcodeRead: (
       state: typeof productionExecutionWorkflowTestRecordedState
     ) => void = () => undefined
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockImplementationOnce(
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
-          resolveOldBarcodeRead = resolve
+          resolveOldBarcodeRead = (state) =>
+            resolve(productionExecutionWorkflowLifecyclePage(state))
         })
     )
     renderProductionExecutionBarcodeReviewWorkflow()
-    await readProductionExecutionWorkflowTestBarcode()
+    await readProductionExecutionWorkflowTestBarcode('PRODUCT-001', false)
     fireEvent.change(screen.getByLabelText('产品一维码'), {
       target: { value: 'PRODUCT-002' },
     })
@@ -413,17 +625,13 @@ describe('production execution product review and explicit confirmation', () => 
     ).not.toHaveBeenCalled()
   })
 
-  it('allows a first start after route selection but blocks completing an unrecorded barcode', async () => {
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockResolvedValue(
+  it('starts a new barcode through its plan route and blocks completion without recorded state', async () => {
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
       null
     )
     renderProductionExecutionBarcodeReviewWorkflow()
     await readProductionExecutionWorkflowTestBarcode()
-    const routeSelect = await screen.findByLabelText('生产路线')
     expect(screen.getAllByText(/该产品码尚无工序执行记录/)).toHaveLength(1)
-    expect(screen.getByRole('button', { name: '确认工序开工' })).toBeDisabled()
-    fireEvent.change(routeSelect, { target: { value: 'route-1' } })
-    expect(screen.getByLabelText('本次办理工序')).toHaveValue('step-1')
     expect(screen.getByRole('button', { name: '确认工序开工' })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: /完工过站\s*本工序/ }))
     expect(
@@ -437,19 +645,26 @@ describe('production execution product review and explicit confirmation', () => 
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'START',
-          routeStepId: 'step-1',
-          processStepId: 'process-1',
+          productBarcode: 'PRODUCT-001',
+          productionWorkLocationId: 'location-1',
         })
       )
     )
+    const submittedCommand =
+      productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mock
+        .calls[0][0]
+    expect(submittedCommand).not.toHaveProperty('executionLotId')
+    expect(submittedCommand).not.toHaveProperty('routeId')
+    expect(submittedCommand).not.toHaveProperty('routeStepId')
+    expect(submittedCommand).not.toHaveProperty('branchOperationId')
   })
 
   it('keeps confirmation disabled when reading fails', async () => {
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockRejectedValue(
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockRejectedValue(
       new Error('unavailable')
     )
     renderProductionExecutionBarcodeReviewWorkflow()
-    await readProductionExecutionWorkflowTestBarcode()
+    await readProductionExecutionWorkflowTestBarcode('PRODUCT-001', false)
     await screen.findByText(/当前工序读取失败/)
     expect(screen.getByRole('button', { name: '确认工序开工' })).toBeDisabled()
     expect(screen.queryByLabelText('生产路线')).not.toBeInTheDocument()
@@ -461,7 +676,7 @@ describe('production execution product review and explicit confirmation', () => 
     ]
     renderProductionExecutionBarcodeReviewWorkflow()
     await readProductionExecutionWorkflowTestBarcode()
-    await screen.findByLabelText('生产路线')
+    expect(await screen.findAllByText('1. 裁切')).not.toHaveLength(0)
     expect(screen.getByRole('button', { name: '确认工序开工' })).toBeDisabled()
     expect(screen.getByText('当前账号没有生产执行权限。')).toBeInTheDocument()
   })
@@ -482,7 +697,6 @@ describe('production execution product review and explicit confirmation', () => 
         expect.objectContaining({
           action: 'COMPLETE',
           targetRouteStepId: '',
-          targetProcessStepId: '',
         })
       )
     )
@@ -491,6 +705,12 @@ describe('production execution product review and explicit confirmation', () => 
   it('retains entered details on a failed command and clears them before reviewing another product', async () => {
     productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mockRejectedValue(
       new Error('状态冲突，请重新核对')
+    )
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage({
+        ...productionExecutionWorkflowTestRecordedState,
+        status: 'HOLD',
+      })
     )
     renderProductionExecutionBarcodeReviewWorkflow()
     await readProductionExecutionWorkflowTestBarcode()
@@ -503,11 +723,11 @@ describe('production execution product review and explicit confirmation', () => 
     await screen.findByText('状态冲突，请重新核对')
     expect(notes).toHaveValue('仅针对第一个产品')
     expect(screen.getByLabelText('产品一维码')).toHaveValue('PRODUCT-001')
-    productionExecutionWorkflowTestDependencies.readCurrentProcess.mockResolvedValue(
-      {
+    productionExecutionWorkflowTestDependencies.readLifecycleHistory.mockResolvedValue(
+      productionExecutionWorkflowLifecyclePage({
         ...productionExecutionWorkflowTestRecordedState,
         productBarcode: 'PRODUCT-002',
-      }
+      })
     )
     await readProductionExecutionWorkflowTestBarcode('PRODUCT-002')
     await waitFor(() => expect(screen.getByLabelText('备注')).toHaveValue(''))

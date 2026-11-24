@@ -1,19 +1,26 @@
 export const codeCenter = {
   title: 'Code Center',
   linearBarcode: {
+    symbols: {
+      linearBarcode: 'Code128',
+      qrCode: 'QR Code',
+      pairedSymbols: 'Code128 / QR Code',
+      sameCode: 'Code128 and QR encode the same value: {{code}}',
+      loading: 'Preparing symbols',
+      renderFailed: 'Symbols could not be rendered',
+    },
     tabs: {
       protocol: 'Protocol Rules',
       print: 'Print',
-      status: 'Barcode Status',
+      status: 'Code Status',
       numbering: 'Business Numbering',
     },
     print: {
       page: {
-        title: 'Linear Barcode Print Center',
-        subtitle:
-          'LINEAR BARCODE PRINT / Unique numbering, batch records, and Code128 previews',
+        title: 'Product Code Print Center',
+        subtitle: 'Unique numbering, batch records, and Code128 / QR previews',
         notice:
-          'Each print transaction reserves unique serials, creates canonical 15-character codes, and stores every code as available inventory before opening the preview.',
+          'Each product code is issued once and rendered as both Code128 and QR. Choose either symbol or both in the print window; reprint existing codes from inventory below.',
         badges: {
           placeholder: 'Skeleton Placeholder',
           awaitingOrder: 'Awaiting Order',
@@ -80,13 +87,16 @@ export const codeCenter = {
         preview: {
           title: 'Parse Preview',
           description:
-            'Set an independent preprint quantity per order line and generate that many unique Code128 labels.',
+            'Set an independent preprint quantity per order line. Each unique code is rendered as Code128 and QR in one preview window.',
           placeholder:
             'Preprint quantity is independent of order quantity and supports 1 to 200 unique codes per batch.',
           actions: {
             printNow: 'Print {{quantity}} Now',
             printing: 'Preparing Preview ({{quantity}})...',
             previewReady: 'Print Preview Ready',
+            loadingIssuanceSummary: 'Loading Issuance Count',
+            unattributedIssuedInventory: 'Unresolved legacy code ownership',
+            orderQuantityReached: 'Order Quantity Reached',
             batchPrintAll: 'Batch Print Order',
             batchPrinting: 'Batch Printing',
           },
@@ -114,7 +124,7 @@ export const codeCenter = {
             previewClosed:
               'The print preview was closed. Any newly created batch is scrapped automatically.',
             renderFailed:
-              'The Code128 label could not be rendered, so no print batch was created.',
+              'Code128 or QR rendering failed. Retry; newly issued batches follow the existing print scrapping rules.',
           },
           states: {
             awaitingSelection: 'Select an order to inspect parsing results.',
@@ -122,6 +132,8 @@ export const codeCenter = {
             noLines: 'This order has no lines available for parsing.',
             lineReady: 'Ready',
             lineBlocked: 'Blocked',
+            unattributedIssuedInventory:
+              '{{quantity}} active legacy codes have no confirmed order line. Issuance is paused until inventory is reconciled.',
           },
           fields: {
             lineNo: 'Line',
@@ -131,7 +143,9 @@ export const codeCenter = {
             holeCount: 'Hole Count',
             quantity: 'Quantity',
             orderQuantity: 'Order Quantity',
-            printQuantity: 'Preprint Quantity (1-200)',
+            issuedQuantity: 'Valid Issued',
+            remainingQuantity: 'Remaining to Issue',
+            printQuantity: 'Print Quantity This Time',
             sequenceRuleKey: 'Sequence Rule Key',
             mockSerial: 'Preview Serial',
             barcodeSerial: 'Barcode Config Serial',
@@ -196,15 +210,19 @@ export const codeCenter = {
           },
         },
         inventory: {
-          title: 'Linear Barcode Inventory',
+          title: 'Product Code Inventory',
           description:
-            'Lists each issued code with its batch, order line, availability, and expiration time.',
+            'Each issued code has Code128 and QR symbols on the same row. Reprints reuse the original code without issuing another number.',
+          actions: {
+            reprint: 'Reprint code',
+            reprintCode: 'Reprint existing code {{code}}',
+          },
           total: 'Inventory {{count}}',
           available: 'Available {{count}}',
-          refresh: 'Refresh linear barcode inventory',
-          loading: 'Loading linear barcode inventory',
-          loadFailed: 'Failed to load linear barcode inventory.',
-          empty: 'No linear barcode inventory exists in the current scope.',
+          refresh: 'Refresh product-code inventory',
+          loading: 'Loading product-code inventory',
+          loadFailed: 'Failed to load product-code inventory.',
+          empty: 'No product-code inventory exists in the current scope.',
           fields: {
             code: 'Full Code',
             batchNo: 'Print Batch',
@@ -224,9 +242,9 @@ export const codeCenter = {
     },
     status: {
       page: {
-        title: 'Linear Barcode Status Definitions',
+        title: 'Product Code Status Definitions',
         description:
-          'Defines status meanings, sources, and boundaries across print inventory and production execution',
+          'Defines product-code status meanings, sources, and boundaries; Code128 and QR use the same code and share the same status',
         badges: {
           definitionOnly: 'Definitions',
         },
@@ -235,10 +253,10 @@ export const codeCenter = {
         retryContract: 'Reload Contract',
       },
       states: {
-        loadingContract: 'Loading backend linear barcode status contract',
-        contractLoadFailed: 'Failed to load linear barcode status contract',
+        loadingContract: 'Loading backend product-code status contract',
+        contractLoadFailed: 'Failed to load product-code status contract',
         contractLoadFailedDescription:
-          'This page no longer falls back to a frontend status array. If the contract cannot load, fix the backend contract endpoint first so the UI cannot drift from the real state machine.',
+          'This page no longer falls back to a frontend status array. If the contract cannot load, fix the backend contract endpoint first so the UI cannot drift from the real state machine. Code128 and QR share this status contract.',
       },
       metrics: {
         total: 'Total Statuses',
@@ -249,12 +267,12 @@ export const codeCenter = {
         inventory: {
           title: 'Print Inventory Statuses',
           description:
-            'Describes issued barcode codes from print generation through binding, expiry, or scrapping.',
+            'Describes product codes from print generation through binding, expiry, or scrapping; the Code128 and QR symbols share one inventory record.',
         },
         production: {
           title: 'Production Execution Statuses',
           description:
-            'Describes bound product barcodes through production execution, transfer, hold, and rework flows.',
+            'Describes product codes through production execution, transfer, hold, and rework flows. Roll binding is not required to start production; either symbol reaches the same state.',
         },
       },
       location: {
@@ -300,16 +318,16 @@ export const codeCenter = {
       flow: {
         title: 'Lifecycle Notes',
         description:
-          'Status boundaries are defined here first. Later scan, outsourcing, transfer, and traceability features should reference these meanings instead of inventing separate ones.',
-        printStageTitle: '1. Print Numbering',
+          'Inventory and production states belong to separate business facts. Product binding is an optional material-trace relation, not a production-start prerequisite.',
+        printStageTitle: 'Product Code Issuance',
         printStageDescription:
-          'The print tab creates linear barcode inventory in linear_barcode_inventory_items.',
-        bindingStageTitle: '2. Product Binding',
+          'The print tab creates one inventory record per product code in linear_barcode_inventory_items.',
+        bindingStageTitle: 'Optional: Code-to-Roll Binding',
         bindingStageDescription:
-          'Product binding links a code to a product and moves inventory from available to bound.',
-        executionStageTitle: '3. Production Execution',
+          'Product binding links the code to an activated prepreg roll instance and moves inventory from available to bound; it does not mean production has started.',
+        executionStageTitle: 'Independent Production History',
         executionStageDescription:
-          'Scan, transfer, outsourcing, and process execution write product_barcode_states / events.',
+          'Production-state initialization and scan/process commands write production states, operations, and events. Starting work does not require binding or modify code inventory.',
       },
       fields: {
         phase: 'Phase',
@@ -323,15 +341,15 @@ export const codeCenter = {
           AVAILABLE: {
             label: 'Available',
             description:
-              'The code has been generated and reserved in print inventory, but is not yet bound to a product.',
-            phase: 'After printing, before binding',
+              'The product code is in print inventory and has not been linked to a prepreg roll instance.',
+            phase: 'Available after printing',
             trigger: 'Written automatically after successful batch print',
           },
           BOUND: {
             label: 'Bound',
             description:
-              'The code has been bound to a product and cannot be reused as a blank code.',
-            phase: 'After product binding',
+              'The product code is linked to a prepreg roll instance and cannot be rebound to another roll.',
+            phase: 'After material-trace binding',
             trigger: 'Written after product binding succeeds',
           },
           EXPIRED: {
@@ -339,7 +357,8 @@ export const codeCenter = {
             description:
               'The preprinted code is past its validity window and should not be bound to a new product.',
             phase: 'Inventory expiry',
-            trigger: 'Written when expiry is refreshed before query or binding',
+            trigger:
+              'Shown as expired after expiry; persisted when scanned for binding',
           },
           SCRAPPED: {
             label: 'Scrapped',
@@ -353,14 +372,15 @@ export const codeCenter = {
           NOT_STARTED: {
             label: 'Not Started',
             description:
-              'The product barcode has a production state record, but has not entered a concrete process execution yet.',
+              'The product code has a production state record, but has not entered a concrete process execution yet.',
             phase: 'Production pending',
-            trigger: 'Initialized state or pre-production state after binding',
+            trigger:
+              'Production state initialization or route-step advancement',
           },
           IN_PROGRESS: {
             label: 'In Progress',
             description:
-              'The product barcode has entered a process or execution action and is flowing through production.',
+              'The product code has entered a process or execution action and is flowing through production.',
             phase: 'Process execution',
             trigger:
               'Written by scan start, process execution, or transfer to a new process',
@@ -368,14 +388,14 @@ export const codeCenter = {
           COMPLETED: {
             label: 'Completed',
             description:
-              'The current production execution for the product barcode is complete and can move to acceptance, shipment, or archive checks.',
+              'The current production execution for the product code is complete and can move to acceptance, shipment, or archive checks.',
             phase: 'Execution complete',
             trigger: 'Written by process completion or production completion',
           },
           HOLD: {
             label: 'On Hold',
             description:
-              'The product barcode is temporarily stopped and requires manual confirmation, exception handling, or a later action.',
+              'The product code is temporarily stopped and requires manual confirmation, exception handling, or a later action.',
             phase: 'Exception waiting',
             trigger:
               'Written by exception hold, pause, or waiting-for-handling action',
@@ -383,7 +403,7 @@ export const codeCenter = {
           REWORK: {
             label: 'Rework',
             description:
-              'The product barcode has entered rework and must later return to an explicit state through scan or execution actions.',
+              'The product code has entered rework and must later return to an explicit state through scan or execution actions.',
             phase: 'Rework handling',
             trigger:
               'Written by quality exception, rework instruction, or rework transfer',
@@ -478,18 +498,18 @@ export const codeCenter = {
       page: {
         title: 'Shared Numbering Engine',
         description:
-          'Centralized entry for the current shared numbering configuration and linear-barcode numbering rules',
+          'Centralized entry for the current shared numbering configuration and product-code numbering rules',
         notice:
-          'This shared page now only keeps the linear-barcode shared numbering configuration.',
+          'This shared page now only keeps the product-code shared numbering configuration.',
         badges: {
-          linearBarcode: 'Linear Barcode',
+          linearBarcode: 'Product Codes',
         },
       },
       sections: {
         linearBarcode: {
-          title: 'Linear Barcode Numbering Rules',
+          title: 'Product Code Numbering Rules',
           description:
-            'Reuses the current linear-barcode numbering rules and persisted /numbering/rules backend capability.',
+            'Reuses the current product-code numbering rules and persisted /numbering/rules backend capability.',
           status: 'Backend numbering connected',
         },
       },

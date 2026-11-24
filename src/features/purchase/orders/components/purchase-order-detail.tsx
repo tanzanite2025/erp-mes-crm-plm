@@ -326,7 +326,7 @@ export function PurchaseOrderDetail({
 
           <Button
             variant='outline'
-            className='w-full rounded-[24px] py-6 text-[11px] font-black'
+            className='w-full rounded-[24px] py-6'
             disabled={!hasEvidencePhotos}
             onClick={() => reactToPrint()}
           >
@@ -335,7 +335,7 @@ export function PurchaseOrderDetail({
           </Button>
 
           <Button
-            className='w-full rounded-[24px] py-6 text-[11px] font-black shadow-lg shadow-primary/10'
+            className='w-full rounded-[24px] py-6 shadow-lg shadow-primary/10'
             disabled={!canConfirmReceipt || confirmReceiptMutation.isPending}
             onClick={handleConfirmReceipt}
           >
@@ -349,7 +349,7 @@ export function PurchaseOrderDetail({
 
           <Button
             variant='destructive'
-            className='w-full rounded-[24px] py-6 text-[11px] font-black shadow-lg shadow-destructive/10'
+            className='w-full rounded-[24px] py-6 shadow-lg shadow-destructive/10'
             disabled={!canCancelOrder}
             onClick={handleDelete}
           >

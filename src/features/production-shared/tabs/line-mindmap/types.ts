@@ -10,12 +10,7 @@ export interface LineMindmapProcessDraft {
   description: string
   isActive: boolean
   name: string
-}
-
-export interface LineMindmapProcessOption {
-  id: string
-  label: string
-  code?: string
+  processLibraryId: string
 }
 
 export interface LineMindmapToolbarProps {
@@ -36,4 +31,5 @@ export interface LineMindmapToolbarProps {
   onToggleLine: () => void
   onEditNode: () => void
   onSelectLine: (value: string) => void
+  onCaptureTopologyTemplate: () => void
 }

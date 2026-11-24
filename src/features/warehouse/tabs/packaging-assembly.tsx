@@ -226,7 +226,7 @@ function PackageCodePrintFormatSelector({
               }`}
             >
               <div className='mb-2 flex items-center justify-between gap-2'>
-                <span className='inline-flex items-center gap-1.5 text-[11px] font-black'>
+                <span className='inline-flex items-center gap-1.5'>
                   <Icon className='size-3.5' />
                   {option.label}
                 </span>
@@ -247,7 +247,7 @@ function PackageCodePrintFormatSelector({
                   }
                 />
               </div>
-              <div className='mt-1 truncate text-[10px] font-bold text-muted-foreground'>
+              <div className='mt-1 truncate text-muted-foreground'>
                 {option.hint}
               </div>
             </button>
@@ -461,7 +461,7 @@ export default function PackagingAssembly() {
                 type='button'
                 onClick={() => createSessionMutation.mutate()}
                 disabled={createSessionMutation.isPending}
-                className='h-10 rounded-full text-xs font-black'
+                className='h-10 rounded-full'
               >
                 {createSessionMutation.isPending ? (
                   <Loader2 className='size-4 animate-spin' />
@@ -475,7 +475,7 @@ export default function PackagingAssembly() {
                 variant='outline'
                 onClick={() => setPrintPackageCode(activePackageCode)}
                 disabled={!activePackageCode}
-                className='h-10 rounded-full text-xs font-black'
+                className='h-10 rounded-full'
               >
                 <Printer className='size-4' />
                 {copy.printPackageCode}
@@ -484,7 +484,7 @@ export default function PackagingAssembly() {
                 type='button'
                 variant='outline'
                 onClick={() => void assembliesQuery.refetch()}
-                className='h-10 rounded-full text-xs font-black'
+                className='h-10 rounded-full'
               >
                 <RefreshCw className='size-4' />
                 {copy.refresh}
@@ -590,7 +590,7 @@ function AssemblyRecord({
             type='button'
             variant='outline'
             size='sm'
-            className='h-8 rounded-full text-[11px] font-black'
+            className='h-8 rounded-full'
             onClick={onPrint}
           >
             <Printer className='size-3.5' />

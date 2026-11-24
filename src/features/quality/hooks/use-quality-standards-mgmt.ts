@@ -1,20 +1,8 @@
 import type {
-  QualityStandardsListStats,
   QualityStandardsListSearchState,
   QualityStandardsStatusFilter,
-  QualityStandardsTypeFilter,
 } from '../types/quality-standards-list'
 import { useGetQualityStandards } from './use-quality'
-
-const DEFAULT_STATUS_STATS: QualityStandardsListStats = {
-  total: 0,
-  draft: 0,
-  pendingApproval: 0,
-  approved: 0,
-  rejected: 0,
-  published: 0,
-  archived: 0,
-}
 
 type SearchStateUpdater = (
   prev: QualityStandardsListSearchState
@@ -31,20 +19,19 @@ export function useQualityStandardsMgmt({
 }: UseQualityStandardsMgmtParams) {
   const page = search.page
   const pageSize = search.pageSize
-  const typeFilter = search.type
   const statusFilter = search.status
 
-  const { data, error, isLoading, isFetching } = useGetQualityStandards({
-    page,
-    pageSize,
-    type: typeFilter,
-    status: statusFilter,
-    keyword: search.keyword,
-  })
+  const { data, error, isLoading, isFetching, refetch } =
+    useGetQualityStandards({
+      page,
+      pageSize,
+      status: statusFilter,
+      keyword: search.keyword,
+    })
 
   const standards = data?.items || []
   const total = data?.total || 0
-  const stats = data?.metadata?.stats ?? DEFAULT_STATUS_STATS
+  const stats = data?.metadata?.stats
 
   const handleSearchChange = (value: string) => {
     navigate({
@@ -52,16 +39,6 @@ export function useQualityStandardsMgmt({
       search: (prev) => ({
         ...prev,
         keyword: value.trim(),
-        page: 1,
-      }),
-    })
-  }
-
-  const handleTypeFilterChange = (value: QualityStandardsTypeFilter) => {
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        type: value,
         page: 1,
       }),
     })
@@ -96,8 +73,7 @@ export function useQualityStandardsMgmt({
     })
   }
 
-  const hasActiveFilters =
-    Boolean(search.keyword) || typeFilter !== 'ALL' || statusFilter !== 'ALL'
+  const hasActiveFilters = Boolean(search.keyword) || statusFilter !== 'ALL'
 
   return {
     standards,
@@ -105,15 +81,15 @@ export function useQualityStandardsMgmt({
     stats,
     isLoading,
     isFetching,
+    refetch,
+    hasLoadedStandards: Boolean(data),
     error,
     page,
     pageSize,
-    typeFilter,
     statusFilter,
     searchQuery: search.keyword,
     hasActiveFilters,
     setSearchQuery: handleSearchChange,
-    setTypeFilter: handleTypeFilterChange,
     setStatusFilter: handleStatusFilterChange,
     setPage: handlePageChange,
     setPageSize: handlePageSizeChange,

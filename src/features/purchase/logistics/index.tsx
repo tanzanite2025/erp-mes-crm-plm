@@ -159,7 +159,7 @@ export function PurchaseLogisticsPage() {
                 variant='outline'
                 disabled={isSyncing || !isOnline || pendingDrafts.length === 0}
                 onClick={() => void performSync('manual')}
-                className='rounded-full border-amber-300 bg-white text-[10px] font-black tracking-widest text-amber-700 uppercase hover:bg-amber-100'
+                className='rounded-full border-amber-300 bg-white text-amber-700 hover:bg-amber-100'
               >
                 <RefreshCw
                   className={`me-2 size-3 ${isSyncing ? 'animate-spin' : ''}`}

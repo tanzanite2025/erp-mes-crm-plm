@@ -587,7 +587,7 @@ export function SalesExchangeSourceOrderMaster({
                                   type='button'
                                   variant='ghost'
                                   size='sm'
-                                  className='h-7 rounded-full px-2.5 text-[10px] font-black text-primary'
+                                  className='control-typography-compact h-7 rounded-full px-2.5 text-primary'
                                   onClick={() =>
                                     onSelectSalesExchange(
                                       latestExchangeReference.id
@@ -610,7 +610,7 @@ export function SalesExchangeSourceOrderMaster({
                               type='button'
                               variant='outline'
                               size='sm'
-                              className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                              className='h-8 shrink-0 rounded-full px-3'
                               onClick={() => {
                                 if (!latestExchangeReference) return
                                 setOldItemInboundTarget({
@@ -630,7 +630,7 @@ export function SalesExchangeSourceOrderMaster({
                               type='button'
                               variant='outline'
                               size='sm'
-                              className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                              className='h-8 shrink-0 rounded-full px-3'
                               onClick={() => {
                                 if (!latestExchangeReference) return
                                 setReplacementShipmentTarget({
@@ -647,7 +647,7 @@ export function SalesExchangeSourceOrderMaster({
                             type='button'
                             size='sm'
                             disabled={!canStartLineExchange}
-                            className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                            className='h-8 shrink-0 rounded-full px-3'
                             onClick={() => {
                               if (!canStartLineExchange) return
                               onOpenCreateSalesExchangeDialog(

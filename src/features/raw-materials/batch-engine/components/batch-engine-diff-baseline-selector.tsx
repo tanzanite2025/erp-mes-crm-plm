@@ -33,8 +33,8 @@ export function BatchEngineDiffBaselineSelector(
               onClick={() => onChangeBaselinePlan(plan.rank)}
               className={
                 selected
-                  ? 'h-10 rounded-full border border-rose-300 bg-rose-500/10 px-4 text-[10px] font-black tracking-[0.18em] text-rose-700 uppercase'
-                  : 'h-10 rounded-full border border-slate-200 bg-white px-4 text-[10px] font-black tracking-[0.18em] text-slate-600 uppercase'
+                  ? 'h-10 rounded-full border border-rose-300 bg-rose-500/10 px-4 text-rose-700'
+                  : 'h-10 rounded-full border border-slate-200 bg-white px-4 text-slate-600'
               }
             >
               Top{plan.rank}

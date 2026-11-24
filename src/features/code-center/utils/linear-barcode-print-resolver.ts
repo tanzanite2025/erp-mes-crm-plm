@@ -1,6 +1,6 @@
 import type { TranslationKey } from '@/locales'
+import { formatProductCodeMonthSegment } from '@/lib/product-code/product-code-protocol'
 import {
-  formatLinearBarcodeMonthValue,
   type LinearBarcodeMockInputs,
   type LinearBarcodeProtocolConfig,
 } from '@/features/basic-settings/data/linear-barcode-protocol'
@@ -12,6 +12,7 @@ const PREVIEW_SERIAL_LENGTH = 4
 
 export interface LinearBarcodePrintInput {
   salesOrderId: string
+  salesOrderLineId?: number
   productId: string
   productLabel: string
   lineNo: number
@@ -24,6 +25,7 @@ export interface LinearBarcodePrintInput {
 
 export interface LinearBarcodeResolvedPrintLine {
   key: string
+  salesOrderLineId?: number
   lineNo: number
   productLabel: string
   orderQuantity: number
@@ -64,7 +66,7 @@ function buildMockInputs(
 
   return {
     year: now.getFullYear().toString().slice(-2),
-    month: formatLinearBarcodeMonthValue(now),
+    month: formatProductCodeMonthSegment(now),
     day: String(now.getDate()).padStart(2, '0'),
     model: line.modelCodeSnapshot || '',
     appearance: line.appearanceBarcodeCodeSnapshot || '',
@@ -161,11 +163,12 @@ export function resolveLinearBarcodePrintLines({
     }
 
     const productLabel = line.productModel || line.productCode || '--'
-    const key = `${order.id}-${line.lineNo}`
+    const key = `${order.id}-${line.id ?? line.lineNo}`
 
     if (issues.length > 0 || !line.productId || !protocol?.sequenceRuleKey) {
       return {
         key,
+        salesOrderLineId: line.id,
         lineNo: line.lineNo,
         productLabel,
         orderQuantity: line.qty,
@@ -181,6 +184,7 @@ export function resolveLinearBarcodePrintLines({
 
     return {
       key,
+      salesOrderLineId: line.id,
       lineNo: line.lineNo,
       productLabel,
       orderQuantity: line.qty,
@@ -190,6 +194,7 @@ export function resolveLinearBarcodePrintLines({
       isReady: true,
       printInput: {
         salesOrderId: order.id,
+        salesOrderLineId: line.id,
         productId: line.productId,
         productLabel,
         lineNo: line.lineNo,

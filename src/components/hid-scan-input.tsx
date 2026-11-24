@@ -159,7 +159,7 @@ export function HIDScanInput({
             }
           }}
           className={cn(
-            'h-12 rounded-2xl border-dashed bg-background pr-4 pl-11 font-maple-ui text-sm font-black tracking-widest',
+            'h-12 rounded-2xl border-dashed bg-background pr-4 pl-11 font-maple-ui',
             inputClassName
           )}
         />
@@ -173,7 +173,7 @@ export function HIDScanInput({
               variant='outline'
               disabled={disabled || !currentValue.trim()}
               onClick={() => completeScan('manual')}
-              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed px-4'
             >
               <Keyboard className='mr-2 size-3.5' />
               手动完成
@@ -189,7 +189,7 @@ export function HIDScanInput({
                 startedAtRef.current = null
                 setScanValue('')
               }}
-              className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full px-4'
             >
               <RotateCcw className='mr-2 size-3.5' />
               清空

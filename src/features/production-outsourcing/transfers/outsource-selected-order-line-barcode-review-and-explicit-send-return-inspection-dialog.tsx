@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { TranslationKey } from '@/locales'
 import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
@@ -13,6 +14,10 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  productionWorkLocationCatalogQueryKey,
+  queryProductionWorkLocationCatalog,
+} from '@/features/production-shared/services/production-work-location-catalog-query-service'
 import type {
   OutsourceOrder,
   OutsourceOrderLine,
@@ -52,11 +57,17 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
   const categoryOptionsQuery = useOutsourceInventoryCategoryOptions(
     activeAction?.action === 'send' || activeAction?.action === 'return'
   )
+  const workLocationsQuery = useQuery({
+    queryKey: productionWorkLocationCatalogQueryKey,
+    queryFn: ({ signal }) => queryProductionWorkLocationCatalog(signal),
+    enabled: activeAction?.action === 'inspect',
+  })
   const [productBarcode, setProductBarcode] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [result, setResult] = useState<OutsourceInspectionResult>('PASS')
   const [disposition, setDisposition] =
     useState<OutsourceInspectionDisposition>('ACCEPT')
+  const [productionWorkLocationId, setProductionWorkLocationId] = useState('')
   const [sourceCategory, setSourceCategory] = useState('')
   const [targetCategory, setTargetCategory] = useState('')
   const [batchNo, setBatchNo] = useState('')
@@ -87,6 +98,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
     !Number.isFinite(quantity) ||
     quantity <= 0 ||
     quantity > reviewed.availableQuantity ||
+    (isInspection && !productionWorkLocationId) ||
     (!isInspection &&
       (activeAction.action === 'send' ? !sourceCategory : !targetCategory))
 
@@ -196,7 +208,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
                   onChange={(event) =>
                     changeOutsourceExecutionProductBarcode(event.target.value)
                   }
-                  className='h-9 min-w-0 rounded-md border bg-background px-3 text-sm'
+                  className='h-9 min-w-0 rounded-md border bg-background px-3'
                 >
                   <option value=''>
                     {t(
@@ -240,6 +252,20 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
                     : {reviewed.processName || '-'} ·{' '}
                     {t(
                       `productionExecution.statuses.${reviewed.status}` as TranslationKey
+                    )}
+                  </p>
+                  <p>
+                    {t('productionOutsourcing.execution.review.cycle', {
+                      value: reviewed.cycleNo,
+                    })}
+                    {isInspection && (
+                      <>
+                        {' · '}
+                        {t(
+                          'productionOutsourcing.execution.review.inspectionRound',
+                          { value: reviewed.inspectionRoundNo }
+                        )}
+                      </>
                     )}
                   </p>
                   <p>
@@ -288,7 +314,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
                     }
                     disabled={activeAction.action === 'return'}
                     onChange={(event) => setSourceCategory(event.target.value)}
-                    className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30'
+                    className='h-9 rounded-md border border-input bg-transparent px-3 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30'
                   >
                     <option value=''>
                       {t(
@@ -326,7 +352,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
                     }
                     disabled={activeAction.action === 'send'}
                     onChange={(event) => setTargetCategory(event.target.value)}
-                    className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30'
+                    className='h-9 rounded-md border border-input bg-transparent px-3 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-60 dark:bg-input/30'
                   >
                     <option
                       value={
@@ -385,6 +411,31 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
             </div>
             {isInspection ? (
               <div className='grid gap-3 sm:grid-cols-2'>
+                <div className='grid gap-1.5 sm:col-span-2'>
+                  <span className='text-xs font-medium text-muted-foreground'>
+                    {t('productionExecution.fields.workLocation')}
+                  </span>
+                  <select
+                    aria-label={t('productionExecution.fields.workLocation')}
+                    value={productionWorkLocationId}
+                    onChange={(event) =>
+                      setProductionWorkLocationId(event.target.value)
+                    }
+                    disabled={
+                      workLocationsQuery.isLoading || workLocationsQuery.isError
+                    }
+                    className='h-9 min-w-0 rounded-md border border-input bg-background px-3 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                  >
+                    <option value=''>
+                      {t('productionExecution.placeholders.workLocation')}
+                    </option>
+                    {(workLocationsQuery.data ?? []).map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.code} · {location.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className='grid gap-1.5'>
                   <span className='text-xs font-medium text-muted-foreground'>
                     {t('productionOutsourcing.execution.fields.result')}
@@ -406,7 +457,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
                             : 'ACCEPT'
                       )
                     }}
-                    className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+                    className='h-9 rounded-md border border-input bg-transparent px-3 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
                   >
                     <option value='PASS'>
                       {t('productionOutsourcing.execution.results.PASS')}
@@ -433,7 +484,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
                         event.target.value as OutsourceInspectionDisposition
                       )
                     }
-                    className='h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+                    className='h-9 rounded-md border border-input bg-transparent px-3 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
                   >
                     <option value='ACCEPT' disabled={result === 'FAIL'}>
                       {t('productionOutsourcing.execution.dispositions.ACCEPT')}
@@ -480,6 +531,7 @@ export function OutsourceSelectedOrderLineBarcodeReviewAndExplicitBusinessExecut
               if (isInspection) {
                 onSubmit({
                   productBarcode,
+                  productionWorkLocationId,
                   result,
                   disposition,
                   inspectedQuantity: quantity,

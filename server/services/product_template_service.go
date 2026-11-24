@@ -258,6 +258,15 @@ func DeleteProductTemplate(ctx context.Context, id string) error {
 		if boundCategoryCount > 0 {
 			return domainConflictError("该模板仍被产品分类或基础型号引用，请先在分类管理中调整模板关联")
 		}
+		if tx.Migrator().HasTable(&models.ProductionLine{}) {
+			var boundProductionLineCount int64
+			if err := tx.Model(&models.ProductionLine{}).Where("product_template_id = ?", id).Count(&boundProductionLineCount).Error; err != nil {
+				return err
+			}
+			if boundProductionLineCount > 0 {
+				return domainConflictError("该模板仍被产线脑图 L1 引用，请先调整产线模板关联")
+			}
+		}
 		if err := tx.Where("template_id = ?", id).Delete(&models.ProductTemplateAttributeBinding{}).Error; err != nil {
 			return err
 		}

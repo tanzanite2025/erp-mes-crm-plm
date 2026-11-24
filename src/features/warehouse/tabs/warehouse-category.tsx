@@ -264,7 +264,7 @@ export default function WarehouseCategory() {
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            className='mt-5 h-10 rounded-full border-dashed px-6'
             onClick={() => {
               void refetch()
             }}
@@ -310,7 +310,7 @@ export default function WarehouseCategory() {
             <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
             <Input
               placeholder={t('warehouse.category.searchPlaceholder')}
-              className='h-11 rounded-xl border-none bg-muted/50 pl-10 text-xs font-medium transition-all focus-visible:ring-1 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl md:text-sm'
+              className='h-11 rounded-xl border-none bg-muted/50 pl-10 transition-all focus-visible:ring-1 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -318,7 +318,7 @@ export default function WarehouseCategory() {
           <div className='flex items-center justify-end gap-3'>
             <Button
               onClick={handleAdd}
-              className='h-10 shrink-0 gap-2 rounded-full px-4 text-[9px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:h-11 md:px-6 md:text-[10px]'
+              className='h-10 shrink-0 gap-2 rounded-full px-4 shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:h-11 md:px-6'
             >
               <Plus className='size-3.5 md:size-4' />
               <span className='truncate'>{t('warehouse.category.add')}</span>
@@ -538,7 +538,7 @@ export default function WarehouseCategory() {
                     value={formData.name}
                     onChange={(e) => updateForm({ name: e.target.value })}
                     placeholder={t('warehouse.category.dialog.namePlaceholder')}
-                    className='h-10 rounded-xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                    className='h-10 rounded-xl border-none bg-muted/50 px-4 shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5'
                   />
                 </div>
                 <div className='space-y-2 md:space-y-3'>
@@ -552,7 +552,7 @@ export default function WarehouseCategory() {
                       updateForm({ code: normalizeMachineCode(e.target.value) })
                     }
                     placeholder={t('warehouse.category.dialog.codePlaceholder')}
-                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui text-xs font-black shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5'
                   />
                 </div>
               </div>
@@ -570,7 +570,7 @@ export default function WarehouseCategory() {
                     placeholder={t(
                       'warehouse.category.dialog.descriptionPlaceholder'
                     )}
-                    className='min-h-[96px] resize-none rounded-xl border-none bg-muted/50 px-4 py-3 text-xs font-medium shadow-inner focus-visible:ring-blue-600 md:text-sm'
+                    className='min-h-[96px] resize-none rounded-xl border-none bg-muted/50 px-4 py-3 shadow-inner focus-visible:ring-blue-600'
                   />
                 </div>
                 <div className='space-y-2 md:space-y-3'>
@@ -584,7 +584,7 @@ export default function WarehouseCategory() {
                       updateForm({ sortOrder: Number(e.target.value) || 0 })
                     }
                     placeholder='0'
-                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui text-xs font-black shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                    className='h-10 rounded-xl border-none bg-muted/50 px-4 font-maple-ui shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5'
                   />
                   <div className='flex items-center justify-between rounded-xl bg-muted/40 px-4 py-3'>
                     <span className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -720,13 +720,13 @@ export default function WarehouseCategory() {
           <DialogFooter className='flex flex-row items-center justify-between gap-3 bg-transparent p-5 pt-0 md:gap-4 md:p-8'>
             <Button
               variant='ghost'
-              className='h-10 flex-1 rounded-full text-[9px] font-black tracking-widest uppercase transition-colors hover:bg-muted md:h-11 md:text-[10px]'
+              className='h-10 flex-1 rounded-full transition-colors hover:bg-muted md:h-11'
               onClick={() => setIsDialogOpen(false)}
             >
               {t('warehouse.category.dialog.cancel')}
             </Button>
             <Button
-              className='h-10 flex-1 gap-2 rounded-full bg-blue-600 text-[9px] font-black tracking-widest uppercase shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:h-11 md:text-[10px]'
+              className='h-10 flex-1 gap-2 rounded-full bg-blue-600 shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:h-11'
               onClick={handleSave}
             >
               <CheckCircle2 className='size-3.5 md:size-4' />{' '}

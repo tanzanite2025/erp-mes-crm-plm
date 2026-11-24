@@ -252,14 +252,14 @@ export function DrawingMgmt({
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary' />
           <Input
             placeholder={t('equipmentTooling.drawings.page.searchPlaceholder')}
-            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-xs font-bold shadow-inner'
+            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 shadow-inner'
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
 
         <Button
-          className='h-12 w-full shrink-0 gap-2 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:w-auto'
+          className='h-12 w-full shrink-0 gap-2 rounded-full bg-blue-600 px-8 shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:w-auto'
           onClick={openCreateDialog}
         >
           <FilePlus className='size-4' />
@@ -380,7 +380,7 @@ export function DrawingMgmt({
 
               <Button
                 variant='outline'
-                className='h-11 w-full gap-3 rounded-full border-dashed border-slate-200 text-[10px] font-black tracking-widest uppercase shadow-sm transition-all hover:border-blue-600 hover:bg-blue-600 hover:text-white active:scale-95'
+                className='h-11 w-full gap-3 rounded-full border-dashed border-slate-200 shadow-sm transition-all hover:border-blue-600 hover:bg-blue-600 hover:text-white active:scale-95'
                 onClick={() => handleDownload(drawing)}
               >
                 <Download className='size-4' />
@@ -515,7 +515,7 @@ export function DrawingMgmt({
           <DialogFooter className='shrink-0 border-t border-dashed border-muted-foreground/10 bg-muted/5 p-6 sm:p-8'>
             <Button
               variant='ghost'
-              className='h-11 w-full rounded-full text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'
+              className='h-11 w-full rounded-full text-muted-foreground/40'
               onClick={() => setIsLogOpen(false)}
             >
               {t('equipmentTooling.drawings.audit.close')}

@@ -43,7 +43,7 @@ export const mockWheelTraceGateway: WheelTraceQueryGateway = {
         lineCode: 'LINE-A',
         lineName: '一号轮圈线',
         segmentName: '包装段',
-        processCode: 'PACK',
+        branchOperationId: 'branch-operation-packaging',
         processName: '包装确认',
         teamName: '白班 A 组',
         operatorName: '王五',

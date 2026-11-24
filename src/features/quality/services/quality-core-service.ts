@@ -9,6 +9,8 @@ import {
 } from '@/lib/api-response'
 import {
   toQualityStandardContract,
+  toQualityStandardListSummary,
+  type QualityStandardListSummary,
   type QualityStandardApiDTO,
   type QualityStandardsListApiResponseDTO,
 } from '../adapters/quality-standard-api-adapter'
@@ -19,7 +21,7 @@ import type {
 } from '../types/quality-standards-list'
 
 export type QualityStandardsResponse = {
-  items: Standard[]
+  items: QualityStandardListSummary[]
   total: number
   page: number
   pageSize: number
@@ -28,6 +30,29 @@ export type QualityStandardsResponse = {
 }
 
 export interface QualityTask {
+  [key: string]: unknown
+  standardId?: string
+  standard?: Standard
+  standardVersion?: number
+  standardSnapshot?: {
+    id: string
+    code: string
+    name: string
+    version: number
+    items: Standard['items']
+  } | null
+  evaluationData?:
+    | {
+        itemId: string
+        itemName: string
+        value: number
+        unit: string
+        grade?: string
+        result: 'PASS' | 'FAIL'
+      }[]
+    | null
+  status?: string
+  sourceType?: string
   id: string
   productionPlanId?: string
   orderId?: string
@@ -74,17 +99,23 @@ function resolveOptionalNumberField(
 
 export interface QualityAbnormality {
   id: string
+  taskId?: string
+  inspectionTask?: QualityTask
+  createdAt?: string
+  updatedAt?: string
+  resolver?: string
+  analysis?: string
   description: string
   severity: 'CRITICAL' | 'MAJOR' | 'HIGH' | 'MEDIUM' | 'MINOR' | 'LOW'
   status: 'OPEN' | 'CLOSED' | 'REJECTED'
   disposalMethod?: string
-  scrapQuantity?: number
+  scrapQuantity?: number | null
   scrapUnit?: string
   productionPlanId?: string
   orderId?: string
   productId?: string
   batchNo?: string
-  occurredAt?: string
+  occurredAt?: string | null
 }
 
 /**
@@ -100,16 +131,20 @@ export const QualityCoreService = {
     type = 'ALL',
     status = 'ALL',
     keyword = '',
+    productId,
   }: GetQualityStandardsParams): Promise<QualityStandardsResponse> => {
     const context = 'QualityCoreService.getStandards'
     const searchParams = new URLSearchParams({
       page: String(page),
       pageSize: String(pageSize),
-      type,
       status,
     })
+    if (type !== 'ALL') {
+      searchParams.set('type', type)
+    }
 
     const normalizedKeyword = keyword.trim()
+    if (productId) searchParams.set('productId', productId)
     if (normalizedKeyword) {
       searchParams.set('keyword', normalizedKeyword)
     }
@@ -143,7 +178,7 @@ export const QualityCoreService = {
 
     return {
       ...payload,
-      items: items.map(toQualityStandardContract),
+      items: items.map(toQualityStandardListSummary),
       total: ensureNumberField(payload, 'total', context),
       page: ensureNumberField(payload, 'page', context),
       pageSize: ensureNumberField(payload, 'pageSize', context),

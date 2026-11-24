@@ -48,6 +48,11 @@ func createProductionExecutionLotTestSchema(t *testing.T, database *gorm.DB) {
 			order_id TEXT,
 			product_id TEXT,
 			product_name TEXT,
+			bom_owner_type TEXT NOT NULL DEFAULT '',
+			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
+			bom_version_level TEXT NOT NULL DEFAULT '',
+			production_route_revision_id TEXT,
+			production_route_revision_no INTEGER NOT NULL DEFAULT 0,
 			quantity REAL,
 			status TEXT,
 			start_date DATETIME,
@@ -55,6 +60,17 @@ func createProductionExecutionLotTestSchema(t *testing.T, database *gorm.DB) {
 			notes TEXT
 		)
 	`).Error)
+	require.NoError(t, database.Exec(`CREATE TABLE products (
+		id TEXT PRIMARY KEY, sku TEXT, name TEXT, status TEXT, deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, database.Exec(`CREATE TABLE customers (
+		id TEXT PRIMARY KEY, name TEXT, deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, database.Exec(`CREATE TABLE boms (
+		id TEXT PRIMARY KEY, product_id TEXT, bom_type TEXT, status TEXT,
+		owner_type TEXT, owner_customer_id TEXT, version_level TEXT,
+		effective_from DATETIME, effective_to DATETIME, deleted_at DATETIME
+	)`).Error)
 	require.NoError(t, database.Exec(`
 		CREATE TABLE production_tasks (
 			id TEXT PRIMARY KEY,
@@ -90,15 +106,33 @@ func createProductionExecutionLotTestSchema(t *testing.T, database *gorm.DB) {
 	`).Error)
 }
 
+func seedProductionExecutionLotTestPlan(t *testing.T, database *gorm.DB, planID string) {
+	t.Helper()
+	productID := "product-" + planID
+	require.NoError(t, database.Exec(
+		"INSERT INTO products (id, sku, name, status) VALUES (?, ?, ?, 'ACTIVE')",
+		productID, productID, "测试产品",
+	).Error)
+	require.NoError(t, database.Exec(
+		`INSERT INTO boms (id, product_id, bom_type, status, owner_type, owner_customer_id, version_level)
+		 VALUES (?, ?, 'MBOM', 'RELEASED', 'INTERNAL', '', 'std')`,
+		"bom-"+planID, productID,
+	).Error)
+	require.NoError(t, database.Create(&models.ProductionPlan{
+		BaseModel:       models.BaseModel{ID: planID},
+		OrderNo:         "MO-" + planID,
+		ProductID:       productID,
+		ProductName:     "测试产品",
+		BOMOwnerType:    "INTERNAL",
+		BOMVersionLevel: "std",
+		Quantity:        10,
+		Status:          "SCHEDULED",
+	}).Error)
+}
+
 func TestSaveProductionExecutionLotCreatesOptionalBatchLink(t *testing.T) {
 	service, database := newProductionExecutionLotTestService(t)
-	require.NoError(t, database.Create(&models.ProductionPlan{
-		BaseModel:   models.BaseModel{ID: "plan-a"},
-		OrderNo:     "MO-001",
-		ProductID:   "product-a",
-		ProductName: "产品A",
-		Quantity:    10,
-	}).Error)
+	seedProductionExecutionLotTestPlan(t, database, "plan-a")
 	require.NoError(t, database.Create(&models.ProductionTask{
 		ID:        "task-a",
 		PlanID:    "plan-a",
@@ -108,12 +142,12 @@ func TestSaveProductionExecutionLotCreatesOptionalBatchLink(t *testing.T) {
 
 	lot, err := service.SaveProductionExecutionLot(SaveProductionExecutionLotRequest{
 		ProductBarcode: " abc-001 ",
-		ProductID:      "product-a",
+		ProductID:      "product-plan-a",
 		ProductName:    "产品A",
 		PlanID:         "plan-a",
 		TaskID:         "task-a",
 		BatchNo:        " BATCH-001 ",
-		Quantity:       2,
+		Quantity:       1,
 		Operator:       "tester",
 	})
 
@@ -121,7 +155,7 @@ func TestSaveProductionExecutionLotCreatesOptionalBatchLink(t *testing.T) {
 	require.Equal(t, "ABC-001", lot.ProductBarcode)
 	require.Equal(t, "BATCH-001", lot.BatchNo)
 	require.Equal(t, ProductionExecutionLotStatusActive, lot.Status)
-	require.Equal(t, 2.0, lot.Quantity)
+	require.Equal(t, 1.0, lot.Quantity)
 
 	list, err := service.ListProductionExecutionLots(ProductionExecutionLotListQuery{
 		ProductBarcode: "abc-001",
@@ -133,10 +167,13 @@ func TestSaveProductionExecutionLotCreatesOptionalBatchLink(t *testing.T) {
 }
 
 func TestSaveProductionExecutionLotUpsertsByProductBarcode(t *testing.T) {
-	service, _ := newProductionExecutionLotTestService(t)
+	service, database := newProductionExecutionLotTestService(t)
+	seedProductionExecutionLotTestPlan(t, database, "plan-upsert")
 
 	first, err := service.SaveProductionExecutionLot(SaveProductionExecutionLotRequest{
 		ProductBarcode: "ABC-002",
+		ProductID:      "product-plan-upsert",
+		PlanID:         "plan-upsert",
 		BatchNo:        "BATCH-A",
 		Quantity:       1,
 	})
@@ -144,14 +181,31 @@ func TestSaveProductionExecutionLotUpsertsByProductBarcode(t *testing.T) {
 
 	second, err := service.SaveProductionExecutionLot(SaveProductionExecutionLotRequest{
 		ProductBarcode: "ABC-002",
+		ProductID:      "product-plan-upsert",
+		PlanID:         "plan-upsert",
 		BatchNo:        "BATCH-B",
-		Quantity:       3,
+		Quantity:       1,
 	})
 	require.NoError(t, err)
 
 	require.Equal(t, first.ID, second.ID)
 	require.Equal(t, "BATCH-B", second.BatchNo)
-	require.Equal(t, 3.0, second.Quantity)
+	require.Equal(t, 1.0, second.Quantity)
+}
+
+func TestSaveProductionExecutionLotRejectsQuantityOtherThanOnePerBarcode(t *testing.T) {
+	service, _ := newProductionExecutionLotTestService(t)
+	seedProductionExecutionLotTestPlan(t, service.txManager.DB(), "plan-unit-quantity")
+
+	for _, quantity := range []float64{0.5, 2} {
+		_, err := service.SaveProductionExecutionLot(SaveProductionExecutionLotRequest{
+			ProductBarcode: "ABC-UNIT-QUANTITY",
+			PlanID:         "plan-unit-quantity",
+			Quantity:       quantity,
+		})
+		require.ErrorIs(t, err, ErrInvalidProductionExecutionLot)
+		require.Contains(t, err.Error(), "quantity must equal 1")
+	}
 }
 
 func TestSaveProductionExecutionLotRejectsMissingPlan(t *testing.T) {
@@ -164,4 +218,31 @@ func TestSaveProductionExecutionLotRejectsMissingPlan(t *testing.T) {
 	})
 
 	require.ErrorIs(t, err, ErrInvalidProductionExecutionLot)
+}
+
+func TestProductionPlanCannotChangeMBOMBranchAfterExecutionLotExists(t *testing.T) {
+	service, database := newProductionExecutionLotTestService(t)
+	seedProductionExecutionLotTestPlan(t, database, "plan-branch-locked")
+
+	_, err := service.SaveProductionExecutionLot(SaveProductionExecutionLotRequest{
+		ProductBarcode: "BRANCH-LOCKED-001",
+		PlanID:         "plan-branch-locked",
+		Quantity:       1,
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, database.Exec(
+		`INSERT INTO boms (id, product_id, bom_type, status, owner_type, owner_customer_id, version_level)
+		 VALUES (?, ?, 'MBOM', 'RELEASED', 'INTERNAL', '', 'alternate')`,
+		"bom-plan-branch-locked-alternate", "product-plan-branch-locked",
+	).Error)
+	var previous models.ProductionPlan
+	require.NoError(t, database.First(&previous, "id = ?", "plan-branch-locked").Error)
+	updated := previous
+	updated.BOMVersionLevel = "alternate"
+
+	err = ValidateProductionPlanBOMBranchTx(database, &updated, &previous)
+
+	require.ErrorIs(t, err, ErrInvalidProductionPlanBOMBranch)
+	require.Contains(t, err.Error(), "cannot change its MBOM branch")
 }

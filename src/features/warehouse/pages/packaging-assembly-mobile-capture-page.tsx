@@ -191,7 +191,7 @@ export function PackagingAssemblyMobileCapturePage({
           <Button
             type='button'
             onClick={() => addBarcode(rawCode)}
-            className='mt-3 h-12 w-full rounded-full text-sm font-black tracking-widest'
+            className='mt-3 h-12 w-full rounded-full'
           >
             <Plus className='size-4' />
             {copy.add}
@@ -236,7 +236,7 @@ export function PackagingAssemblyMobileCapturePage({
           type='button'
           onClick={() => void submitAssembly()}
           disabled={!canSubmit}
-          className='h-14 w-full rounded-full text-sm font-black tracking-widest'
+          className='h-14 w-full rounded-full'
         >
           {submitting ? (
             <Loader2 className='size-4 animate-spin' />

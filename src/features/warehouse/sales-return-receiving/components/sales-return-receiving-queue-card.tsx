@@ -252,7 +252,7 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
           asChild
           size='sm'
           variant='ghost'
-          className='h-8 shrink-0 rounded-full px-3 text-[9px] font-black tracking-widest text-emerald-700 uppercase hover:bg-emerald-500/10'
+          className='h-8 shrink-0 rounded-full px-3 text-emerald-700 hover:bg-emerald-500/10'
         >
           <Link to='/trading/sales-returns' search={{ returnId: item.id }}>
             查看单据 <ArrowRight className='size-3' />
@@ -351,7 +351,7 @@ export function SalesReturnReceivingQueueCard() {
                 <Button
                   type='button'
                   variant='outline'
-                  className='mt-4 h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='mt-4 h-9 rounded-full border-dashed px-4'
                   onClick={() => {
                     void retry()
                   }}

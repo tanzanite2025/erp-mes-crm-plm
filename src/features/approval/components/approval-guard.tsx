@@ -82,7 +82,7 @@ export function ApprovalGuard({
             <div className='relative'>
               <KeyRound className='absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-primary opacity-40' />
               <Input
-                className='h-14 rounded-2xl border-none bg-muted/50 pl-12 text-center font-maple-ui text-2xl font-black tracking-[0.5em] transition-all focus-visible:ring-2 focus-visible:ring-primary/20'
+                className='h-14 rounded-2xl border-none bg-muted/50 pl-12 text-center font-maple-ui transition-all focus-visible:ring-2 focus-visible:ring-primary/20'
                 maxLength={6}
                 placeholder='123456'
                 value={pinCode}
@@ -96,14 +96,14 @@ export function ApprovalGuard({
           <DialogFooter className='-mx-6 -mb-6 gap-2 rounded-b-[32px] bg-muted/30 p-4'>
             <Button
               variant='ghost'
-              className='rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='rounded-full'
               onClick={() => setIsOpen(false)}
             >
               {t('common.actions.cancel')}
             </Button>
             <Button
               disabled={pinCode.length !== 6}
-              className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20'
+              className='rounded-full px-6 shadow-lg shadow-primary/20'
               onClick={handleVerify}
             >
               {t('approval.guard.verifyAction')}

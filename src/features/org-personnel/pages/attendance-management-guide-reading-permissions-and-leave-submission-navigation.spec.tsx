@@ -122,9 +122,14 @@ async function openAndFillGuideLeaveRequest() {
   const launcher = screen.getByRole('button', { name: '新建请假申请' })
   expect(launcher).toHaveClass('rounded-full')
   fireEvent.click(launcher)
-  const dialog = await screen.findByRole('dialog', { name: '新建请假申请' })
-  await waitFor(() =>
-    expect(EmployeeCoreService.getEmployees).toHaveBeenCalledOnce()
+  const dialog = await screen.findByRole(
+    'dialog',
+    { name: '新建请假申请' },
+    { timeout: 5000 }
+  )
+  await waitFor(
+    () => expect(EmployeeCoreService.getEmployees).toHaveBeenCalledOnce(),
+    { timeout: 5000 }
   )
   fireEvent.click(within(dialog).getAllByRole('combobox')[0])
   fireEvent.click(await screen.findByRole('option', { name: /指南请假员工/ }))

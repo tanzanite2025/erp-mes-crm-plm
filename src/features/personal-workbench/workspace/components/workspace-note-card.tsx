@@ -71,7 +71,7 @@ export function WorkspaceNoteCard({
             type='button'
             variant='outline'
             size='sm'
-            className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest'
+            className='h-8 rounded-full px-3'
             onClick={() => onEdit(item.id)}
           >
             <Pencil className='size-3.5' />

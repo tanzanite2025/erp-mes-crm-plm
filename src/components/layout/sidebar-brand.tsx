@@ -30,10 +30,10 @@ export function SidebarBrand({ team }: SidebarBrandProps) {
       </div>
 
       <div className='flex h-[48px] w-full min-w-0 flex-col items-center justify-center text-center group-data-[collapsible=icon]:hidden'>
-        <div className='min-h-[15px] max-w-full truncate text-[15px] leading-none font-black text-sidebar-foreground'>
+        <div className='min-h-[16px] max-w-full truncate text-[16px] leading-none font-black text-sidebar-foreground'>
           {team.name}
         </div>
-        <div className='mt-1.5 min-h-[11px] max-w-full truncate text-[11px] leading-none font-semibold text-sidebar-foreground/60'>
+        <div className='mt-1.5 min-h-[12px] max-w-full truncate text-[12px] leading-none font-semibold text-sidebar-foreground/60'>
           {team.plan}
         </div>
       </div>

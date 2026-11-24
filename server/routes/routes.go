@@ -396,6 +396,14 @@ func SetupRoutes(r *gin.Engine) {
 		quality := authorized.Group("/quality")
 		quality.Use(qualityAccess)
 		{
+			quality.GET("/inspection-stages", handlers.GetQualityInspectionStagesHandler)
+			quality.POST("/inspection-stages", adminOnly, handlers.SaveQualityInspectionStageHandler)
+			quality.PUT("/inspection-stages/:id", adminOnly, handlers.SaveQualityInspectionStageHandler)
+			quality.GET("/defect-types", handlers.GetQualityDefectTypesHandler)
+			quality.POST("/defect-types", adminOnly, handlers.SaveQualityDefectTypeHandler)
+			quality.PUT("/defect-types/:id", adminOnly, handlers.SaveQualityDefectTypeHandler)
+			quality.GET("/inspection-stages/:id/defect-types", handlers.GetQualityInspectionStageDefectTypeBindingsHandler)
+			quality.PUT("/inspection-stages/:id/defect-types", adminOnly, handlers.ReplaceQualityInspectionStageDefectTypeBindingsHandler)
 			quality.GET("/standards", handlers.GetInspectionStandardsHandler)
 			quality.GET("/standards/:id", handlers.GetInspectionStandardByIDHandler)
 			quality.PATCH("/standards/:id", adminOnly, handlers.PatchInspectionStandardHandler)
@@ -407,7 +415,7 @@ func SetupRoutes(r *gin.Engine) {
 			quality.POST("/quantity-settlements", handlers.ConfirmQualityBatchQuantitySettlementHandler)
 			quality.GET("/stats", handlers.GetInspectionStatsHandler)
 			quality.GET("/abnormalities", handlers.GetAbnormalitiesHandler)
-			quality.POST("/abnormalities/:id/disposal", handlers.RecordQualityAbnormalityDisposalHandler)
+			quality.POST("/abnormalities/:id/disposal", middleware.RequireAnyPermission(authz.ActionQualityAbnormalityDispose), handlers.RecordQualityAbnormalityDisposalHandler)
 		}
 
 		labExpGroup := authorized.Group("/labs/experimental")
@@ -479,12 +487,13 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 
 func registerBasicUnitRoutes(authorized *gin.RouterGroup) {
 	unitGroup := authorized.Group("/basic/units")
-	unitGroup.Use(middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading))
-	unitGroup.GET("", handlers.GetUnitsHandler)
-	unitGroup.POST("", middleware.RequireAnyPermission(authz.PermissionManage), handlers.SaveUnitHandler)
-	unitGroup.PATCH("/:id", middleware.RequireAnyPermission(authz.PermissionManage), handlers.PatchUnitHandler)
-	unitGroup.POST("/sync", middleware.RequireAnyPermission(authz.PermissionManage), handlers.BulkSyncUnitsHandler)
-	unitGroup.DELETE("/:id", middleware.RequireAnyPermission(authz.PermissionManage), handlers.DeleteUnitHandler)
+	unitGroup.GET("", middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading, authz.MenuQuality), handlers.GetUnitsHandler)
+	unitMaintenance := unitGroup.Group("")
+	unitMaintenance.Use(middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading))
+	unitMaintenance.POST("", middleware.RequireAnyPermission(authz.PermissionManage), handlers.SaveUnitHandler)
+	unitMaintenance.PATCH("/:id", middleware.RequireAnyPermission(authz.PermissionManage), handlers.PatchUnitHandler)
+	unitMaintenance.POST("/sync", middleware.RequireAnyPermission(authz.PermissionManage), handlers.BulkSyncUnitsHandler)
+	unitMaintenance.DELETE("/:id", middleware.RequireAnyPermission(authz.PermissionManage), handlers.DeleteUnitHandler)
 }
 
 func registerKnowledgeBaseRoutes(authorized *gin.RouterGroup) {

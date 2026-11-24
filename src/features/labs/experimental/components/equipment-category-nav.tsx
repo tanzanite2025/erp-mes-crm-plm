@@ -37,7 +37,7 @@ export function EquipmentCategoryNav({
       <Button
         variant='ghost'
         size='sm'
-        className='h-11 gap-1.5 rounded-xl px-4 text-[10px] font-black tracking-widest text-primary/60 uppercase transition-all hover:bg-primary/5 hover:text-primary'
+        className='h-11 gap-1.5 rounded-xl px-4 text-primary/60 transition-all hover:bg-primary/5 hover:text-primary'
         onClick={onAddTopCategory}
       >
         <Plus className='size-3.5' />

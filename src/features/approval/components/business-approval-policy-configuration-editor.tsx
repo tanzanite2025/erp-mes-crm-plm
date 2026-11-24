@@ -114,7 +114,7 @@ export function BusinessApprovalPolicyConfigurationEditor({
               </Label>
               <select
                 id={`approval-policy-${configuration.businessType}-${field.id}`}
-                className='h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50'
+                className='h-10 w-full rounded-md border border-input bg-background px-3 disabled:opacity-50'
                 value={field.value}
                 disabled={disabled}
                 onChange={(event) => field.setValue(event.target.value)}

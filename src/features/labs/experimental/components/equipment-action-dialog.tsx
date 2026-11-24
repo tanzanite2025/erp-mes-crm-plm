@@ -241,26 +241,17 @@ export function EquipmentActionDialog({
                 updateFormData({ status: value })
               }}
             >
-              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-[11px] font-black tracking-widest uppercase focus:ring-primary/30'>
+              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 focus:ring-primary/30'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                <SelectItem
-                  value='Active'
-                  className='py-3 text-[10px] font-black tracking-widest uppercase'
-                >
+                <SelectItem value='Active' className='py-3'>
                   运行中 / ACTIVE
                 </SelectItem>
-                <SelectItem
-                  value='Maintenance'
-                  className='py-3 text-[10px] font-black tracking-widest text-amber-600 uppercase'
-                >
+                <SelectItem value='Maintenance' className='py-3 text-amber-600'>
                   维保中 / MAINTENANCE
                 </SelectItem>
-                <SelectItem
-                  value='Inactive'
-                  className='py-3 text-[10px] font-black tracking-widest text-rose-600 uppercase'
-                >
+                <SelectItem value='Inactive' className='py-3 text-rose-600'>
                   已停用 / INACTIVE
                 </SelectItem>
               </SelectContent>
@@ -287,7 +278,7 @@ export function EquipmentActionDialog({
               <Input
                 id='sn'
                 placeholder='SN_XXXX_XXXX'
-                className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-maple-ui text-sm focus-visible:ring-primary/30'
+                className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-maple-ui focus-visible:ring-primary/30'
                 value={formData.sn}
                 onChange={(e) => {
                   updateFormData({ sn: e.target.value })
@@ -304,7 +295,7 @@ export function EquipmentActionDialog({
               <Input
                 id='name'
                 placeholder='例如：精密分析电子天平'
-                className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black focus-visible:ring-primary/30'
+                className='h-12 rounded-2xl border-none bg-muted/40 px-5 focus-visible:ring-primary/30'
                 value={formData.name}
                 onChange={(e) => {
                   updateFormData({ name: e.target.value })
@@ -324,7 +315,7 @@ export function EquipmentActionDialog({
               <Input
                 id='model'
                 placeholder='GEN-IV 2026'
-                className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-medium uppercase focus-visible:ring-primary/30'
+                className='h-12 rounded-2xl border-none bg-muted/40 px-5 focus-visible:ring-primary/30'
                 value={formData.model}
                 onChange={(e) => {
                   updateFormData({ model: e.target.value })
@@ -341,7 +332,7 @@ export function EquipmentActionDialog({
               <Input
                 id='spec'
                 placeholder='精度 0.0001g / 量程 200g'
-                className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-[11px] font-medium focus-visible:ring-primary/30'
+                className='h-12 rounded-2xl border-none bg-muted/40 px-5 focus-visible:ring-primary/30'
                 value={formData.spec}
                 onChange={(e) => {
                   updateFormData({ spec: e.target.value })
@@ -361,7 +352,7 @@ export function EquipmentActionDialog({
               id='description'
               placeholder='请输入设备的详细描述、操作规程及校准周期等关键信息...'
               rows={5}
-              className='resize-none rounded-3xl border-none bg-muted/40 p-6 text-[11px] leading-relaxed font-medium focus-visible:ring-primary/30'
+              className='resize-none rounded-3xl border-none bg-muted/40 p-6 focus-visible:ring-primary/30'
               value={formData.description}
               onChange={(e) => {
                 updateFormData({ description: e.target.value })
@@ -391,14 +382,14 @@ export function EquipmentActionDialog({
             <div className='flex gap-4'>
               <Button
                 variant='outline'
-                className='h-12 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase'
+                className='h-12 flex-1 rounded-full'
                 onClick={() => setIsDeleteConfirmOpen(false)}
               >
                 取消操作
               </Button>
               <Button
                 variant='destructive'
-                className='h-12 flex-1 rounded-full bg-destructive text-[10px] font-black tracking-widest uppercase shadow-xl shadow-destructive/20'
+                className='h-12 flex-1 rounded-full bg-destructive shadow-xl shadow-destructive/20'
                 onClick={() => {
                   if (equipment && onDelete) onDelete(equipment.id)
                   setIsDeleteConfirmOpen(false)

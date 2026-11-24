@@ -1,0 +1,59 @@
+/* Control text is a shared contract. Keep these rules outside Tailwind layers so
+   page utilities cannot silently introduce another control typography scale. */
+:root {
+  /* Page controls use 13px text; compact actions remain 12px. */
+  --control-font-size: 0.8125rem;
+  --control-line-height: 1.25rem;
+  --control-font-weight: 500;
+  --compact-control-font-size: 0.75rem;
+  --compact-control-line-height: 1rem;
+}
+
+.control-typography,
+:where(
+  button:not([data-sidebar]),
+  input:not(
+    [type='checkbox'],
+    [type='radio'],
+    [type='range'],
+    [type='color'],
+    [type='hidden']
+  ),
+  textarea,
+  select
+) {
+  font-size: var(--control-font-size);
+  line-height: var(--control-line-height);
+  font-weight: var(--control-font-weight);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.control-typography-compact {
+  font-size: var(--compact-control-font-size);
+  line-height: var(--compact-control-line-height);
+  font-weight: var(--control-font-weight);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* A label inside a shared control follows its control. Badges, shortcuts and
+   explicitly named content slots retain their own semantic text hierarchy. */
+:where(.control-typography, .control-typography-compact)
+  :where(span:not([data-slot]), strong, b, em) {
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+:where(input, textarea)::placeholder {
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  color: var(--muted-foreground);
+  opacity: 1;
+}

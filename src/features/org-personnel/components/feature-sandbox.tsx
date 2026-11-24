@@ -56,7 +56,7 @@ export class FeatureSandbox extends Component<Props, State> {
             </div>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
-              className='mt-4 h-9 rounded-full bg-rose-600 px-6 text-[10px] font-black tracking-widest text-white uppercase transition-colors hover:bg-rose-700'
+              className='mt-4 h-9 rounded-full bg-rose-600 px-6 text-white transition-colors hover:bg-rose-700'
             >
               尝试恢复
             </button>

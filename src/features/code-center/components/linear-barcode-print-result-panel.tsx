@@ -13,6 +13,7 @@ interface LinearBarcodePrintResultPanelProps {
   resultFilter: BatchPrintResultFilter
   retryingKeys: Record<string, boolean>
   isRetryingFailedOnly: boolean
+  isProductCodeIssuanceInProgress: boolean
   onRetryFailedOnly: () => void | Promise<void>
   onRetryItem: (itemKey: string) => void | Promise<void>
   onResultFilterChange: (filter: BatchPrintResultFilter) => void
@@ -24,6 +25,7 @@ export function LinearBarcodePrintResultPanel({
   resultFilter,
   retryingKeys,
   isRetryingFailedOnly,
+  isProductCodeIssuanceInProgress,
   onRetryFailedOnly,
   onRetryItem,
   onResultFilterChange,
@@ -59,10 +61,10 @@ export function LinearBarcodePrintResultPanel({
           variant='outline'
           onClick={() => void onRetryFailedOnly()}
           disabled={
-            isRetryingFailedOnly ||
+            isProductCodeIssuanceInProgress ||
             !batchPrintResult.items.some((item) => item.status === 'failed')
           }
-          className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
+          className='h-8 rounded-full px-4'
         >
           {isRetryingFailedOnly
             ? t(
@@ -77,7 +79,7 @@ export function LinearBarcodePrintResultPanel({
           size='sm'
           variant={resultFilter === 'all' ? 'default' : 'outline'}
           onClick={() => onResultFilterChange('all')}
-          className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
+          className='h-8 rounded-full px-4'
         >
           {t('codeCenter.linearBarcode.print.sections.result.filters.all')}
         </Button>
@@ -86,7 +88,7 @@ export function LinearBarcodePrintResultPanel({
           size='sm'
           variant={resultFilter === 'success' ? 'default' : 'outline'}
           onClick={() => onResultFilterChange('success')}
-          className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
+          className='h-8 rounded-full px-4'
         >
           {t('codeCenter.linearBarcode.print.sections.result.filters.success')}
         </Button>
@@ -95,7 +97,7 @@ export function LinearBarcodePrintResultPanel({
           size='sm'
           variant={resultFilter === 'failed' ? 'default' : 'outline'}
           onClick={() => onResultFilterChange('failed')}
-          className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
+          className='h-8 rounded-full px-4'
         >
           {t('codeCenter.linearBarcode.print.sections.result.filters.failed')}
         </Button>
@@ -104,7 +106,7 @@ export function LinearBarcodePrintResultPanel({
           size='sm'
           variant={resultFilter === 'skipped' ? 'default' : 'outline'}
           onClick={() => onResultFilterChange('skipped')}
-          className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
+          className='h-8 rounded-full px-4'
         >
           {t('codeCenter.linearBarcode.print.sections.result.filters.skipped')}
         </Button>
@@ -214,8 +216,8 @@ export function LinearBarcodePrintResultPanel({
                       size='sm'
                       variant='outline'
                       onClick={() => void onRetryItem(item.key)}
-                      disabled={Boolean(retryingKeys[item.key])}
-                      className='h-7 rounded-full px-3 text-[9px] font-black tracking-[0.18em] uppercase'
+                      disabled={isProductCodeIssuanceInProgress}
+                      className='control-typography-compact h-7 rounded-full px-3'
                     >
                       {retryingKeys[item.key]
                         ? t(

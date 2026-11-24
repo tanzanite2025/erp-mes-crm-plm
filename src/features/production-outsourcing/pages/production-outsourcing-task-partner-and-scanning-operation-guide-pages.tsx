@@ -80,12 +80,9 @@ function ProductionOutsourcingOperationGuideReadingPage({
             aria-label={translateSelectedOutsourcingGuideContent(
               `chapters.${chapter.key}.label`
             )}
-            className='h-auto min-h-10 min-w-0 flex-1 flex-col gap-1 rounded-lg px-1 py-2 text-[11px] leading-4 whitespace-normal text-muted-foreground shadow-none data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 sm:flex-none sm:flex-row sm:gap-2 sm:px-3 sm:text-sm dark:data-[state=active]:bg-sky-950 dark:data-[state=active]:text-sky-100'
+            className='h-auto min-h-10 min-w-0 flex-1 flex-col gap-1 rounded-lg px-1 py-2 whitespace-normal text-muted-foreground shadow-none data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 sm:flex-none sm:flex-row sm:gap-2 sm:px-3 dark:data-[state=active]:bg-sky-950 dark:data-[state=active]:text-sky-100'
           >
-            <span
-              aria-hidden='true'
-              className='text-xs text-sky-600 dark:text-sky-400'
-            >
+            <span aria-hidden='true' className='text-sky-600 dark:text-sky-400'>
               {String(index + 1).padStart(2, '0')}
             </span>
             <span className='sm:hidden'>

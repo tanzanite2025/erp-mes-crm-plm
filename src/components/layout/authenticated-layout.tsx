@@ -223,7 +223,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           <div className='flex flex-col gap-3 sm:flex-row'>
             <Button
               type='button'
-              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
               onClick={() => {
                 void runIdentitySync()
               }}
@@ -233,7 +233,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             <Button
               type='button'
               variant='outline'
-              className='h-11 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full border-dashed px-6'
               onClick={() => {
                 navigate({ to: '/sign-in', replace: true })
               }}

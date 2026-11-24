@@ -187,7 +187,7 @@ export function BOMRecordsTab() {
                 variant='outline'
                 onClick={resetFilters}
                 disabled={!hasActiveFilters}
-                className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full border-dashed px-5'
               >
                 清空筛选
               </Button>
@@ -258,7 +258,7 @@ export function BOMRecordsTab() {
                 value={createdFrom}
                 max={createdTo || undefined}
                 onChange={(event) => setCreatedFrom(event.target.value)}
-                className='mt-3 h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-bold md:text-[11px] [&::-webkit-date-and-time-value]:text-left [&::-webkit-datetime-edit]:text-[11px] [&::-webkit-datetime-edit]:font-bold'
+                className='mt-3 h-12 rounded-2xl border-none bg-muted/50 px-4 [&::-webkit-date-and-time-value]:text-left'
               />
             </div>
 
@@ -273,7 +273,7 @@ export function BOMRecordsTab() {
                 value={createdTo}
                 min={createdFrom || undefined}
                 onChange={(event) => setCreatedTo(event.target.value)}
-                className='mt-3 h-12 rounded-2xl border-none bg-muted/50 px-4 text-[11px] font-bold md:text-[11px] [&::-webkit-date-and-time-value]:text-left [&::-webkit-datetime-edit]:text-[11px] [&::-webkit-datetime-edit]:font-bold'
+                className='mt-3 h-12 rounded-2xl border-none bg-muted/50 px-4 [&::-webkit-date-and-time-value]:text-left'
               />
             </div>
           </div>

@@ -17,8 +17,7 @@ const (
 )
 
 type productionQualityRoutingTarget struct {
-	TargetRouteStepID   string `json:"targetRouteStepId,omitempty"`
-	TargetProcessStepID string `json:"targetProcessStepId,omitempty"`
+	TargetRouteStepID string `json:"targetRouteStepId,omitempty"`
 }
 
 type productionQualityRouting map[string]productionQualityRoutingTarget
@@ -105,50 +104,42 @@ func parseProductionQualityRoutingTarget(raw json.RawMessage) (productionQuality
 			TargetRouteStepID: strings.TrimSpace(routeStepID),
 		}, nil
 	}
+	var targetFields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(trimmed), &targetFields); err != nil {
+		return productionQualityRoutingTarget{}, fmt.Errorf("must be a route step id or target object")
+	}
+	for field := range targetFields {
+		if field != "targetRouteStepId" {
+			return productionQualityRoutingTarget{}, fmt.Errorf("unsupported target field %s", field)
+		}
+	}
 
 	var target productionQualityRoutingTarget
 	if err := json.Unmarshal([]byte(trimmed), &target); err != nil {
 		return productionQualityRoutingTarget{}, fmt.Errorf("must be a route step id or target object")
 	}
 	target.TargetRouteStepID = strings.TrimSpace(target.TargetRouteStepID)
-	target.TargetProcessStepID = strings.TrimSpace(target.TargetProcessStepID)
 	return target, nil
 }
 
 func validateProductionQualityRoutingTargets(routing productionQualityRouting, steps []ProductionRouteStepDTO) error {
 	stepsByID := make(map[string]ProductionRouteStepDTO, len(steps))
-	stepsByProcessID := make(map[string][]ProductionRouteStepDTO, len(steps))
 	for _, step := range steps {
 		stepID := strings.TrimSpace(step.ID)
-		processStepID := strings.TrimSpace(step.ProcessStepID)
 		if stepID != "" {
 			stepsByID[stepID] = step
-		}
-		if processStepID != "" {
-			stepsByProcessID[processStepID] = append(stepsByProcessID[processStepID], step)
 		}
 	}
 
 	for disposition, target := range routing {
 		switch {
 		case target.TargetRouteStepID != "":
-			step, ok := stepsByID[target.TargetRouteStepID]
+			_, ok := stepsByID[target.TargetRouteStepID]
 			if !ok {
 				return fmt.Errorf("%s targetRouteStepId does not belong to this route", disposition)
 			}
-			if target.TargetProcessStepID != "" && target.TargetProcessStepID != step.ProcessStepID {
-				return fmt.Errorf("%s targetProcessStepId does not match targetRouteStepId", disposition)
-			}
-		case target.TargetProcessStepID != "":
-			matches := stepsByProcessID[target.TargetProcessStepID]
-			if len(matches) == 0 {
-				return fmt.Errorf("%s targetProcessStepId does not belong to this route", disposition)
-			}
-			if len(matches) > 1 {
-				return fmt.Errorf("%s targetProcessStepId matches multiple route steps; targetRouteStepId is required", disposition)
-			}
 		default:
-			return fmt.Errorf("%s target is empty", disposition)
+			return fmt.Errorf("%s targetRouteStepId is required", disposition)
 		}
 	}
 	return nil
@@ -181,8 +172,7 @@ func resolveProductionQualityRoutingTargetForDispositionTx(
 		return productionQualityRoutingTarget{}, false, nil
 	}
 	return productionQualityRoutingTarget{
-		TargetRouteStepID:   targetStep.ID,
-		TargetProcessStepID: targetStep.ProcessStepID,
+		TargetRouteStepID: targetStep.ID,
 	}, true, nil
 }
 
@@ -193,31 +183,16 @@ func resolveProductionQualityRoutingTargetStepTx(
 ) (models.ProductionRouteStep, bool, error) {
 	routeID = strings.TrimSpace(routeID)
 	target.TargetRouteStepID = strings.TrimSpace(target.TargetRouteStepID)
-	target.TargetProcessStepID = strings.TrimSpace(target.TargetProcessStepID)
-	if routeID == "" || target.isEmpty() {
+	if routeID == "" || target.TargetRouteStepID == "" {
 		return models.ProductionRouteStep{}, false, nil
 	}
 
-	if target.TargetRouteStepID != "" {
-		step, err := loadProductionRouteStepTx(tx, target.TargetRouteStepID)
-		if err != nil {
-			return models.ProductionRouteStep{}, false, err
-		}
-		if step.RouteID != routeID {
-			return models.ProductionRouteStep{}, false, fmt.Errorf("%w: targetRouteStepId does not belong to routeId", ErrInvalidProductionScanCommand)
-		}
-		if target.TargetProcessStepID != "" && step.ProcessStepID != target.TargetProcessStepID {
-			return models.ProductionRouteStep{}, false, fmt.Errorf("%w: targetProcessStepId does not match targetRouteStepId", ErrInvalidProductionScanCommand)
-		}
-		return step, true, nil
-	}
-
-	step, found, err := findUniqueProductionRouteStepByProcessTx(tx, routeID, target.TargetProcessStepID)
+	step, err := loadProductionRouteStepTx(tx, target.TargetRouteStepID)
 	if err != nil {
 		return models.ProductionRouteStep{}, false, err
 	}
-	if !found {
-		return models.ProductionRouteStep{}, false, fmt.Errorf("%w: targetProcessStepId does not belong to routeId", ErrInvalidProductionScanCommand)
+	if step.RouteID != routeID {
+		return models.ProductionRouteStep{}, false, fmt.Errorf("%w: targetRouteStepId does not belong to routeId", ErrInvalidProductionScanCommand)
 	}
 	return step, true, nil
 }
@@ -239,6 +214,5 @@ func isSupportedProductionQualityDisposition(value string) bool {
 }
 
 func (target productionQualityRoutingTarget) isEmpty() bool {
-	return strings.TrimSpace(target.TargetRouteStepID) == "" &&
-		strings.TrimSpace(target.TargetProcessStepID) == ""
+	return strings.TrimSpace(target.TargetRouteStepID) == ""
 }

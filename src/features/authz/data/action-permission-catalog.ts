@@ -196,6 +196,11 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'POST /enterprise/config',
       'POST /enterprise/config/logo',
       'PATCH /quality/standards/:id',
+      'POST /quality/inspection-stages',
+      'PUT /quality/inspection-stages/:id',
+      'POST /quality/defect-types',
+      'PUT /quality/defect-types/:id',
+      'PUT /quality/inspection-stages/:id/defect-types',
       'PATCH /basic/units/:id',
       'POST /permission-presets',
       'DELETE /permission-presets/:id',
@@ -671,6 +676,14 @@ const engineeringActions: LegacyActionPermissionEntry[] = [
 
 const qualityActions: LegacyActionPermissionEntry[] = [
   {
+    id: 'action_quality_abnormality_dispose',
+    label: '品质：确认异常处置',
+    desc: '允许确认报废、返工或让步接收并关闭品质异常。',
+    category: 'action',
+    parentId: 'menu_quality',
+    routeBindings: ['POST /quality/abnormalities/:id/disposal'],
+  },
+  {
     id: 'action_lab_experimental_category_create',
     label: '品质：创建实验分类',
     desc: '允许创建实验室实验分类。',
@@ -856,7 +869,6 @@ const productionActions: LegacyActionPermissionEntry[] = [
       'POST /production/cutting-issuances',
       'POST /production/product-barcode-states',
       'POST /production/execution-lots',
-      'POST /production/operation-executions',
       'POST /production/scan-commands/execute',
     ],
   },

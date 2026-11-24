@@ -55,7 +55,7 @@ export function BOMCreationGuideDraftEntry({
           onClick={() => setIsOpen(true)}
           className={
             presentation === 'inline'
-              ? 'h-auto min-h-9 w-full bg-violet-700 py-2 text-start text-xs whitespace-normal text-white hover:bg-violet-800 dark:bg-violet-500 dark:text-violet-950 dark:hover:bg-violet-400'
+              ? 'h-auto min-h-9 w-full bg-violet-700 py-2 text-start whitespace-normal text-white hover:bg-violet-800 dark:bg-violet-500 dark:text-violet-950 dark:hover:bg-violet-400'
               : undefined
           }
         >

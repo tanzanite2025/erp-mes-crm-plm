@@ -3,8 +3,10 @@ package services
 import (
 	"fmt"
 	"strings"
+	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func ListProcessSteps() ([]ProcessStepDTO, error) {
@@ -35,8 +37,25 @@ func (s *ProductionService) SaveProcessStep(req SaveProcessStepRequest) (Process
 
 	step := mapProcessStepDTOToModel(normalizedStep)
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		if step.ID != "" && !step.IsActive {
+			var existing models.ProcessStep
+			lookupErr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, "id = ?", step.ID).Error
+			if lookupErr == nil {
+				if err := validateProductionProcessLibraryEntryCanBeDeactivated(tx, step.ID); err != nil {
+					return err
+				}
+			} else if lookupErr != gorm.ErrRecordNotFound {
+				return lookupErr
+			}
+		}
 		if err := s.repository.SaveProcessStep(tx, &step); err != nil {
 			return err
+		}
+		if step.IsActive != normalizedStep.IsActive {
+			step.IsActive = normalizedStep.IsActive
+			if err := tx.Model(&step).Update("is_active", step.IsActive).Error; err != nil {
+				return err
+			}
 		}
 
 		return tx.First(&step, "id = ?", step.ID).Error
@@ -45,9 +64,46 @@ func (s *ProductionService) SaveProcessStep(req SaveProcessStepRequest) (Process
 }
 
 func (s *ProductionService) DeleteProcessStep(id string, operator string, ip string) error {
+	id = strings.TrimSpace(id)
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		var existing models.ProcessStep
+		lookupErr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&existing, "id = ?", id).Error
+		if lookupErr != nil && lookupErr != gorm.ErrRecordNotFound {
+			return lookupErr
+		}
+		if lookupErr == gorm.ErrRecordNotFound {
+			return s.repository.DeleteProcessStep(tx, id)
+		}
+		if err := validateProductionProcessLibraryEntryCanBeDeleted(tx, strings.TrimSpace(id)); err != nil {
+			return err
+		}
 		return s.repository.DeleteProcessStep(tx, id)
 	})
+}
+
+func validateProductionProcessLibraryEntryCanBeDeactivated(database *gorm.DB, processLibraryID string) error {
+	return validateProductionProcessLibraryEntryReferences(database, processLibraryID)
+}
+
+func validateProductionProcessLibraryEntryCanBeDeleted(database *gorm.DB, processLibraryID string) error {
+	return validateProductionProcessLibraryEntryReferences(database, processLibraryID)
+}
+
+func validateProductionProcessLibraryEntryReferences(database *gorm.DB, processLibraryID string) error {
+	if database == nil || processLibraryID == "" {
+		return nil
+	}
+
+	var selectionCount int64
+	if err := database.Model(&models.ProductionBOMBranchOperationProcessLibrarySelection{}).
+		Where("process_library_id = ?", processLibraryID).
+		Count(&selectionCount).Error; err != nil {
+		return err
+	}
+	if selectionCount > 0 {
+		return fmt.Errorf("%w: process library entry %s is selected by an MBOM branch", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
+	}
+	return nil
 }
 
 func normalizeProcessStepDTO(step ProcessStepDTO) ProcessStepDTO {

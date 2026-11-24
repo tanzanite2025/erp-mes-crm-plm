@@ -92,7 +92,7 @@ export function LogisticsPackagingRulesTab() {
 
       <div className='flex justify-end'>
         <Button
-          className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-lg transition-all duration-300 hover:shadow-xl'
+          className='h-11 rounded-full px-6 shadow-lg transition-all duration-300 hover:shadow-xl'
           onClick={() => formController.handleCreate()}
         >
           <Plus className='mr-2 size-4' />
@@ -241,7 +241,7 @@ export function LogisticsPackagingRulesTab() {
                       <Button
                         variant='ghost'
                         size='sm'
-                        className='h-7 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-primary/10 hover:text-primary'
+                        className='control-typography-compact h-7 transition-colors hover:bg-primary/10 hover:text-primary'
                         onClick={() => formController.handleEdit(profile)}
                       >
                         {t('logisticsPackagingManagement.packagingRules.edit')}

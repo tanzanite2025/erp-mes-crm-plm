@@ -222,7 +222,7 @@ export function DocumentLinesEditor({
           onClick={onAddLine}
           variant='outline'
           size='sm'
-          className='h-8 rounded-full border-2 border-dashed px-4 text-[10px] font-black uppercase transition-all hover:bg-primary/5'
+          className='h-8 rounded-full border-2 border-dashed px-4 transition-all hover:bg-primary/5'
         >
           <Plus className='mr-1 size-3' />
           {t('tradingSalesOrder.linesEditor.addLine')}
@@ -292,7 +292,7 @@ export function DocumentLinesEditor({
                 </td>
                 <td className='px-4'>
                   <select
-                    className='h-9 w-full appearance-none truncate rounded-lg border bg-background/50 px-2 text-[12px] font-bold outline-none focus:ring-1 focus:ring-primary'
+                    className='h-9 w-full appearance-none truncate rounded-lg border bg-background/50 px-2 outline-none focus:ring-1 focus:ring-primary'
                     value={line.productId || ''}
                     onChange={(e) => handleProductChange(index, e.target.value)}
                   >
@@ -309,7 +309,7 @@ export function DocumentLinesEditor({
                 <td className='px-2'>
                   <div className='space-y-2 py-2'>
                     <select
-                      className='h-8 w-full appearance-none rounded-lg border bg-background px-2 text-[10px] font-bold outline-none focus:ring-1 focus:ring-primary'
+                      className='h-8 w-full appearance-none rounded-lg border bg-background px-2 outline-none focus:ring-1 focus:ring-primary'
                       value={line.appearanceId || ''}
                       onChange={(e) =>
                         handleAppearanceChange(index, e.target.value)
@@ -366,7 +366,7 @@ export function DocumentLinesEditor({
                 </td>
                 <td className='px-2'>
                   <select
-                    className='h-8 w-full appearance-none rounded-lg border bg-orange-500/5 px-2 text-center text-[10px] font-bold outline-none focus:ring-1 focus:ring-orange-500'
+                    className='h-8 w-full appearance-none rounded-lg border bg-orange-500/5 px-2 text-center outline-none focus:ring-1 focus:ring-orange-500'
                     value={line.drillingPlanId || ''}
                     onChange={(e) =>
                       onLineChange(
@@ -389,7 +389,7 @@ export function DocumentLinesEditor({
                 </td>
                 <td className='px-2'>
                   <select
-                    className='h-8 w-full appearance-none rounded-lg border bg-blue-500/5 px-2 text-center text-[10px] font-bold outline-none focus:ring-1 focus:ring-blue-500'
+                    className='h-8 w-full appearance-none rounded-lg border bg-blue-500/5 px-2 text-center outline-none focus:ring-1 focus:ring-blue-500'
                     value={line.labelingPlanId || ''}
                     onChange={(e) =>
                       onLineChange(
@@ -412,7 +412,7 @@ export function DocumentLinesEditor({
                 </td>
                 <td className='px-2'>
                   <select
-                    className='h-8 w-full appearance-none rounded-lg border bg-background px-2 text-center text-[11px] font-bold outline-none focus:ring-1 focus:ring-primary'
+                    className='h-8 w-full appearance-none rounded-lg border bg-background px-2 text-center outline-none focus:ring-1 focus:ring-primary'
                     value={line.holeCount?.toString() || ''}
                     onChange={(e) =>
                       onLineChange(
@@ -439,7 +439,7 @@ export function DocumentLinesEditor({
                     onChange={(e) =>
                       onLineChange(index, 'qty', Number(e.target.value) || 0)
                     }
-                    className='h-9 border-primary/20 text-center text-[12px] font-black'
+                    className='h-9 border-primary/20 text-center'
                   />
                 </td>
                 <td className='px-2'>
@@ -449,7 +449,7 @@ export function DocumentLinesEditor({
                     onChange={(e) =>
                       onLineChange(index, 'price', Number(e.target.value) || 0)
                     }
-                    className='h-9 border-amber-500/20 text-center text-[12px] font-black'
+                    className='h-9 border-amber-500/20 text-center'
                   />
                 </td>
                 <td className='text-center text-xs font-black text-primary tabular-nums'>
@@ -458,7 +458,7 @@ export function DocumentLinesEditor({
                 </td>
                 <td className='px-2'>
                   <select
-                    className='h-8 w-full rounded-lg border bg-background px-2 text-center text-[10px] font-bold'
+                    className='h-8 w-full rounded-lg border bg-background px-2 text-center'
                     value={line.uom}
                     onChange={(e) => onLineChange(index, 'uom', e.target.value)}
                   >
@@ -507,7 +507,7 @@ export function DocumentLinesEditor({
                   {t('tradingSalesOrder.linesEditor.lineItem')} #{line.lineNo}
                 </span>
                 <select
-                  className='h-11 w-full appearance-none truncate rounded-xl border-none bg-background px-3 text-[13px] font-bold shadow-sm'
+                  className='h-11 w-full appearance-none truncate rounded-xl border-none bg-background px-3 shadow-sm'
                   value={line.productId || ''}
                   onChange={(e) => handleProductChange(index, e.target.value)}
                 >
@@ -542,7 +542,7 @@ export function DocumentLinesEditor({
               </div>
               <div className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_84px]'>
                 <select
-                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3 text-[11px] font-bold'
+                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3'
                   value={line.appearanceId || ''}
                   onChange={(e) =>
                     handleAppearanceChange(index, e.target.value)
@@ -603,7 +603,7 @@ export function DocumentLinesEditor({
                   </span>
                 </div>
                 <select
-                  className='h-10 w-full appearance-none rounded-xl border border-orange-200/50 bg-orange-50/50 px-3 text-[11px] font-bold'
+                  className='h-10 w-full appearance-none rounded-xl border border-orange-200/50 bg-orange-50/50 px-3'
                   value={line.drillingPlanId || ''}
                   onChange={(e) =>
                     onLineChange(
@@ -632,7 +632,7 @@ export function DocumentLinesEditor({
                   </span>
                 </div>
                 <select
-                  className='h-10 w-full appearance-none rounded-xl border border-blue-200/50 bg-blue-50/50 px-3 text-[11px] font-bold'
+                  className='h-10 w-full appearance-none rounded-xl border border-blue-200/50 bg-blue-50/50 px-3'
                   value={line.labelingPlanId || ''}
                   onChange={(e) =>
                     onLineChange(
@@ -661,7 +661,7 @@ export function DocumentLinesEditor({
                   </span>
                 </div>
                 <select
-                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3 text-center text-[12px] font-bold'
+                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3 text-center'
                   value={line.holeCount?.toString() || ''}
                   onChange={(e) =>
                     onLineChange(
@@ -689,7 +689,7 @@ export function DocumentLinesEditor({
                   </span>
                 </div>
                 <select
-                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3 text-[11px] font-bold'
+                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3'
                   value={line.uom}
                   onChange={(e) => onLineChange(index, 'uom', e.target.value)}
                 >
@@ -714,7 +714,7 @@ export function DocumentLinesEditor({
                     onChange={(e) =>
                       onLineChange(index, 'qty', Number(e.target.value) || 0)
                     }
-                    className='h-11 rounded-xl border-primary/30 bg-primary/5 text-center text-[13px] font-black shadow-sm focus:ring-primary'
+                    className='h-11 rounded-xl border-primary/30 bg-primary/5 text-center shadow-sm focus:ring-primary'
                   />
                 </div>
                 <div className='space-y-1'>
@@ -727,7 +727,7 @@ export function DocumentLinesEditor({
                     onChange={(e) =>
                       onLineChange(index, 'price', Number(e.target.value) || 0)
                     }
-                    className='h-11 rounded-xl border-amber-500/30 bg-amber-50/5 text-center text-[13px] font-black'
+                    className='h-11 rounded-xl border-amber-500/30 bg-amber-50/5 text-center'
                   />
                 </div>
               </div>
@@ -750,10 +750,7 @@ export function DocumentLinesEditor({
             <span className='text-[10px] font-black tracking-[0.3em] text-muted-foreground/30 uppercase'>
               {t('tradingSalesOrder.linesEditor.noLines')}
             </span>
-            <Button
-              onClick={onAddLine}
-              className='h-8 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
-            >
+            <Button onClick={onAddLine} className='h-8 rounded-full px-6'>
               {t('tradingSalesOrder.linesEditor.addFirst')}
             </Button>
           </div>

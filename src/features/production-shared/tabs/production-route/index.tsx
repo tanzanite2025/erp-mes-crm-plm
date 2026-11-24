@@ -1,6 +1,13 @@
-import { useMemo, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { GitBranch, Plus, Search, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  BadgeCheck,
+  GitBranch,
+  History,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { isForbiddenError } from '@/lib/error-status'
@@ -14,43 +21,19 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
-import type { ProductionLine } from '../../data/production-line'
 import { productionResourceQueryKeys } from '../../data/production-resource-query-keys'
 import type { ProductionRoute } from '../../data/production-route'
-import {
-  useProductionLinesQuery,
-  useProductionRoutesQuery,
-} from '../../hooks/use-production-resources'
+import { useProductionRoutesQuery } from '../../hooks/use-production-resources'
 import { productionRoutesService } from '../../services/production-routes-service'
-import {
-  ProductionRouteDialog,
-  type ProductionRouteSegmentOption,
-} from './production-route-dialog'
+import { ProductionRouteDialog } from './production-route-dialog'
+import { ProductionRouteRevisionHistoryDialog } from './production-route-revision-history-dialog'
 
 const logger = createLogger('ProductionRoute')
 
-function buildSegmentOptions(lines: ProductionLine[]) {
-  const options: ProductionRouteSegmentOption[] = []
-  for (const line of lines) {
-    for (const segment of line.segments) {
-      options.push({
-        id: segment.id,
-        label: `${line.name} / ${segment.name}`,
-        processes: segment.processes.filter((process) => process.isActive),
-      })
-    }
-  }
-  return options
-}
-
 function statusTone(status: ProductionRoute['status']) {
-  if (status === 'PUBLISHED') {
-    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600'
-  }
-  if (status === 'ARCHIVED') {
-    return 'border-slate-500/30 bg-slate-500/10 text-slate-500'
-  }
-  return 'border-amber-500/30 bg-amber-500/10 text-amber-600'
+  return status === 'PUBLISHED'
+    ? 'border-emerald-600/30 bg-emerald-600/10 text-emerald-700'
+    : 'border-amber-500/30 bg-amber-500/10 text-amber-600'
 }
 
 export function ProductionRouteMgmt() {
@@ -60,21 +43,26 @@ export function ProductionRouteMgmt() {
   const [searchTerm, setSearchTerm] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRoute, setEditingRoute] = useState<ProductionRoute | null>(null)
+  const [historyFamilyId, setHistoryFamilyId] = useState<string | null>(null)
+  const [isCreatingRevision, setIsCreatingRevision] = useState(false)
   const routesQuery = useProductionRoutesQuery()
-  const linesQuery = useProductionLinesQuery()
+  const bomBranchesQuery = useQuery({
+    queryKey: productionResourceQueryKeys.routeBOMBranches(),
+    queryFn: productionRoutesService.getBOMBranches,
+    enabled: dialogOpen,
+  })
   const canManage = allowsAction('action_production_route_manage')
   const routes = routesQuery.data ?? []
-  const segmentOptions = useMemo(
-    () => buildSegmentOptions(linesQuery.data ?? []),
-    [linesQuery.data]
-  )
+  const historyRoutes = historyFamilyId
+    ? routes.filter((route) => route.routeFamilyId === historyFamilyId)
+    : []
 
   const filteredRoutes = routes.filter((route) => {
     const search = searchTerm.trim().toLowerCase()
     if (!search) {
       return true
     }
-    return `${route.code} ${route.name} ${route.productName}`
+    return `${route.code} ${route.name} ${route.productSKU || ''} ${route.productName} ${route.bomVersionLevel || ''}`
       .toLowerCase()
       .includes(search)
   })
@@ -127,6 +115,51 @@ export function ProductionRouteMgmt() {
     }
   }
 
+  const handlePublish = async (route: ProductionRoute) => {
+    if (
+      !canManage ||
+      !(await requestApplicationConfirmation(
+        t('productionArchitecture.routes.publishConfirm', { name: route.name })
+      ))
+    ) {
+      return
+    }
+    try {
+      await productionRoutesService.publishRoute(route.id, route.version)
+      await queryClient.invalidateQueries({
+        queryKey: productionResourceQueryKeys.routes(),
+      })
+      toast.success(t('productionArchitecture.routes.toasts.published'))
+    } catch (error) {
+      logger.error('Failed to publish production route', error)
+      toast.error(t('productionArchitecture.routes.toasts.publishFailed'))
+    }
+  }
+
+  const handleCreateRevision = async (route: ProductionRoute) => {
+    if (!canManage || isCreatingRevision) {
+      return
+    }
+    setIsCreatingRevision(true)
+    try {
+      const draft = await productionRoutesService.createRevision(route.id)
+      await queryClient.invalidateQueries({
+        queryKey: productionResourceQueryKeys.routes(),
+      })
+      setHistoryFamilyId(null)
+      setEditingRoute(draft)
+      setDialogOpen(true)
+      toast.success(t('productionArchitecture.routes.toasts.revisionCreated'))
+    } catch (error) {
+      logger.error('Failed to create production route revision', error)
+      toast.error(
+        t('productionArchitecture.routes.toasts.revisionCreateFailed')
+      )
+    } finally {
+      setIsCreatingRevision(false)
+    }
+  }
+
   if (isForbiddenError(routesQuery.error)) {
     return <ForbiddenState />
   }
@@ -146,7 +179,7 @@ export function ProductionRouteMgmt() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={t('productionArchitecture.routes.searchPlaceholder')}
-            className='h-12 rounded-full border-primary/15 bg-background pl-11 font-semibold'
+            className='h-12 rounded-full border-primary/15 bg-background pl-11'
           />
         </div>
         <Button
@@ -157,7 +190,7 @@ export function ProductionRouteMgmt() {
               ? undefined
               : t('productionArchitecture.routes.noManagePermission')
           }
-          className='h-11 rounded-full px-5 text-xs font-bold'
+          className='h-11 rounded-full px-5'
         >
           <Plus className='mr-2 size-4' />
           {t('productionArchitecture.routes.add')}
@@ -198,14 +231,24 @@ export function ProductionRouteMgmt() {
                       {route.name}
                     </CardTitle>
                     <p className='mt-1 font-maple-ui text-[10px] font-bold text-muted-foreground'>
-                      {route.code} · v{route.version}
+                      {route.code} · R{route.revisionNo} · v{route.version}
                     </p>
                   </div>
-                  <Badge variant='outline' className={statusTone(route.status)}>
-                    {t(
-                      `productionArchitecture.routes.statuses.${route.status}`
-                    )}
-                  </Badge>
+                  <div className='flex shrink-0 flex-wrap gap-2'>
+                    <Badge
+                      variant='outline'
+                      className={statusTone(route.status)}
+                    >
+                      {t(
+                        `productionArchitecture.routes.statuses.${route.status}`
+                      )}
+                    </Badge>
+                    {route.isCurrentRevision ? (
+                      <Badge variant='secondary'>
+                        {t('productionArchitecture.routes.history.current')}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </div>
                 <p className='line-clamp-2 text-xs font-medium text-muted-foreground'>
                   {route.description ||
@@ -220,8 +263,19 @@ export function ProductionRouteMgmt() {
                     })}
                   </span>
                   <span>
-                    {route.productName ||
-                      t('productionArchitecture.routes.productUnbound')}
+                    {[
+                      route.productSKU,
+                      route.productName,
+                      route.bomVersionLevel ||
+                        t(
+                          'productionArchitecture.routes.bomBranch.unspecifiedVersion'
+                        ),
+                      route.bomOwnerType === 'CUSTOMER'
+                        ? `${t('productionArchitecture.routes.bomBranch.customer')}: ${route.bomOwnerCustomerName || route.bomOwnerCustomerId}`
+                        : t('productionArchitecture.routes.bomBranch.internal'),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </span>
                 </div>
                 <div className='space-y-1.5'>
@@ -234,12 +288,7 @@ export function ProductionRouteMgmt() {
                         {step.sequence}
                       </span>
                       <span className='min-w-0 flex-1 truncate font-bold'>
-                        {step.processName ||
-                          step.processCode ||
-                          step.processStepId}
-                      </span>
-                      <span className='shrink-0 text-[10px] font-bold text-muted-foreground'>
-                        {step.segmentName}
+                        {step.branchOperationName || step.branchOperationId}
                       </span>
                     </div>
                   ))}
@@ -255,8 +304,39 @@ export function ProductionRouteMgmt() {
                   <Button
                     variant='outline'
                     size='sm'
+                    onClick={() => setHistoryFamilyId(route.routeFamilyId)}
+                    title={t('productionArchitecture.routes.history.view')}
+                  >
+                    <History className='mr-2 size-4' />
+                    {t('productionArchitecture.routes.history.view')}
+                  </Button>
+                  {route.status === 'DRAFT' && (
+                    <Button
+                      variant='default'
+                      size='sm'
+                      onClick={() => void handlePublish(route)}
+                      disabled={
+                        !canManage || isChecking || route.steps.length === 0
+                      }
+                      title={
+                        canManage
+                          ? t('productionArchitecture.routes.publish')
+                          : t(
+                              'productionArchitecture.routes.noManagePermission'
+                            )
+                      }
+                    >
+                      <BadgeCheck className='mr-2 size-4' />
+                      {t('productionArchitecture.routes.publish')}
+                    </Button>
+                  )}
+                  <Button
+                    variant='outline'
+                    size='sm'
                     onClick={() => openEdit(route)}
-                    disabled={!canManage || isChecking}
+                    disabled={
+                      !canManage || isChecking || route.status !== 'DRAFT'
+                    }
                     title={
                       canManage
                         ? undefined
@@ -269,7 +349,9 @@ export function ProductionRouteMgmt() {
                     variant='ghost'
                     size='icon'
                     onClick={() => void handleDelete(route)}
-                    disabled={!canManage || isChecking}
+                    disabled={
+                      !canManage || isChecking || route.status !== 'DRAFT'
+                    }
                     title={
                       canManage
                         ? t('common.actions.delete')
@@ -289,9 +371,23 @@ export function ProductionRouteMgmt() {
         open={dialogOpen}
         route={editingRoute}
         routes={routes}
-        segments={segmentOptions}
+        bomBranches={bomBranchesQuery.data ?? []}
+        isLoadingBOMBranches={bomBranchesQuery.isLoading}
         onOpenChange={setDialogOpen}
         onSave={handleSave}
+      />
+      <ProductionRouteRevisionHistoryDialog
+        open={historyFamilyId !== null}
+        routes={historyRoutes}
+        canManage={canManage}
+        isCheckingPermission={isChecking}
+        isCreatingRevision={isCreatingRevision}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHistoryFamilyId(null)
+          }
+        }}
+        onCreateRevision={(route) => void handleCreateRevision(route)}
       />
     </div>
   )

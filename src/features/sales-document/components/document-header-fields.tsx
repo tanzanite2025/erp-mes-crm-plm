@@ -124,7 +124,7 @@ export function DocumentHeaderFields({
             <Button
               type='button'
               variant='outline'
-              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed px-4'
               onClick={() => {
                 void financeResources.retry()
               }}
@@ -157,7 +157,7 @@ export function DocumentHeaderFields({
                   purchaseOrderNo: e.target.value,
                 }))
               }
-              className='h-11 text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
+              className='h-11 shadow-sm sm:h-10'
             />
           </div>
 
@@ -173,7 +173,7 @@ export function DocumentHeaderFields({
                 )}
                 value={formData.orderNo}
                 readOnly
-                className='h-11 cursor-not-allowed border-muted-foreground/10 bg-muted/20 pl-9 font-maple-ui text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
+                className='h-11 cursor-not-allowed border-muted-foreground/10 bg-muted/20 pl-9 font-maple-ui shadow-sm sm:h-10'
               />
             </div>
           </div>
@@ -185,7 +185,7 @@ export function DocumentHeaderFields({
             <div className='relative'>
               <User className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground/40' />
               <select
-                className='h-11 w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+                className='h-11 w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10'
                 value={selectedCustomerId}
                 disabled={readOnly}
                 onChange={(e) => handleCustomerChange(e.target.value)}
@@ -207,7 +207,7 @@ export function DocumentHeaderFields({
               {t('tradingSalesOrder.headerFields.tradeMode')}
             </Label>
             <select
-              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10'
               value={formData.type}
               disabled={readOnly}
               onChange={(e) =>
@@ -227,7 +227,7 @@ export function DocumentHeaderFields({
               {t('tradingSalesOrder.headerFields.category')}
             </Label>
             <select
-              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10'
               value={formData.classification}
               disabled={readOnly}
               onChange={(e) => onClassificationChange(e.target.value)}
@@ -256,7 +256,7 @@ export function DocumentHeaderFields({
                     deliveryDate: e.target.value,
                   }))
                 }
-                className='h-11 pl-9 text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
+                className='h-11 pl-9 shadow-sm sm:h-10'
               />
             </div>
           </div>
@@ -268,7 +268,7 @@ export function DocumentHeaderFields({
             <div className='relative'>
               <CircleDollarSign className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground/40' />
               <select
-                className='h-11 w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+                className='h-11 w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10'
                 value={formData.currency || 'CNY'}
                 disabled={readOnly || isFinanceLoading || isFinanceError}
                 onChange={(e) => handleCurrencyChange(e.target.value)}
@@ -292,7 +292,7 @@ export function DocumentHeaderFields({
               {t('tradingSalesOrder.headerFields.paymentMethod')}
             </Label>
             <select
-              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10'
               value={formData.paymentMethod || ''}
               disabled={readOnly || isFinanceLoading || isFinanceError}
               onChange={(e) => handlePaymentMethodChange(e.target.value)}
@@ -313,7 +313,7 @@ export function DocumentHeaderFields({
               {t('tradingSalesOrder.headerFields.paymentTerm')}
             </Label>
             <select
-              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+              className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10'
               value={formData.paymentTerm || ''}
               disabled={readOnly || isFinanceLoading || isFinanceError}
               onChange={(e) => handlePaymentTermChange(e.target.value)}
@@ -341,7 +341,7 @@ export function DocumentHeaderFields({
                 )}
                 value={formData.barcode}
                 readOnly
-                className='h-11 cursor-not-allowed border-primary/20 bg-primary/5 pl-9 font-maple-ui text-[13px] font-bold text-primary sm:h-10 sm:text-[12px]'
+                className='h-11 cursor-not-allowed border-primary/20 bg-primary/5 pl-9 font-maple-ui text-primary sm:h-10'
               />
             </div>
           </div>

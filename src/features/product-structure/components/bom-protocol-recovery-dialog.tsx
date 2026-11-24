@@ -96,8 +96,8 @@ export function BOMProtocolRecoveryDialog({
                     <div className='flex w-full gap-3'>
                       <RefreshCw className='mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600' />
                       <div className='flex-1 space-y-1'>
-                        <div className='font-medium'>重建树结构（推荐）</div>
-                        <div className='text-xs text-muted-foreground'>
+                        <div>重建树结构（推荐）</div>
+                        <div className='text-muted-foreground'>
                           根据当前表格数据完全重建树结构。这会丢失自定义的树结构排序，但能确保数据一致性。
                         </div>
                       </div>
@@ -114,8 +114,8 @@ export function BOMProtocolRecoveryDialog({
                     <div className='flex w-full gap-3'>
                       <Filter className='mt-0.5 h-5 w-5 flex-shrink-0 text-green-600' />
                       <div className='flex-1 space-y-1'>
-                        <div className='font-medium'>过滤无效引用</div>
-                        <div className='text-xs text-muted-foreground'>
+                        <div>过滤无效引用</div>
+                        <div className='text-muted-foreground'>
                           保留现有树结构，仅移除无效的节点引用。适合只有少量数据问题的情况。
                         </div>
                       </div>
@@ -132,8 +132,8 @@ export function BOMProtocolRecoveryDialog({
                     <div className='flex w-full gap-3'>
                       <X className='mt-0.5 h-5 w-5 flex-shrink-0 text-orange-600' />
                       <div className='flex-1 space-y-1'>
-                        <div className='font-medium'>使用默认结构</div>
-                        <div className='text-xs text-muted-foreground'>
+                        <div>使用默认结构</div>
+                        <div className='text-muted-foreground'>
                           忽略现有树结构，使用默认的分类结构显示所有物料。适合树结构完全损坏的情况。
                         </div>
                       </div>
@@ -150,8 +150,8 @@ export function BOMProtocolRecoveryDialog({
                     <div className='flex w-full gap-3'>
                       <Wrench className='mt-0.5 h-5 w-5 flex-shrink-0 text-gray-600' />
                       <div className='flex-1 space-y-1'>
-                        <div className='font-medium'>手动修复</div>
-                        <div className='text-xs text-muted-foreground'>
+                        <div>手动修复</div>
+                        <div className='text-muted-foreground'>
                           关闭此对话框，手动检查并修复数据问题。适合需要精确控制的情况。
                         </div>
                       </div>

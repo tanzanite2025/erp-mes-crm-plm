@@ -113,13 +113,13 @@ export function PurchaseOrderActionDialogShell({
             <Button
               variant='ghost'
               onClick={() => onOpenChange(false)}
-              className='shrink-0 rounded-2xl px-3 py-5 text-[11px] font-black uppercase sm:p-5'
+              className='shrink-0 rounded-2xl px-3 py-5 sm:p-5'
             >
               {cancelText}
             </Button>
             <Button
               onClick={onSave}
-              className='min-w-0 flex-1 rounded-2xl bg-primary px-4 py-5 text-[11px] font-black uppercase shadow-xl shadow-primary/20 sm:flex-none sm:px-8'
+              className='min-w-0 flex-1 rounded-2xl bg-primary px-4 py-5 shadow-xl shadow-primary/20 sm:flex-none sm:px-8'
             >
               {saveText}
             </Button>

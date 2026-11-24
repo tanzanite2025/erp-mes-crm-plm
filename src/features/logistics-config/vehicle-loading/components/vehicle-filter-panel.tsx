@@ -13,7 +13,7 @@ import type { VehicleCategory } from '../../vehicle-specs/data/vehicle-specs.typ
 import { FieldCard } from './field-card'
 
 const fieldClass =
-  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-sm font-medium leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30'
+  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30'
 const labelClass =
   'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
 

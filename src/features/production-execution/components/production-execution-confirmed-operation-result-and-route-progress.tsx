@@ -26,12 +26,14 @@ function resolveProductionExecutionRecordedRouteStepName(
   routes: ProductionRoute[],
   routeId: string,
   routeStepId: string,
-  processStepId: string
+  branchOperationId: string
 ) {
   const steps = routes.find((route) => route.id === routeId)?.steps ?? []
   const step = steps.find((item) => item.id === routeStepId)
   if (step) return formatProductionExecutionRouteStepName(step)
-  const matches = steps.filter((item) => item.processStepId === processStepId)
+  const matches = steps.filter(
+    (item) => item.branchOperationId === branchOperationId
+  )
   return matches.length === 1
     ? formatProductionExecutionRouteStepName(matches[0])
     : ''
@@ -53,7 +55,7 @@ export function ProductionExecutionConfirmedOperationResultAndRouteProgress({
       routes,
       response.operation.routeId,
       response.progress.executedRouteStepId,
-      response.progress.executedProcessStepId
+      response.progress.executedBranchOperationId
     )
   const currentStep =
     response &&
@@ -61,9 +63,9 @@ export function ProductionExecutionConfirmedOperationResultAndRouteProgress({
       routes,
       response.state.routeId,
       response.state.routeStepId,
-      response.state.currentProcessStepId
+      response.state.currentBranchOperationId
     ) ||
-      response.state.currentProcessStep?.name)
+      response.state.currentBranchOperation?.name)
   return (
     <section
       aria-labelledby='production-execution-result-title'
@@ -185,14 +187,14 @@ export function ProductionExecutionConfirmedOperationResultAndRouteProgress({
                         routes,
                         event.routeId,
                         event.fromRouteStepId,
-                        event.fromProcessStepId
+                        event.fromBranchOperationId
                       ) || t('productionExecution.workflow.unknownProcess')}
                       {' → '}
                       {resolveProductionExecutionRecordedRouteStepName(
                         routes,
                         event.routeId,
                         event.toRouteStepId,
-                        event.toProcessStepId
+                        event.toBranchOperationId
                       ) || t('productionExecution.workflow.unknownProcess')}
                     </p>
                   ) : (

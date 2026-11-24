@@ -105,7 +105,7 @@ export function RuleExecutionLogToolbar({
           variant='outline'
           onClick={onRefresh}
           disabled={isFetching}
-          className='h-9 rounded-full border-dashed border-muted-foreground/30 px-3.5 text-[10px] font-black tracking-widest uppercase'
+          className='h-9 rounded-full border-dashed border-muted-foreground/30 px-3.5'
         >
           <RefreshCcw
             className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`}

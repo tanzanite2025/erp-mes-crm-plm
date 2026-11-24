@@ -115,10 +115,7 @@ export function CommandMenuKnowledgeDetailDrawer({
 
           {entry.routePath ? (
             <div className='relative flex justify-end border-t border-dashed border-amber-500/20 bg-amber-500/5 px-5 py-3'>
-              <Button
-                asChild
-                className='h-9 cursor-pointer rounded-full px-4 text-[11px] font-black'
-              >
+              <Button asChild className='h-9 cursor-pointer rounded-full px-4'>
                 <Link to={entry.routePath as never}>
                   <ExternalLink className='mr-1.5 size-3.5' />
                   {t('basicSettings.knowledgeBase.actions.openRoute')}

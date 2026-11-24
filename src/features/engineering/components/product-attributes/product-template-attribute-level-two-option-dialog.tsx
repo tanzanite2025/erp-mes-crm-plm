@@ -159,7 +159,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
               >
                 <SelectTrigger
                   id={categoryFieldId}
-                  className='w-full rounded-xl border-input/60 bg-muted/20 text-sm font-medium shadow-none data-[size=default]:h-11'
+                  className='w-full rounded-xl border-input/60 bg-muted/20 shadow-none data-[size=default]:h-11'
                 >
                   <SelectValue
                     placeholder={
@@ -286,7 +286,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
           <Button
             variant='outline'
             type='button'
-            className='h-10 rounded-full px-5 text-xs font-bold'
+            className='h-10 rounded-full px-5'
             disabled={isSaving}
             onClick={() => onOpenChange(false)}
           >
@@ -296,7 +296,7 @@ export function ProductTemplateAttributeLevelTwoOptionDialog({
             type='submit'
             form={optionFormId}
             disabled={isSaving || !isCatalogReady}
-            className='h-10 rounded-full px-5 text-xs font-bold'
+            className='h-10 rounded-full px-5'
           >
             {isSaving ? (isZh ? '保存中…' : 'Saving…') : isZh ? '保存' : 'Save'}
           </Button>

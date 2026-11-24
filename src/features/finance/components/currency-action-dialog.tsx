@@ -203,7 +203,7 @@ export function CurrencyActionDialog({
                 }
               }}
             >
-              <SelectTrigger className='h-12 rounded-2xl border-none bg-white font-bold shadow-sm'>
+              <SelectTrigger className='h-12 rounded-2xl border-none bg-white shadow-sm'>
                 <SelectValue
                   placeholder={t(
                     'finance.currencyRates.dialog.templatePlaceholder'
@@ -217,8 +217,8 @@ export function CurrencyActionDialog({
                     value={p.code}
                     className='rounded-xl py-3'
                   >
-                    <span className='font-black'>{p.code}</span> -{' '}
-                    {t(getCurrencyNameKey(p.code))} ({p.symbol})
+                    <span>{p.code}</span> - {t(getCurrencyNameKey(p.code))} (
+                    {p.symbol})
                   </SelectItem>
                 ))}
                 {filteredPresets.length === 0 && (
@@ -307,7 +307,7 @@ export function CurrencyActionDialog({
                 onChange={(e) => {
                   updateFormData({ rate: parseFloat(e.target.value) })
                 }}
-                className='h-12 rounded-2xl border-dashed border-emerald-500/30 bg-emerald-500/5 font-black text-emerald-600'
+                className='h-12 rounded-2xl border-dashed border-emerald-500/30 bg-emerald-500/5 text-emerald-600'
               />
               {editingCurrency?.isBase && (
                 <div className='absolute top-1/2 right-3 -translate-y-1/2'>

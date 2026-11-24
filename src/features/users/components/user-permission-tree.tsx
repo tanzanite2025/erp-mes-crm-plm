@@ -177,7 +177,7 @@ function PermissionModule({
             type='button'
             variant='ghost'
             size='sm'
-            className='h-7 rounded-full px-2 text-[9px] font-black tracking-[0.12em] uppercase sm:text-[10px]'
+            className='control-typography-compact h-7 rounded-full px-2'
             onClick={() => onToggleModule(node.module.id)}
           >
             {expanded

@@ -48,11 +48,11 @@ export function OrganizationAndAccountOperationGuidePage() {
             aria-label={t(
               `orgPersonnel.operationGuide.chapters.${chapter.key}.label`
             )}
-            className='h-full min-h-9 min-w-0 flex-none flex-col justify-start gap-1 rounded-lg px-1 py-2 text-[11px] leading-4 font-medium whitespace-normal text-muted-foreground shadow-none transition-colors hover:bg-sky-50 hover:text-sky-800 data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none sm:h-auto sm:flex-row sm:justify-center sm:gap-2 sm:px-3 sm:text-sm sm:leading-5 dark:hover:bg-sky-950/40 dark:hover:text-sky-200 dark:data-[state=active]:bg-sky-950 dark:data-[state=active]:text-sky-100'
+            className='h-full min-h-9 min-w-0 flex-none flex-col justify-start gap-1 rounded-lg px-1 py-2 whitespace-normal text-muted-foreground shadow-none transition-colors hover:bg-sky-50 hover:text-sky-800 data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none sm:h-auto sm:flex-row sm:justify-center sm:gap-2 sm:px-3 dark:hover:bg-sky-950/40 dark:hover:text-sky-200 dark:data-[state=active]:bg-sky-950 dark:data-[state=active]:text-sky-100'
           >
             <span
               aria-hidden='true'
-              className='text-[11px] font-semibold text-sky-600/80 dark:text-sky-400'
+              className='text-sky-600/80 dark:text-sky-400'
             >
               {String(index + 1).padStart(2, '0')}
             </span>

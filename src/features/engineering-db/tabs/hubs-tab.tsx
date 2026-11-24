@@ -270,7 +270,7 @@ export function HubsTab() {
             setCurrentRow(undefined)
             setOpen(true)
           }}
-          className='h-11 gap-2 rounded-full bg-indigo-600 px-8 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95'
+          className='h-11 gap-2 rounded-full bg-indigo-600 px-8 text-white shadow-xl shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95'
         >
           <Plus className='size-4' /> {t('engineering.hubs.table.upload')}
         </Button>

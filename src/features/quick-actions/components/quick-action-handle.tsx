@@ -45,7 +45,7 @@ export function QuickActionHandle({
       >
         <ScanLine className='size-4' />
         {!isDock && (
-          <span className='text-[10px] font-black tracking-widest uppercase [writing-mode:vertical-rl]'>
+          <span className='[writing-mode:vertical-rl]'>
             {t('quickActions.handle.label')}
           </span>
         )}

@@ -84,7 +84,7 @@ export function PurchaseOrderLinesEditor({
                 ? t('purchase.orders.linesEditor.materialPermissionRequired')
                 : t('purchase.orders.linesEditor.createMaterial')
             }
-            className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-emerald-500/5 hover:text-emerald-600 disabled:opacity-45'
+            className='control-typography-compact h-7 rounded-lg border-dashed hover:bg-emerald-500/5 hover:text-emerald-600 disabled:opacity-45'
           >
             <Plus className='mr-1 size-3' />
             {t('purchase.orders.linesEditor.createMaterial')}
@@ -100,7 +100,7 @@ export function PurchaseOrderLinesEditor({
                 ? t('purchase.orders.linesEditor.openMaterialArchive')
                 : t('purchase.orders.linesEditor.materialPermissionRequired')
             }
-            className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-blue-500/5 hover:text-blue-600 disabled:opacity-45'
+            className='control-typography-compact h-7 rounded-lg border-dashed hover:bg-blue-500/5 hover:text-blue-600 disabled:opacity-45'
           >
             <ExternalLink className='mr-1 size-3' />
             {t('purchase.orders.linesEditor.openMaterialArchive')}
@@ -110,7 +110,7 @@ export function PurchaseOrderLinesEditor({
             variant='outline'
             size='sm'
             onClick={onAddLine}
-            className='h-7 rounded-lg border-dashed text-[10px] font-black uppercase hover:bg-primary/5 hover:text-primary'
+            className='control-typography-compact h-7 rounded-lg border-dashed hover:bg-primary/5 hover:text-primary'
           >
             <Plus className='mr-1 size-3' />
             {t('purchase.orders.linesEditor.addLine')}
@@ -192,7 +192,7 @@ export function PurchaseOrderLinesEditor({
                       onChange={(e) =>
                         onLineChange(index, 'qty', Number(e.target.value))
                       }
-                      className='h-10 rounded-xl border-none bg-muted/20 text-right font-black md:h-9'
+                      className='h-10 rounded-xl border-none bg-muted/20 text-right md:h-9'
                     />
                   </div>
                   <div className='space-y-1.5'>
@@ -218,7 +218,7 @@ export function PurchaseOrderLinesEditor({
                       onChange={(e) =>
                         onLineChange(index, 'price', Number(e.target.value))
                       }
-                      className='h-10 rounded-xl border-none bg-muted/20 text-right font-black md:h-9'
+                      className='h-10 rounded-xl border-none bg-muted/20 text-right md:h-9'
                     />
                   </div>
                   <div className='w-20 pb-2 text-right md:w-auto'>

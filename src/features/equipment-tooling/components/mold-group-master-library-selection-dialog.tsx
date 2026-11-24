@@ -165,7 +165,7 @@ export function MoldGroupMasterLibrarySelectionDialog({
                   ? '搜索分组、模具编号或名称'
                   : 'Search group or mold'
               }
-              className='w-full min-w-0 placeholder:text-[13px] placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground placeholder:opacity-100 sm:w-auto sm:flex-1'
+              className='w-full min-w-0 placeholder:text-muted-foreground placeholder:opacity-100 sm:w-auto sm:flex-1'
             />
             <Button
               type='button'

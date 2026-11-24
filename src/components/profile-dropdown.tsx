@@ -73,20 +73,20 @@ export function ProfileDropdown() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator className='my-2 bg-border/70' />
           <DropdownMenuItem
-            className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+            className='rounded-2xl px-3 py-3 text-foreground focus:bg-primary/5 focus:text-foreground'
             onClick={openPersonalWorkbenchBottomDrawer}
           >
             打开个人记录底部抽屉
           </DropdownMenuItem>
           <DropdownMenuSeparator className='my-2 bg-border/70' />
           <DropdownMenuItem
-            className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground'
+            className='rounded-2xl px-3 py-3 text-foreground focus:bg-primary/5 focus:text-foreground'
             onSelect={() => setIsChangePasswordOpen(true)}
           >
             {t('common.auth.changePassword.title')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-destructive focus:bg-destructive/10 focus:text-destructive'
+            className='rounded-2xl px-3 py-3 text-destructive focus:bg-destructive/10 focus:text-destructive'
             variant='destructive'
             onClick={() => setOpen(true)}
           >

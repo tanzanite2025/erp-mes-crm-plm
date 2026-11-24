@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { Inbox, MoveHorizontal, Plus, ShieldCheck } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,6 +12,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { LevelConfig, Standard, StandardItem } from '../data/schema'
+import { formatQualityInspectionGradeWeightBoundaryWithoutRounding } from '../presenters/format-quality-inspection-grade-weight-boundary-without-rounding'
+import { groupQualityStandardInspectionItemsByStageForDisplay } from '../presenters/group-quality-standard-inspection-items-by-stage-for-display'
 
 interface StandardPreviewMatrixTableProps {
   standard: Standard
@@ -29,9 +30,8 @@ export function StandardPreviewMatrixTable({
 }: StandardPreviewMatrixTableProps) {
   const { t } = useLanguage()
   const hasItems = standard.items && standard.items.length > 0
-  const hasDeviationBands = standard.items?.some((item) =>
-    item.levels.some((level) => level.deviationMinExclusive !== undefined)
-  )
+  const inspectionStageGroups =
+    groupQualityStandardInspectionItemsByStageForDisplay(standard.items ?? [])
 
   return (
     <div className='relative flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/5'>
@@ -42,93 +42,110 @@ export function StandardPreviewMatrixTable({
           </div>
 
           <div className='scrollbar-thin flex-1 overflow-auto p-4 lg:p-6 lg:pt-4'>
-            {hasDeviationBands && (
-              <p className='mb-3 text-[11px] leading-relaxed text-muted-foreground'>
-                {t('quality.standards.dialog.detail.deviationGradingHint')}
-              </p>
-            )}
+            <p className='mb-3 text-[13px] leading-relaxed text-muted-foreground'>
+              {t('quality.standards.dialog.detail.deviationGradingHint')}
+            </p>
             <Table className='min-w-[1390px] border-separate border-spacing-0'>
               <TableHeader className='sticky top-0 z-30 bg-background/95 backdrop-blur-xl'>
                 <TableRow className='hover:bg-transparent'>
-                  <TableHead className='sticky left-0 z-40 h-12 w-[180px] border border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] backdrop-blur-xl lg:h-14 lg:text-[10px]'>
+                  <TableHead className='sticky left-0 z-40 h-12 w-[180px] border border-white/10 bg-muted/40 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap uppercase shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] backdrop-blur-xl lg:h-14 lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.item')}
                     <div className='absolute right-0 bottom-0 h-full w-px bg-white/10' />
                   </TableHead>
-                  <TableHead className='w-[80px] border border-l-0 border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase lg:text-[10px]'>
+                  <TableHead className='w-[80px] border border-l-0 border-white/10 bg-muted/40 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.order')}
                   </TableHead>
-                  <TableHead className='w-[100px] border border-l-0 border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase lg:text-[10px]'>
+                  <TableHead className='w-[100px] border border-l-0 border-white/10 bg-muted/40 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.centerValue')}
                   </TableHead>
-                  <TableHead className='w-[90px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
+                  <TableHead className='w-[90px] border border-l-0 border-white/10 bg-primary/5 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap text-primary uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.level')}
                   </TableHead>
-                  <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
-                    {t(
-                      hasDeviationBands
-                        ? 'quality.standards.dialog.detail.table.deviationRule'
-                        : 'quality.standards.dialog.detail.table.tolerance'
-                    )}
+                  <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap text-primary uppercase lg:text-[13px]'>
+                    {t('quality.standards.dialog.detail.table.deviationRule')}
                   </TableHead>
-                  <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
+                  <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap text-primary uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.min')}
                   </TableHead>
-                  <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[9px] font-black tracking-widest whitespace-nowrap text-primary uppercase lg:text-[10px]'>
+                  <TableHead className='w-[110px] border border-l-0 border-white/10 bg-primary/5 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap text-primary uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.max')}
                   </TableHead>
-                  <TableHead className='w-[80px] border border-l-0 border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase lg:text-[10px]'>
+                  <TableHead className='w-[80px] border border-l-0 border-white/10 bg-muted/40 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.unit')}
                   </TableHead>
-                  <TableHead className='w-[90px] border border-l-0 border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-widest whitespace-nowrap uppercase lg:text-[10px]'>
+                  <TableHead className='w-[90px] border border-l-0 border-white/10 bg-muted/40 text-center text-[13px] font-semibold tracking-widest whitespace-nowrap uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.required')}
                   </TableHead>
-                  <TableHead className='border border-l-0 border-white/10 bg-muted/40 text-center text-[9px] font-black tracking-[0.2em] whitespace-nowrap uppercase lg:text-[10px]'>
+                  <TableHead className='border border-l-0 border-white/10 bg-muted/40 text-center text-[13px] font-semibold tracking-[0.2em] whitespace-nowrap uppercase lg:text-[13px]'>
                     {t('quality.standards.dialog.detail.table.remarks')}
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {standard.items.map((item: StandardItem) => (
-                  <React.Fragment key={item.id}>
-                    <TableRow className='group h-14 transition-colors'>
-                      <TableCell
-                        rowSpan={item.levels.length}
-                        className='sticky left-0 z-20 border border-t-0 border-white/10 bg-muted/10 px-4 text-center text-[11px] font-black whitespace-nowrap shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] backdrop-blur group-hover:bg-muted/20 lg:text-xs'
-                      >
-                        {item.name}
-                        <div className='absolute right-0 bottom-0 h-full w-px bg-white/20 shadow-[2px_0_8px_rgba(0,0,0,0.2)]' />
+              {inspectionStageGroups.map((stageGroup) => {
+                const stageName = stageGroup.inspectionStageName
+                return (
+                  <TableBody
+                    key={stageGroup.inspectionStageId}
+                    aria-label={`${t('quality.standards.inspectionStages.stageGroup')} · ${stageName}`}
+                  >
+                    <TableRow className='bg-muted/30 hover:bg-muted/30'>
+                      <TableCell colSpan={10} className='border px-4 py-3'>
+                        <h3 className='text-sm leading-5 font-semibold'>
+                          {stageName}
+                        </h3>
                       </TableCell>
-                      <TableCell
-                        rowSpan={item.levels.length}
-                        className='border border-t-0 border-l-0 border-white/10 text-center font-maple-ui text-[9px] whitespace-nowrap opacity-40 lg:text-[10px]'
-                      >
-                        {item.order}
-                      </TableCell>
-                      <TableCell
-                        rowSpan={item.levels.length}
-                        className='border border-t-0 border-l-0 border-white/10 bg-muted/5 text-center text-[11px] font-black whitespace-nowrap lg:text-xs'
-                      >
-                        {item.centerValue?.toFixed(2)}
-                      </TableCell>
-                      <LevelRow
-                        level={item.levels[0]}
-                        remarks={item.remarks}
-                        unit={item.unit}
-                        isRequired={item.isRequired}
-                        rowSpan={item.levels.length}
-                      />
                     </TableRow>
-                    {item.levels.slice(1).map((level: LevelConfig) => (
-                      <TableRow
-                        key={`${item.id}-${level.level}`}
-                        className='group h-10 transition-colors'
-                      >
-                        <LevelCells level={level} />
-                      </TableRow>
+                    {stageGroup.items.map((item: StandardItem) => (
+                      <React.Fragment key={item.id}>
+                        <TableRow className='group h-14 transition-colors'>
+                          <TableCell
+                            rowSpan={item.levels.length}
+                            className='sticky left-0 z-20 border border-t-0 border-white/10 bg-muted/10 px-4 text-center text-[13px] font-semibold whitespace-nowrap shadow-[4px_0_12px_-4px_rgba(0,0,0,0.1)] backdrop-blur group-hover:bg-muted/20 lg:text-[13px]'
+                          >
+                            <div>{item.name}</div>
+                            <div className='mt-1 text-[13px] font-normal text-muted-foreground'>
+                              {t('quality.standards.inspectionStages.stage')}：
+                              {item.inspectionStageName}
+                            </div>
+                            <div className='absolute right-0 bottom-0 h-full w-px bg-white/20 shadow-[2px_0_8px_rgba(0,0,0,0.2)]' />
+                          </TableCell>
+                          <TableCell
+                            rowSpan={item.levels.length}
+                            className='border border-t-0 border-l-0 border-white/10 text-center font-maple-ui text-[13px] whitespace-nowrap opacity-40 lg:text-[13px]'
+                          >
+                            {item.order}
+                          </TableCell>
+                          <TableCell
+                            rowSpan={item.levels.length}
+                            className='border border-t-0 border-l-0 border-white/10 bg-muted/5 text-center text-[13px] font-semibold whitespace-nowrap lg:text-[13px]'
+                          >
+                            {item.centerValue}
+                          </TableCell>
+                          <LevelRow
+                            level={item.levels[0]}
+                            centerValue={item.centerValue}
+                            remarks={item.remarks}
+                            unit={item.unit}
+                            isRequired={item.isRequired}
+                            rowSpan={item.levels.length}
+                          />
+                        </TableRow>
+                        {item.levels.slice(1).map((level: LevelConfig) => (
+                          <TableRow
+                            key={`${item.id}-${level.level}`}
+                            className='group h-10 transition-colors'
+                          >
+                            <LevelCells
+                              level={level}
+                              centerValue={item.centerValue}
+                            />
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
                     ))}
-                  </React.Fragment>
-                ))}
-              </TableBody>
+                  </TableBody>
+                )
+              })}
             </Table>
           </div>
         </>
@@ -141,17 +158,14 @@ export function StandardPreviewMatrixTable({
           <h3 className='mb-2 text-xs font-bold tracking-tight'>
             {t('quality.standards.dialog.detail.emptyTitle')}
           </h3>
-          <p className='max-w-xs text-[10px] leading-relaxed font-medium text-muted-foreground opacity-50'>
+          <p className='max-w-xs text-[13px] leading-relaxed font-medium text-muted-foreground opacity-50'>
             {t('quality.standards.dialog.detail.emptyDescription', {
               code: standard.code,
             })}
           </p>
           {showPrimaryAction ? (
             <div className='mt-8'>
-              <Button
-                className='h-9 rounded-xl bg-primary/10 px-6 text-[10px] font-black text-primary uppercase shadow-xl transition-all hover:bg-primary hover:text-primary-foreground'
-                onClick={onPrimaryAction}
-              >
+              <Button className='rounded-full' onClick={onPrimaryAction}>
                 <Plus className='mr-2 size-3.5' />
                 {primaryActionLabel}
               </Button>
@@ -165,12 +179,14 @@ export function StandardPreviewMatrixTable({
 
 function LevelRow({
   level,
+  centerValue,
   remarks,
   unit,
   isRequired,
   rowSpan,
 }: {
   level: LevelConfig
+  centerValue: number
   remarks?: string
   unit?: string
   isRequired?: boolean
@@ -180,10 +196,10 @@ function LevelRow({
 
   return (
     <>
-      <LevelCells level={level} />
+      <LevelCells level={level} centerValue={centerValue} />
       <TableCell
         rowSpan={rowSpan}
-        className='border border-t-0 border-l-0 border-white/10 px-1 text-center text-[9px] font-black whitespace-nowrap opacity-50 lg:text-[10px]'
+        className='border border-t-0 border-l-0 border-white/10 px-1 text-center text-[13px] font-semibold whitespace-nowrap opacity-50 lg:text-[13px]'
       >
         {unit}
       </TableCell>
@@ -193,7 +209,7 @@ function LevelRow({
       >
         <Badge
           variant={isRequired ? 'default' : 'outline'}
-          className='rounded-md px-1.5 py-0 text-[8px] font-black lg:text-[9px]'
+          className='rounded-md px-1.5 py-0 text-[13px] font-semibold lg:text-[13px]'
         >
           {isRequired
             ? t('quality.standards.dialog.detail.yes')
@@ -202,7 +218,7 @@ function LevelRow({
       </TableCell>
       <TableCell
         rowSpan={rowSpan}
-        className='max-w-sm border border-t-0 border-l-0 border-white/10 p-3 text-[9px] leading-relaxed font-medium whitespace-pre-line text-muted-foreground opacity-70 lg:text-[10px]'
+        className='max-w-sm border border-t-0 border-l-0 border-white/10 p-3 text-[13px] leading-relaxed font-medium whitespace-pre-line text-muted-foreground opacity-70 lg:text-[13px]'
       >
         {remarks?.replace(/；/g, '\n') ||
           t('quality.standards.dialog.detail.noRemarks')}
@@ -211,35 +227,46 @@ function LevelRow({
   )
 }
 
-function LevelCells({ level }: { level: LevelConfig }) {
+function LevelCells({
+  level,
+  centerValue,
+}: {
+  level: LevelConfig
+  centerValue: number
+}) {
+  const { t } = useLanguage()
   return (
     <>
-      <TableCell
-        className={cn(
-          'border border-t-0 border-l-0 border-white/10 px-2 text-center text-[10px] font-black whitespace-nowrap lg:text-[11px]',
-          level.level === 'S' && 'border-primary/30 bg-primary/20 text-primary'
-        )}
-      >
+      <TableCell className='border border-t-0 border-l-0 border-white/10 px-2 text-center text-[13px] font-semibold whitespace-nowrap lg:text-[13px]'>
         {level.level}
-      </TableCell>
-      <TableCell
-        className={cn(
-          'border border-t-0 border-l-0 border-white/10 text-center text-[10px] font-bold whitespace-nowrap lg:text-[11px]',
-          level.level === 'S' && 'bg-primary/5'
+        {level.result && (
+          <span className='ml-1 text-muted-foreground'>
+            (
+            {t(
+              level.result === 'PASS'
+                ? 'quality.grading.pass'
+                : 'quality.grading.fail'
+            )}
+            )
+          </span>
         )}
-      >
-        {level.deviationMinExclusive !== undefined &&
-        level.tolerance !== undefined
-          ? `${level.deviationMinExclusive} < |Δ| ≤ ${level.tolerance}`
-          : level.level === 'S' && level.tolerance === 0
-            ? '|Δ| = 0'
-            : level.tolerance?.toFixed(3)}
       </TableCell>
-      <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[10px] font-black whitespace-nowrap lg:text-[11px]'>
-        {level.min?.toFixed(3)}
+      <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[13px] font-bold whitespace-nowrap lg:text-[13px]'>
+        {`−${level.lowerTolerance} / +${level.upperTolerance}`}
       </TableCell>
-      <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[10px] font-black whitespace-nowrap lg:text-[11px]'>
-        {level.max?.toFixed(3)}
+      <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[13px] font-semibold whitespace-nowrap lg:text-[13px]'>
+        {formatQualityInspectionGradeWeightBoundaryWithoutRounding(
+          centerValue,
+          level.lowerTolerance,
+          'lower'
+        )}
+      </TableCell>
+      <TableCell className='border border-t-0 border-l-0 border-white/10 text-center text-[13px] font-semibold whitespace-nowrap lg:text-[13px]'>
+        {formatQualityInspectionGradeWeightBoundaryWithoutRounding(
+          centerValue,
+          level.upperTolerance,
+          'upper'
+        )}
       </TableCell>
     </>
   )

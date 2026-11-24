@@ -42,7 +42,7 @@ export function ProductionMaterialIssuanceWarehouseDocumentProgressMovementHisto
       <Button
         type='button'
         variant='outline'
-        className='h-auto min-h-10 max-w-full rounded-full border-dashed px-4 py-2 text-[10px] leading-5 font-black tracking-widest whitespace-normal uppercase md:min-h-11 md:px-5'
+        className='h-auto min-h-10 max-w-full rounded-full border-dashed px-4 py-2 whitespace-normal md:min-h-11 md:px-5'
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
@@ -107,7 +107,7 @@ function AuthorizedProductionMaterialIssuanceWarehouseDocumentHandling({
           type='button'
           variant='outline'
           size='sm'
-          className='h-10 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+          className='h-10 rounded-full border-dashed px-4'
           disabled={query.isFetching || pending}
           onClick={() => void query.refetch()}
         >
@@ -177,7 +177,7 @@ function AuthorizedProductionMaterialIssuanceWarehouseDocumentHandling({
           ) : (
             <Button
               type='button'
-              className='h-auto min-h-10 max-w-full rounded-full px-5 py-2 text-[10px] font-black tracking-widest whitespace-normal uppercase shadow-lg shadow-primary/15 active:scale-95'
+              className='h-auto min-h-10 max-w-full rounded-full px-5 py-2 whitespace-normal shadow-lg shadow-primary/15 active:scale-95'
               disabled={pending || !currentActionAllowed}
               onClick={() => command.submitWarehouseConfirmation()}
             >
@@ -200,7 +200,7 @@ function AuthorizedProductionMaterialIssuanceWarehouseDocumentHandling({
             <Button
               type='button'
               variant='outline'
-              className='h-auto min-h-10 max-w-full rounded-full border-dashed px-4 py-2 text-[10px] font-black tracking-widest whitespace-normal uppercase'
+              className='h-auto min-h-10 max-w-full rounded-full border-dashed px-4 py-2 whitespace-normal'
               onClick={command.startAnotherExplicitWarehouseConfirmation}
             >
               {t(

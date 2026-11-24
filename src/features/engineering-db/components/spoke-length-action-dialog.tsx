@@ -244,7 +244,7 @@ export function SpokeLengthActionDialog({
             </Label>
             <Input
               placeholder='例如：DT-SWISS-29er-Rear'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-blue-500/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner focus-visible:ring-blue-500/20'
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
@@ -270,7 +270,7 @@ export function SpokeLengthActionDialog({
             </Label>
             <Input
               placeholder='例如：298'
-              className='h-12 rounded-2xl border-none bg-background px-5 font-maple-ui text-sm font-black shadow-sm'
+              className='h-12 rounded-2xl border-none bg-background px-5 font-maple-ui shadow-sm'
               value={formData.length}
               onChange={(e) => updateField('length', e.target.value)}
             />
@@ -281,7 +281,7 @@ export function SpokeLengthActionDialog({
             </Label>
             <Input
               placeholder='例如：SUS304 / Steel'
-              className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold shadow-sm'
+              className='h-12 rounded-2xl border-none bg-background px-5 shadow-sm'
               value={formData.material}
               onChange={(e) => updateField('material', e.target.value)}
             />

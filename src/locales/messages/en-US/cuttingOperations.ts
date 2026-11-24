@@ -36,12 +36,6 @@ export const cuttingOperations = {
         step1: 'Step 01',
         step2: 'Step 02',
       },
-      execution: {
-        label: 'Cutting Issuance Execution',
-        placeholder: 'Select a cutting issuance execution',
-        hint: 'Under the formal scheme, every binding record must be attached to a cutting issuance execution.',
-        loadingHint: 'Loading cutting issuance execution options...',
-      },
       barcode: {
         label: 'Code-Center Linear Barcode',
         placeholder: 'Scan or enter the code-center linear barcode',
@@ -114,11 +108,6 @@ export const cuttingOperations = {
         title: 'Waiting for Binding Input',
         description:
           'Provide the product barcode and an activated prepreg roll-instance QR code before submitting the formal binding.',
-      },
-      missingExecution: {
-        title: 'Execution Missing',
-        description:
-          'The formal scheme requires each binding to be attached to a cutting issuance execution. Select one first.',
       },
       missingBarcode: {
         title: 'Barcode Missing',

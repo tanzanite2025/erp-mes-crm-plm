@@ -106,7 +106,7 @@ export function WorkspaceItemEditor({
                   value={content}
                   onChange={(event) => setContent(event.target.value)}
                   placeholder='把文本、备注或临时说明贴在这里'
-                  className='min-h-56 rounded-2xl bg-amber-50/50 p-4 text-sm leading-6'
+                  className='min-h-56 rounded-2xl bg-amber-50/50 p-4'
                 />
               </div>
             ) : (
@@ -129,7 +129,7 @@ export function WorkspaceItemEditor({
                     value={remark}
                     onChange={(event) => setRemark(event.target.value)}
                     placeholder='写一下这是哪个后台、什么时候用、要注意什么'
-                    className='min-h-36 rounded-2xl p-4 text-sm leading-6'
+                    className='min-h-36 rounded-2xl p-4'
                   />
                 </div>
               </>

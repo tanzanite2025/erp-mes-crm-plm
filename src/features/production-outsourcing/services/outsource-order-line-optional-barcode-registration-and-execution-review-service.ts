@@ -23,6 +23,8 @@ const outsourceExecutionBarcodeReviewSchema = z.object({
   productBarcode: z.string(),
   productName: z.string(),
   action: z.enum(['SEND', 'RETURN', 'INSPECT']),
+  cycleNo: z.number().int().nonnegative(),
+  inspectionRoundNo: z.number().int().nonnegative(),
   routeStepId: z.string(),
   processName: z.string(),
   status: z.string(),

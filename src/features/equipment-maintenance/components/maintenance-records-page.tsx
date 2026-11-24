@@ -208,7 +208,7 @@ export function MaintenanceRecordsPage({
               <Button
                 variant='ghost'
                 size='sm'
-                className='h-5 px-2 text-[9px] font-black tracking-wider uppercase'
+                className='control-typography-compact h-5 px-2'
                 onClick={handleClearFilters}
               >
                 清除筛选
@@ -222,7 +222,7 @@ export function MaintenanceRecordsPage({
               <Search className='absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground/40' />
               <Input
                 placeholder='检索标题或设备序列号...'
-                className='h-8 rounded-lg border-none bg-background/60 pl-8 text-[11px] font-bold'
+                className='h-8 rounded-lg border-none bg-background/60 pl-8'
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -239,7 +239,7 @@ export function MaintenanceRecordsPage({
                 setCurrentPage(1)
               }}
             >
-              <SelectTrigger className='h-8 rounded-lg border-none bg-background/60 py-1 text-[11px] font-bold'>
+              <SelectTrigger className='h-8 rounded-lg border-none bg-background/60 py-1'>
                 <SelectValue placeholder='状态' />
               </SelectTrigger>
               <SelectContent>
@@ -258,7 +258,7 @@ export function MaintenanceRecordsPage({
                 setCurrentPage(1)
               }}
             >
-              <SelectTrigger className='h-8 rounded-lg border-none bg-background/60 py-1 text-[11px] font-bold'>
+              <SelectTrigger className='h-8 rounded-lg border-none bg-background/60 py-1'>
                 <SelectValue placeholder='优先级' />
               </SelectTrigger>
               <SelectContent>
@@ -277,7 +277,7 @@ export function MaintenanceRecordsPage({
                 setCurrentPage(1)
               }}
             >
-              <SelectTrigger className='h-8 rounded-lg border-none bg-background/60 py-1 text-[11px] font-bold'>
+              <SelectTrigger className='h-8 rounded-lg border-none bg-background/60 py-1'>
                 <SelectValue placeholder='类型' />
               </SelectTrigger>
               <SelectContent>

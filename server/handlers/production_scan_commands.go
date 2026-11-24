@@ -27,7 +27,7 @@ func ExecuteProductionScanCommandHandler(c *gin.Context) {
 	response, err := services.ExecuteProductionScanCommandWithContext(auditContextFromGin(c), req)
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrProductionExecutionRequestKeyConflict), errors.Is(err, services.ErrProductionExecutionRoundConflict):
+		case errors.Is(err, services.ErrProductionExecutionRequestKeyConflict), errors.Is(err, services.ErrProductionExecutionRoundConflict), errors.Is(err, services.ErrProductBarcodeExecutionLifecycleConflict), errors.Is(err, services.ErrProductionScanRoutePositionConflict):
 			c.JSON(http.StatusConflict, gin.H{"error": "[CONFLICT] " + err.Error(), "code": "PRODUCTION_EXECUTION_CONFLICT"})
 		case errors.Is(err, services.ErrInvalidProductionScanCommand):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})

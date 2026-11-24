@@ -139,7 +139,7 @@ export function FurnaceArchivePage() {
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             placeholder={t('toolingFurnaces.archive.searchPlaceholder')}
-            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-sm font-bold shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -147,7 +147,7 @@ export function FurnaceArchivePage() {
 
         <Button
           onClick={handleAddFurnace}
-          className='h-12 w-full shrink-0 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:w-auto'
+          className='h-12 w-full shrink-0 rounded-full px-8 shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:w-auto'
         >
           <Plus className='mr-2 size-4' />
           {t('toolingFurnaces.actions.add')}
@@ -241,7 +241,7 @@ export function FurnaceArchivePage() {
                   <Button
                     asChild
                     variant='outline'
-                    className='h-10 w-full rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+                    className='h-10 w-full rounded-full border-dashed'
                   >
                     <Link
                       to='/tooling-furnaces/maintenance'

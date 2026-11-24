@@ -92,7 +92,7 @@ export function VehicleContactsListPanel({
               <Button
                 type='button'
                 size='sm'
-                className='h-9 rounded-lg px-4 text-[10px] font-black tracking-widest uppercase shadow-none'
+                className='h-9 rounded-lg px-4 shadow-none'
                 onClick={onCreate}
                 disabled={
                   vehicleSpecsLoading ||
@@ -108,7 +108,7 @@ export function VehicleContactsListPanel({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-9 rounded-lg border-dashed px-4 text-[10px] font-black tracking-widest uppercase shadow-none'
+                className='h-9 rounded-lg border-dashed px-4 shadow-none'
                 onClick={onGoToVehicleCatalog}
               >
                 <MapPinned className='mr-2 size-4' />
@@ -205,7 +205,7 @@ export function VehicleContactsListPanel({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-9 rounded-lg border-dashed px-3 text-[10px] font-black tracking-widest uppercase shadow-none'
+                className='h-9 rounded-lg border-dashed px-3 shadow-none'
                 onClick={() => onEdit(item)}
               >
                 编辑
@@ -214,7 +214,7 @@ export function VehicleContactsListPanel({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-9 rounded-lg border-dashed px-3 text-[10px] font-black tracking-widest uppercase shadow-none'
+                className='h-9 rounded-lg border-dashed px-3 shadow-none'
                 onClick={() => onToggleEnabled(item)}
               >
                 {item.enabled ? '停用' : '启用'}
@@ -223,7 +223,7 @@ export function VehicleContactsListPanel({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-9 rounded-lg border-dashed px-3 text-[10px] font-black tracking-widest text-destructive uppercase shadow-none'
+                className='h-9 rounded-lg border-dashed px-3 text-destructive shadow-none'
                 onClick={() => onRequestDelete(item)}
               >
                 删除

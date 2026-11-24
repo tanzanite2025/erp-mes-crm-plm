@@ -200,7 +200,7 @@ export function RuleStatusRow({
             disabled={!enabled}
             value=''
             onChange={(event) => onAddNotifyUser(event.target.value)}
-            className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50'
+            className='h-10 rounded-2xl border border-input bg-background px-3 disabled:cursor-not-allowed disabled:opacity-50'
           >
             <option value=''>添加通知账号</option>
             {users
@@ -223,7 +223,7 @@ export function RuleStatusRow({
               disabled={!enabled}
               value={approval.enabled ? approval.approver1Id : ''}
               onChange={(event) => onApprovalUserChange(event.target.value)}
-              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50'
+              className='h-10 rounded-2xl border border-input bg-background px-3 disabled:cursor-not-allowed disabled:opacity-50'
             >
               <option value=''>不创建审批</option>
               {users.map((user) => (
@@ -268,7 +268,7 @@ export function RuleStatusRow({
             <select
               value={segment?.dynamicTargetField ?? ''}
               onChange={(event) => onDynamicNotifyChange(event.target.value)}
-              className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold tracking-normal text-foreground normal-case'
+              className='h-10 rounded-2xl border border-input bg-background px-3 text-foreground'
             >
               <option value=''>不使用动态对象</option>
               {resolverOptions.map((resolver) => (
@@ -287,7 +287,7 @@ export function RuleStatusRow({
                 onChange={(event) =>
                   onApprovalDynamicChange(event.target.value)
                 }
-                className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold tracking-normal text-foreground normal-case'
+                className='h-10 rounded-2xl border border-input bg-background px-3 text-foreground'
               >
                 <option value=''>不使用动态审批人</option>
                 {resolverOptions.map((resolver) => (

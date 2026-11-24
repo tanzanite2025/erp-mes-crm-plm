@@ -18,11 +18,11 @@ func removePayrollTablesFromProductionExecutionTestDatabase(t *testing.T, databa
 
 func TestProductionExecutionAndRequestReplayWorkWithoutPayrollTablesOrEmployeeBinding(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationProcess(t, database, "production-only-process")
+	seedProductionOperationBranch(t, database, "production-only-process")
 	removePayrollTablesFromProductionExecutionTestDatabase(t, database)
-	for index, action := range []string{ProductionOperationActionStart, ProductionOperationActionComplete, ProductionOperationActionHold, ProductionOperationActionRework, ProductionOperationActionComplete} {
+	for index, action := range []string{ProductionOperationActionStart, ProductionOperationActionHold, ProductionOperationActionComplete, ProductionOperationActionRework, ProductionOperationActionComplete} {
 		request := RecordProductionOperationExecutionRequest{
-			ProductBarcode: "PRODUCTION-WITHOUT-PAYROLL", ProcessStepID: "production-only-process", Action: action,
+			ProductBarcode: "PRODUCTION-WITHOUT-PAYROLL", BranchOperationID: "production-only-process", Action: action,
 			IdempotencyKey: action + "-" + strconv.Itoa(index),
 		}
 		original, err := service.RecordProductionOperationExecution(request)
@@ -58,14 +58,15 @@ func TestProductionScanRouteProgressAndReplayWorkWithoutPayrollTables(t *testing
 
 func TestProductionCompletionAndReworkNeverChangeExistingPayrollSnapshots(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationProcess(t, database, "isolated-production-process")
+	seedProductionOperationBranch(t, database, "isolated-production-process")
 	require.NoError(t, database.Exec(`CREATE TABLE audit_logs(id TEXT PRIMARY KEY,module TEXT,target_id TEXT,action TEXT,diff TEXT,operator TEXT,ip TEXT,created_at DATETIME)`).Error)
 	_, err := NewPieceworkRateService(productionOperationExecutionTestTxManager{db: database}).CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
 	require.NoError(t, err)
 	require.NoError(t, database.Exec("INSERT INTO piecework_records(id,work_date,total_amount) VALUES('historical-finance-row','2026-10-15',6)").Error)
-	for _, action := range []string{ProductionOperationActionComplete, ProductionOperationActionRework, ProductionOperationActionComplete} {
+	for index, action := range []string{ProductionOperationActionComplete, ProductionOperationActionRework, ProductionOperationActionComplete} {
 		_, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-			ProductBarcode: "PRODUCTION-PRESERVES-PAYROLL", ProcessStepID: "isolated-production-process", Action: action,
+			IdempotencyKey: "payroll-independent-command-" + strconv.Itoa(index),
+			ProductBarcode: "PRODUCTION-PRESERVES-PAYROLL", BranchOperationID: "isolated-production-process", Action: action,
 		})
 		require.NoError(t, err)
 	}

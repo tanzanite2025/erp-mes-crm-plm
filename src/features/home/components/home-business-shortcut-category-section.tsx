@@ -45,7 +45,7 @@ export function HomeBusinessShortcutCategorySection({
             <Button
               variant='ghost'
               size='sm'
-              className='h-7 shrink-0 gap-1 text-xs text-muted-foreground'
+              className='control-typography-compact h-7 shrink-0 gap-1 text-muted-foreground'
               aria-expanded={isExpanded}
               aria-controls={shortcutsListId}
               onClick={() => setIsExpanded((expanded) => !expanded)}

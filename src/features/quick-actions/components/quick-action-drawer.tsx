@@ -236,9 +236,7 @@ export function QuickActionDrawer({
                         />
                       </div>
                       <div className='min-w-0'>
-                        <p className='truncate text-[12px] font-black tracking-widest text-foreground uppercase'>
-                          {title}
-                        </p>
+                        <p className='truncate text-foreground'>{title}</p>
                       </div>
                     </div>
                     <ArrowRight className='size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary' />
@@ -249,7 +247,7 @@ export function QuickActionDrawer({
                         type='button'
                         variant='outline'
                         size='sm'
-                        className='rounded-full px-3 text-[10px] font-black tracking-widest'
+                        className='rounded-full px-3'
                         onClick={async (event) => {
                           event.stopPropagation()
 
@@ -284,7 +282,7 @@ export function QuickActionDrawer({
         <div className='mt-auto border-t border-dashed border-border/70 p-4'>
           <Button
             variant='outline'
-            className='h-10 w-full rounded-2xl text-[11px] font-black tracking-widest uppercase'
+            className='h-10 w-full rounded-2xl'
             onClick={() => onOpenChange(false)}
           >
             {t('quickActions.drawer.close')}

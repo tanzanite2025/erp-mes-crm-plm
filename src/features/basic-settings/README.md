@@ -1,6 +1,6 @@
 # 基础设置职责边界
 
-一维码协议 TAB 的跨模块规则以[一维码生命周期契约](../../../docs/architecture/linear-barcode-lifecycle-contract.md)为准。
+产品编码协议规则 TAB 的跨模块规则以[产品编码生命周期契约](../../../docs/architecture/linear-barcode-lifecycle-contract.md)为准。
 
 该 TAB 只负责维护和模拟 15 位协议配置，包括字段定义、显示规则和服务端发号规则键。
 

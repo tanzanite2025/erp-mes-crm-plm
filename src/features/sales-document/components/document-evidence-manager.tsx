@@ -376,7 +376,7 @@ export function DocumentEvidenceManager({
                     }
                     placeholder={resolvedNotePlaceholder}
                     className={cn(
-                      'rounded-xl bg-background text-xs shadow-none',
+                      'rounded-xl bg-background shadow-none',
                       compact ? 'h-7.5' : 'h-9'
                     )}
                     disabled={disabled}

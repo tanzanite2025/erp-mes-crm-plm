@@ -126,7 +126,7 @@ export function ProductBarcodeMobileCapturePage({
           type='button'
           onClick={() => void submitCapturedCode(rawCode)}
           disabled={submitting}
-          className='h-14 w-full rounded-full text-sm font-black tracking-widest'
+          className='h-14 w-full rounded-full'
         >
           {submitting ? (
             <Loader2 className='size-4 animate-spin' />

@@ -151,7 +151,7 @@ export function LogisticsProviderCard({
           <Button
             variant='outline'
             size='sm'
-            className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full px-4'
             onClick={onEdit}
           >
             <PencilLine className='size-3.5' />
@@ -345,7 +345,7 @@ export function LogisticsProviderCard({
         <div className='flex flex-wrap gap-2 pt-0.5'>
           <Button
             variant='outline'
-            className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full px-4'
             onClick={onVerify}
             disabled={!provider.id || verifyPending}
           >
@@ -356,11 +356,7 @@ export function LogisticsProviderCard({
             )}
             {t('logisticsConfig.platforms.actions.verify')}
           </Button>
-          <Button
-            asChild
-            variant='outline'
-            className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
-          >
+          <Button asChild variant='outline' className='h-9 rounded-full px-4'>
             <Link to='/logistics-settings/platforms'>
               <MoveUpRight className='size-3.5' />
               {t('logisticsConfig.platforms.actions.viewDirectory')}
@@ -369,7 +365,7 @@ export function LogisticsProviderCard({
           <Button
             variant='ghost'
             disabled={deletePending || (provider.referenceCount || 0) > 0}
-            className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest text-rose-500 uppercase hover:bg-rose-50 hover:text-rose-600'
+            className='h-9 rounded-full px-4 text-rose-500 hover:bg-rose-50 hover:text-rose-600'
             onClick={onDelete}
           >
             <X className='size-3.5' />

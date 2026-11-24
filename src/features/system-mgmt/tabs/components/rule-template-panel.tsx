@@ -105,7 +105,7 @@ export function RuleTemplatePanel({
             type='button'
             variant='outline'
             size='sm'
-            className='h-9 rounded-xl text-[11px] font-black'
+            className='h-9 rounded-xl'
             onClick={onCreateTemplate}
           >
             <Plus className='mr-1 size-3.5' />
@@ -115,7 +115,7 @@ export function RuleTemplatePanel({
             type='button'
             variant='outline'
             size='sm'
-            className='h-9 rounded-xl text-[11px] font-black'
+            className='h-9 rounded-xl'
             disabled={!selectedCommand}
             onClick={() => onDuplicateTemplate(selectedCommand)}
           >
@@ -128,7 +128,7 @@ export function RuleTemplatePanel({
         <select
           value={selectedCommandId}
           onChange={(event) => onCommandChange(event.target.value)}
-          className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold'
+          className='h-10 rounded-2xl border border-input bg-background px-3'
         >
           <option value=''>选择内容模板</option>
           {categorizedCommands.recommended.length > 0 ? (

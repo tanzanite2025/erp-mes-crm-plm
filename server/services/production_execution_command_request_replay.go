@@ -30,11 +30,6 @@ func executeProductionCommandWithRequestReplayTx[T any](
 	tx *gorm.DB, commandType string, key string, request any, execute func() (T, error),
 ) (T, error) {
 	var result T
-	// Internal legacy callers are protected by completion-round uniqueness.
-	// HTTP callers must provide a key so implicit route resolution can be replayed.
-	if key == "" {
-		return execute()
-	}
 	if err := ValidateProductionExecutionCommandIdempotencyKey(key); err != nil {
 		return result, err
 	}
@@ -86,33 +81,26 @@ func lockProductionBarcodeExecutionTransaction(tx *gorm.DB, barcode string) erro
 	return tx.Exec("SELECT pg_advisory_xact_lock(?)", int64(binary.BigEndian.Uint64(lockHash[:8]))).Error
 }
 
-func resolveProductionBarcodeExecutionRoundTx(tx *gorm.DB, request RecordProductionOperationExecutionRequest) (int64, *time.Time, error) {
+func resolveProductionBarcodeExecutionRoundTx(tx *gorm.DB, request RecordProductionOperationExecutionRequest) (int64, error) {
 	var reworkCount int64
 	query := tx.Unscoped().Model(&models.ProductionOperationExecution{}).
 		Where("product_barcode = ? AND action = ?", request.ProductBarcode, ProductionOperationActionRework)
 	if err := query.Count(&reworkCount).Error; err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 	round := reworkCount + 1
 	if request.ExecutionRound > 0 && request.ExecutionRound != round {
-		return 0, nil, fmt.Errorf("%w: expected execution round %d, current round is %d", ErrProductionExecutionRoundConflict, request.ExecutionRound, round)
+		return 0, fmt.Errorf("%w: expected execution round %d, current round is %d", ErrProductionExecutionRoundConflict, request.ExecutionRound, round)
 	}
 	if request.Action == ProductionOperationActionRework {
-		return round + 1, nil, nil
+		return round + 1, nil
 	}
-	if reworkCount == 0 {
-		return round, nil, nil
-	}
-	var lastRework models.ProductionOperationExecution
-	if err := query.Order("created_at DESC, id DESC").First(&lastRework).Error; err != nil {
-		return 0, nil, err
-	}
-	return round, &lastRework.CreatedAt, nil
+	return round, nil
 }
 
 func productionOperationWorkIdentityKey(request RecordProductionOperationExecutionRequest) string {
 	identity, _ := json.Marshal([]string{request.ProductBarcode,
-		normalizeProductionExecutionUUIDIdentity(request.RouteStepID), normalizeProductionExecutionUUIDIdentity(request.ProcessStepID)})
+		normalizeProductionExecutionUUIDIdentity(request.RouteStepID), normalizeProductionExecutionUUIDIdentity(request.BranchOperationID)})
 	hash := sha256.Sum256(identity)
 	return hex.EncodeToString(hash[:])
 }
@@ -122,18 +110,11 @@ func normalizeProductionExecutionUUIDIdentity(value string) string {
 }
 
 func findCompletedProductionWorkInExecutionRoundTx(
-	tx *gorm.DB, request RecordProductionOperationExecutionRequest, round int64, lastReworkAt *time.Time,
+	tx *gorm.DB, request RecordProductionOperationExecutionRequest, round int64,
 ) (productionOperationExecutionRecordResult, bool, error) {
 	var operation models.ProductionOperationExecution
-	legacyQuery := tx.Unscoped().Model(&models.ProductionOperationExecution{}).
-		Where("work_identity_key = '' AND product_barcode = ? AND process_step_id = ?", request.ProductBarcode, request.ProcessStepID).
-		Where("COALESCE(CAST(route_step_id AS TEXT), '') = ?", request.RouteStepID)
-	if lastReworkAt != nil {
-		legacyQuery = legacyQuery.Where("created_at > ?", *lastReworkAt)
-	}
-	query := tx.Unscoped().Where("action = ?", ProductionOperationActionComplete).
-		Where(tx.Where("work_identity_key = ? AND execution_round = ?", productionOperationWorkIdentityKey(request), round).
-			Or("id IN (?)", legacyQuery.Select("id")))
+	query := tx.Unscoped().Where("action = ? AND work_identity_key = ? AND execution_round = ?",
+		ProductionOperationActionComplete, productionOperationWorkIdentityKey(request), round)
 	err := query.Order("created_at DESC, id DESC").First(&operation).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return productionOperationExecutionRecordResult{}, false, nil

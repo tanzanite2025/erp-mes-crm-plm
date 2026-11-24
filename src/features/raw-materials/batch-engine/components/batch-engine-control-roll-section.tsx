@@ -73,7 +73,7 @@ export function BatchEngineControlRollSection(
               )
             }
           >
-            <SelectTrigger className='h-9 rounded-lg bg-background text-xs font-semibold'>
+            <SelectTrigger className='h-9 rounded-lg bg-background'>
               <SelectValue
                 placeholder={
                   prepregLoading
@@ -125,7 +125,7 @@ export function BatchEngineControlRollSection(
               <Input
                 value={controls.rollWidthMm}
                 readOnly
-                className='h-8 rounded-lg bg-background text-xs font-semibold'
+                className='h-8 rounded-lg bg-background'
                 placeholder='--'
               />
             </BatchEngineControlField>
@@ -137,7 +137,7 @@ export function BatchEngineControlRollSection(
               <Input
                 value={controls.rollLengthM}
                 readOnly
-                className='h-8 rounded-lg bg-background text-xs font-semibold'
+                className='h-8 rounded-lg bg-background'
                 placeholder='--'
               />
             </BatchEngineControlField>

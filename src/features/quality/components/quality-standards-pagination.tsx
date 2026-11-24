@@ -48,16 +48,12 @@ export function QualityStandardsPagination({
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className='h-8 w-[76px] rounded-xl border-border/70 bg-background text-[11px] font-bold shadow-none'>
+            <SelectTrigger className='h-8 w-[76px] rounded-full border-border/70 bg-background shadow-none'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent className='rounded-xl bg-background'>
               {PAGE_SIZE_OPTIONS.map((option) => (
-                <SelectItem
-                  key={option}
-                  value={String(option)}
-                  className='text-[11px] font-semibold'
-                >
+                <SelectItem key={option} value={String(option)}>
                   {option}
                 </SelectItem>
               ))}
@@ -68,6 +64,7 @@ export function QualityStandardsPagination({
 
       <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end'>
         <CompactPaginationControls
+          className='[&_[data-slot=button]]:rounded-full'
           page={page}
           totalPages={totalPages}
           showPageNumbers

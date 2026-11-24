@@ -91,7 +91,7 @@ export function SecurityAuthDialog({
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={handleKeyDown}
-            className='h-12 rounded-2xl border-none bg-slate-100 text-center font-maple-ui text-lg tracking-[0.5em] transition-all focus:ring-2 focus:ring-orange-500 dark:bg-white/6 dark:text-slate-100'
+            className='h-12 rounded-2xl border-none bg-slate-100 text-center font-maple-ui transition-all focus:ring-2 focus:ring-orange-500 dark:bg-white/6 dark:text-slate-100'
             autoFocus
           />
         </div>
@@ -101,14 +101,14 @@ export function SecurityAuthDialog({
             variant='ghost'
             onClick={() => handleOpenChange(false)}
             disabled={isSubmitting}
-            className='h-11 flex-1 rounded-full bg-slate-100 text-[10px] font-bold tracking-widest uppercase transition-all hover:bg-slate-200 dark:bg-white/6 dark:hover:bg-white/10'
+            className='h-11 flex-1 rounded-full bg-slate-100 transition-all hover:bg-slate-200 dark:bg-white/6 dark:hover:bg-white/10'
           >
             {t('orgPersonnel.lineMgmt.dialog.cancel')}
           </Button>
           <Button
             onClick={() => void handleVerify()}
             disabled={password.trim().length === 0 || isSubmitting}
-            className='h-11 flex-1 gap-2 rounded-full bg-slate-900 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg transition-all hover:bg-black'
+            className='h-11 flex-1 gap-2 rounded-full bg-slate-900 text-white shadow-lg transition-all hover:bg-black'
           >
             <ShieldCheck className='size-4' />
             {t('orgPersonnel.lineMgmt.topology.authVerify')}

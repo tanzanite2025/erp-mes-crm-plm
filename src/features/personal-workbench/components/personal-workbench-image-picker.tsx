@@ -725,7 +725,7 @@ export function PersonalWorkbenchImagePicker({
                 ) : (
                   <Camera className='size-6 text-muted-foreground/50' />
                 )}
-                <span className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                <span className='text-muted-foreground/60'>
                   {isUploading
                     ? '处理中'
                     : compactMode

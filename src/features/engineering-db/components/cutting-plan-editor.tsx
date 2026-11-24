@@ -502,7 +502,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                 <Button
                   type='button'
                   variant='outline'
-                  className='h-10 w-full justify-start rounded-2xl px-3 text-left text-sm font-semibold'
+                  className='h-10 w-full justify-start rounded-2xl px-3 text-left'
                 >
                   {selectedEffectiveDate ? (
                     formatEngineeringDateProtocol(selectedEffectiveDate)
@@ -595,7 +595,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             type='button'
             variant='outline'
             onClick={addLine}
-            className='h-8 rounded-full text-xs font-black'
+            className='h-8 rounded-full'
           >
             <Plus className='size-3.5' />
             {t('engineering.cuttingPlan.actions.addLine')}
@@ -737,7 +737,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                           updateLineCutSize(index, nextValue)
                         }
                       >
-                        <SelectTrigger className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'>
+                        <SelectTrigger className='h-8 rounded-lg border-muted/60 bg-background'>
                           <SelectValue
                             placeholder={
                               cutSizeQuery.isLoading
@@ -948,7 +948,7 @@ function LineInput({
       value={value || ''}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'
+      className='h-8 rounded-lg border-muted/60 bg-background'
     />
   )
 }
@@ -965,7 +965,7 @@ function ReadonlyLineValue({
       value={value || ''}
       readOnly
       placeholder={placeholder}
-      className='h-8 rounded-lg border-muted/60 bg-muted/20 text-xs font-semibold text-foreground'
+      className='h-8 rounded-lg border-muted/60 bg-muted/20 text-foreground'
     />
   )
 }

@@ -138,22 +138,22 @@ export function ItemTable({
                       </div>
 
                       <div className='max-w-36 min-w-0'>
-                        <div className='truncate text-sm font-bold text-foreground'>
+                        <div className='truncate text-foreground'>
                           {node.label}
                         </div>
                       </div>
                       {!node.isSectionActive && (
-                        <span className='shrink-0 text-[10px] text-muted-foreground'>
+                        <span className='shrink-0 text-muted-foreground'>
                           {t('engineering.bomSectionConfig.inactiveLabel')}
                         </span>
                       )}
 
                       <div className='flex items-center gap-1.5'>
-                        <div className='flex h-5 items-center rounded-full border border-dashed border-blue-300 bg-blue-500/10 px-2 font-maple-ui text-[8px] tracking-widest text-blue-700 uppercase'>
+                        <div className='flex h-5 items-center rounded-full border border-dashed border-blue-300 bg-blue-500/10 px-2 font-maple-ui text-blue-700'>
                           {node.childCount}{' '}
                           {t('engineering.bomArchive.summary.itemsUnit')}
                         </div>
-                        <div className='flex h-5 items-center rounded-full border border-dashed border-emerald-300 bg-emerald-500/10 px-2 font-maple-ui text-[8px] tracking-widest text-emerald-700 uppercase'>
+                        <div className='flex h-5 items-center rounded-full border border-dashed border-emerald-300 bg-emerald-500/10 px-2 font-maple-ui text-emerald-700'>
                           {node.sectionCost.toFixed(2)}
                         </div>
                       </div>
@@ -180,7 +180,7 @@ export function ItemTable({
                       )}
                       disabled={!canEdit}
                       onClick={() => onAdd(node.sectionCode)}
-                      className='flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-xs font-semibold text-blue-600 disabled:cursor-not-allowed disabled:text-muted-foreground dark:text-blue-400'
+                      className='flex min-h-11 w-full items-center gap-2.5 px-4 text-left text-blue-600 disabled:cursor-not-allowed disabled:text-muted-foreground dark:text-blue-400'
                       style={{ paddingLeft: 28 + node.depth * 20 }}
                     >
                       <Plus className='size-4 shrink-0' />

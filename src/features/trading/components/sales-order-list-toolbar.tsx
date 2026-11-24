@@ -82,14 +82,14 @@ export function SalesOrderListToolbar({
             placeholder={t('tradingSalesOrder.linesEditor.selectDesktop')}
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
-            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-[13px] font-medium shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
           />
         </div>
 
         <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>
           <div className='grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2'>
             <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-              <SelectTrigger className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 text-[9px] font-black tracking-tighter shadow-sm sm:h-11 sm:w-[180px] sm:px-3 sm:text-[11px] sm:font-bold sm:tracking-normal'>
+              <SelectTrigger className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 shadow-sm sm:h-11 sm:w-[180px] sm:px-3'>
                 <SelectValue
                   placeholder={t('tradingSalesOrder.master.filters.status')}
                 />
@@ -113,7 +113,7 @@ export function SalesOrderListToolbar({
               onValueChange={onPaymentMethodFilterChange}
             >
               <SelectTrigger
-                className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 text-[9px] font-black tracking-tighter shadow-sm sm:h-11 sm:w-[180px] sm:px-3 sm:text-[11px] sm:font-bold sm:tracking-normal'
+                className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 shadow-sm sm:h-11 sm:w-[180px] sm:px-3'
                 disabled={financeFilterStatus !== 'ready'}
               >
                 <SelectValue
@@ -139,7 +139,7 @@ export function SalesOrderListToolbar({
               onValueChange={onPaymentTermFilterChange}
             >
               <SelectTrigger
-                className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 text-[9px] font-black tracking-tighter shadow-sm sm:h-11 sm:w-[180px] sm:px-3 sm:text-[11px] sm:font-bold sm:tracking-normal'
+                className='h-9 w-full min-w-0 rounded-full border-dashed bg-background/80 px-1.5 shadow-sm sm:h-11 sm:w-[180px] sm:px-3'
                 disabled={financeFilterStatus !== 'ready'}
               >
                 <SelectValue
@@ -163,7 +163,7 @@ export function SalesOrderListToolbar({
 
           <Button
             onClick={onAddOrder}
-            className='h-11 w-full rounded-full bg-primary px-6 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/10 sm:w-auto'
+            className='h-11 w-full rounded-full bg-primary px-6 text-primary-foreground shadow-xl shadow-primary/10 sm:w-auto'
           >
             <Plus className='mr-2 size-4' />
             {t('tradingSalesOrder.list.addOrder')}
@@ -183,7 +183,7 @@ export function SalesOrderListToolbar({
               type='button'
               variant='outline'
               size='sm'
-              className='h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase'
+              className='h-8 rounded-full border-dashed px-3'
               onClick={onRetryFinanceFilters}
             >
               重试
@@ -201,7 +201,7 @@ export function SalesOrderListToolbar({
             type='button'
             variant='outline'
             size='sm'
-            className='h-8 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest'
+            className='h-8 rounded-full border-dashed px-4'
             onClick={onClearCustomerContext}
           >
             清除上下文

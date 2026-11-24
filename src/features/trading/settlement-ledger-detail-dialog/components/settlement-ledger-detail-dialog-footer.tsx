@@ -23,13 +23,13 @@ export function SettlementLedgerDetailDialogFooter({
     <>
       <Button
         variant='outline'
-        className='h-10 rounded-full border-dashed px-5 text-[10px] font-black tracking-[0.14em]'
+        className='h-10 rounded-full border-dashed px-5'
         onClick={() => vm.handleOpenChange(false)}
       >
         关闭
       </Button>
       <Button
-        className='h-10 rounded-full px-5 text-[10px] font-black tracking-[0.14em]'
+        className='h-10 rounded-full px-5'
         onClick={() => void vm.handleSubmit()}
         disabled={
           !vm.canSubmit || isSubmitPending || isDetailLoading || !isDetailReady

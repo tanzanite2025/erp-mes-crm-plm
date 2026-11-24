@@ -119,7 +119,7 @@ export function useQualityMutations() {
   const executeInspectionMutation = useMutation({
     mutationFn: (data: ExecuteInspectionPayload) =>
       QualityMaintenanceService.executeInspection(data),
-    ...buildMutationOptions<void, Error, ExecuteInspectionPayload>({
+    ...buildMutationOptions<QualityTask, Error, ExecuteInspectionPayload>({
       queryClient,
       invalidateQueryKeys: [
         ['quality_tasks'],
@@ -143,7 +143,7 @@ export function useQualityMutations() {
         params.data
       ),
     ...buildMutationOptions<
-      unknown,
+      QualityAbnormality,
       Error,
       {
         id: string
@@ -151,7 +151,7 @@ export function useQualityMutations() {
       }
     >({
       queryClient,
-      invalidateQueryKeys: [['quality_abnormalities']],
+      invalidateQueryKeys: [['quality_abnormalities'], ['business-analysis']],
       onError: handleServerError,
       onSuccess: () => {
         toast.success(t('quality.hooks.saveAbnormalityDisposalSuccess'))

@@ -131,7 +131,7 @@ export function SettlementRecordEvidencePanel({
             type='button'
             variant='outline'
             size='sm'
-            className='h-8 rounded-full border-dashed px-4 text-[9px] font-black tracking-widest uppercase'
+            className='h-8 rounded-full border-dashed px-4'
             onClick={() => {
               void evidencesQuery.retryRead()
             }}

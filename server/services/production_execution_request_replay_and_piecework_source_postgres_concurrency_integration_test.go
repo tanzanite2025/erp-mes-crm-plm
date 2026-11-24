@@ -109,7 +109,6 @@ func newProductionExecutionReplayPostgresCommittedFixtureInDisposableSchema(t *t
 			}
 			if err := transaction.Create(&models.ProductionRouteStep{
 				BaseModel: models.BaseModel{ID: stepID}, RouteID: fixture.routeID, Sequence: sequence,
-				SegmentID: uuid.NewString(), ProcessStepID: processID,
 			}).Error; err != nil {
 				return err
 			}
@@ -177,7 +176,7 @@ func TestProductionExecutionPostgresConcurrentCompletionKeysCreateOneProductionF
 					processID = strings.ToUpper(processID)
 				}
 				result, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-					IdempotencyKey: key, ProductBarcode: fixture.barcode, ProcessStepID: processID, Action: ProductionOperationActionComplete,
+					IdempotencyKey: key, ProductBarcode: fixture.barcode, BranchOperationID: processID, Action: ProductionOperationActionComplete,
 				})
 				return result.ID, err
 			})

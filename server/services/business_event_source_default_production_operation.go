@@ -20,7 +20,7 @@ func defaultProductionOperationEventSourceConfig() json.RawMessage {
 			{Key: "productBarcode", Label: "产品一维码", Path: "productBarcode", Type: "string", TemplateKey: "ProductBarcode", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "routeId", Label: "路线ID", Path: "routeId", Type: "string", TemplateKey: "RouteId", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "routeStepId", Label: "路线步骤ID", Path: "routeStepId", Type: "string", TemplateKey: "RouteStepId", TemplateEnabled: true, DynamicResolver: false},
-			{Key: "processStepId", Label: "工序ID", Path: "processStepId", Type: "string", TemplateKey: "ProcessStepId", TemplateEnabled: true, DynamicResolver: false},
+			{Key: "branchOperationId", Label: "分支工序ID", Path: "branchOperationId", Type: "string", TemplateKey: "BranchOperationId", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "action", Label: "扫码动作", Path: "action", Type: "string", TemplateKey: "Action", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "result", Label: "执行结果", Path: "result", Type: "string", TemplateKey: "Result", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "operator", Label: "操作人", Path: "operator", Type: "user", TemplateKey: "Operator", TemplateEnabled: true, DynamicResolver: true},

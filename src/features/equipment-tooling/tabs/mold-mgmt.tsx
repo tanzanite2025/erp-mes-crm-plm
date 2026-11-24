@@ -148,7 +148,7 @@ export function MoldMgmt() {
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary' />
           <Input
             placeholder={t('equipmentTooling.molds.page.searchPlaceholder')}
-            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-xs font-bold shadow-inner transition-all placeholder:text-muted-foreground/30 focus:ring-2 focus:ring-primary/20'
+            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 shadow-inner transition-all placeholder:text-muted-foreground/30 focus:ring-2 focus:ring-primary/20'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -163,7 +163,7 @@ export function MoldMgmt() {
         </Button>
         <Button
           onClick={handleAddMold}
-          className='h-12 w-full shrink-0 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 md:w-auto'
+          className='h-12 w-full shrink-0 rounded-full bg-primary px-8 shadow-xl shadow-primary/20 transition-all active:scale-95 md:w-auto'
         >
           <Plus className='mr-2 size-3.5' />{' '}
           {t('equipmentTooling.molds.actions.add')}
@@ -363,13 +363,8 @@ export function MoldMgmt() {
                           <CardContent className='flex-1 px-5 pb-6 sm:px-6'>
                             <Tabs defaultValue='info' className='w-full'>
                               <TabsList className='mb-4 grid w-full grid-cols-2'>
-                                <TabsTrigger value='info' className='text-xs'>
-                                  基本信息
-                                </TabsTrigger>
-                                <TabsTrigger
-                                  value='maintenance'
-                                  className='text-xs'
-                                >
+                                <TabsTrigger value='info'>基本信息</TabsTrigger>
+                                <TabsTrigger value='maintenance'>
                                   维保记录
                                 </TabsTrigger>
                               </TabsList>
@@ -488,7 +483,7 @@ export function MoldMgmt() {
                       <div className='flex size-12 items-center justify-center rounded-full border border-transparent bg-muted/50 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/20 group-hover:bg-primary/10'>
                         <Plus className='size-6 transition-colors group-hover:text-primary' />
                       </div>
-                      <span className='text-[10px] font-black tracking-widest uppercase'>
+                      <span>
                         {t('equipmentTooling.molds.actions.addInGroup')}
                       </span>
                     </Button>
@@ -509,7 +504,7 @@ export function MoldMgmt() {
               {t('equipmentTooling.molds.empty.description')}
             </p>
             <Button
-              className='xs:w-auto mt-8 h-12 w-full rounded-full bg-primary px-10 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20'
+              className='xs:w-auto mt-8 h-12 w-full rounded-full bg-primary px-10 shadow-xl shadow-primary/20'
               onClick={handleAddMold}
             >
               {t('equipmentTooling.molds.empty.init')}

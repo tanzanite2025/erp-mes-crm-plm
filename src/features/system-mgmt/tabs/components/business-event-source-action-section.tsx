@@ -112,14 +112,14 @@ export function BusinessEventSourceActionSection({
                 readOnly={isActionIdentityLocked}
                 onChange={(event) => onCodeChange(index, event.target.value)}
                 className={cn(
-                  'h-9 rounded-2xl font-maple-ui text-xs',
+                  'h-9 rounded-2xl font-maple-ui',
                   readonlyFieldClass(isActionIdentityLocked)
                 )}
               />
               <Input
                 value={action.name}
                 onChange={(event) => onNameChange(index, event.target.value)}
-                className='h-9 rounded-2xl text-xs font-bold'
+                className='h-9 rounded-2xl'
               />
               <select
                 value={action.kind}
@@ -132,7 +132,7 @@ export function BusinessEventSourceActionSection({
                   )
                 }
                 className={cn(
-                  'h-9 rounded-2xl border border-input bg-background px-2 text-xs font-bold',
+                  'h-9 rounded-2xl border border-input bg-background px-2',
                   readonlyFieldClass(isActionIdentityLocked)
                 )}
               >

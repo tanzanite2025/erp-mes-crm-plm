@@ -46,16 +46,18 @@ export const apsScheduling = {
         loading: 'Loading',
         awaitingOrder: 'Awaiting Order',
         awaitingLine: 'Awaiting Line',
+        awaitingBOMBranch: 'Select an MBOM Branch',
         matching: 'Matching',
         templateMatched: 'Template Matched',
         missingTemplate: 'Template Needed',
+        missingBOMBranch: 'No Active Production MBOM Branch',
       },
     },
     feedback: {
       loadingFailed: 'Load failed: {{message}}',
       unknownError: 'Unknown error',
       createMissingSelection:
-        'Select an order line and an applicable cutting template first.',
+        'Select an order line, cutting template, and production MBOM branch first.',
       createSuccess: 'Execution created: {{id}}',
       createFailed: 'Failed to create execution.',
       responseMissingId:
@@ -84,6 +86,8 @@ export const apsScheduling = {
       linePlaceholder: 'Select order line',
       templateLabel: 'Cutting Template',
       templateWaiting: 'Select a cutting template',
+      bomBranchLabel: 'Production MBOM Branch',
+      bomBranchPlaceholder: 'Select the branch for this plan',
       dueDateLabel: 'Due Date',
       lineOption: 'Line {{lineNo}} | {{productModel}} | {{holeCount}} holes',
     },

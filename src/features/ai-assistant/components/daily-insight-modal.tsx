@@ -242,10 +242,10 @@ export function DailyInsightModal({
                           )}
                         </div>
                         <div className='text-left'>
-                          <div className='mb-1 text-[11px] leading-none font-black text-foreground/90'>
+                          <div className='mb-1 text-foreground/90'>
                             {action.label}
                           </div>
-                          <div className='w-32 truncate font-maple-ui text-[8px] tracking-tighter text-muted-foreground/40 uppercase'>
+                          <div className='w-32 truncate font-maple-ui text-muted-foreground/40'>
                             {action.value}
                           </div>
                         </div>
@@ -264,7 +264,7 @@ export function DailyInsightModal({
                   onOpenChange(false)
                   aiAgentService.markAsRead()
                 }}
-                className='h-14 w-full max-w-sm gap-3 rounded-full bg-primary text-[11px] font-black tracking-[0.2em] text-primary-foreground uppercase shadow-2xl shadow-primary/10 transition-all hover:bg-primary/90 active:scale-95'
+                className='h-14 w-full max-w-sm gap-3 rounded-full bg-primary text-primary-foreground shadow-2xl shadow-primary/10 transition-all hover:bg-primary/90 active:scale-95'
               >
                 <CheckCircle2 className='size-5 text-emerald-400' />
                 已知晓，继续监控全线运营
@@ -315,7 +315,7 @@ export function DailyInsightModal({
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     disabled={isGenerating}
-                    className='h-10 border-none bg-transparent text-[13px] font-medium shadow-none placeholder:text-muted-foreground/30 focus-visible:ring-0'
+                    className='h-10 border-none bg-transparent shadow-none placeholder:text-muted-foreground/30 focus-visible:ring-0'
                   />
                 </div>
                 <Button

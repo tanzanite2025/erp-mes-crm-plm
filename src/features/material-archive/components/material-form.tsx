@@ -153,13 +153,13 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
             <TabsList className='mb-6 grid h-10 w-full grid-cols-2 rounded-full border border-dashed border-muted/50 bg-muted/30 p-1'>
               <TabsTrigger
                 value='internal'
-                className='rounded-full text-[10px] font-black tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-sm'
+                className='rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm'
               >
                 {t('materialArchive.form.internalTab')}
               </TabsTrigger>
               <TabsTrigger
                 value='external'
-                className='rounded-full text-[10px] font-black tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-sm'
+                className='rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm'
               >
                 {t('materialArchive.form.externalTab')}
               </TabsTrigger>

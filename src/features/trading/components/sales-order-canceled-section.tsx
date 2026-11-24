@@ -57,7 +57,7 @@ export function SalesOrderCanceledSection({
           type='button'
           variant='outline'
           size='sm'
-          className='h-8 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest'
+          className='h-8 rounded-full border-dashed px-4'
           onClick={onToggle}
         >
           {showCanceledSection ? '收起' : '展开'}

@@ -96,7 +96,7 @@ export function VehicleModelTemplateVersionPanel({
               type='button'
               disabled={!canManageTemplates || isCurrent || isRestoring}
               onClick={() => restoreMutation.mutate(version.version)}
-              className='inline-flex h-7 items-center gap-1 rounded-full border border-border/70 bg-background px-2 font-black text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
+              className='control-typography-compact inline-flex h-7 items-center gap-1 rounded-full border border-border/70 bg-background px-2 text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
             >
               <RotateCcw className='size-3' />
               {t('logisticsConfig.vehicleModelTemplates.restoreVersion')}

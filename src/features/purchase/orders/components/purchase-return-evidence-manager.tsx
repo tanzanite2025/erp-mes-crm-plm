@@ -319,7 +319,7 @@ export function PurchaseReturnEvidenceManager({
                         })
                       }
                       placeholder={notePlaceholder}
-                      className='h-9 rounded-xl text-xs'
+                      className='h-9 rounded-xl'
                       disabled={disabled}
                     />
                   </div>
@@ -336,7 +336,7 @@ export function PurchaseReturnEvidenceManager({
                           })
                         }
                         placeholder={locationPlaceholder}
-                        className='h-9 rounded-xl text-xs'
+                        className='h-9 rounded-xl'
                         disabled={disabled}
                       />
                     </div>
@@ -352,7 +352,7 @@ export function PurchaseReturnEvidenceManager({
                           })
                         }
                         placeholder={defectPartPlaceholder}
-                        className='h-9 rounded-xl text-xs'
+                        className='h-9 rounded-xl'
                         disabled={disabled}
                       />
                     </div>

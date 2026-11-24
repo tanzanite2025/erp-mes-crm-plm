@@ -160,7 +160,7 @@ export function TaxActionDialog({
               onChange={(e) => {
                 updateFormData({ code: e.target.value.toUpperCase() })
               }}
-              className='h-12 rounded-2xl bg-muted/5 font-black'
+              className='h-12 rounded-2xl bg-muted/5'
             />
           </div>
           <div className='space-y-2'>
@@ -175,7 +175,7 @@ export function TaxActionDialog({
                 onChange={(e) => {
                   updateFormData({ rate: Number(e.target.value) })
                 }}
-                className='h-12 rounded-2xl bg-muted/5 pr-8 font-maple-ui font-bold'
+                className='h-12 rounded-2xl bg-muted/5 pr-8 font-maple-ui'
               />
               <span className='absolute top-1/2 right-3 -translate-y-1/2 text-xs font-black opacity-30'>
                 %
@@ -194,7 +194,7 @@ export function TaxActionDialog({
             onChange={(e) => {
               updateFormData({ name: e.target.value })
             }}
-            className='h-12 rounded-2xl bg-muted/5 font-bold'
+            className='h-12 rounded-2xl bg-muted/5'
           />
         </div>
 

@@ -108,6 +108,7 @@ const (
 
 const (
 	ActionLabExperimentalCategoryCreate = "action_lab_experimental_category_create"
+	ActionQualityAbnormalityDispose     = "action_quality_abnormality_dispose"
 	ActionLabExperimentalCategoryDelete = "action_lab_experimental_category_delete"
 )
 
@@ -216,6 +217,7 @@ var baseAdminFallbackPermissions = []string{
 	ActionEquipmentMaintenanceManage,
 	ActionMaterialUpdate,
 	ActionLabExperimentalCategoryCreate,
+	ActionQualityAbnormalityDispose,
 	ActionLabExperimentalCategoryDelete,
 	ActionOrgProfileUpdate,
 	ActionEmployeeUpdate,

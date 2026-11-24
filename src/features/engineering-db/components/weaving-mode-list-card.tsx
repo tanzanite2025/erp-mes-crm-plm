@@ -45,7 +45,7 @@ export function WeavingModeListCard({
             <Button
               variant='outline'
               onClick={onRetry}
-              className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='rounded-full px-6'
             >
               {t('common.actions.retry')}
             </Button>
@@ -106,7 +106,7 @@ export function WeavingModeListCard({
                 <Button
                   variant='outline'
                   size='sm'
-                  className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                  className='h-8 rounded-full px-3'
                   onClick={() => onEdit(item)}
                 >
                   <Pencil className='mr-1.5 size-3.5' />
@@ -115,7 +115,7 @@ export function WeavingModeListCard({
                 <Button
                   variant='ghost'
                   size='sm'
-                  className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest text-destructive uppercase'
+                  className='h-8 rounded-full px-3 text-destructive'
                   onClick={() => void onDelete(item)}
                 >
                   <Trash2 className='mr-1.5 size-3.5' />

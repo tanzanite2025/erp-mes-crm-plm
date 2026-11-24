@@ -77,6 +77,9 @@ func SaveSalesOrderHandler(c *gin.Context) {
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}
+		if respondToProtectedIssuedProductCodeSalesOrder(c, err) {
+			return
+		}
 		if err == ErrVersionConflict || errors.Is(err, services.ErrSalesTransactionVersionConflict) {
 			respondVersionConflict(c)
 			return
@@ -111,6 +114,9 @@ func PatchSalesOrderHandler(c *gin.Context) {
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}
+		if respondToProtectedIssuedProductCodeSalesOrder(c, err) {
+			return
+		}
 		switch {
 		case strings.Contains(err.Error(), "invalid sales order delta"):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -134,6 +140,9 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 	err := services.DeleteSalesOrder(id)
 	if err != nil {
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
+			return
+		}
+		if respondToProtectedIssuedProductCodeSalesOrder(c, err) {
 			return
 		}
 		switch {
@@ -167,6 +176,9 @@ func BulkSyncSalesOrdersHandler(c *gin.Context) {
 
 	if err := services.BulkSyncSalesOrders(input); err != nil {
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
+			return
+		}
+		if respondToProtectedIssuedProductCodeSalesOrder(c, err) {
 			return
 		}
 		switch {

@@ -375,7 +375,7 @@ export function DrawingActionDialog({
                   type='button'
                   variant='ghost'
                   size='sm'
-                  className='rounded-xl text-[9px] font-black tracking-widest text-rose-500 uppercase'
+                  className='rounded-xl text-rose-500'
                   onClick={() => {
                     form.setValue('fileUrl', '')
                     setPendingFile(null)

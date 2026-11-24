@@ -75,7 +75,7 @@ export function KnowledgeBaseEntryCard({
             <Button
               variant='outline'
               size='sm'
-              className='h-8 rounded-full border-dashed px-3 text-[11px] font-bold'
+              className='h-8 rounded-full border-dashed px-3'
               asChild
             >
               <Link to={entry.routePath as never}>
@@ -87,7 +87,7 @@ export function KnowledgeBaseEntryCard({
           <Button
             variant='outline'
             size='sm'
-            className='h-8 rounded-full border-dashed px-3 text-[11px] font-bold'
+            className='h-8 rounded-full border-dashed px-3'
             onClick={() => onEdit(entry)}
           >
             <Edit3 className='mr-1.5 size-3.5' />
@@ -96,7 +96,7 @@ export function KnowledgeBaseEntryCard({
           <Button
             variant='ghost'
             size='sm'
-            className='h-8 rounded-full px-3 text-[11px] font-bold text-destructive hover:bg-destructive/10 hover:text-destructive'
+            className='h-8 rounded-full px-3 text-destructive hover:bg-destructive/10 hover:text-destructive'
             onClick={() => onDelete(entry.id)}
           >
             <Trash2 className='mr-1.5 size-3.5' />

@@ -90,7 +90,7 @@ export function SalesReturnSourceOrderSpotlight({
             variant='outline'
             size='sm'
             onClick={onClearSelection}
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
           >
             {t('trading.salesReturns.queryShell.clearSelection')}
           </Button>
@@ -193,7 +193,7 @@ export function SalesReturnSourceOrderSpotlight({
               logisticsNote,
             })
           }}
-          className='h-10 w-full rounded-full text-[10px] font-black tracking-widest uppercase'
+          className='h-10 w-full rounded-full'
         >
           {t('trading.salesReturns.entryShell.sourceAction')}
         </Button>

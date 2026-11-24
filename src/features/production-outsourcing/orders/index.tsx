@@ -229,7 +229,7 @@ export function OutsourceOrderManagement() {
             onChange={(event) =>
               setStatus(event.target.value as OutsourceOrderStatus | 'ALL')
             }
-            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 md:text-sm dark:bg-input/30'
+            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 dark:bg-input/30'
           >
             <option value='ALL'>
               {t('productionOutsourcing.orders.filters.allStatus')}
@@ -255,7 +255,7 @@ export function OutsourceOrderManagement() {
                 event.target.value as OutsourceOrderSourceType | 'ALL'
               )
             }
-            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 md:text-sm dark:bg-input/30'
+            className='h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-44 dark:bg-input/30'
           >
             <option value='ALL'>
               {t('productionOutsourcing.orders.filters.allSource')}
@@ -275,7 +275,7 @@ export function OutsourceOrderManagement() {
               ? undefined
               : t('productionOutsourcing.orders.noManagePermission')
           }
-          className='h-9 w-full rounded-full px-4 text-xs font-medium md:w-auto'
+          className='h-9 w-full rounded-full px-4 md:w-auto'
         >
           <Plus className='size-4' />
           {t('productionOutsourcing.orders.actions.add')}
@@ -306,7 +306,7 @@ export function OutsourceOrderManagement() {
             </p>
             <Button
               variant='outline'
-              className='h-9 rounded-full px-4 text-xs font-medium'
+              className='h-9 rounded-full px-4'
               onClick={() => void ordersQuery.refetch()}
             >
               {t('common.actions.retry')}
@@ -325,7 +325,7 @@ export function OutsourceOrderManagement() {
               onClick={openCreate}
               disabled={!canManage || isChecking}
               variant='outline'
-              className='h-9 rounded-full px-4 text-xs font-medium'
+              className='h-9 rounded-full px-4'
             >
               {t('productionOutsourcing.orders.actions.add')}
             </Button>
@@ -408,17 +408,6 @@ export function OutsourceOrderManagement() {
                             {line.quantity} {line.uom}
                           </span>
                         </div>
-                        {line.processName ? (
-                          <span className='truncate text-xs text-muted-foreground'>
-                            {t(
-                              'productionOutsourcing.orders.fields.processName'
-                            )}
-                            ：
-                            {line.processCode
-                              ? `${line.processCode} · ${line.processName}`
-                              : line.processName}
-                          </span>
-                        ) : null}
                       </div>
                     )
                   )}
@@ -442,7 +431,7 @@ export function OutsourceOrderManagement() {
                     targetId={order.id}
                     targetName={order.orderNo}
                     label={t('common.audit.trigger')}
-                    className='rounded-full border-solid text-xs font-medium tracking-normal normal-case'
+                    className='rounded-full border-solid'
                   />
                   <Button
                     variant='outline'

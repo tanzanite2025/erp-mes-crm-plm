@@ -79,7 +79,7 @@ export function ProductTemplateAttributeLevelTwoOptionCard({
             </div>
           </div>
           <Button
-            className='h-11 rounded-full px-6 text-[10px] font-black tracking-[0.2em] uppercase shadow-lg shadow-primary/10 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none'
+            className='h-11 rounded-full px-6 shadow-lg shadow-primary/10 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none'
             onClick={onCreateOption}
             disabled={!selectedCategoryKey}
           >

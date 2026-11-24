@@ -16,9 +16,9 @@ export function NavBadge({
   return (
     <Badge
       className={cn(
-        'flex h-4 min-w-4 items-center justify-center rounded-full px-1 py-0 text-[10px] font-black',
+        'flex h-4 min-w-4 items-center justify-center rounded-full px-1 py-0 text-[11px] font-black',
         danger && 'bg-rose-500 text-white',
-        dot && 'min-w-4 text-[8px]'
+        dot && 'min-w-4 text-[9px]'
       )}
     >
       {children}

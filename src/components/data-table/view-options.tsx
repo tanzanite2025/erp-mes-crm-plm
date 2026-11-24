@@ -58,19 +58,15 @@ export function DataTableViewOptions<TData>({
             {compact ? (
               <>
                 <MixerHorizontalIcon className='size-3 text-blue-600' />
-                <span className='text-[10px] leading-none font-black tracking-tighter'>
-                  {t('common.table.viewManagement')}
-                </span>
+                <span>{t('common.table.viewManagement')}</span>
               </>
             ) : (
               <>
                 <div className='flex items-center gap-1'>
                   <MixerHorizontalIcon className='size-3 text-blue-600' />
-                  <span className='text-[10px] leading-none font-black tracking-tighter'>
-                    {t('common.table.viewManagement')}
-                  </span>
+                  <span>{t('common.table.viewManagement')}</span>
                 </div>
-                <span className='font-maple-ui text-[7px] leading-none tracking-widest uppercase opacity-40'>
+                <span className='font-maple-ui opacity-40'>
                   {t('common.table.viewing')}
                 </span>
               </>
@@ -80,7 +76,7 @@ export function DataTableViewOptions<TData>({
           <Button
             variant='outline'
             size='sm'
-            className='ml-auto hidden h-8 rounded-full px-4 text-[11px] font-black tracking-widest uppercase lg:flex'
+            className='ml-auto hidden h-8 rounded-full px-4 lg:flex'
           >
             <MixerHorizontalIcon className='mr-2 h-4 w-4' />
             {t('common.table.view')}
@@ -111,7 +107,7 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className='cursor-pointer rounded-2xl px-3 py-2 text-[11px] font-black tracking-tighter transition-all hover:bg-muted/50 active:scale-95 data-[state=checked]:bg-blue-500/5 data-[state=checked]:text-blue-600'
+                className='cursor-pointer rounded-2xl px-3 py-2 transition-all hover:bg-muted/50 active:scale-95 data-[state=checked]:bg-blue-500/5 data-[state=checked]:text-blue-600'
                 checked={column.getIsVisible()}
                 onSelect={(event) => {
                   if (keepOpenOnItemSelect) {

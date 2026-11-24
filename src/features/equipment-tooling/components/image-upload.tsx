@@ -80,7 +80,7 @@ export function ImageUpload({
               type='button'
               variant='secondary'
               size='sm'
-              className='h-10 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-10 rounded-full px-6'
               onClick={() => fileInputRef.current?.click()}
             >
               {t('equipmentTooling.imageUpload.actions.replace')}

@@ -34,10 +34,10 @@ import {
 } from '../services/outsource-order-source-options-service'
 
 const fieldLabelClass = 'text-xs font-medium text-muted-foreground'
-const inputClass = 'h-10 rounded-xl text-sm'
+const inputClass = 'h-10 rounded-xl '
 const selectClass =
-  'h-10 w-full rounded-xl border border-input bg-background px-3 text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
-const textareaClass = 'min-h-20 rounded-xl text-sm'
+  'h-10 w-full rounded-xl border border-input bg-background px-3 shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+const textareaClass = 'min-h-20 rounded-xl '
 
 interface OutsourceOrderDialogProps {
   open: boolean
@@ -58,11 +58,6 @@ function normalizeLine(line: OutsourceOrderLineFormValues) {
     specification: line.specification.trim(),
     quantity: Number.isFinite(line.quantity) ? Math.max(0, line.quantity) : 0,
     uom: line.uom.trim().toUpperCase(),
-    segmentId: line.segmentId.trim(),
-    segmentName: line.segmentName.trim(),
-    processStepId: line.processStepId.trim(),
-    processCode: line.processCode.trim(),
-    processName: line.processName.trim(),
     notes: line.notes.trim(),
   }
 }

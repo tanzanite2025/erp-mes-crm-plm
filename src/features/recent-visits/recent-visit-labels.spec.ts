@@ -63,9 +63,9 @@ describe('recent visit route labels', () => {
     expect(previewLabelKey).toBe('quality.standards.workspace.previewTitle')
     expect(
       editorLabelKey ? translate(DEFAULT_LOCALE, editorLabelKey) : ''
-    ).toBe('编辑品质标准工作台')
+    ).toBe('编辑品质标准')
     expect(
       previewLabelKey ? translate(DEFAULT_LOCALE, previewLabelKey) : ''
-    ).toBe('品质标准预览页')
+    ).toBe('品质标准详情')
   })
 })

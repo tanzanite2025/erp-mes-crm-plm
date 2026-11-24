@@ -8,9 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"xdfc-server/db"
-	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -40,6 +38,9 @@ func GetInspectionStandardsHandler(c *gin.Context) {
 	}
 
 	scopedQuery := db.DB.Model(&models.InspectionStandard{})
+	if productID := strings.TrimSpace(c.Query("productId")); productID != "" {
+		scopedQuery = scopedQuery.Where("product_id = ?", productID)
+	}
 	if typeFilter != "" && typeFilter != "ALL" {
 		scopedQuery = scopedQuery.Where("type = ?", typeFilter)
 	}
@@ -372,10 +373,6 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 
 	task := mapInspectionTaskRequestToModel(input)
 
-	now := time.Now()
-	task.CompletedAt = &now
-	task.Inspector = middleware.GetSafeUsername(c)
-
 	if err := services.SaveInspectionTask(auditContextFromGin(c), &task); err != nil {
 		status := mapDomainErrorToHTTPStatus(err)
 		c.JSON(status, gin.H{"error": err.Error()})
@@ -464,8 +461,8 @@ func GetAbnormalitiesHandler(c *gin.Context) {
 }
 
 // RecordQualityAbnormalityDisposalHandler records the quality-owned disposal
-// fact. SCRAP requires quantity, unit, and stable production linkage when
-// available; legacy rows remain readable until they are explicitly completed.
+// fact. Source linkage is immutable and SCRAP requires a positive quantity and
+// configured unit; a closed disposition can only be retried without changes.
 func RecordQualityAbnormalityDisposalHandler(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	var input QualityAbnormalityDisposalRequest
@@ -477,7 +474,7 @@ func RecordQualityAbnormalityDisposalHandler(c *gin.Context) {
 	updated, err := services.RecordQualityAbnormalityDisposal(
 		auditContextFromGin(c),
 		id,
-		&models.QualityAbnormality{
+		&services.QualityAbnormalityDisposalCommand{
 			DisposalMethod:   input.DisposalMethod,
 			ScrapQuantity:    input.ScrapQuantity,
 			ScrapUnit:        input.ScrapUnit,

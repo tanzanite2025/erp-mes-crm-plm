@@ -260,7 +260,7 @@ export function PurchaseOrderMaster({
                               e.stopPropagation()
                               onEdit(order)
                             }}
-                            className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                            className='gap-2 rounded-xl px-3 py-2'
                           >
                             <Edit2
                               className={`size-3 ${
@@ -279,7 +279,7 @@ export function PurchaseOrderMaster({
                               e.stopPropagation()
                               onViewPayable?.(order)
                             }}
-                            className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                            className='gap-2 rounded-xl px-3 py-2'
                           >
                             <FileText className='size-3 text-emerald-600' />
                             {t('purchase.orders.viewPayable')}
@@ -289,7 +289,7 @@ export function PurchaseOrderMaster({
                               e.stopPropagation()
                               onDelete(order.id)
                             }}
-                            className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
+                            className='gap-2 rounded-xl px-3 py-2 text-rose-500 focus:text-rose-600'
                           >
                             <Trash2 className='size-3' />
                             {order.status === 'Canceled'
@@ -362,20 +362,20 @@ export function PurchaseOrderMaster({
                     >
                       <DropdownMenuItem
                         onClick={() => onEdit(order)}
-                        className='px-4 py-2 text-[10px] font-black uppercase'
+                        className='px-4 py-2'
                       >
                         {t('purchase.orders.editOrder')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={!onViewPayable}
                         onClick={() => onViewPayable?.(order)}
-                        className='px-4 py-2 text-[10px] font-black uppercase'
+                        className='px-4 py-2'
                       >
                         {t('purchase.orders.viewPayable')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDelete(order.id)}
-                        className='px-4 py-2 text-[10px] font-black text-rose-500 uppercase'
+                        className='px-4 py-2 text-rose-500'
                       >
                         {t('purchase.orders.voidContract')}
                       </DropdownMenuItem>

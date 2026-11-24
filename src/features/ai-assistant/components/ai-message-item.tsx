@@ -59,7 +59,7 @@ export const AiMessageItem = memo(
                   size='sm'
                   variant={action.type === 'ACT' ? 'secondary' : 'default'}
                   onClick={() => onExecuteAction(action)}
-                  className='h-8 gap-1.5 rounded-full border border-primary/20 text-[10px] font-black tracking-widest uppercase transition-transform active:scale-90'
+                  className='h-8 gap-1.5 rounded-full border border-primary/20 transition-transform active:scale-90'
                 >
                   <Activity className='size-3' />
                   {action.label}

@@ -265,7 +265,6 @@ function OutsourceTransferExecutionWorkspace() {
                             {line.productName || line.productCode || '-'}
                           </p>
                           <p className='mt-1 text-xs text-muted-foreground'>
-                            {line.processName || '-'} ·{' '}
                             {quantityText(line.quantity, line.uom)}
                           </p>
                         </div>

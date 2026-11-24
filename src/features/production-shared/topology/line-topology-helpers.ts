@@ -1,4 +1,11 @@
-import type { ProductionLine, ProductionSegment } from '../data/production-line'
+import {
+  getProductionBOMBranchDisplayName,
+  type ProductionBOMBranch,
+} from '../data/production-bom-branch'
+import type {
+  ProductionLine,
+  ProductionLineSegment,
+} from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 
 function normalizeProcesses(
@@ -11,8 +18,8 @@ function normalizeProcesses(
 }
 
 export function normalizeSegments(
-  segments: ProductionSegment[] = []
-): ProductionSegment[] {
+  segments: ProductionLineSegment[] = []
+): ProductionLineSegment[] {
   return segments.map((segment, index) => ({
     ...segment,
     sortOrder: index,
@@ -22,7 +29,7 @@ export function normalizeSegments(
 
 export function updateLineSegments(
   line: ProductionLine,
-  updater: (segments: ProductionSegment[]) => ProductionSegment[]
+  updater: (segments: ProductionLineSegment[]) => ProductionLineSegment[]
 ): ProductionLine {
   return {
     ...line,
@@ -30,24 +37,38 @@ export function updateLineSegments(
   }
 }
 
-export function addSegmentToLine(
+export function addProductionBOMBranchSegmentToLine(
   line: ProductionLine,
-  name: string
+  branch: ProductionBOMBranch
 ): ProductionLine {
-  const nextName = name.trim()
-  if (!nextName) {
-    return line
-  }
-
   return updateLineSegments(line, (segments) => [
     ...segments,
     {
       id: crypto.randomUUID(),
-      name: nextName,
+      ...branch,
+      name: getProductionBOMBranchDisplayName(branch),
       sortOrder: segments.length,
       processes: [],
     },
   ])
+}
+
+export function bindProductionBOMBranchToLineSegment(
+  line: ProductionLine,
+  segmentId: string,
+  branch: ProductionBOMBranch
+): ProductionLine {
+  return updateLineSegments(line, (segments) =>
+    segments.map((segment) =>
+      segment.id === segmentId
+        ? {
+            ...segment,
+            ...branch,
+            name: getProductionBOMBranchDisplayName(branch),
+          }
+        : segment
+    )
+  )
 }
 
 export function addProcessToLineSegment(
@@ -88,23 +109,6 @@ export function removeProcessFromLineSegment(
             ),
           }
         : segment
-    )
-  )
-}
-
-export function renameSegmentInLine(
-  line: ProductionLine,
-  segmentId: string,
-  name: string
-): ProductionLine {
-  const nextName = name.trim()
-  if (!nextName) {
-    return line
-  }
-
-  return updateLineSegments(line, (segments) =>
-    segments.map((segment) =>
-      segment.id === segmentId ? { ...segment, name: nextName } : segment
     )
   )
 }

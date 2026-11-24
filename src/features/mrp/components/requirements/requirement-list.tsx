@@ -79,7 +79,7 @@ export function RequirementList({ data, isLoading }: RequirementListProps) {
             placeholder={t('mrp.requirements.list.searchPlaceholder')}
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className='h-11 border-none bg-transparent pl-11 text-[12px] font-black placeholder:font-bold placeholder:text-muted-foreground/30 focus-visible:ring-0'
+            className='h-11 border-none bg-transparent pl-11 placeholder:text-muted-foreground/30 focus-visible:ring-0'
           />
         </div>
         <div className='mx-1 h-5 w-px bg-muted' />

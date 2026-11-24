@@ -293,7 +293,7 @@ export function ExcelViewer({
                 <TabsTrigger
                   key={idx}
                   value={idx.toString()}
-                  className='h-7 px-4 text-[10px] font-bold tracking-wider uppercase data-[state=active]:bg-white data-[state=active]:shadow-sm'
+                  className='control-typography-compact h-7 px-4 data-[state=active]:bg-white data-[state=active]:shadow-sm'
                 >
                   {sheet.name}
                 </TabsTrigger>

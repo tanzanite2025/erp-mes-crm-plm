@@ -44,7 +44,7 @@ export function PurchaseOrderNoteSection({
           placeholder={t('purchase.orders.headerFields.notePlaceholder')}
           value={note}
           onChange={(e) => handleHeaderChange('note', e.target.value)}
-          className='h-10 rounded-2xl border-none bg-background font-bold shadow-sm'
+          className='h-10 rounded-2xl border-none bg-background shadow-sm'
         />
       ) : (
         <Textarea
@@ -52,7 +52,7 @@ export function PurchaseOrderNoteSection({
           value={note}
           onChange={(e) => handleHeaderChange('note', e.target.value)}
           className={cn(
-            'resize-none rounded-2xl border-none bg-background p-4 font-bold shadow-sm',
+            'resize-none rounded-2xl border-none bg-background p-4 shadow-sm',
             'min-h-[80px]'
           )}
         />

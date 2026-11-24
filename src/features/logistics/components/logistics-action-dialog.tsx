@@ -346,13 +346,13 @@ export function LogisticsActionDialog({
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='rounded-2xl p-5 text-[11px] font-black uppercase'
+            className='rounded-2xl p-5'
           >
             {t('trading.logistics.dialog.cancel')}
           </Button>
           <Button
             onClick={handleSave}
-            className='rounded-2xl bg-primary p-5 px-8 text-[11px] font-black uppercase shadow-xl shadow-primary/20'
+            className='rounded-2xl bg-primary p-5 px-8 shadow-xl shadow-primary/20'
           >
             {t('trading.logistics.dialog.save')}
           </Button>

@@ -311,7 +311,7 @@ export function CuttingPlanTab() {
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={t('engineering.cuttingPlan.placeholders.search')}
-            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-semibold shadow-inner'
+            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner'
           />
         </div>
 
@@ -332,7 +332,7 @@ export function CuttingPlanTab() {
           <Button
             variant='outline'
             onClick={downloadTemplate}
-            className='h-11 rounded-full px-5 text-xs font-black'
+            className='h-11 rounded-full px-5'
           >
             <Download className='size-4' />
             {t('engineering.cuttingPlan.actions.downloadTemplate')}
@@ -340,15 +340,12 @@ export function CuttingPlanTab() {
           <Button
             variant='outline'
             onClick={() => importInputRef.current?.click()}
-            className='h-11 rounded-full px-5 text-xs font-black'
+            className='h-11 rounded-full px-5'
           >
             <Upload className='size-4' />
             {t('engineering.cuttingPlan.actions.importTemplate')}
           </Button>
-          <Button
-            onClick={openCreate}
-            className='h-11 rounded-full px-6 text-xs font-black'
-          >
+          <Button onClick={openCreate} className='h-11 rounded-full px-6'>
             <Plus className='size-4' />
             {t('engineering.cuttingPlan.actions.create')}
           </Button>
@@ -386,9 +383,7 @@ export function CuttingPlanTab() {
                   className='min-w-0 flex-1 text-left'
                 >
                   <div className='flex flex-wrap items-center gap-2'>
-                    <span className='text-base font-black tracking-tight'>
-                      {plan.name}
-                    </span>
+                    <span>{plan.name}</span>
                     <Badge
                       variant='outline'
                       className='rounded-full border-dashed text-[10px] font-black'
@@ -401,7 +396,7 @@ export function CuttingPlanTab() {
                       </Badge>
                     ) : null}
                   </div>
-                  <div className='mt-2 grid gap-2 text-xs font-semibold text-muted-foreground md:grid-cols-4'>
+                  <div className='mt-2 grid gap-2 text-muted-foreground md:grid-cols-4'>
                     <Info
                       icon={FileSpreadsheet}
                       label={t('engineering.cuttingPlan.fields.product')}
@@ -435,7 +430,7 @@ export function CuttingPlanTab() {
                     variant='outline'
                     size='sm'
                     onClick={() => void handlePreview(plan)}
-                    className='h-8 rounded-full px-3 text-[11px] font-black'
+                    className='h-8 rounded-full px-3'
                   >
                     <Printer className='size-3.5' />
                     {t('engineering.cuttingPlan.actions.previewPrint')}
@@ -445,7 +440,7 @@ export function CuttingPlanTab() {
                     variant='outline'
                     size='sm'
                     onClick={() => void handleExport(plan)}
-                    className='h-8 rounded-full px-3 text-[11px] font-black'
+                    className='h-8 rounded-full px-3'
                   >
                     <Download className='size-3.5' />
                     {t('engineering.cuttingPlan.actions.downloadPrint')}
@@ -486,7 +481,7 @@ export function CuttingPlanTab() {
             <Button
               variant='outline'
               onClick={() => void handlePreview(draft)}
-              className='rounded-full px-5 font-black'
+              className='rounded-full px-5'
             >
               <Printer className='size-4' />
               {t('engineering.cuttingPlan.actions.previewPrint')}
@@ -494,7 +489,7 @@ export function CuttingPlanTab() {
             <Button
               variant='outline'
               onClick={() => void handleExport(draft)}
-              className='rounded-full px-5 font-black'
+              className='rounded-full px-5'
             >
               <Download className='size-4' />
               {t('engineering.cuttingPlan.actions.downloadPrint')}
@@ -502,14 +497,14 @@ export function CuttingPlanTab() {
             <Button
               variant='outline'
               onClick={closeDialog}
-              className='rounded-full px-6 font-black'
+              className='rounded-full px-6'
             >
               {t('engineering.cuttingPlan.actions.cancel')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={saveMutation.isPending}
-              className='rounded-full px-8 font-black'
+              className='rounded-full px-8'
             >
               {saveMutation.isPending
                 ? `${t('engineering.cuttingPlan.actions.save')}...`
@@ -693,7 +688,7 @@ function InvalidCuttingPlanAlert({
             variant={effectiveFailureType === 'all' ? 'default' : 'outline'}
             size='sm'
             onClick={() => setSelectedFailureType('all')}
-            className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+            className='h-8 rounded-full px-3'
           >
             {t('engineering.cuttingPlan.alerts.filters.all', {
               count: invalidItems.length,
@@ -710,7 +705,7 @@ function InvalidCuttingPlanAlert({
                 }
                 size='sm'
                 onClick={() => setSelectedFailureType(failureType)}
-                className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                className='h-8 rounded-full px-3'
               >
                 {getInvalidCuttingPlanFailureFilterLabel(
                   t,

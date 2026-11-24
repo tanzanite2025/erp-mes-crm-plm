@@ -155,7 +155,7 @@ export function BOMDialogShell({
                   module={AUDIT_MODULES.bom}
                   targetId={auditTarget.id}
                   targetName={auditTarget.name}
-                  className='h-9 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-9 rounded-full border-dashed bg-background/80 px-4'
                 />
               ) : null}
               <DialogClose asChild>

@@ -92,7 +92,7 @@ export function CompactPaginationControls({
                 variant={pageNumber === currentPage ? 'default' : 'outline'}
                 disabled={disabled}
                 onClick={() => goToPage(pageNumber)}
-                className='h-8 min-w-8 rounded-xl px-2 text-[11px] font-bold shadow-none'
+                className='h-8 min-w-8 rounded-xl px-2 shadow-none'
               >
                 <span className='sr-only'>
                   {t('common.table.goToPage', { page: pageNumber })}

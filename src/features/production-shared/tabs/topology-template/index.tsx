@@ -1,133 +1,183 @@
 import { useState } from 'react'
-import { Plus, Search, FileCode } from 'lucide-react'
-import { useLanguage } from '@/context/language-provider'
+import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
+import { failLoudly } from '@/lib/safe-catch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useProductionTopologyLabels } from '../../topology/production-topology-labels'
-import type { TopologyTemplate } from '../../topology/types'
+import { ForbiddenState } from '@/components/forbidden-state'
+import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
+import type { ProductionTopologyTemplate } from '../../data/production-line'
+import {
+  useProductionLineBOMBranchesQuery,
+  useProductionLinesQuery,
+} from '../../hooks/use-production-resources'
 import { useTopologyTemplates } from '../../topology/use-topology-templates'
 import { TemplateCard } from './components/template-card'
-import { TemplateDialog } from './components/template-dialog'
+import {
+  TemplateDialog,
+  type ProductionTopologyTemplateDialogSaveRequest,
+} from './components/template-dialog'
 
 export function TopologyTemplateMgmt() {
-  const { t } = useLanguage()
-  const { level1Name, level2Name } = useProductionTopologyLabels()
-  const { templates, addTemplate, removeTemplate, updateTemplate } =
-    useTopologyTemplates()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<
-    TopologyTemplate | undefined
-  >()
+  const { allowsPermission, isChecking } = usePermissionActions()
+  const canManage = allowsPermission('perm_manage')
+  const {
+    templates,
+    isLoaded,
+    error,
+    isSaving,
+    captureFromLine,
+    updateTemplate,
+    removeTemplate,
+    applyToNewLine,
+    refresh,
+  } = useTopologyTemplates()
+  const lineQuery = useProductionLinesQuery()
+  const branchQuery = useProductionLineBOMBranchesQuery()
+  const [search, setSearch] = useState('')
+  const [dialog, setDialog] = useState<{
+    mode: 'capture' | 'edit' | 'apply'
+    template?: ProductionTopologyTemplate
+  } | null>(null)
+  const [operationError, setOperationError] = useState('')
 
-  const filteredTemplates = templates.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const handleAdd = () => {
-    setEditingTemplate(undefined)
-    setIsDialogOpen(true)
-  }
-
-  const handleEdit = (template: TopologyTemplate) => {
-    setEditingTemplate(template)
-    setIsDialogOpen(true)
-  }
-
-  const handleSave = (data: Partial<TopologyTemplate>) => {
-    if (editingTemplate) {
-      updateTemplate({ ...editingTemplate, ...data } as TopologyTemplate)
-    } else {
-      const newTemplate: TopologyTemplate = {
-        id: crypto.randomUUID(),
-        name: data.name || '',
-        description: data.description,
-        segments: data.segments || [],
-        createdAt: new Date().toISOString(),
-      }
-      addTemplate(newTemplate)
+  const saveTopologyTemplateDialog = async (
+    request: ProductionTopologyTemplateDialogSaveRequest
+  ) => {
+    if (!canManage) throw new Error('无拓扑模板维护权限')
+    switch (request.mode) {
+      case 'capture':
+        await captureFromLine({
+          sourceLineId: request.sourceLineId,
+          sourceLineVersion: request.sourceLineVersion,
+          name: request.name,
+          description: request.description,
+        })
+        toast.success('已保存为独立拓扑模板')
+        return
+      case 'edit':
+        await updateTemplate(request.template)
+        toast.success('拓扑模板已保存')
+        return
+      case 'apply':
+        await applyToNewLine({
+          template: request.template,
+          code: request.code,
+        })
+        toast.success(`已创建新 L1：${request.code}`)
+        return
     }
   }
-
+  const deleteIndependentTopologyTemplate = async (
+    template: ProductionTopologyTemplate
+  ) => {
+    if (!canManage || isSaving) return
+    if (
+      !(await requestApplicationConfirmation(
+        `确认删除模板“${template.name}”？已建立的实际生产结构不会受影响。`
+      ))
+    )
+      return
+    setOperationError('')
+    try {
+      await removeTemplate(template)
+      toast.success('拓扑模板已删除')
+    } catch (deleteError) {
+      failLoudly(deleteError, 'TopologyTemplateMgmt.delete', { silentUI: true })
+      setOperationError(
+        deleteError instanceof Error ? deleteError.message : '删除失败，请重试'
+      )
+    }
+  }
+  if (isChecking || !isLoaded)
+    return <p className='p-4 text-muted-foreground'>正在读取拓扑模板…</p>
+  if (error && 'status' in error && error.status === 403)
+    return <ForbiddenState />
   return (
-    <div className='flex animate-in flex-col gap-8 pb-10 duration-700 fade-in'>
-      {/* 顶部 UDS 风格页眉 - 触发重载 HMR_TRIGGER_v2 */}
-      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-        <div className='flex items-center gap-2 text-primary'>
-          <FileCode className='size-4' />
-          <h3 className='text-lg font-black tracking-tighter uppercase underline decoration-rose-500'>
-            {t('orgPersonnel.topologyTemplateMgmt.header.title')}
-          </h3>
-        </div>
-        <p className='text-[9px] font-black tracking-widest text-muted-foreground opacity-60'>
-          {t('orgPersonnel.topologyTemplateMgmt.header.subtitle')}
+    <div className='space-y-4'>
+      <div className='rounded-xl border border-dashed p-4'>
+        <h3 className='font-semibold'>生产拓扑模板</h3>
+        <p className='mt-1 text-sm text-muted-foreground'>
+          从已建立的 L1 保存独立副本，用于创建新的
+          L1。修改或删除模板不会同步到实际生产结构。
         </p>
       </div>
-
-      <div className='flex items-center justify-between gap-4 px-1'>
-        <div className='relative max-w-sm flex-1'>
-          <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
-          <Input
-            placeholder={t(
-              'orgPersonnel.topologyTemplateMgmt.list.searchPlaceholder'
-            )}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Button
-          onClick={handleAdd}
-          className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
-        >
-          <Plus className='mr-2 size-4' />{' '}
-          {t('orgPersonnel.topologyTemplateMgmt.list.addTemplate')}
-        </Button>
-      </div>
-
-      {filteredTemplates.length > 0 ? (
-        <div className='grid h-fit grid-cols-1 content-start items-stretch gap-6 px-1'>
-          {filteredTemplates.map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onEdit={handleEdit}
-              onDelete={removeTemplate}
-              onUpdate={updateTemplate}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className='flex flex-col items-center justify-center space-y-4 rounded-[24px] border-dashed border-muted/50 bg-muted/5 p-12 text-center'>
-          <FileCode className='size-12 text-muted-foreground/20' />
-          <div className='space-y-1'>
-            <p className='text-base font-black tracking-tighter text-muted-foreground/60 uppercase'>
-              {t('orgPersonnel.topologyTemplateMgmt.list.noTemplates')}
-            </p>
-            <p className='max-w-[400px] text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-              {t('orgPersonnel.topologyTemplateMgmt.list.emptyDescDynamic', {
-                level1Name,
-                level2Name,
-              })}
-            </p>
-          </div>
+      <div className='flex flex-wrap gap-3'>
+        <Input
+          aria-label='搜索拓扑模板'
+          placeholder='搜索模板名称或说明'
+          className='max-w-sm'
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        {canManage && (
           <Button
-            onClick={handleAdd}
-            variant='outline'
-            className='h-11 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase hover:bg-muted/5'
+            disabled={isSaving || Boolean(error)}
+            onClick={() => setDialog({ mode: 'capture' })}
           >
-            {t('orgPersonnel.topologyTemplateMgmt.list.initButton')}
+            <Plus /> 从实际 L1 生成模板
+          </Button>
+        )}
+      </div>
+      {error && (
+        <div role='alert' className='space-y-2 text-sm text-destructive'>
+          <p>{error.message}</p>
+          <Button variant='outline' onClick={() => void refresh()}>
+            重新读取模板
           </Button>
         </div>
       )}
-
+      {operationError && (
+        <p role='alert' className='text-sm text-destructive'>
+          {operationError}
+        </p>
+      )}
+      {!error &&
+        templates
+          .filter((template) =>
+            `${template.name} ${template.description || ''}`
+              .toLowerCase()
+              .includes(search.toLowerCase())
+          )
+          .map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              canManage={canManage}
+              isSaving={isSaving}
+              onEdit={(item) => setDialog({ mode: 'edit', template: item })}
+              onApply={(item) => setDialog({ mode: 'apply', template: item })}
+              onDelete={(item) => void deleteIndependentTopologyTemplate(item)}
+            />
+          ))}
+      {!error && templates.length === 0 && (
+        <p className='p-8 text-center text-sm text-muted-foreground'>
+          暂无拓扑模板。先建立实际 L1，再将其保存为模板。
+        </p>
+      )}
       <TemplateDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        template={editingTemplate}
-        onSave={handleSave}
+        open={Boolean(dialog)}
+        onOpenChange={(open) => {
+          if (!open) setDialog(null)
+        }}
+        mode={dialog?.mode || 'capture'}
+        template={dialog?.template}
+        lines={lineQuery.data || []}
+        branches={branchQuery.data || []}
+        isLoadingSources={
+          dialog?.mode === 'capture'
+            ? lineQuery.isLoading
+            : branchQuery.isLoading
+        }
+        sourceError={
+          dialog?.mode === 'capture'
+            ? lineQuery.error
+            : dialog?.mode === 'edit'
+              ? branchQuery.error
+              : null
+        }
+        onSave={saveTopologyTemplateDialog}
       />
     </div>
   )

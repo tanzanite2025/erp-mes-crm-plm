@@ -51,7 +51,7 @@ export function EngineeringSidebar({
               placeholder={t(
                 'engineering.productMgmt.sidebar.searchPlaceholder'
               )}
-              className='h-11 rounded-full border-none bg-white/50 pl-9 text-xs font-bold tracking-tight uppercase shadow-inner placeholder:text-muted-foreground/30 focus-visible:ring-2 focus-visible:ring-blue-600/20'
+              className='h-11 rounded-full border-none bg-white/50 pl-9 shadow-inner placeholder:text-muted-foreground/30 focus-visible:ring-2 focus-visible:ring-blue-600/20'
               value={vm.searchTerm}
               onChange={(e) => vm.handleSearchTermChange(e.target.value)}
             />
@@ -60,14 +60,14 @@ export function EngineeringSidebar({
           <div className='flex items-center gap-2'>
             <Button
               variant='outline'
-              className='flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-muted-foreground/10 bg-white px-4 text-[9px] font-black tracking-widest whitespace-nowrap text-muted-foreground uppercase transition-all hover:bg-muted/40 hover:text-blue-600'
+              className='flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-muted-foreground/10 bg-white px-4 whitespace-nowrap text-muted-foreground transition-all hover:bg-muted/40 hover:text-blue-600'
               onClick={onAddType}
             >
               <Settings2 className='size-4' />
               <span>{t('engineering.productMgmt.sidebar.editCategory')}</span>
             </Button>
             <Button
-              className='h-11 flex-1 gap-2 rounded-full bg-blue-600 px-5 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-600/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:flex-none'
+              className='h-11 flex-1 gap-2 rounded-full bg-blue-600 px-5 text-white shadow-xl shadow-blue-600/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:flex-none'
               onClick={onAddProduct}
             >
               <Plus className='size-4' />

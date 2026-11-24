@@ -1,5 +1,5 @@
 import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
-import { parseLinearBarcodeCode } from '@/features/basic-settings/utils/linear-barcode-parser'
+import { parseProductCodeForDisplay } from '@/lib/product-code/product-code-parser'
 import type { ScanResolveInput } from '../core/types'
 import type {
   WheelBarcodeSnapshot,
@@ -63,7 +63,7 @@ export const wheelTraceParserService = {
     input: ScanResolveInput<WheelTraceParserContext>
   ): Pick<WheelTracePayload, 'summary' | 'barcode' | 'identity' | 'warnings'> {
     const barcode = toBarcodeSnapshot(input.rawCode)
-    const parsed = parseLinearBarcodeCode(barcode.rawCode, input.context)
+    const parsed = parseProductCodeForDisplay(barcode.rawCode, input.context)
 
     if (!parsed.isValid) {
       return {

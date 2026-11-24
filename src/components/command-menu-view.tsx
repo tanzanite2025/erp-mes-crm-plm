@@ -92,14 +92,15 @@ export function CommandMenuView({
         requireCloseButton
         shouldFilter={false}
         overlayClassName='!bg-transparent'
-        className='h-svh! max-h-svh! w-[100vw]! max-w-[100vw]! overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:border-sky-500/20 **:data-[slot=command-input-wrapper]:px-5 md:h-auto! md:max-h-[calc(100dvh-2rem)]! md:w-[85vw]! md:max-w-[85vw]! [&_[data-slot=command-input-wrapper]_svg]:size-4'
+        className='h-svh! max-h-svh! w-[100vw]! max-w-[100vw]! grid-rows-[minmax(0,1fr)] overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:border-sky-500/20 **:data-[slot=command-input-wrapper]:px-5 md:h-auto! md:max-h-[calc(100dvh-2rem)]! md:w-[85vw]! md:max-w-[85vw]! [&_[data-slot=command-input-wrapper]_svg]:size-4'
+        commandClassName='min-h-0'
       >
         <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_34%)]' />
 
-        <div className='relative border-b border-dashed border-sky-500/20'>
+        <div className='relative shrink-0 border-b border-dashed border-sky-500/20'>
           <CommandInput
             placeholder={t('commandMenu.placeholder')}
-            className='h-14 border-none bg-transparent text-sm focus:ring-0'
+            className='h-14 border-none bg-transparent focus:ring-0'
             value={searchValue}
             onValueChange={onSearchChange}
           />
@@ -111,25 +112,25 @@ export function CommandMenuView({
         </div>
 
         <Tabs defaultValue='business' className='flex min-h-0 flex-1 flex-col'>
-          <div className='px-3 pt-1.5'>
+          <div className='shrink-0 px-3 pt-1.5'>
             <TabsList className='grid w-full grid-cols-3 rounded-2xl border border-sky-500/15 bg-sky-500/5 p-1'>
               <TabsTrigger
                 value='business'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <Box size={11} />
                 {t('commandMenu.headings.data')}
               </TabsTrigger>
               <TabsTrigger
                 value='knowledge'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <BookOpenText size={11} />
                 {t('commandMenu.headings.knowledgeBase')}
               </TabsTrigger>
               <TabsTrigger
                 value='actions'
-                className='flex items-center gap-1.5 rounded-xl py-1.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+                className='flex items-center gap-1.5 rounded-xl py-1.5 text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
               >
                 <Zap size={11} />
                 {t('commandMenu.headings.actions')}
@@ -137,7 +138,8 @@ export function CommandMenuView({
             </TabsList>
           </div>
 
-          <CommandList className='max-h-none min-h-0 flex-1 overflow-hidden'>
+          {/* Keep cmdk's sizing wrapper bounded so the results scroll inside it. */}
+          <CommandList className='max-h-none min-h-0 flex-1 overflow-hidden [&>[cmdk-list-sizer]]:h-full'>
             <ScrollArea className='h-full max-h-full md:h-[540px] md:max-h-[calc(100dvh-10.5rem)]'>
               <div className='min-h-full'>
                 <TabsContent
@@ -278,7 +280,7 @@ export function CommandMenuView({
           </CommandList>
         </Tabs>
 
-        <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
+        <div className='flex shrink-0 items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-4 py-2'>
           <div className='flex items-center gap-2.5 text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             <span className='flex items-center gap-1.5'>
               <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-maple-ui text-[7px]'>
@@ -367,20 +369,15 @@ function SearchListItem({
         )}
       </div>
       <div className='flex flex-1 items-center justify-between overflow-hidden'>
-        <div className='flex min-w-0 flex-col truncate leading-tight'>
-          <span
-            className={cn(
-              'truncate font-bold tracking-tight',
-              isAction ? 'text-[12px]' : 'text-[13px]'
-            )}
-          >
+        <div className='flex min-w-0 flex-col truncate'>
+          <span className={cn('truncate', isAction ? '' : '')}>
             {item.title}
           </span>
           {item.parentTitle && (
             <span
               className={cn(
-                'truncate font-black tracking-[0.18em] text-muted-foreground/45 uppercase',
-                isAction ? 'text-[6px]' : 'text-[7px]'
+                'truncate text-muted-foreground/45',
+                isAction ? '' : ''
               )}
             >
               {item.parentTitle}

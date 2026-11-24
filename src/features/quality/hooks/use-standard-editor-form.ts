@@ -17,6 +17,7 @@ interface UseStandardEditorFormOptions {
   initialStandard?: Standard | null
   resetKey: string
   mode: 'create' | 'edit'
+  editInspectionCriteria?: boolean
 }
 
 type StandardFormUpdater =
@@ -47,6 +48,7 @@ export function useStandardEditorForm({
   initialStandard,
   resetKey,
   mode,
+  editInspectionCriteria = true,
 }: UseStandardEditorFormOptions) {
   const { t } = useLanguage()
   const isEdit = mode === 'edit'
@@ -59,14 +61,12 @@ export function useStandardEditorForm({
     commit,
     isDirty,
   } = useDeltaTracker(memoizedInitial, resetKey)
-  const isControlledProtocol = Boolean(
-    memoizedInitial.productId && memoizedInitial.code.startsWith('QCP-')
-  )
+  const isEditingInspectionCriteria = editInspectionCriteria
   const {
     units,
     isLoading: areUnitsLoading,
     error: unitsError,
-  } = useUnitsQuery({ enabled: isControlledProtocol })
+  } = useUnitsQuery({ enabled: isEditingInspectionCriteria })
   const initialInspectionCriteria = useMemo(
     () => ({
       criteria: createControlledProtocolInspectionCriteriaFormValues(
@@ -115,7 +115,7 @@ export function useStandardEditorForm({
       }
 
       const snapshot = buildSnapshot(formData, overrides)
-      if (isControlledProtocol) {
+      if (isEditingInspectionCriteria) {
         if (areUnitsLoading || unitsError) {
           toast.error(
             t(
@@ -157,7 +157,7 @@ export function useStandardEditorForm({
       }
 
       const delta = commit()
-      if (isControlledProtocol && areInspectionCriteriaDirty()) {
+      if (isEditingInspectionCriteria && areInspectionCriteriaDirty()) {
         delta.items = { o: memoizedInitial.items, n: snapshot.items }
       }
 
@@ -193,7 +193,7 @@ export function useStandardEditorForm({
       commit,
       formData,
       inspectionCriteriaForm,
-      isControlledProtocol,
+      isEditingInspectionCriteria,
       isEdit,
       memoizedInitial,
       t,
@@ -213,11 +213,12 @@ export function useStandardEditorForm({
     updateField,
     buildSubmitPayload,
     buildSubmitPayloadWithOverrides,
-    inspectionCriteria: isControlledProtocol
+    inspectionCriteria: isEditingInspectionCriteria
       ? inspectionCriteriaForm.criteria
       : null,
     updateInspectionCriteria,
     isDirty:
-      isDirty() || (isControlledProtocol && areInspectionCriteriaDirty()),
+      isDirty() ||
+      (isEditingInspectionCriteria && areInspectionCriteriaDirty()),
   }
 }

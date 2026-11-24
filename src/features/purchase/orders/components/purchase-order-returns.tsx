@@ -554,7 +554,7 @@ export function PurchaseOrderReturns() {
         <Button
           type='button'
           variant='outline'
-          className='h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+          className='h-10 rounded-full border-dashed px-6'
           onClick={() => {
             void Promise.all([
               ordersQuery.refetch(),
@@ -782,7 +782,7 @@ export function PurchaseOrderReturns() {
                 <Button
                   variant='outline'
                   onClick={fillAllRemaining}
-                  className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-10 rounded-full px-4'
                 >
                   <RotateCcw className='mr-2 size-4' />
                   {t('purchase.orders.returns.fillAll')}
@@ -790,7 +790,7 @@ export function PurchaseOrderReturns() {
                 <Button
                   variant='ghost'
                   onClick={clearAllDrafts}
-                  className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-10 rounded-full px-4'
                 >
                   <XCircle className='mr-2 size-4' />
                   {t('purchase.orders.returns.clearAll')}
@@ -923,7 +923,7 @@ export function PurchaseOrderReturns() {
                               type='button'
                               variant='outline'
                               onClick={() => fillLineRemaining(line.id!)}
-                              className='h-11 flex-1 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                              className='h-11 flex-1 rounded-full px-4'
                             >
                               {t('purchase.orders.returns.fillRemaining')}
                             </Button>
@@ -931,7 +931,7 @@ export function PurchaseOrderReturns() {
                               type='button'
                               variant='ghost'
                               onClick={() => clearLineDraft(line.id!)}
-                              className='h-11 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                              className='h-11 rounded-full px-4'
                             >
                               {t('purchase.orders.returns.clearLine')}
                             </Button>
@@ -1022,7 +1022,7 @@ export function PurchaseOrderReturns() {
                 <Button
                   variant='ghost'
                   onClick={() => handleOpenChange(false)}
-                  className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+                  className='h-11 rounded-full px-6'
                 >
                   {t('purchase.orders.receiptDialogCancel')}
                 </Button>
@@ -1033,7 +1033,7 @@ export function PurchaseOrderReturns() {
                     createMutation.isPending ||
                     draftSummary.selectedLines === 0
                   }
-                  className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+                  className='h-11 rounded-full px-6'
                 >
                   {createMutation.isPending ? (
                     <Loader2 className='mr-2 size-4 animate-spin' />
@@ -1118,7 +1118,7 @@ export function PurchaseOrderReturns() {
                   handleOpenChange(true)
                 }}
                 disabled={eligibleOrders.length === 0}
-                className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-5'
               >
                 <PackageX className='mr-2 size-4' />
                 {t('purchase.orders.returns.createAction')}
@@ -1192,37 +1192,35 @@ export function PurchaseOrderReturns() {
                                 >
                                   <div className='flex items-center justify-between gap-3'>
                                     <div>
-                                      <p className='text-[12px] font-black'>
-                                        {order.orderNo}
-                                      </p>
-                                      <p className='mt-1 text-[10px] font-bold text-muted-foreground'>
+                                      <p>{order.orderNo}</p>
+                                      <p className='mt-1 text-muted-foreground'>
                                         {order.purchaser ||
                                           t('purchase.orders.notSet')}
                                       </p>
                                     </div>
-                                    <span className='text-[10px] font-bold text-muted-foreground'>
+                                    <span className='text-muted-foreground'>
                                       {order.expectedDate || '--'}
                                     </span>
                                   </div>
 
                                   <div className='mt-4 grid grid-cols-2 gap-3'>
                                     <div>
-                                      <p className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                                      <p className='text-muted-foreground/50'>
                                         {t(
                                           'purchase.orders.returns.pendingLines'
                                         )}
                                       </p>
-                                      <p className='mt-1 text-sm font-black text-amber-600'>
+                                      <p className='mt-1 text-amber-600'>
                                         {pendingLinesCount}
                                       </p>
                                     </div>
                                     <div>
-                                      <p className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
+                                      <p className='text-muted-foreground/50'>
                                         {t(
                                           'purchase.orders.returns.pendingQty'
                                         )}
                                       </p>
-                                      <p className='mt-1 text-sm font-black text-rose-600'>
+                                      <p className='mt-1 text-rose-600'>
                                         {formatMetric(pendingQty)}
                                       </p>
                                     </div>
@@ -1266,7 +1264,7 @@ export function PurchaseOrderReturns() {
                           return
                         handleOpenChange(true)
                       }}
-                      className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+                      className='h-11 rounded-full px-5'
                     >
                       <RotateCcw className='mr-2 size-4' />
                       {t('purchase.orders.returns.createAction')}
@@ -1421,7 +1419,7 @@ export function PurchaseOrderReturns() {
                 <div className='flex flex-wrap gap-2'>
                   <Button
                     variant='outline'
-                    className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                    className='h-10 rounded-full px-4'
                     onClick={() =>
                       setHistoryOrderNo(selectedOrder?.orderNo || '')
                     }
@@ -1431,7 +1429,7 @@ export function PurchaseOrderReturns() {
                   </Button>
                   <Button
                     variant='ghost'
-                    className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                    className='h-10 rounded-full px-4'
                     onClick={() => setHistoryOrderNo('')}
                   >
                     {t('purchase.orders.returns.viewAllHistory')}
@@ -1500,7 +1498,7 @@ export function PurchaseOrderReturns() {
                               <Button
                                 variant='outline'
                                 size='sm'
-                                className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                                className='h-10 rounded-full px-4'
                                 onClick={() =>
                                   setHistoryOrderNo(record.purchaseOrderNo)
                                 }
@@ -1511,7 +1509,7 @@ export function PurchaseOrderReturns() {
                               <Button
                                 variant='outline'
                                 size='sm'
-                                className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                                className='h-10 rounded-full px-4'
                                 onClick={() => setRecordToPrint(record)}
                               >
                                 <Printer className='mr-1 size-3.5' />

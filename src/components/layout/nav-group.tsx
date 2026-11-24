@@ -29,6 +29,7 @@ type ManualExpansion = {
 
 type NavGroupComponentProps = NavGroupProps & {
   onDesktopCategoryActivate?: (categoryId: string) => void
+  onMobileCategoryActivate?: (categoryId: string) => void
   selectedCategoryId?: string | null
 }
 
@@ -38,6 +39,7 @@ export function NavGroup({
   icon: Icon,
   children,
   onDesktopCategoryActivate,
+  onMobileCategoryActivate,
   selectedCategoryId,
 }: NavGroupComponentProps) {
   const pathname = useLocation({ select: (location) => location.pathname })
@@ -51,29 +53,38 @@ export function NavGroup({
   const routeScopedManualExpansion =
     manualExpansion?.pathname === pathname ? manualExpansion.expanded : null
   const isExpanded = routeScopedManualExpansion ?? shouldExpandForPath
-  const shouldRenderMenu = !isDesktop && isExpanded
+  const shouldRenderMenu = !isDesktop && !onMobileCategoryActivate && isExpanded
 
   if (children.length === 0) {
     return null
   }
 
-  if (isDesktop) {
+  if (isDesktop || onMobileCategoryActivate) {
+    const mobileCategory = !isDesktop
     return (
       <div className='px-2 py-0.5' data-sidebar-nav-group={id}>
         <button
           type='button'
-          className='desktop-sidebar-category-button'
+          className={`desktop-sidebar-category-button${mobileCategory ? 'mobile-sidebar-category-button' : ''}`}
           aria-expanded={isSelectedCategory}
           aria-controls={
-            isSelectedCategory
-              ? 'desktop-sidebar-secondary-navigation'
-              : undefined
+            mobileCategory
+              ? 'mobile-sidebar-secondary-navigation'
+              : isSelectedCategory
+                ? 'desktop-sidebar-secondary-navigation'
+                : undefined
           }
           aria-current={shouldExpandForPath ? 'location' : undefined}
           data-sidebar-nav-group-anchor={id}
           data-sidebar-active-path={shouldExpandForPath}
           data-sidebar-category-selected={isSelectedCategory}
-          onClick={() => onDesktopCategoryActivate?.(id)}
+          onClick={() => {
+            if (mobileCategory) {
+              onMobileCategoryActivate?.(id)
+            } else {
+              onDesktopCategoryActivate?.(id)
+            }
+          }}
         >
           {Icon ? (
             <Icon className='size-4 shrink-0' aria-hidden='true' />
@@ -117,7 +128,7 @@ export function NavGroup({
       >
         <div className='flex min-w-0 flex-1 items-center gap-1.5'>
           {Icon ? <Icon className='size-3.5 shrink-0 opacity-75' /> : null}
-          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight font-black tracking-tight whitespace-normal text-sidebar-foreground/78'>
+          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[14px] leading-tight font-black tracking-tight whitespace-normal text-sidebar-foreground/78'>
             {title}
           </SidebarGroupLabel>
         </div>
@@ -185,7 +196,7 @@ function SidebarMenuLink({
           onClick={() => setOpenMobile(false)}
         >
           {item.icon ? <item.icon /> : null}
-          <span className='px-0.5 py-0 text-[12px] leading-normal font-black'>
+          <span className='px-0.5 py-0 text-[13px] leading-normal font-black'>
             {item.title}
           </span>
           {item.badge ? (

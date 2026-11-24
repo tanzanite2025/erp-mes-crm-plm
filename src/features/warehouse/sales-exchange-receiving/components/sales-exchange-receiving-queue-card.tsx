@@ -205,7 +205,7 @@ function SalesExchangeReceivingQueueItemCard({
               <Button
                 type='button'
                 size='sm'
-                className='h-7 shrink-0 rounded-full px-2.5 text-[8px] font-black tracking-widest uppercase'
+                className='control-typography-compact h-7 shrink-0 rounded-full px-2.5'
                 disabled={isConfirmingOldItemInbound}
                 onClick={() =>
                   void onConfirmOldItemInbound(
@@ -235,7 +235,7 @@ function SalesExchangeReceivingQueueItemCard({
             asChild
             size='sm'
             variant='ghost'
-            className='h-8 rounded-full px-3 text-[9px] font-black tracking-widest text-sky-700 uppercase hover:bg-sky-500/10'
+            className='h-8 rounded-full px-3 text-sky-700 hover:bg-sky-500/10'
           >
             <Link to='/trading/sales-exchanges'>
               查看换货 <ArrowRight className='size-3' />
@@ -304,7 +304,7 @@ export function SalesExchangeReceivingQueueCard() {
                     type='button'
                     variant='ghost'
                     size='sm'
-                    className='h-6 rounded-full px-2 text-[8px] font-black tracking-widest text-sky-700 uppercase hover:bg-sky-500/10'
+                    className='control-typography-compact h-6 rounded-full px-2 text-sky-700 hover:bg-sky-500/10'
                     disabled={isRefreshing}
                     onClick={(event) => {
                       event.preventDefault()

@@ -75,7 +75,7 @@ export default function ProductShipment() {
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            className='mt-5 h-10 rounded-full border-dashed px-6'
             onClick={() => {
               void retryRead()
             }}

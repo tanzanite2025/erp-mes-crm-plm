@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
@@ -26,6 +27,10 @@ func SaveProcessStepHandler(c *gin.Context) {
 
 	step, err := services.SaveProcessStep(services.MapSaveProcessStepHandlerRequestToServiceRequest(req, middleware.GetSafeUsername(c), c.ClientIP()))
 	if err != nil {
+		if errors.Is(err, services.ErrProductionProcessLibraryReferenceConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save process step: " + err.Error()})
 		return
 	}
@@ -36,6 +41,10 @@ func SaveProcessStepHandler(c *gin.Context) {
 func DeleteProcessStepHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProcessStep(id, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+		if errors.Is(err, services.ErrProductionProcessLibraryReferenceConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete process step"})
 		return
 	}

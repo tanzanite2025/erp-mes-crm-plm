@@ -130,13 +130,13 @@ export function TechnicalSpecificationDocumentLibrarySelectionDialog({
                     ? '搜索名称、编码、分类或修订版本'
                     : 'Search name, code, category or revision'
                 }
-                className='h-10 pl-9 text-[13px] placeholder:text-[13px] placeholder:tracking-normal placeholder:text-muted-foreground placeholder:normal-case placeholder:opacity-100 md:text-[13px]'
+                className='h-10 pl-9 placeholder:text-muted-foreground placeholder:opacity-100'
               />
             </div>
             <Button
               type='button'
               variant='outline'
-              className='rounded-full text-[13px]'
+              className='rounded-full'
               disabled={documentsQuery.isFetching}
               onClick={() => void documentsQuery.refetch()}
             >
@@ -144,7 +144,7 @@ export function TechnicalSpecificationDocumentLibrarySelectionDialog({
             </Button>
             <Button
               type='button'
-              className='rounded-full bg-blue-600 text-[13px] text-white hover:bg-blue-700'
+              className='rounded-full bg-blue-600 text-white hover:bg-blue-700'
               disabled={!createPermission.isAllowed}
               title={
                 !createPermission.isAllowed
@@ -219,7 +219,7 @@ export function TechnicalSpecificationDocumentLibrarySelectionDialog({
                     <Button
                       type='button'
                       variant='outline'
-                      className='shrink-0 rounded-full text-xs'
+                      className='shrink-0 rounded-full'
                       onClick={() => setPreviewId(specification.id)}
                     >
                       <Eye className='mr-1 size-4' />

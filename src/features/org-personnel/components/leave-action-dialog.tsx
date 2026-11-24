@@ -352,7 +352,7 @@ export function LeaveActionDialog({
             <Button
               type='button'
               variant='outline'
-              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
@@ -362,7 +362,7 @@ export function LeaveActionDialog({
               <Button
                 type='button'
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-6'
                 onClick={handlePreview}
                 disabled={
                   !hasSelectedEmployee(employeeId) ||
@@ -380,7 +380,7 @@ export function LeaveActionDialog({
               <Button
                 type='submit'
                 form='leave-action-form'
-                className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-6'
                 disabled={
                   !hasSelectedEmployee(employeeId) ||
                   isSubmitting ||

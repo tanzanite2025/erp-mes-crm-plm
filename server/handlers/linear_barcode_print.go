@@ -18,6 +18,10 @@ func respondLinearBarcodePrintError(c *gin.Context, err error) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 销售订单或订单行不存在"})
 	case errors.Is(err, services.ErrLinearBarcodeOrderNotPrintable):
 		c.JSON(http.StatusConflict, gin.H{"error": "[BUSINESS_RULE_VIOLATION] 仅排产中的销售订单允许预打一维码"})
+	case errors.Is(err, services.ErrLinearBarcodeIssuanceExceedsOrderLineQuantity):
+		c.JSON(http.StatusConflict, gin.H{"error": "[BUSINESS_RULE_VIOLATION] " + err.Error()})
+	case errors.Is(err, services.ErrLinearBarcodeOrderHasUnattributedLegacyInventory):
+		c.JSON(http.StatusConflict, gin.H{"error": "[BUSINESS_RULE_VIOLATION] " + err.Error(), "code": "LINEAR_BARCODE_LEGACY_INVENTORY_UNATTRIBUTED"})
 	case isUniqueViolation(err):
 		c.JSON(http.StatusConflict, gin.H{"error": "[BUSINESS_RULE_VIOLATION] 发号结果与已有一维码冲突，请重试"})
 	default:

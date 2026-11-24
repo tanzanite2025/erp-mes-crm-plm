@@ -72,7 +72,7 @@ export function CuttingEngineConfigPage() {
             variant='outline'
             size='sm'
             onClick={() => void refetchConfig()}
-            className='self-start rounded-full text-[10px] font-black tracking-widest uppercase sm:self-auto'
+            className='self-start rounded-full sm:self-auto'
           >
             {t('systemManagement.auditEngine.retry')}
           </Button>
@@ -170,12 +170,8 @@ function CuttingEngineConfigForm({
               : 'border-dashed border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
           }`}
         >
-          <span className='block text-[10px] font-black tracking-widest uppercase'>
-            {option.label}
-          </span>
-          <span className='mt-1 block text-[8px] font-black tracking-widest uppercase opacity-60'>
-            {option.description}
-          </span>
+          <span className='block'>{option.label}</span>
+          <span className='mt-1 block opacity-60'>{option.description}</span>
         </button>
       ))}
     </div>
@@ -320,7 +316,7 @@ function CuttingEngineConfigForm({
                     type='number'
                     value={splitPenalty}
                     onChange={(e) => setSplitPenalty(e.target.value)}
-                    className='h-9 w-14 rounded-lg border-none bg-background text-center font-maple-ui text-xs'
+                    className='h-9 w-14 rounded-lg border-none bg-background text-center font-maple-ui'
                   />
                 </div>
               </div>
@@ -348,7 +344,7 @@ function CuttingEngineConfigForm({
                     type='number'
                     value={mustFulfillPenalty}
                     onChange={(e) => setMustFulfillPenalty(e.target.value)}
-                    className='h-9 w-20 rounded-lg border-none bg-background text-center font-maple-ui text-xs'
+                    className='h-9 w-20 rounded-lg border-none bg-background text-center font-maple-ui'
                   />
                 </div>
               </div>
@@ -558,7 +554,7 @@ function CuttingEngineConfigForm({
                             : 'border-dashed border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40'
                         }`}
                       >
-                        <span className='block text-[10px] font-black tracking-widest uppercase'>
+                        <span className='block'>
                           {angleMixModeLabels[mode]}
                         </span>
                       </button>
@@ -612,7 +608,7 @@ function CuttingEngineConfigForm({
                       onChange={(e) =>
                         setDirectionSwitchPenalty(e.target.value)
                       }
-                      className='h-10 w-16 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
+                      className='h-10 w-16 rounded-lg border-none bg-background pr-3 text-right font-maple-ui'
                     />
                   </div>
                 </div>
@@ -666,7 +662,7 @@ function CuttingEngineConfigForm({
                       type='text'
                       value={minSupportedLength}
                       onChange={(e) => setMinSupportedLength(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui'
                     />
                     <span className='text-[10px] font-black text-muted-foreground/50'>
                       {t('rawMaterials.engineConfig.constraints.units.mm')}
@@ -692,7 +688,7 @@ function CuttingEngineConfigForm({
                       type='text'
                       value={maxSupportedLength}
                       onChange={(e) => setMaxSupportedLength(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui'
                     />
                     <span className='text-[10px] font-black text-muted-foreground/50'>
                       {t('rawMaterials.engineConfig.constraints.units.mm')}
@@ -718,7 +714,7 @@ function CuttingEngineConfigForm({
                       type='text'
                       value={fixedDecisionLength}
                       onChange={(e) => setFixedDecisionLength(e.target.value)}
-                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
+                      className='h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui'
                     />
                     <span className='text-[10px] font-black text-muted-foreground/50'>
                       {t('rawMaterials.engineConfig.constraints.units.mm')}
@@ -791,7 +787,7 @@ function CuttingEngineConfigForm({
             variant='outline'
             onClick={handleReset}
             disabled={isSaving || isLoading}
-            className='flex h-11 gap-2 rounded-full border-slate-300 px-6 text-[10px] font-black tracking-widest uppercase hover:bg-slate-100/50'
+            className='flex h-11 gap-2 rounded-full border-slate-300 px-6 hover:bg-slate-100/50'
           >
             {isSaving ? (
               <Loader2 className='size-3.5 animate-spin' />
@@ -805,7 +801,7 @@ function CuttingEngineConfigForm({
           <Button
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className='flex h-11 gap-2 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-sm hover:bg-primary/90'
+            className='flex h-11 gap-2 rounded-full bg-primary px-8 text-primary-foreground shadow-sm hover:bg-primary/90'
           >
             {isSaving ? (
               <Loader2 className='size-3.5 animate-spin' />

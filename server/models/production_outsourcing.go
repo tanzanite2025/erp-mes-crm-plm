@@ -80,11 +80,6 @@ type OutsourceOrderLine struct {
 	Specification    string                `gorm:"type:text" json:"specification"`
 	Quantity         float64               `gorm:"not null" json:"quantity"`
 	UOM              string                `gorm:"size:20" json:"uom"`
-	SegmentID        string                `gorm:"size:36;index" json:"segmentId"`
-	SegmentName      string                `gorm:"size:100" json:"segmentName"`
-	ProcessStepID    string                `gorm:"size:36;index" json:"processStepId"`
-	ProcessCode      string                `gorm:"size:50" json:"processCode"`
-	ProcessName      string                `gorm:"size:100" json:"processName"`
 	Status           string                `gorm:"size:30;index;default:'DRAFT'" json:"status"`
 	SentQuantity     float64               `gorm:"default:0" json:"sentQuantity"`
 	ReturnedQuantity float64               `gorm:"default:0" json:"returnedQuantity"`
@@ -114,15 +109,16 @@ type OutsourceTransfer struct {
 	BaseModel
 	TransferNo           string              `gorm:"size:60;uniqueIndex;not null" json:"transferNo"`
 	OutsourceOrderID     string              `gorm:"size:36;index;not null" json:"outsourceOrderId"`
-	OutsourceOrderLineID string              `gorm:"size:36;index;not null;uniqueIndex:idx_outsource_transfer_line_type_barcode" json:"outsourceOrderLineId"`
-	TransferType         string              `gorm:"size:20;index;not null;uniqueIndex:idx_outsource_transfer_line_type_barcode" json:"transferType"`
-	ProductBarcode       string              `gorm:"size:120;index;not null;uniqueIndex:idx_outsource_transfer_line_type_barcode" json:"productBarcode"`
+	OutsourceOrderLineID string              `gorm:"size:36;index;not null;uniqueIndex:idx_outsource_transfer_cycle_identity" json:"outsourceOrderLineId"`
+	TransferType         string              `gorm:"size:20;index;not null;uniqueIndex:idx_outsource_transfer_cycle_identity" json:"transferType"`
+	ProductBarcode       string              `gorm:"size:120;index;not null;uniqueIndex:idx_outsource_transfer_cycle_identity" json:"productBarcode"`
+	CycleNo              int                 `gorm:"not null;default:1;uniqueIndex:idx_outsource_transfer_cycle_identity" json:"cycleNo"`
 	Quantity             float64             `gorm:"not null" json:"quantity"`
 	UOM                  string              `gorm:"size:20" json:"uom"`
 	PartnerID            string              `gorm:"size:36;index" json:"partnerId"`
 	RouteID              string              `gorm:"type:uuid;index" json:"routeId"`
 	RouteStepID          string              `gorm:"type:uuid;index" json:"routeStepId"`
-	ProcessStepID        string              `gorm:"type:uuid;index" json:"processStepId"`
+	BranchOperationID    string              `gorm:"type:uuid;index;not null" json:"branchOperationId"`
 	FromHolderType       string              `gorm:"size:40;index" json:"fromHolderType"`
 	FromHolderID         string              `gorm:"type:uuid;index" json:"fromHolderId"`
 	ToHolderType         string              `gorm:"size:40;index" json:"toHolderType"`
@@ -151,8 +147,10 @@ type OutsourceInspection struct {
 	BaseModel
 	InspectionNo         string              `gorm:"size:60;uniqueIndex;not null" json:"inspectionNo"`
 	OutsourceOrderID     string              `gorm:"size:36;index;not null" json:"outsourceOrderId"`
-	OutsourceOrderLineID string              `gorm:"size:36;index;not null;uniqueIndex:idx_outsource_inspection_line_barcode" json:"outsourceOrderLineId"`
-	ProductBarcode       string              `gorm:"size:120;index;not null;uniqueIndex:idx_outsource_inspection_line_barcode" json:"productBarcode"`
+	OutsourceOrderLineID string              `gorm:"size:36;index;not null;uniqueIndex:idx_outsource_inspection_round_identity" json:"outsourceOrderLineId"`
+	ProductBarcode       string              `gorm:"size:120;index;not null;uniqueIndex:idx_outsource_inspection_round_identity" json:"productBarcode"`
+	CycleNo              int                 `gorm:"not null;default:1;uniqueIndex:idx_outsource_inspection_round_identity" json:"cycleNo"`
+	InspectionRoundNo    int                 `gorm:"not null;default:1;uniqueIndex:idx_outsource_inspection_round_identity" json:"inspectionRoundNo"`
 	InspectionTaskID     string              `gorm:"type:uuid;index" json:"inspectionTaskId"`
 	Result               string              `gorm:"size:30;index;not null" json:"result"`
 	Disposition          string              `gorm:"size:30;index;not null" json:"disposition"`
@@ -164,7 +162,7 @@ type OutsourceInspection struct {
 	UOM                  string              `gorm:"size:20" json:"uom"`
 	RouteID              string              `gorm:"type:uuid;index" json:"routeId"`
 	RouteStepID          string              `gorm:"type:uuid;index" json:"routeStepId"`
-	ProcessStepID        string              `gorm:"type:uuid;index" json:"processStepId"`
+	BranchOperationID    string              `gorm:"type:uuid;index;not null" json:"branchOperationId"`
 	OperationID          string              `gorm:"type:uuid;index" json:"operationId"`
 	InspectedAt          *time.Time          `gorm:"index" json:"inspectedAt"`
 	Inspector            string              `gorm:"size:120" json:"inspector"`

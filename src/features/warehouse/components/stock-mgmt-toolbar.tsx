@@ -22,7 +22,7 @@ export function StockMgmtToolbar({
         <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
         <Input
           placeholder={t('warehouse.stock.searchPlaceholder')}
-          className='h-11 rounded-xl border-none bg-muted/50 pl-10 text-xs font-medium transition-all focus-visible:ring-1 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl md:text-sm'
+          className='h-11 rounded-xl border-none bg-muted/50 pl-10 transition-all focus-visible:ring-1 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl'
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -30,7 +30,7 @@ export function StockMgmtToolbar({
       <div className='flex items-center gap-3'>
         <Button
           onClick={onReconcile}
-          className='h-10 flex-1 gap-2 rounded-full px-4 text-[9px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:flex-none md:h-11 md:px-6 md:text-[10px]'
+          className='h-10 flex-1 gap-2 rounded-full px-4 shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:flex-none md:h-11 md:px-6'
         >
           <ShieldCheck className='size-4' />
           {t('warehouse.stock.reconcile')}

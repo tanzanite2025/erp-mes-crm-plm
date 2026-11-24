@@ -141,7 +141,7 @@ export function WeavingModeActionDialog({
               type='number'
               min={1}
               disabled={ratioLocked}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner'
               value={draft.ratioNumerator}
               onChange={(event) =>
                 setDraft((prev) => ({
@@ -159,7 +159,7 @@ export function WeavingModeActionDialog({
               type='number'
               min={1}
               disabled={ratioLocked}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner'
               value={draft.ratioDenominator}
               onChange={(event) =>
                 setDraft((prev) => ({
@@ -200,7 +200,7 @@ export function WeavingModeActionDialog({
             {t('engineering.masterData.weavingMode.fields.description')}
           </Label>
           <Textarea
-            className='min-h-[120px] resize-none rounded-[24px] border-none bg-muted/40 p-5 text-sm font-bold shadow-inner'
+            className='min-h-[120px] resize-none rounded-[24px] border-none bg-muted/40 p-5 shadow-inner'
             value={draft.description}
             onChange={(event) =>
               setDraft((prev) => ({ ...prev, description: event.target.value }))

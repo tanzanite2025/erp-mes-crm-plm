@@ -1,5 +1,6 @@
 import {
   FilePenLine,
+  Copy,
   GitBranchPlus,
   MoreVertical,
   Pencil,
@@ -44,6 +45,7 @@ export function LineMindmapToolbar({
   onToggleLine,
   onEditNode,
   onSelectLine,
+  onCaptureTopologyTemplate,
 }: LineMindmapToolbarProps) {
   const { t } = useLanguage()
   const lineActionLabel = activeLineIsActive ? '停用当前 L1' : '启用当前 L1'
@@ -62,16 +64,12 @@ export function LineMindmapToolbar({
             value={resolvedLineId || undefined}
             onValueChange={onSelectLine}
           >
-            <SelectTrigger className='h-8 w-[200px] shrink-0 rounded-2xl border-none bg-background/80 px-3 text-[9px] font-black shadow-none sm:w-[220px]'>
+            <SelectTrigger className='h-8 w-[200px] shrink-0 rounded-2xl border-none bg-background/80 px-3 shadow-none sm:w-[220px]'>
               <SelectValue placeholder='选择要查看的 L1' />
             </SelectTrigger>
             <SelectContent>
               {lineOptions.map((lineOption) => (
-                <SelectItem
-                  key={lineOption.id}
-                  value={lineOption.id}
-                  className='text-[9px] font-black'
-                >
+                <SelectItem key={lineOption.id} value={lineOption.id}>
                   {lineOption.label} · {lineOption.code}
                 </SelectItem>
               ))}
@@ -81,7 +79,7 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
+            className='h-8 shrink-0 rounded-full border-dashed px-3'
             onClick={onCreateLevel1}
             disabled={isCheckingPermissions || !canManageLine}
             title={
@@ -111,9 +109,16 @@ export function LineMindmapToolbar({
               className='rounded-[20px] border border-dashed border-muted/40 bg-background/95 p-1 shadow-2xl'
             >
               <DropdownMenuItem
+                onClick={onCaptureTopologyTemplate}
+                disabled={!canManageLine}
+                className='cursor-pointer gap-2 rounded-xl px-4 py-3'
+              >
+                <Copy className='size-3.5' /> 保存为拓扑模板
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={onEditLine}
                 disabled={!canUpdateLine}
-                className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-[10px] font-black tracking-widest uppercase'
+                className='cursor-pointer gap-2 rounded-xl px-4 py-3'
                 title={
                   canUpdateLine
                     ? '编辑 L1'
@@ -128,7 +133,7 @@ export function LineMindmapToolbar({
               <DropdownMenuItem
                 onClick={onToggleLine}
                 disabled={!canUpdateLine}
-                className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-[10px] font-black tracking-widest uppercase'
+                className='cursor-pointer gap-2 rounded-xl px-4 py-3'
                 title={
                   canUpdateLine
                     ? lineActionLabel
@@ -143,7 +148,7 @@ export function LineMindmapToolbar({
               <DropdownMenuItem
                 onClick={onDeleteLine}
                 disabled={!canManageLine}
-                className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-[10px] font-black tracking-widest text-rose-600 uppercase focus:text-rose-600'
+                className='cursor-pointer gap-2 rounded-xl px-4 py-3 text-rose-600 focus:text-rose-600'
                 title={
                   canManageLine
                     ? '删除当前 L1'
@@ -160,7 +165,7 @@ export function LineMindmapToolbar({
 
           <Button
             type='button'
-            className='h-8 shrink-0 rounded-full px-3 text-[8px] font-black tracking-widest uppercase'
+            className='h-8 shrink-0 rounded-full px-3'
             onClick={onCreateLevel2}
             disabled={isCheckingPermissions || !activeLine || !canUpdateLine}
             title={
@@ -174,13 +179,13 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
+            className='h-8 shrink-0 rounded-full border-dashed px-3'
             onClick={onCreateLevel3}
-            disabled={isCheckingPermissions || !activeLine || !canUpdateLine}
+            disabled={isCheckingPermissions || !activeLine || !canManageLine}
             title={
-              canUpdateLine
+              canManageLine
                 ? '新增 L3'
-                : t('productionArchitecture.mindmap.actions.noUpdatePermission')
+                : t('productionArchitecture.mindmap.actions.noManagePermission')
             }
           >
             <Workflow className='size-3.5' /> 新增 L3
@@ -188,7 +193,7 @@ export function LineMindmapToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-8 shrink-0 rounded-full border-dashed px-3 text-[8px] font-black tracking-widest uppercase'
+            className='h-8 shrink-0 rounded-full border-dashed px-3'
             onClick={onEditNode}
             disabled={isCheckingPermissions || !selectedNode || !canUpdateLine}
             title={

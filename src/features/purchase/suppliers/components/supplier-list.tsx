@@ -233,7 +233,7 @@ export function SupplierList() {
               queryKey: supplierQueryKeys.list(),
             })
           }
-          className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase'
+          className='h-12 rounded-full border-2 border-dashed px-10'
         >
           {t('common.actions.retry')}
         </Button>
@@ -298,7 +298,7 @@ export function SupplierList() {
             placeholder={t('purchase.suppliers.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
           />
         </div>
         <div className='flex w-full flex-row items-center gap-2 sm:gap-3 md:w-auto'>
@@ -307,7 +307,7 @@ export function SupplierList() {
               <Button
                 variant='ghost'
                 className={cn(
-                  'h-11 min-w-0 flex-1 rounded-full px-3 text-[9px] font-black tracking-widest uppercase transition-all sm:w-auto sm:flex-none sm:px-6 sm:text-[10px]',
+                  'h-11 min-w-0 flex-1 rounded-full px-3 transition-all sm:w-auto sm:flex-none sm:px-6',
                   statusFilter !== 'All'
                     ? 'bg-primary/10 text-primary'
                     : 'opacity-60'
@@ -334,7 +334,7 @@ export function SupplierList() {
               <DropdownMenuSeparator className='bg-muted/50' />
               <DropdownMenuItem
                 onClick={() => setStatusFilter('All')}
-                className='flex items-center justify-between rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
+                className='flex items-center justify-between rounded-lg px-4 py-2'
               >
                 {t('purchase.suppliers.filterAll')}
                 {statusFilter === 'All' && (
@@ -343,7 +343,7 @@ export function SupplierList() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setStatusFilter('Active')}
-                className='mt-1 flex items-center justify-between rounded-lg px-4 py-2 text-[10px] font-black tracking-widest text-emerald-600 uppercase'
+                className='mt-1 flex items-center justify-between rounded-lg px-4 py-2 text-emerald-600'
               >
                 {t('purchase.suppliers.filterActive')}
                 {statusFilter === 'Active' && (
@@ -352,7 +352,7 @@ export function SupplierList() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setStatusFilter('OnReview')}
-                className='mt-1 flex items-center justify-between rounded-lg px-4 py-2 text-[10px] font-black tracking-widest text-amber-600 uppercase'
+                className='mt-1 flex items-center justify-between rounded-lg px-4 py-2 text-amber-600'
               >
                 {t('purchase.suppliers.filterReview')}
                 {statusFilter === 'OnReview' && (
@@ -361,7 +361,7 @@ export function SupplierList() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setStatusFilter('Inactive')}
-                className='mt-1 flex items-center justify-between rounded-lg px-4 py-2 text-[10px] font-black tracking-widest text-rose-600 uppercase'
+                className='mt-1 flex items-center justify-between rounded-lg px-4 py-2 text-rose-600'
               >
                 {t('purchase.suppliers.filterInactive')}
                 {statusFilter === 'Inactive' && (
@@ -373,7 +373,7 @@ export function SupplierList() {
 
           <Button
             onClick={handleAddClick}
-            className='h-11 min-w-0 flex-1 rounded-full bg-primary px-3 text-[9px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto sm:flex-none sm:px-8 sm:text-[10px]'
+            className='h-11 min-w-0 flex-1 rounded-full bg-primary px-3 text-primary-foreground shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto sm:flex-none sm:px-8'
           >
             <Plus className='mr-2 size-4' />{' '}
             {t('purchase.suppliers.addSupplier')}
@@ -428,12 +428,12 @@ export function SupplierList() {
                     >
                       <DropdownMenuItem
                         onClick={() => handleEditClick(supplier)}
-                        className='rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
+                        className='rounded-lg px-4 py-2'
                       >
                         {t('purchase.suppliers.edit')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:bg-rose-500/10 focus:text-rose-500'
+                        className='mt-1 rounded-lg px-4 py-2 text-rose-500 focus:bg-rose-500/10 focus:text-rose-500'
                         onClick={(e) => {
                           e.stopPropagation()
                           handleDeleteSupplier(supplier.id)
@@ -513,7 +513,7 @@ export function SupplierList() {
                           event.stopPropagation()
                           handleOpenWeChat(supplier)
                         }}
-                        className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase sm:justify-self-end'
+                        className='h-9 w-full rounded-full px-4 sm:justify-self-end'
                       >
                         {t('purchase.suppliers.openWechat')}
                         <ExternalLink className='ms-2 size-3' />
@@ -543,12 +543,12 @@ export function SupplierList() {
                           targetId={supplier.id}
                           targetName={supplier.name || supplier.code}
                           label={t('common.audit.trigger')}
-                          className='h-9 w-full rounded-full px-5 text-[8px] sm:w-auto md:text-[9px]'
+                          className='h-9 w-full rounded-full px-5 sm:w-auto'
                         />
                         <Button
                           variant='secondary'
                           size='sm'
-                          className='h-9 w-full rounded-full bg-muted/20 px-5 text-[8px] font-black tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/30 sm:w-auto md:text-[9px]'
+                          className='h-9 w-full rounded-full bg-muted/20 px-5 text-muted-foreground transition-colors hover:bg-muted/30 sm:w-auto'
                         >
                           {t('purchase.suppliers.dossier')}
                           <ExternalLink className='ms-2 size-3 opacity-50' />
@@ -570,7 +570,7 @@ export function SupplierList() {
           <Button
             variant='outline'
             onClick={handleAddClick}
-            className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase transition-all duration-500 hover:bg-primary hover:text-primary-foreground'
+            className='h-12 rounded-full border-2 border-dashed px-10 transition-all duration-500 hover:bg-primary hover:text-primary-foreground'
           >
             {t('purchase.suppliers.firstVendor')}
           </Button>

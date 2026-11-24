@@ -69,7 +69,7 @@ export function ProductCreationGuideStepNavigation({
                   disabled={isBusy || !reachable}
                   onClick={() => onSelectStep(step.key)}
                   className={cn(
-                    'flex h-full w-full flex-col items-center gap-1.5 rounded-full px-1 py-2 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:flex-row sm:gap-2 sm:px-2',
+                    'flex h-full w-full flex-col items-center gap-1.5 rounded-full px-1 py-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:flex-row sm:gap-2 sm:px-2',
                     active
                       ? 'bg-primary/8 text-primary'
                       : 'text-muted-foreground hover:bg-muted'
@@ -77,7 +77,7 @@ export function ProductCreationGuideStepNavigation({
                 >
                   <span
                     className={cn(
-                      'flex size-6 shrink-0 items-center justify-center rounded-full border text-xs',
+                      'flex size-6 shrink-0 items-center justify-center rounded-full border',
                       active &&
                         'border-primary bg-primary text-primary-foreground',
                       completed &&

@@ -104,7 +104,7 @@ export function ProductionSelector({
             placeholder={t(
               'orgPersonnel.org.productionSelector.searchPlaceholder'
             )}
-            className='h-11 rounded-2xl border-none bg-muted/50 pl-9 text-xs font-bold'
+            className='h-11 rounded-2xl border-none bg-muted/50 pl-9'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -159,13 +159,13 @@ export function ProductionSelector({
           <Button
             variant='outline'
             onClick={() => handleDialogOpenChange(false)}
-            className='h-11 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full border-dashed px-6'
           >
             {t('common.actions.cancel')}
           </Button>
           <Button
             onClick={handleSave}
-            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20'
+            className='h-11 rounded-full px-8 shadow-xl shadow-primary/20'
           >
             {t('orgPersonnel.org.productionSelector.submit')}
           </Button>

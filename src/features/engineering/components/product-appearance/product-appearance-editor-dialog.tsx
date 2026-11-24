@@ -266,7 +266,7 @@ function ProductAppearanceEditorDialogSession({
                 <Button
                   type='button'
                   variant='outline'
-                  className='h-8 flex-1 rounded-full border-dashed px-3 text-[10px] font-black'
+                  className='h-8 flex-1 rounded-full border-dashed px-3'
                   onClick={() => imageInputRef.current?.click()}
                 >
                   <Upload className='size-3' />
@@ -280,7 +280,7 @@ function ProductAppearanceEditorDialogSession({
                   <Button
                     type='button'
                     variant='ghost'
-                    className='h-8 rounded-full px-3 text-[10px] font-black text-destructive'
+                    className='h-8 rounded-full px-3 text-destructive'
                     onClick={() =>
                       setDraft((current) => ({
                         ...current,
@@ -327,7 +327,7 @@ function ProductAppearanceEditorDialogSession({
                   autoFocus
                   required
                   maxLength={100}
-                  className='h-11 rounded-2xl border-none bg-background/90 px-4 text-xs font-bold shadow-none md:text-xs'
+                  className='h-11 rounded-2xl border-none bg-background/90 px-4 shadow-none'
                   value={draft.name}
                   onChange={(event) =>
                     setDraft((current) => ({
@@ -353,7 +353,7 @@ function ProductAppearanceEditorDialogSession({
                   maxLength={1}
                   inputMode='numeric'
                   pattern='[1-9]'
-                  className='h-11 rounded-2xl border-none bg-background/90 px-4 text-xs font-bold shadow-none md:text-xs'
+                  className='h-11 rounded-2xl border-none bg-background/90 px-4 shadow-none'
                   value={draft.barcodeCode}
                   onChange={(event) =>
                     setDraft((current) => ({
@@ -392,7 +392,7 @@ function ProductAppearanceEditorDialogSession({
             </Label>
             <Textarea
               id={`${formId}-description`}
-              className='min-h-24 rounded-2xl border-none bg-muted/30 px-4 py-3 text-xs shadow-none md:text-xs'
+              className='min-h-24 rounded-2xl border-none bg-muted/30 px-4 py-3 shadow-none'
               value={draft.description}
               onChange={(event) =>
                 setDraft((current) => ({

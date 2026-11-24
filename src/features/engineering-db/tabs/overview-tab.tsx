@@ -313,7 +313,7 @@ export function OverviewTab() {
               placeholder={t('engineering.db.overview.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className='h-10 w-full rounded-xl border-none bg-background pl-9 text-sm font-bold shadow-inner placeholder:text-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-primary/20'
+              className='h-10 w-full rounded-xl border-none bg-background pl-9 shadow-inner placeholder:text-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-primary/20'
             />
           </div>
           <div className='flex items-center gap-2 self-end lg:self-auto'>

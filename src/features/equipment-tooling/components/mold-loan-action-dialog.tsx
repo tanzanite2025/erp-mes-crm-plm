@@ -202,7 +202,7 @@ export function MoldLoanActionDialog({
           <Button
             variant={mode === 'LEND' ? 'default' : 'ghost'}
             className={cn(
-              'h-10 flex-1 rounded-xl text-[10px] font-black tracking-widest uppercase',
+              'h-10 flex-1 rounded-xl',
               mode === 'LEND'
                 ? 'border border-blue-100 bg-white text-blue-600 shadow-sm'
                 : 'text-muted-foreground/60'
@@ -214,7 +214,7 @@ export function MoldLoanActionDialog({
           <Button
             variant={mode === 'BORROW' ? 'default' : 'ghost'}
             className={cn(
-              'h-10 flex-1 rounded-xl text-[10px] font-black tracking-widest uppercase',
+              'h-10 flex-1 rounded-xl',
               mode === 'BORROW'
                 ? 'border border-purple-100 bg-white text-purple-600 shadow-sm'
                 : 'text-muted-foreground/60'

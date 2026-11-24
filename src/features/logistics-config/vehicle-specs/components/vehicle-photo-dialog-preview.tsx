@@ -69,7 +69,7 @@ export function VehiclePhotoDialogPreview({
                     type='button'
                     onClick={() => onSelectAnnotation(annotation.id)}
                     className={cn(
-                      'absolute z-10 flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[10px] font-black shadow-lg transition',
+                      'control-typography-compact absolute z-10 flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border shadow-lg transition',
                       active
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-white/80 bg-background/95 text-foreground hover:border-primary hover:text-primary'
@@ -140,10 +140,10 @@ export function VehiclePhotoDialogPreview({
                   />
                 </div>
                 <div className='px-3 py-2'>
-                  <div className='text-[11px] font-black text-foreground'>
+                  <div className='text-foreground'>
                     {viewTypeLabel(image.viewType)}
                   </div>
-                  <div className='mt-1 text-[11px] leading-relaxed text-muted-foreground'>
+                  <div className='mt-1 text-muted-foreground'>
                     {image.caption || image.alt}
                   </div>
                 </div>

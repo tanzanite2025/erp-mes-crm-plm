@@ -2,16 +2,24 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"xdfc-server/audit"
 	"xdfc-server/models"
+	"xdfc-server/repositories"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func ListProductionLines() ([]ProductionLineDTO, error) {
 	return defaultProductionService.ListProductionLines()
+}
+
+func ListProductionLineProductTemplates() ([]ProductionLineProductTemplateDTO, error) {
+	return defaultProductionService.ListProductionLineProductTemplates()
 }
 
 func SaveProductionLine(req SaveProductionLineRequest) (ProductionLineDTO, error) {
@@ -31,46 +39,105 @@ func (s *ProductionService) ListProductionLines() ([]ProductionLineDTO, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := attachProductionBOMBranchOperations(s.txManager.DB(), lines); err != nil {
+		return nil, err
+	}
 	return mapProductionLinesToDTO(lines), nil
 }
 
+func (s *ProductionService) ListProductionLineProductTemplates() ([]ProductionLineProductTemplateDTO, error) {
+	var templates []models.ProductTemplate
+	if err := s.txManager.DB().
+		Select("id", "name", "code", "active").
+		Order("name asc, code asc").
+		Find(&templates).Error; err != nil {
+		return nil, err
+	}
+
+	items := make([]ProductionLineProductTemplateDTO, 0, len(templates))
+	for _, template := range templates {
+		items = append(items, ProductionLineProductTemplateDTO{
+			ID:     template.ID,
+			Name:   template.Name,
+			Code:   template.Code,
+			Active: template.Active,
+		})
+	}
+	return items, nil
+}
+
 func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (ProductionLineDTO, error) {
-	line := mapProductionLineDTOToModel(req.Line)
+	var saved ProductionLineDTO
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		var err error
+		saved, err = s.saveProductionLineWithBOMBranchAssociationsTx(tx, req)
+		return err
+	})
+	return saved, err
+}
+
+func (s *ProductionService) saveProductionLineWithBOMBranchAssociationsTx(tx *gorm.DB, req SaveProductionLineRequest) (ProductionLineDTO, error) {
+	line := mapProductionLineDTOToModel(req.Line)
+	err := func() error {
 		var before *ProductionLineDTO
+		var existing *models.ProductionLine
 		auditAction := audit.AuditActionCreate
 		if line.ID != "" && !strings.HasPrefix(line.ID, "temp-") {
-			existing, err := s.repository.GetProductionLineByID(tx, line.ID)
+			existingLine, err := s.repository.GetProductionLineByID(tx.Clauses(clause.Locking{Strength: "UPDATE"}), line.ID)
 			if err != nil {
 				return err
 			}
-			if existing.Version != line.Version {
+			existing = &existingLine
+			line.CreatedAt = existingLine.CreatedAt
+			if existingLine.Version != line.Version {
 				return ErrProductionLineVersionConflict
 			}
-			beforeDTO := mapProductionLineToDTO(existing)
+			beforeDTO := mapProductionLineToDTO(existingLine)
 			before = &beforeDTO
 			auditAction = audit.AuditActionUpdate
+		}
+		if err := validateProductionLineSegmentOwnership(tx, &line); err != nil {
+			return err
+		}
+		if line.ProductTemplateID == nil && existing != nil {
+			line.ProductTemplateID = existing.ProductTemplateID
+		}
+		if line.ProductTemplateID == nil {
+			if existing == nil {
+				return fmt.Errorf("%w: productTemplateId is required for a new L1", ErrInvalidProductionLineTemplate)
+			}
+		} else {
+			var template models.ProductTemplate
+			if err := tx.First(&template, "id = ?", *line.ProductTemplateID).Error; err != nil {
+				return fmt.Errorf("%w: selected product template does not exist", ErrInvalidProductionLineTemplate)
+			}
+			isExistingTemplate := existing != nil && existing.ProductTemplateID != nil && *existing.ProductTemplateID == template.ID
+			if !template.Active && !isExistingTemplate {
+				return fmt.Errorf("%w: selected product template is inactive", ErrInvalidProductionLineTemplate)
+			}
+			line.Name = template.Name
+			line.ProductTemplate = &template
+		}
+		if err := validateAndHydrateProductionLineBOMBranches(tx, &line); err != nil {
+			return err
 		}
 
 		currentAuthCode, err := s.systemConfigRepo.GetSystemConfigValue(tx, "topology_auth_password", "622575")
 		if err != nil {
 			return err
 		}
-		if line.ID != "" && !strings.HasPrefix(line.ID, "temp-") && req.AuthCode != currentAuthCode {
+		if existing != nil && req.AuthCode != currentAuthCode {
 			return ErrProductionTopologyUnauthorized
 		}
 
-		segmentIDs, processIDs := collectProductionAssociationIDs(line.Segments)
-		if line.ID != "" {
-			if err := s.repository.DeleteLineSegmentProcessMappingsNotIn(tx, line.ID, processIDs); err != nil {
-				return err
-			}
+		segmentIDs := collectProductionLineSegmentIDs(line.Segments)
+		if existing != nil {
 			if err := s.repository.DeleteLineSegmentsNotIn(tx, line.ID, segmentIDs); err != nil {
 				return err
 			}
 		}
 
-		if line.ID != "" && !strings.HasPrefix(line.ID, "temp-") {
+		if existing != nil {
 			updated, err := s.repository.BumpProductionLineVersion(tx, line.ID, line.Version)
 			if err != nil {
 				return err
@@ -80,10 +147,14 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			}
 			line.Version++
 		} else {
+			line.ID = uuid.NewString()
 			line.Version = 1
 		}
 
-		if err := s.repository.SaveProductionLine(tx, &line); err != nil {
+		if err := s.repository.SaveProductionLine(tx, &line, existing); err != nil {
+			if errors.Is(err, repositories.ErrProductionLineSegmentIdentityConflict) {
+				return fmt.Errorf("%w: L2 ID 已被其他请求使用，请刷新后重新添加分支关联", ErrInvalidProductionLineSegmentOwnership)
+			}
 			return err
 		}
 
@@ -102,7 +173,7 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			event = event.WithChanges(audit.DiffModelValues(*before, after)...)
 		}
 		return recordAuditEventTx(tx, event.Normalize())
-	})
+	}()
 	return mapProductionLineToDTO(line), err
 }
 
@@ -128,7 +199,7 @@ func (s *ProductionService) PatchProductionLine(req PatchProductionLineRequest) 
 func applyProductionLineDelta(line *ProductionLineDTO, delta map[string]json.RawMessage, version int64) error {
 	line.Version = version
 
-	if err := validateSupportedTopLevelDeltaKeys(delta, "code", "name", "description", "isActive", "segments"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(delta, "code", "name", "productTemplateId", "description", "isActive", "segments"); err != nil {
 		return fmt.Errorf("invalid production line delta: %w", err)
 	}
 
@@ -145,6 +216,10 @@ func applyProductionLineDelta(line *ProductionLineDTO, delta map[string]json.Raw
 			}
 		case "name":
 			if err := json.Unmarshal(valueRaw, &line.Name); err != nil {
+				return err
+			}
+		case "productTemplateId":
+			if err := json.Unmarshal(valueRaw, &line.ProductTemplateID); err != nil {
 				return err
 			}
 		case "description":
@@ -167,6 +242,12 @@ func applyProductionLineDelta(line *ProductionLineDTO, delta map[string]json.Raw
 
 func (s *ProductionService) DeleteProductionLine(id string, operator string, ip string) error {
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		if _, err := s.repository.GetProductionLineByID(tx.Clauses(clause.Locking{Strength: "UPDATE"}), id); err != nil {
+			return err
+		}
+		if err := s.repository.DeleteLineSegmentsNotIn(tx, id, nil); err != nil {
+			return err
+		}
 		if err := s.repository.DeleteProductionLine(tx, id); err != nil {
 			return err
 		}
@@ -181,20 +262,14 @@ func (s *ProductionService) DeleteProductionLine(id string, operator string, ip 
 	})
 }
 
-func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string) {
+func collectProductionLineSegmentIDs(segments []models.LineSegment) []string {
 	var segmentIDs []string
-	var processIDs []string
 
 	for _, segment := range segments {
 		if segment.ID != "" && !strings.HasPrefix(segment.ID, "temp-") {
 			segmentIDs = append(segmentIDs, segment.ID)
 		}
-		for _, process := range segment.Processes {
-			if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
-				processIDs = append(processIDs, process.ID)
-			}
-		}
 	}
 
-	return segmentIDs, processIDs
+	return segmentIDs
 }

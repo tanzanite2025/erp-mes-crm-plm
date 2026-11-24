@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func GetProductionPlansHandler(c *gin.Context) {
@@ -74,7 +75,7 @@ func SaveProductionPlanHandler(c *gin.Context) {
 		var previousPlan models.ProductionPlan
 		hasPreviousPlan := false
 		if strings.TrimSpace(plan.ID) != "" {
-			if err := tx.Preload("Tasks").Where("id = ?", strings.TrimSpace(plan.ID)).First(&previousPlan).Error; err == nil {
+			if err := tx.Preload("Tasks").Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", strings.TrimSpace(plan.ID)).First(&previousPlan).Error; err == nil {
 				hasPreviousPlan = true
 			} else if err != nil && err != gorm.ErrRecordNotFound {
 				return err
@@ -88,16 +89,33 @@ func SaveProductionPlanHandler(c *gin.Context) {
 		if err := services.ValidateProductionPlanSalesOrderSourceTx(tx, &plan, previousPlanSource); err != nil {
 			return err
 		}
+		if err := services.ValidateProductionPlanBOMBranchTx(tx, &plan, previousPlanSource); err != nil {
+			return err
+		}
+		if hasPreviousPlan && strings.TrimSpace(previousPlan.ProductionRouteRevisionID) != "" {
+			plan.ProductionRouteRevisionID = previousPlan.ProductionRouteRevisionID
+			plan.ProductionRouteRevisionNo = previousPlan.ProductionRouteRevisionNo
+		} else if err := services.BindProductionPlanToCurrentPublishedRouteRevisionTx(tx, &plan); err != nil {
+			return err
+		}
 
 		if plan.ID != "" {
 			if err := tx.Model(&plan).Omit("CreatedAt", "Tasks", "SalesOrder").Updates(&plan).Error; err != nil {
+				return err
+			}
+			// Switching to an internal or unversioned branch must clear the previous identity.
+			if err := tx.Model(&plan).Select("ProductID", "BOMOwnerType", "BOMOwnerCustomerID", "BOMVersionLevel").Updates(&plan).Error; err != nil {
 				return err
 			}
 			if err := tx.Model(&plan).Association("Tasks").Replace(plan.Tasks); err != nil {
 				return err
 			}
 		} else {
-			if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Omit("SalesOrder").Save(&plan).Error; err != nil {
+			omittedPlanColumns := []string{"SalesOrder"}
+			if plan.OrderID == "" {
+				omittedPlanColumns = append(omittedPlanColumns, "OrderID")
+			}
+			if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Omit(omittedPlanColumns...).Save(&plan).Error; err != nil {
 				return err
 			}
 		}
@@ -128,7 +146,9 @@ func SaveProductionPlanHandler(c *gin.Context) {
 	})
 
 	if err != nil {
-		if errors.Is(err, services.ErrSalesTransactionInvalidPayload) || errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, services.ErrSalesTransactionInvalidPayload) ||
+			errors.Is(err, services.ErrInvalidProductionPlanBOMBranch) ||
+			errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 保存生产计划失败: " + err.Error()})
 			return
 		}

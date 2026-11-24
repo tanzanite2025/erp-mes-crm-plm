@@ -321,7 +321,7 @@ export function MaintenancePlansPage() {
               </CardTitle>
               <Button
                 size='sm'
-                className='h-6 rounded-full px-2 text-[9px] font-black tracking-wider uppercase'
+                className='control-typography-compact h-6 rounded-full px-2'
               >
                 <Plus className='mr-0.5 size-3' /> 新建计划
               </Button>

@@ -74,7 +74,7 @@ export function RoutingQueryErrorState({
           <Button
             variant='outline'
             onClick={onRetry}
-            className='h-10 rounded-full border-dashed border-rose-300 bg-white/80 px-4 text-xs font-bold text-rose-700 hover:bg-white'
+            className='h-10 rounded-full border-dashed border-rose-300 bg-white/80 px-4 text-rose-700 hover:bg-white'
           >
             <RefreshCcw className='mr-2 size-4' />
             {retryLabel ?? `重新加载${resourceLabel}`}

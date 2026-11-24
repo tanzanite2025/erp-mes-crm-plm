@@ -185,7 +185,7 @@ export function PurchaseOrderList() {
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            className='mt-5 h-10 rounded-full border-dashed px-6'
             onClick={() => {
               void ordersQuery.refetch()
             }}
@@ -277,7 +277,7 @@ export function PurchaseOrderList() {
               size='sm'
               disabled={page === 1}
               onClick={() => setPage((prev) => prev - 1)}
-              className='h-9 px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-white hover:shadow-md'
+              className='h-9 px-6 transition-all hover:bg-white hover:shadow-md'
             >
               {t('purchase.orders.prevPage')}
             </Button>
@@ -297,7 +297,7 @@ export function PurchaseOrderList() {
               size='sm'
               disabled={page >= Math.ceil(total / pageSize)}
               onClick={() => setPage((prev) => prev + 1)}
-              className='h-9 px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-white hover:shadow-md'
+              className='h-9 px-6 transition-all hover:bg-white hover:shadow-md'
             >
               {t('purchase.orders.nextPage')}
             </Button>

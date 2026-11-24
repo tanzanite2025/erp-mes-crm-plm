@@ -43,7 +43,7 @@ export function BOMDialogFooter({
               form='bom-form'
               variant='outline'
               disabled={isSubmitDisabled || isLifecycleOperationPending}
-              className='h-12 flex-1 shrink-0 rounded-xl border-dashed border-muted-foreground/20 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-muted/50 sm:h-full sm:w-32'
+              className='h-12 flex-1 shrink-0 rounded-xl border-dashed border-muted-foreground/20 transition-all hover:bg-muted/50 sm:h-full sm:w-32'
             >
               {t('engineering.bomArchive.dialog.saveDraft')}
             </Button>
@@ -55,7 +55,7 @@ export function BOMDialogFooter({
                   type='button'
                   disabled={isSubmitDisabled || isLifecycleOperationPending}
                   onClick={() => onPromote('RELEASED')}
-                  className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-blue-600 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-blue-600/10 transition-all hover:bg-blue-700 sm:h-full sm:w-48'
+                  className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-blue-600 text-white shadow-lg shadow-blue-600/10 transition-all hover:bg-blue-700 sm:h-full sm:w-48'
                 >
                   {t(
                     currentRow?.id
@@ -71,7 +71,7 @@ export function BOMDialogFooter({
             type='button'
             disabled={isLifecycleOperationPending}
             onClick={() => onPromote('RELEASED')}
-            className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-emerald-600 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-emerald-600/10 transition-all hover:bg-emerald-700 sm:h-full sm:w-48'
+            className='h-12 flex-1 shrink-0 rounded-xl border border-white/20 bg-emerald-600 text-white shadow-lg shadow-emerald-600/10 transition-all hover:bg-emerald-700 sm:h-full sm:w-48'
           >
             {t(
               isMBOM(currentRow)

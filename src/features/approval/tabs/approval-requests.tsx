@@ -248,14 +248,14 @@ export function ApprovalRequests() {
                 <Button
                   variant='ghost'
                   size='sm'
-                  className='h-9 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase hover:bg-destructive/10 hover:text-destructive'
+                  className='h-9 flex-1 rounded-full hover:bg-destructive/10 hover:text-destructive'
                   onClick={() => handleReject(req.id)}
                 >
                   {t('approval.requests.reject')}
                 </Button>
                 <Button
                   size='sm'
-                  className='h-9 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20'
+                  className='h-9 flex-1 rounded-full shadow-xl shadow-blue-500/20'
                   onClick={() => {
                     const isFinal = req.currentLevel === 2 || !req.approver2Id
                     if (isFinal && req.module !== 'Quality') {
@@ -371,7 +371,7 @@ export function ApprovalRequests() {
             <Input
               type='text'
               maxLength={6}
-              className='text-center font-maple-ui text-2xl tracking-[1em]'
+              className='text-center font-maple-ui'
               placeholder='000000'
               value={pinCode}
               onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}

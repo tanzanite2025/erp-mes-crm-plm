@@ -165,7 +165,7 @@ export function UnitActionDialog({
               updateFormData({ code: e.target.value.toUpperCase() })
             }}
             disabled={unit?.isSystem}
-            className='h-10 rounded-xl font-maple-ui text-xs font-black uppercase'
+            className='h-10 rounded-xl font-maple-ui'
           />
         </div>
         <div className='space-y-2'>
@@ -178,7 +178,7 @@ export function UnitActionDialog({
             onChange={(e) => {
               updateFormData({ name: e.target.value })
             }}
-            className='h-10 rounded-xl text-xs font-bold'
+            className='h-10 rounded-xl'
           />
         </div>
       </div>
@@ -189,7 +189,7 @@ export function UnitActionDialog({
             {t('basicSettings.units.dialog.fields.category')}
           </Label>
           <select
-            className='h-10 w-full rounded-xl border border-input bg-background/50 px-3 py-1 text-xs font-black shadow-sm outline-none focus:ring-1 focus:ring-primary'
+            className='h-10 w-full rounded-xl border border-input bg-background/50 px-3 py-1 shadow-sm outline-none focus:ring-1 focus:ring-primary'
             value={formData.category}
             onChange={(e) => {
               updateFormData({ category: e.target.value as UnitCategory })
@@ -219,7 +219,7 @@ export function UnitActionDialog({
                 ),
               })
             }}
-            className='h-10 rounded-xl font-maple-ui text-xs font-black'
+            className='h-10 rounded-xl font-maple-ui'
           />
         </div>
       </div>
@@ -270,7 +270,7 @@ export function UnitActionDialog({
           onChange={(e) => {
             updateFormData({ description: e.target.value })
           }}
-          className='h-10 rounded-xl text-xs font-medium'
+          className='h-10 rounded-xl'
         />
       </div>
     </ActionDialogShell>

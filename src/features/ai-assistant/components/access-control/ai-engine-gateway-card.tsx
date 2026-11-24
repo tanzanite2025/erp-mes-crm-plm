@@ -80,7 +80,7 @@ export function AiEngineGatewayCard({
         <Button
           type='button'
           disabled={isSaving || isGroupIdMissing}
-          className='h-9 w-full shrink-0 rounded-full px-4 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-indigo-100 sm:w-auto'
+          className='h-9 w-full shrink-0 rounded-full px-4 shadow-lg shadow-indigo-100 sm:w-auto'
           onClick={onSave}
         >
           {isSaving ? (
@@ -122,7 +122,7 @@ export function AiEngineGatewayCard({
           <Button
             type='button'
             variant={enabled ? 'destructive' : 'default'}
-            className='h-8 w-full rounded-full px-4 text-[10px] font-black tracking-widest uppercase sm:w-auto'
+            className='h-8 w-full rounded-full px-4 sm:w-auto'
             onClick={() => onEnabledChange(!enabled)}
           >
             {enabled

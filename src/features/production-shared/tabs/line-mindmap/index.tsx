@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { requestApplicationConfirmation } from '@/lib/application-confirm-prompt-and-alert-dialog-requests'
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { isForbiddenError } from '@/lib/error-status'
@@ -10,6 +11,9 @@ import { ProductionLineProfileDialog } from '../../components/production-line-pr
 import type { ProductionLineMutationPayload } from '../../contracts/production-line-mutation'
 import type { ProductionLine } from '../../data/production-line'
 import { useProductionLines } from '../../hooks/use-production-lines'
+import { useProductionLineBOMBranchesQuery } from '../../hooks/use-production-resources'
+import { useTopologyTemplates } from '../../topology/use-topology-templates'
+import { TemplateDialog } from '../topology-template/components/template-dialog'
 import { LineMindmapDialogs } from './components/line-mindmap-dialogs'
 import { LineMindmapToolbar } from './components/line-mindmap-toolbar'
 import { MindmapCanvas } from './components/mindmap-canvas'
@@ -29,6 +33,14 @@ export function LineMindmap() {
   const [nodeEditDialogOpen, setNodeEditDialogOpen] = useState(false)
   const [lineProfileDialogOpen, setLineProfileDialogOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<ProductionLine | null>(null)
+  const [capturingLineAsTemplate, setCapturingLineAsTemplate] =
+    useState<ProductionLine | null>(null)
+  const { captureFromLine } = useTopologyTemplates()
+  const {
+    data: bomBranches = [],
+    error: bomBranchQueryError,
+    isLoading: isLoadingBOMBranches,
+  } = useProductionLineBOMBranchesQuery()
   const {
     createLineStrict,
     deleteLine,
@@ -70,29 +82,21 @@ export function LineMindmap() {
     settleSelection,
     updateLineStrict,
   })
+  const { handleAddSegment, handleBindBOMBranch, handleDeleteSelected } =
+    useLineMindmapActions({
+      activeLine,
+      requestTopologyAuth,
+      selectedNode,
+      settleSelection,
+      updateLineStrict,
+    })
   const {
-    handleAddSegment,
-    handleDeleteSelected,
-    handleRenameSelected,
-    submitTopologyMutation,
-  } = useLineMindmapActions({
-    activeLine,
-    requestTopologyAuth,
-    selectedNode,
-    settleSelection,
-    updateLineStrict,
-  })
-  const {
-    handleAssignProcess,
     handleCreateProcessForSegment,
-    handleDeleteProcessEntity,
-    handleRemoveProcess,
     handleSaveProcessEntity,
-    processOptions,
+    handleSaveProcessSelection,
+    standardProcesses,
   } = useLineMindmapProcessPanel({
     activeLine,
-    selectedNode,
-    submitTopologyMutation,
   })
   const canManageLine = allowsPermission('perm_manage')
   const canUpdateLine = allowsAction('action_production_line_update')
@@ -201,6 +205,10 @@ export function LineMindmap() {
         onEditLine={openEditLineDialog}
         onToggleLine={handleToggleLine}
         onSelectLine={setActiveLineId}
+        onCaptureTopologyTemplate={() => {
+          if (canManageLine && activeLine)
+            setCapturingLineAsTemplate(activeLine)
+        }}
       />
 
       <div className='min-h-0 flex-1'>
@@ -220,24 +228,51 @@ export function LineMindmap() {
         handleAuthConfirm={handleAuthConfirm}
         handleAuthOpenChange={handleAuthOpenChange}
         segmentParentNodeOptions={segmentParentNodeOptions}
+        standardProcesses={standardProcesses}
+        bomBranches={bomBranches}
+        isLoadingBOMBranches={isLoadingBOMBranches}
+        bomBranchQueryError={bomBranchQueryError}
         level2Name='L2'
         level3Name='L3'
         levelNames={levelNames}
         nodeEditDialogOpen={nodeEditDialogOpen}
-        onAssignProcess={handleAssignProcess}
         onCreateProcessDialogOpenChange={setCreateProcessDialogOpen}
         onCreateSegmentDialogOpenChange={setCreateSegmentDialogOpen}
-        onDeleteProcessEntity={handleDeleteProcessEntity}
         onDeleteSelected={handleDeleteSelected}
         onEditDialogOpenChange={setNodeEditDialogOpen}
         onPatchNode={patchNodeDraft}
         onProcessSubmit={handleCreateProcessForSegment}
-        onRemoveProcess={handleRemoveProcess}
-        onRenameSelected={handleRenameSelected}
+        onBindBOMBranch={handleBindBOMBranch}
         onSegmentSubmit={handleAddSegment}
-        onSaveProcessEntity={handleSaveProcessEntity}
-        processOptions={processOptions}
+        onSaveProcessEntity={
+          canManageLine ? handleSaveProcessEntity : undefined
+        }
+        onSaveProcessSelection={
+          canManageLine ? handleSaveProcessSelection : undefined
+        }
         selectedNode={selectedNode}
+      />
+
+      <TemplateDialog
+        open={Boolean(capturingLineAsTemplate)}
+        onOpenChange={(open) => {
+          if (!open) setCapturingLineAsTemplate(null)
+        }}
+        mode='capture'
+        initialSourceLine={capturingLineAsTemplate || undefined}
+        lines={lines}
+        branches={[]}
+        onSave={async (request) => {
+          if (!canManageLine) throw new Error('无拓扑模板维护权限')
+          if (request.mode === 'capture')
+            await captureFromLine({
+              sourceLineId: request.sourceLineId,
+              sourceLineVersion: request.sourceLineVersion,
+              name: request.name,
+              description: request.description,
+            })
+          toast.success('已保存为独立拓扑模板')
+        }}
       />
 
       <ProductionLineProfileDialog

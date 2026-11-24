@@ -279,13 +279,13 @@ export function SelectionTree({
           <div className='flex items-center justify-end gap-2 pr-2'>
             <button
               onClick={() => onSelectionChange([])}
-              className='h-10 rounded-2xl px-4 text-[11px] font-black uppercase transition-colors hover:bg-white/5'
+              className='h-10 rounded-2xl px-4 transition-colors hover:bg-white/5'
             >
               {t('mrp.requirements.selectionTree.cancel')}
             </button>
             <button
               onClick={onAnalyze}
-              className='h-10 rounded-2xl bg-white px-6 text-[11px] font-black text-[#0F172A] uppercase shadow-xl transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:hover:scale-100'
+              className='h-10 rounded-2xl bg-white px-6 text-[#0F172A] shadow-xl transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:hover:scale-100'
             >
               {t('mrp.requirements.selectionTree.analyze')}
             </button>

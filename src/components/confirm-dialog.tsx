@@ -71,7 +71,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           <AlertDialogFooter className='mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end'>
             <AlertDialogCancel
               disabled={isLoading}
-              className='h-auto min-h-11 w-full min-w-0 rounded-full border-none bg-muted/30 px-4 py-3 text-center text-[11px] leading-tight font-black tracking-[0.12em] [overflow-wrap:anywhere] break-words whitespace-normal shadow-none transition-colors hover:bg-muted sm:flex-1'
+              className='h-auto min-h-11 w-full min-w-0 rounded-full border-none bg-muted/30 px-4 py-3 text-center [overflow-wrap:anywhere] break-words whitespace-normal shadow-none transition-colors hover:bg-muted sm:flex-1'
             >
               {cancelBtnText ?? 'Cancel'}
             </AlertDialogCancel>
@@ -80,7 +80,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
               onClick={handleConfirm}
               disabled={disabled || isLoading}
               className={cn(
-                'h-auto min-h-11 w-full min-w-0 rounded-full px-4 py-3 text-center text-[11px] leading-tight font-black tracking-[0.12em] [overflow-wrap:anywhere] break-words whitespace-normal text-white transition-all active:scale-95 sm:flex-1',
+                'h-auto min-h-11 w-full min-w-0 rounded-full px-4 py-3 text-center [overflow-wrap:anywhere] break-words whitespace-normal text-white transition-all active:scale-95 sm:flex-1',
                 !destructive &&
                   'bg-primary shadow-lg shadow-primary/20 hover:bg-primary/90'
               )}

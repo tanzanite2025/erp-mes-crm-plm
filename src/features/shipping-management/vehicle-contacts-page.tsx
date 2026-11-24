@@ -240,7 +240,7 @@ export function VehicleContactsPage() {
               }))
             }
           >
-            <SelectTrigger className='h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-[11px] shadow-none'>
+            <SelectTrigger className='h-10 w-full rounded-lg border border-border/60 bg-background px-3 shadow-none'>
               <SelectValue placeholder='全部类别' />
             </SelectTrigger>
             <SelectContent>
@@ -258,7 +258,7 @@ export function VehicleContactsPage() {
               setUiFilters((prev) => ({ ...prev, vehicleId: value }))
             }
           >
-            <SelectTrigger className='h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-[11px] shadow-none'>
+            <SelectTrigger className='h-10 w-full rounded-lg border border-border/60 bg-background px-3 shadow-none'>
               <SelectValue placeholder='全部车型' />
             </SelectTrigger>
             <SelectContent>
@@ -279,7 +279,7 @@ export function VehicleContactsPage() {
               }))
             }
           >
-            <SelectTrigger className='h-10 w-full rounded-lg border border-border/60 bg-background px-3 text-[11px] shadow-none'>
+            <SelectTrigger className='h-10 w-full rounded-lg border border-border/60 bg-background px-3 shadow-none'>
               <SelectValue placeholder='全部状态' />
             </SelectTrigger>
             <SelectContent>
@@ -289,7 +289,7 @@ export function VehicleContactsPage() {
             </SelectContent>
           </Select>
           <input
-            className='h-10 rounded-lg border border-border/60 bg-background px-3 text-[11px] shadow-none'
+            className='h-10 rounded-lg border border-border/60 bg-background px-3 shadow-none'
             value={uiFilters.keyword}
             onChange={(e) =>
               setUiFilters((prev) => ({ ...prev, keyword: e.target.value }))
@@ -319,7 +319,7 @@ export function VehicleContactsPage() {
           </div>
           <button
             type='button'
-            className='mt-3 uds-chip border-destructive/40 text-[10px] text-destructive'
+            className='mt-3 uds-chip border-destructive/40 text-destructive'
             onClick={() => void reload()}
           >
             重新加载
@@ -374,10 +374,8 @@ export function VehicleContactsPage() {
                     }))
                   }
                 >
-                  <span className='text-[11px] leading-5 font-semibold text-foreground'>
-                    {label}
-                  </span>
-                  <span className='rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-[10px] font-black tracking-widest text-muted-foreground tabular-nums'>
+                  <span className='text-foreground'>{label}</span>
+                  <span className='rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-muted-foreground tabular-nums'>
                     {count}
                   </span>
                 </button>

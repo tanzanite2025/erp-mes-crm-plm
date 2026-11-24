@@ -48,9 +48,7 @@ function SalesOrderDrawingPreviewButton({
       <Eye className='size-4 shrink-0' />
       {getSalesOrderDrawingLabel({ type, t })}
       {type === 'drilling' && row.line.holeCount !== undefined && (
-        <span className='text-xs text-muted-foreground'>
-          {row.line.holeCount}H
-        </span>
+        <span className='text-muted-foreground'>{row.line.holeCount}H</span>
       )}
     </Button>
   )
@@ -118,7 +116,7 @@ export function SalesOrderDetailLineCard({
               type='button'
               size='sm'
               variant='secondary'
-              className='min-h-9 rounded-lg px-3 text-sm font-medium'
+              className='min-h-9 rounded-lg px-3'
               onClick={() => onClaimLine(row.line.lineNo)}
             >
               {t('tradingSalesOrder.detail.claimItem')}

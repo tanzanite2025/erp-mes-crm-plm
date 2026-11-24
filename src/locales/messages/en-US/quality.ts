@@ -1,4 +1,17 @@
+import { qualityAbnormalityDisposal } from './quality-abnormality-disposal'
+import {
+  qualityConfigurableGrading,
+  qualityMeasurementSubmission,
+} from './quality-configurable-grading-and-measurement'
+import { qualityDefectTypeConfiguration } from './quality-defect-type-configuration'
+import { qualityStandardCreationOperationGuide } from './quality-standard-creation-operation-guide'
+
 export const quality = {
+  defectConfiguration: qualityDefectTypeConfiguration,
+  disposal: qualityAbnormalityDisposal,
+  grading: qualityConfigurableGrading,
+  measurement: qualityMeasurementSubmission,
+  standardCreationGuide: qualityStandardCreationOperationGuide,
   layout: {
     title: 'Quality Baseline',
     tabs: {
@@ -13,6 +26,44 @@ export const quality = {
     unknown: 'Unknown',
   },
   standards: {
+    inspectionStages: {
+      manage: 'Manage Stations',
+      title: 'Quality Inspection Stations',
+      description:
+        'Maintain quality inspection station names, notes, display order and availability. The system provides forming, machining, fine inspection and painting stations by default; adjust them as needed.',
+      stage: 'Inspection Station',
+      stageGroup: 'Inspection Station',
+      groupedRulesTitle: 'Inspection Stations and Weight Standards',
+      groupedRulesDescription:
+        'Choose an inspection station, maintain its weight items, then configure grades for each item. Each item keeps its own weight and grade rules.',
+      newItemStage: 'Station for New Weight Item',
+      chooseStage: 'Choose an inspection station',
+      addWeightItem: 'Add Weight Item',
+      list: 'Station Catalog',
+      name: 'Station Name',
+      namePlaceholder:
+        'e.g. Forming Inspection Station, Machining Inspection Station',
+      sortOrder: 'Display Order (smaller numbers first)',
+      notes: 'Station Notes',
+      active: 'Active',
+      inactive: 'Inactive',
+      add: 'Add Station',
+      edit: 'Edit Station',
+      save: 'Save Station',
+      refresh: 'Refresh Catalog',
+      retry: 'Retry',
+      loading: 'Loading stations…',
+      loadFailed: 'Unable to load inspection stations. Please retry.',
+      empty:
+        'No stations configured. Add stations using Manage Stations in Quality Standards.',
+      saved: 'Inspection station saved.',
+      validation:
+        'Enter a station name and an integer display order from 0 to 1000000.',
+      historyHint:
+        'Inactive stations cannot be selected for new items. Saved standards keep their original station names when the catalog is renamed.',
+      readOnly:
+        'You can view stations. Maintenance requires the same management permission as quality standards.',
+    },
     page: {
       title: 'Quality Standards System',
       description:
@@ -25,6 +76,8 @@ export const quality = {
       filterType: 'Type Filter',
       allTypes: 'All Types',
       empty: 'No matching protocols',
+      loadFailed:
+        'Quality standards could not be loaded. Retry to confirm the counts; this does not mean there are no standards.',
       totalRecords: 'Total Records',
       statusViewTitle: 'Status Views',
       statusViewDescription:
@@ -79,7 +132,24 @@ export const quality = {
     workspace: {
       backToList: 'Back to Standards',
       openPreview: 'Open Preview',
-      openEditor: 'Open Editor Workspace',
+      openEditor: 'Edit Stations and Rules',
+      inspectionRulesEditorTitle: 'Edit Stations and Inspection Rules',
+      inspectionRulesNeedConfigurationTitle:
+        'Inspection rules need to be configured again',
+      inspectionRulesNeedConfigurationDescription:
+        'The inspection items do not meet the current configuration requirements. Basic information and audit history are available. Configure inspection stations, weight items, and grade rules before saving.',
+      reconfigureInspectionRules: 'Reconfigure Stations and Rules',
+      inspectionRulesReplacementNotice:
+        'Configure stations, weight items, and grades using the current structure. Saving replaces the original rules; closing or cancelling leaves the original standard unchanged.',
+      inspectionRulesReconfigurationReadOnly:
+        'This version cannot be edited. Configure complete rules in a new draft; the original version remains available for reference.',
+      inspectionRulesEditorDescription:
+        'Configure inspection stations, center values, units, and deviation limits.',
+      editBasicInformation: 'Edit Basic Information',
+      saveBasicInformation: 'Save Basic Information',
+      basicInformationFormDescription:
+        'Edit the code, name, and remarks here. Use the separate dialog for inspection stations and rules.',
+      collapseDetails: 'Collapse Details',
       submitForApproval: 'Submit for Approval',
       approve: 'Approve',
       approveDescription:
@@ -98,15 +168,20 @@ export const quality = {
       rejectReasonPlaceholder: 'Please enter the rejection reason...',
       archiveReasonLabel: 'Archive Reason',
       archiveReasonPlaceholder: 'Please enter the archive reason...',
-      editorCreateTitle: 'Create Quality Standard Workspace',
-      editorEditTitle: 'Edit Quality Standard Workspace',
+      editorCreateTitle: 'Create Quality Standard',
+      editorEditTitle: 'Edit Quality Standard',
       editorCreateDescription:
         'Enter the standard information, then save and review the preview.',
       editorEditDescription:
-        'Edit the standard information and controlled protocol inspection rules, then save and review the preview.',
+        'Edit standard information, inspection stations, and inspection rules.',
+      discardChangesTitle: 'Discard unsaved changes before closing?',
+      discardChangesDescription:
+        'Your changes have not been saved. Continue editing or discard them and close.',
+      keepEditing: 'Keep Editing',
+      discardAndClose: 'Discard and Close',
       editorFormTitle: 'Standard Basics',
       editorFormDescription:
-        'Review the standard information. For controlled protocols, edit the center, unit, and grade A/B deviation limits below.',
+        'Review the standard information. Edit numeric item centers, units and grade rules below.',
       editorDirty: 'Unsaved Changes',
       approvalControlledHint:
         'Saving records standard changes. Configure quality standard approval rules and approvers before submitting for approval.',
@@ -119,7 +194,7 @@ export const quality = {
       editorMissingTitle: 'Editable Quality Standard Not Found',
       editorMissingDescription:
         'The standard may have been deleted, or it is not accessible in the current scope.',
-      previewTitle: 'Quality Standard Preview Page',
+      previewTitle: 'Quality Standard Details',
       previewDescription:
         'Review inspection rules, approval progress, and publication and archive records.',
       previewLoadFailedTitle: 'Failed to Load Standard Preview',
@@ -169,26 +244,22 @@ export const quality = {
         titleEdit: 'Edit Controlled Protocol',
         titleView: 'View Controlled Protocol',
         description:
-          'The center value is grade S. Absolute deviation determines grades A and B; deviation beyond the B limit is scrap.',
+          'Configure grade names, lower/upper deviations and pass/fail decisions independently for each item. Values outside all grade ranges fail.',
         gradingHint:
-          'Both directions use the same rule: center = S; 0 < deviation ≤ A limit = A; A limit < deviation ≤ B limit = B; beyond B = scrap. Deviation uses the inspection item unit.',
+          'Configure the station, center value, unit and grades separately for each inspection item. Grades apply only to that item; the station catalog does not store grades or deviations.',
         fields: {
           product: 'Product',
           qualityCriteria: 'Quality Criteria',
           selectedWeights: 'Inspection Items & Rules',
           itemName: 'Inspection Item',
-          targetWeight: 'Center (Grade S)',
+          targetWeight: 'Center Value',
           unit: 'Unit',
-          aLevelTolerance: 'Grade A Deviation (±)',
-          bLevelTolerance: 'Grade B Deviation (±)',
         },
         placeholders: {
           product: 'Select product',
-          itemName: 'e.g. Finished weight',
+          itemName: 'e.g. Inner rim weight, coated weight without label',
           targetWeight: 'Target',
           unit: 'Select unit',
-          aLevelTolerance: 'e.g. 5',
-          bLevelTolerance: 'e.g. 10',
         },
         actions: {
           addCriterion: 'Add Inspection Item',
@@ -199,13 +270,15 @@ export const quality = {
         },
         empty: {
           criteria:
-            'No inspection items have been added yet. Add a weight, size, or other rule first.',
+            'No weight items yet. Select an inspection station and add a weight item.',
           units:
             'No active units. Add or activate a unit in Unit Settings first.',
         },
         validation: {
           productRequired: 'Please select a product first.',
           criterionRequired: 'Please add at least one inspection item.',
+          inspectionStageRequired:
+            'Select an inspection station for every weight item.',
           itemNameRequired: 'Please enter a name for every inspection item.',
           unitRequired:
             'Select an active configured unit for every inspection item.',
@@ -215,7 +288,7 @@ export const quality = {
           weightRequired:
             'Please enter a finite center value for every inspection item.',
           deviationLimitsInvalid:
-            'Enter finite deviation limits satisfying: 0 < A limit < B limit.',
+            'Check unique grade names and nonnegative, increasing lower/upper deviations. Failing grades cannot be followed by passing grades.',
         },
         toastCreated:
           'Controlled protocol created as a quality standard with {{count}} items.',
@@ -228,7 +301,7 @@ export const quality = {
           'Shows the current standard owner, last update, and review confirmation for quality traceability.',
         auditPending: 'Pending Review',
         deviationGradingHint:
-          '|Δ| is the absolute difference between the measurement and center. Both directions use the same rule; each deviation upper limit is inclusive.',
+          'The first matching grade from strict to broad applies, including its boundaries. Lower and upper deviations may differ. Values outside every range fail; disposal is recorded separately.',
         fields: {
           code: 'Standard Code',
           name: 'Standard Name',
@@ -250,12 +323,9 @@ export const quality = {
           order: 'Order',
           centerValue: 'Center Value',
           level: 'Level',
-          tolerance: 'Tolerance',
           deviationRule: 'Deviation Rule / Tolerance',
           min: 'Min (Lower)',
           max: 'Max (Upper)',
-          errorCodeLower: 'Error Code (Lower)',
-          errorCodeUpper: 'Error Code (Upper)',
           unit: 'Unit',
           required: 'Required',
           remarks: 'Remarks',
@@ -358,7 +428,7 @@ export const quality = {
     approvalResponseNotConfirmed:
       'The submission result could not be confirmed. Refresh the standard and check Tasks & Requests.',
     approveStandardSuccess:
-      'Quality standard approved and moved into the pending release stage.',
+      'Quality standard approved and moved into the pending release station.',
     rejectStandardSuccess:
       'Quality standard rejected and returned for revision.',
     publishStandardSuccess: 'Quality standard published successfully.',

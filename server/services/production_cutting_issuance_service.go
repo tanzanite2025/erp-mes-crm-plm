@@ -36,20 +36,23 @@ type CuttingIssuanceBatchRequest struct {
 }
 
 type CreateCuttingIssuanceExecutionRequest struct {
-	OrderNo           string                        `json:"orderNo"`
-	OrderID           string                        `json:"orderId"`
-	SalesOrderLineNo  int                           `json:"salesOrderLineNo"`
-	ProductModel      string                        `json:"productModel"`
-	ProductCode       string                        `json:"productCode"`
-	ProductID         string                        `json:"productId"`
-	HoleCount         int                           `json:"holeCount"`
-	TemplateID        string                        `json:"templateId"`
-	TemplateName      string                        `json:"templateName"`
-	TemplateVersion   string                        `json:"templateVersion"`
-	Quantity          float64                       `json:"quantity"`
-	TotalLineQuantity float64                       `json:"totalLineQuantity"`
-	Status            string                        `json:"status"`
-	Batches           []CuttingIssuanceBatchRequest `json:"batches"`
+	OrderNo            string                        `json:"orderNo"`
+	OrderID            string                        `json:"orderId"`
+	SalesOrderLineNo   int                           `json:"salesOrderLineNo"`
+	ProductModel       string                        `json:"productModel"`
+	ProductCode        string                        `json:"productCode"`
+	ProductID          string                        `json:"productId"`
+	BOMOwnerType       string                        `json:"bomOwnerType"`
+	BOMOwnerCustomerID string                        `json:"bomOwnerCustomerId"`
+	BOMVersionLevel    string                        `json:"bomVersionLevel"`
+	HoleCount          int                           `json:"holeCount"`
+	TemplateID         string                        `json:"templateId"`
+	TemplateName       string                        `json:"templateName"`
+	TemplateVersion    string                        `json:"templateVersion"`
+	Quantity           float64                       `json:"quantity"`
+	TotalLineQuantity  float64                       `json:"totalLineQuantity"`
+	Status             string                        `json:"status"`
+	Batches            []CuttingIssuanceBatchRequest `json:"batches"`
 }
 
 type CuttingIssuanceListQuery struct {
@@ -149,6 +152,7 @@ type salesOrderLineSnapshot struct {
 	SalesOrderLineID uint
 	OrderNo          string
 	LineNo           int
+	ProductID        string
 	ProductModel     string
 	ProductCode      string
 	HoleCount        int
@@ -213,6 +217,7 @@ func loadSalesOrderLineSnapshot(tx *gorm.DB, req CreateCuttingIssuanceExecutionR
 				SalesOrderLineID: line.ID,
 				OrderNo:          strings.TrimSpace(order.OrderNo),
 				LineNo:           line.LineNo,
+				ProductID:        strings.TrimSpace(line.ProductID),
 				ProductModel:     strings.TrimSpace(line.ProductModel),
 				ProductCode:      strings.TrimSpace(line.ProductCode),
 				HoleCount:        line.HoleCount,
@@ -286,6 +291,9 @@ func normalizeCreateCuttingIssuanceExecutionRequest(input CreateCuttingIssuanceE
 	input.ProductModel = strings.TrimSpace(input.ProductModel)
 	input.ProductCode = strings.TrimSpace(input.ProductCode)
 	input.ProductID = strings.TrimSpace(input.ProductID)
+	input.BOMOwnerType = strings.ToUpper(strings.TrimSpace(input.BOMOwnerType))
+	input.BOMOwnerCustomerID = strings.TrimSpace(input.BOMOwnerCustomerID)
+	input.BOMVersionLevel = strings.TrimSpace(input.BOMVersionLevel)
 	input.TemplateID = strings.TrimSpace(input.TemplateID)
 	input.TemplateName = strings.TrimSpace(input.TemplateName)
 	input.TemplateVersion = strings.TrimSpace(input.TemplateVersion)
@@ -308,6 +316,15 @@ func validateCuttingIssuanceRequest(input CreateCuttingIssuanceExecutionRequest)
 	}
 	if input.ProductModel == "" {
 		return errors.New("productModel is required")
+	}
+	if input.BOMOwnerType != "INTERNAL" && input.BOMOwnerType != "CUSTOMER" {
+		return fmt.Errorf("%w: bomOwnerType must be INTERNAL or CUSTOMER", ErrInvalidProductionPlanBOMBranch)
+	}
+	if input.BOMOwnerType == "INTERNAL" && input.BOMOwnerCustomerID != "" {
+		return fmt.Errorf("%w: internal MBOM branches cannot have an owner customer", ErrInvalidProductionPlanBOMBranch)
+	}
+	if input.BOMOwnerType == "CUSTOMER" && input.BOMOwnerCustomerID == "" {
+		return fmt.Errorf("%w: customer MBOM branches require an owner customer", ErrInvalidProductionPlanBOMBranch)
 	}
 	if input.TemplateID == "" {
 		return errors.New("templateId is required")
@@ -496,23 +513,38 @@ func CreateCuttingIssuanceExecution(
 		if strings.TrimSpace(templateSnapshot.RevisionNo) != "" {
 			req.TemplateVersion = strings.TrimSpace(templateSnapshot.RevisionNo)
 		}
-		if req.ProductID == "" {
-			var lineProductID string
-			if err := tx.Model(&models.SalesOrderLine{}).
-				Where("sales_order_id = ? AND line_no = ?", req.OrderID, req.SalesOrderLineNo).
-				Pluck("product_id", &lineProductID).Error; err == nil {
-				req.ProductID = strings.TrimSpace(lineProductID)
-			}
+		if req.ProductID != "" && req.ProductID != lineSnapshot.ProductID {
+			return fmt.Errorf("%w: selected product does not match the sales order line", ErrInvalidProductionPlanBOMBranch)
 		}
+		req.ProductID = lineSnapshot.ProductID
 
 		plan := models.ProductionPlan{
-			SalesOrderLineID: lineSnapshot.SalesOrderLineID,
-			OrderNo:          req.OrderNo,
-			OrderID:          req.OrderID,
-			ProductID:        req.ProductID,
-			ProductName:      req.ProductModel,
-			Quantity:         req.Quantity,
-			Status:           req.Status,
+			ProductID:          req.ProductID,
+			BOMOwnerType:       req.BOMOwnerType,
+			BOMOwnerCustomerID: req.BOMOwnerCustomerID,
+			BOMVersionLevel:    req.BOMVersionLevel,
+		}
+		if err := ValidateProductionPlanBOMBranchTx(tx, &plan, nil); err != nil {
+			return err
+		}
+		req.BOMOwnerType = plan.BOMOwnerType
+		req.BOMOwnerCustomerID = plan.BOMOwnerCustomerID
+		req.BOMVersionLevel = plan.BOMVersionLevel
+
+		plan = models.ProductionPlan{
+			SalesOrderLineID:   lineSnapshot.SalesOrderLineID,
+			OrderNo:            req.OrderNo,
+			OrderID:            req.OrderID,
+			ProductID:          req.ProductID,
+			ProductName:        req.ProductModel,
+			BOMOwnerType:       req.BOMOwnerType,
+			BOMOwnerCustomerID: req.BOMOwnerCustomerID,
+			BOMVersionLevel:    req.BOMVersionLevel,
+			Quantity:           req.Quantity,
+			Status:             req.Status,
+		}
+		if err := BindProductionPlanToCurrentPublishedRouteRevisionTx(tx, &plan); err != nil {
+			return err
 		}
 		if err := tx.Create(&plan).Error; err != nil {
 			return err

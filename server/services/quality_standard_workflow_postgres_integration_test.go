@@ -54,8 +54,9 @@ func createIsolatedQualityStandardWorkflowPostgresFixture(t *testing.T) qualityS
 	t.Cleanup(func() { require.NoError(t, connection.Close()) })
 	database, err := gorm.Open(postgres.New(postgres.Config{Conn: connection}), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	require.NoError(t, err)
-	require.NoError(t, database.AutoMigrate(&models.User{}, &models.InspectionStandard{}, &models.ApprovalRequest{}, &models.AuditLog{}, &models.Unit{},
+	require.NoError(t, database.AutoMigrate(&models.User{}, &models.InspectionStandard{}, &models.ApprovalRequest{}, &models.AuditLog{}, &models.Unit{}, &models.QualityInspectionStage{},
 		&models.BusinessApprovalPolicyConfiguration{}, &models.BusinessEventSource{}, &models.NotificationRule{}, &models.StandardCommand{}, &models.RuleExecutionLog{}, &models.SystemNotificationInboxEntry{}, &models.WorkflowNotificationOutboxEntry{}))
+	require.NoError(t, database.Create(&models.QualityInspectionStage{BaseModel: models.BaseModel{ID: "11111111-1111-4111-8111-111111111111"}, Code: "INNER_WEIGHT", Name: "内圈重", NormalizedName: "内圈重", Active: true, Version: 1}).Error)
 	previousDatabase := db.DB
 	db.DB = database
 	t.Cleanup(func() { db.DB = previousDatabase })
@@ -81,7 +82,7 @@ func createQualityStandardWorkflowIndependentApprovalPolicy(t *testing.T, fixtur
 func saveQualityStandardWorkflowDraft(t *testing.T, fixture qualityStandardWorkflowPostgresFixture) models.InspectionStandard {
 	t.Helper()
 	standard := models.InspectionStandard{Code: "QCP-" + uuid.NewString(), Name: "重量受控协议", Type: "FQC", Status: "DRAFT",
-		Items: json.RawMessage(`[{"id":"weight","name":"重量","unit":"G","centerValue":450,"levels":[{"level":"S","tolerance":0,"min":450,"max":450},{"level":"A","deviationMinExclusive":0,"tolerance":5,"min":445,"max":455},{"level":"B","deviationMinExclusive":5,"tolerance":10,"min":440,"max":460}]}]`)}
+		Items: json.RawMessage(`[{"id":"weight","name":"重量","inspectionStageId":"11111111-1111-4111-8111-111111111111","inspectionStageName":"内圈重","unit":"G","centerValue":450,"gradingMode":"DEVIATION_BANDS","levels":[{"level":"S","lowerTolerance":0,"upperTolerance":0,"result":"PASS"},{"level":"A","lowerTolerance":5,"upperTolerance":5,"result":"PASS"},{"level":"B","lowerTolerance":10,"upperTolerance":10,"result":"PASS"}]}]`)}
 	require.NoError(t, SaveInspectionStandard(fixture.requestContext, &standard))
 	return standard
 }
@@ -264,9 +265,14 @@ func TestQualityStandardPostgresRejectsInvalidCriteriaAndInactiveApprovalPolicyB
 	standard := saveQualityStandardWorkflowDraft(t, fixture)
 	for _, invalidCriteria := range []struct{ name, original, replacement, message string }{
 		{"unknown unit", `"unit":"G"`, `"unit":"not-configured"`, "单位不存在"},
-		{"wrong center grade", `"level":"S","tolerance":0`, `"level":"S","tolerance":1`, "S 等级必须等于中心值"},
-		{"asymmetric limits", `"min":445`, `"min":444`, "对称"},
-		{"gap in deviation bands", `"deviationMinExclusive":5`, `"deviationMinExclusive":6`, "边界不连续"},
+		{"null required flag", `"centerValue":450`, `"centerValue":450,"isRequired":null`, "不能为空值"},
+		{"null display order", `"centerValue":450`, `"centerValue":450,"order":null`, "不能为空值"},
+		{"null item remarks", `"centerValue":450`, `"centerValue":450,"remarks":null`, "不能为空值"},
+		{"incorrect item field casing", `"centerValue":450`, `"CenterValue":450`, "格式无效"},
+		{"incorrect grade field casing", `"lowerTolerance":0`, `"LowerTolerance":0`, "格式无效"},
+		{"negative deviation", `"lowerTolerance":0`, `"lowerTolerance":-1`, "非负数"},
+		{"non-increasing deviation", `"lowerTolerance":5`, `"lowerTolerance":0`, "逐级递增"},
+		{"missing stage", `"inspectionStageId":"11111111-1111-4111-8111-111111111111"`, `"inspectionStageId":""`, "必须关联检测环节"},
 	} {
 		t.Run(invalidCriteria.name, func(t *testing.T) {
 			candidate := standard

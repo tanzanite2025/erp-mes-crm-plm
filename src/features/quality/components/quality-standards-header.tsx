@@ -1,27 +1,28 @@
-import { Search, Plus, Filter, Loader2, ShieldCheck } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import {
+  Search,
+  Plus,
+  Loader2,
+  ShieldCheck,
+  Layers3,
+  BookOpen,
+} from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
-import type { QualityStandardsTypeFilter } from '../types/quality-standards-list'
-import { getQualityStandardTypeLabel } from '../utils/quality-utils'
+import { matchesPathPermissionProjection } from '@/features/authz/guards/route-access'
 
 interface QualityStandardsHeaderProps {
   searchQuery: string
   onSearchChange: (value: string) => void
   onAdd: () => void
-  total: number
-  typeFilter: QualityStandardsTypeFilter
-  onTypeFilterChange: (value: QualityStandardsTypeFilter) => void
+  onManageInspectionStages?: () => void
+  onConfigureDefectTypes?: () => void
+  total?: number
   isFetching?: boolean
 }
 
@@ -29,12 +30,13 @@ export function QualityStandardsHeader({
   searchQuery,
   onSearchChange,
   onAdd,
+  onManageInspectionStages,
+  onConfigureDefectTypes,
   total,
-  typeFilter,
-  onTypeFilterChange,
   isFetching = false,
 }: QualityStandardsHeaderProps) {
   const { t } = useLanguage()
+  const user = useAuthStore((state) => state.user)
 
   return (
     <div className='flex flex-col gap-8'>
@@ -53,7 +55,7 @@ export function QualityStandardsHeader({
               </span>
               <div className='flex items-baseline gap-1'>
                 <span className='text-2xl font-black text-primary tabular-nums'>
-                  {total}
+                  {total ?? '—'}
                 </span>
                 <span className='text-[10px] font-semibold text-muted-foreground/50'>
                   {t('quality.standards.page.files')}
@@ -67,7 +69,7 @@ export function QualityStandardsHeader({
             <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/30 transition-colors group-focus-within:text-primary' />
             <Input
               placeholder={t('quality.standards.page.searchPlaceholder')}
-              className='h-12 w-full rounded-2xl border-none bg-muted/50 pr-11 pl-11 text-sm font-medium tracking-normal shadow-inner transition-all focus:bg-background sm:w-[320px] lg:w-[380px]'
+              className='h-12 w-full rounded-2xl border-none bg-muted/50 pr-11 pl-11 shadow-inner transition-all focus:bg-background sm:w-[320px] lg:w-[380px]'
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
             />
@@ -77,51 +79,49 @@ export function QualityStandardsHeader({
           </div>
         </div>
 
-        <div className='flex items-center gap-3'>
+        <div className='flex flex-wrap items-center gap-3'>
+          {matchesPathPermissionProjection(
+            user,
+            '/quality/standard-creation-guide'
+          ) && (
+            <Button asChild variant='outline' className='h-11 rounded-full'>
+              <Link to='/quality/standard-creation-guide'>
+                <BookOpen className='size-4' />
+                {t('quality.standardCreationGuide.readGuide')}
+              </Link>
+            </Button>
+          )}
+          {onManageInspectionStages ? (
+            <Button
+              type='button'
+              variant='outline'
+              onClick={onManageInspectionStages}
+              className='h-11 rounded-full'
+            >
+              <Layers3 className='size-4' />
+              {t('quality.standards.inspectionStages.manage')}
+            </Button>
+          ) : null}
+          {onConfigureDefectTypes ? (
+            <Button
+              type='button'
+              variant='outline'
+              className='h-11 rounded-full'
+              onClick={onConfigureDefectTypes}
+            >
+              {t('quality.defectConfiguration.quickConfigure')}
+            </Button>
+          ) : null}
           <AuditTimelineTriggerButton
             module={AUDIT_MODULES.qualityStandard}
             targetName={t('quality.standards.page.title')}
             label={t('common.audit.trigger')}
-            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full border-dashed bg-background/80 px-4'
           />
 
-          <div className='flex items-center gap-2 rounded-2xl border border-dashed border-muted/50 bg-muted/5 px-3'>
-            <Filter className='size-4 text-muted-foreground/45' />
-            <Select
-              value={typeFilter}
-              onValueChange={(value: QualityStandardsTypeFilter) =>
-                onTypeFilterChange(value)
-              }
-            >
-              <SelectTrigger className='h-11 min-w-[132px] border-none bg-transparent px-0 text-[11px] font-black shadow-none'>
-                <SelectValue
-                  placeholder={t('quality.standards.page.filterType')}
-                />
-              </SelectTrigger>
-              <SelectContent className='rounded-2xl border-white/10 bg-background'>
-                <SelectItem value='ALL' className='text-[11px] font-black'>
-                  {t('quality.standards.page.allTypes')}
-                </SelectItem>
-                <SelectItem value='IQC' className='text-[11px] font-black'>
-                  {getQualityStandardTypeLabel(t, 'IQC')} (IQC)
-                </SelectItem>
-                <SelectItem value='IPQC' className='text-[11px] font-black'>
-                  {getQualityStandardTypeLabel(t, 'IPQC')} (IPQC)
-                </SelectItem>
-                <SelectItem value='FQC' className='text-[11px] font-black'>
-                  {getQualityStandardTypeLabel(t, 'FQC')} (FQC)
-                </SelectItem>
-                <SelectItem value='OQC' className='text-[11px] font-black'>
-                  {getQualityStandardTypeLabel(t, 'OQC')} (OQC)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <Button
-            size='sm'
             onClick={onAdd}
-            className='h-11 flex-1 gap-2 rounded-full bg-primary px-6 text-sm font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 sm:flex-initial'
+            className='h-11 flex-1 rounded-full px-6 sm:flex-initial'
           >
             <Plus className='size-4' />
             {t('quality.standards.page.add')}

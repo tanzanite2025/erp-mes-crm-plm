@@ -88,7 +88,7 @@ export function CustomerSalesReturnSummaryBlock({
               variant='outline'
               size='sm'
               onClick={onOpenSalesReturns}
-              className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase'
+              className='h-9 w-full rounded-full px-4'
             >
               {t('trading.customers.summary.returnAction')}
             </Button>

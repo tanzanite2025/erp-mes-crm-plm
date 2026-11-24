@@ -404,7 +404,7 @@ export function UserAuthForm({
           )}
         />
         <Button
-          className='mt-6 h-12 gap-2 rounded-full text-[10px] font-black tracking-[0.2em] uppercase shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95'
+          className='mt-6 h-12 gap-2 rounded-full shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95'
           disabled={isLoading}
         >
           {isLoading ? (

@@ -117,13 +117,13 @@ export function SalesReturnsEntryShell({
                 placeholder={t(
                   'trading.salesReturns.entryShell.searchPlaceholder'
                 )}
-                className='h-12 rounded-full border-primary/15 bg-background pl-11 font-semibold'
+                className='h-12 rounded-full border-primary/15 bg-background pl-11'
               />
             </div>
 
             <div className='flex items-center gap-3'>
               <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-                <SelectTrigger className='h-11 w-[180px] rounded-full border-primary/15 bg-background font-semibold'>
+                <SelectTrigger className='h-11 w-[180px] rounded-full border-primary/15 bg-background'>
                   <SelectValue
                     placeholder={t(
                       'trading.salesReturns.entryShell.statusFilter'

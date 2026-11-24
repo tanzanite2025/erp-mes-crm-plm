@@ -71,14 +71,14 @@ export function MaterialAssemblyManager() {
           <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             placeholder={t('materialArchive.assemblyManager.searchPlaceholder')}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
         <Button
           onClick={handleOpenCreate}
-          className='h-11 rounded-full bg-primary px-6 text-[10px] font-black tracking-widest text-primary-foreground shadow-xl shadow-blue-500/20 transition-all hover:bg-primary/90 active:scale-95'
+          className='h-11 rounded-full bg-primary px-6 text-primary-foreground shadow-xl shadow-blue-500/20 transition-all hover:bg-primary/90 active:scale-95'
         >
           <Plus className='mr-2 size-4' />
           {t('materialArchive.assemblyManager.addRule')}

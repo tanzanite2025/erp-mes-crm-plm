@@ -11,6 +11,10 @@ import (
 func TestProductionOutsourceInventoryAdapterDoesNotTreatProductIDAsMaterialID(t *testing.T) {
 	_, database := newOutsourceExecutionTestService(t)
 	_, line := seedOutsourceExecutionOrder(t, database, OutsourceOrderStatusReleased)
+	require.NoError(t, database.Exec(
+		"UPDATE products SET sku = ?, name = ? WHERE id = ?",
+		"NO-MATERIAL-SKU", "NO-MATERIAL-NAME", line.ProductID,
+	).Error)
 	require.NoError(t, database.Unscoped().
 		Where("product_id = ?", line.ProductID).
 		Delete(&models.ProductInventoryMaterialMapping{}).Error)

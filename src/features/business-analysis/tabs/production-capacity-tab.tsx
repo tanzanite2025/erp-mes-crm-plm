@@ -543,7 +543,7 @@ export function ProductionCapacityAnalysisTab() {
           <button
             type='button'
             onClick={() => void capacityQuery.refetch()}
-            className='inline-flex items-center gap-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase hover:text-foreground'
+            className='inline-flex items-center gap-1 text-muted-foreground hover:text-foreground'
           >
             <RefreshCw
               className={cn(
@@ -854,7 +854,7 @@ function BreakdownTable({
                           type='button'
                           variant='link'
                           size='sm'
-                          className='h-7 shrink-0 px-0 text-[10px] font-black'
+                          className='control-typography-compact h-7 shrink-0 px-0'
                           onClick={() => onDrilldown(row)}
                         >
                           {drilldownLabel}

@@ -12,9 +12,20 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { ProductionLineMutationPayload } from '../contracts/production-line-mutation'
-import type { ProductionLine } from '../data/production-line'
+import type {
+  ProductionLine,
+  ProductionLineProductTemplate,
+} from '../data/production-line'
+import { useProductionLineProductTemplatesQuery } from '../hooks/use-production-resources'
 import {
   normalizeProductionLineCode,
   normalizeProductionLineEntity,
@@ -30,6 +41,7 @@ interface ProductionLineProfileDialogProps {
 }
 
 interface ProductionLineProfileForm {
+  productTemplateId: string
   name: string
   code: string
   description: string
@@ -48,6 +60,7 @@ const KEYWORD_MAP: Record<string, string> = {
 
 function createForm(line: ProductionLine | null): ProductionLineProfileForm {
   return {
+    productTemplateId: line?.productTemplateId ?? '',
     name: line?.name ?? '',
     code: line?.code ?? '',
     description: line?.description ?? '',
@@ -66,9 +79,26 @@ export function ProductionLineProfileDialog({
     createForm(editingLine)
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const {
+    data: productTemplates = [],
+    isLoading: isLoadingProductTemplates,
+    error: productTemplateError,
+  } = useProductionLineProductTemplatesQuery({ enabled: open })
 
   const isEditing = Boolean(editingLine)
   const initialForm = useMemo(() => createForm(editingLine), [editingLine])
+  const selectedProductTemplate = productTemplates.find(
+    (template) => template.id === form.productTemplateId
+  )
+  const selectableProductTemplates = productTemplates.filter(
+    (template) =>
+      template.active || template.id === editingLine?.productTemplateId
+  )
+  const canSaveSelectedProductTemplate = Boolean(
+    selectedProductTemplate &&
+    (selectedProductTemplate.active ||
+      selectedProductTemplate.id === editingLine?.productTemplateId)
+  )
 
   useEffect(() => {
     if (open) {
@@ -106,21 +136,21 @@ export function ProductionLineProfileDialog({
     return candidate
   }
 
-  const handleNameChange = (name: string) => {
+  const handleProductTemplateChange = (
+    productTemplate: ProductionLineProductTemplate
+  ) => {
     setForm((current) => ({
       ...current,
-      name,
-      code: isEditing
-        ? current.code
-        : name.trim()
-          ? generateLineCode(name)
-          : '',
+      productTemplateId: productTemplate.id,
+      name: productTemplate.name,
+      code: isEditing ? current.code : generateLineCode(productTemplate.name),
     }))
   }
 
   const handleSubmit = async () => {
-    const name = form.name.trim()
-    if (!name) {
+    const name = selectedProductTemplate?.name.trim() ?? ''
+    const productTemplateId = form.productTemplateId.trim()
+    if (!name || !productTemplateId || !canSaveSelectedProductTemplate) {
       return
     }
 
@@ -133,10 +163,11 @@ export function ProductionLineProfileDialog({
         const delta = buildFlattenDelta(
           {
             name: editingLine.name,
+            productTemplateId: editingLine.productTemplateId ?? '',
             code: editingLine.code,
             description: editingLine.description,
           },
-          { name, code, description }
+          { name, productTemplateId, code, description }
         )
 
         if (Object.keys(delta).length === 0) {
@@ -158,6 +189,7 @@ export function ProductionLineProfileDialog({
             id: '',
             code,
             name,
+            productTemplateId,
             description,
             version: 1,
             isActive: true,
@@ -188,13 +220,58 @@ export function ProductionLineProfileDialog({
                   {isEditing ? `编辑 ${entityLabel}` : `新增 ${entityLabel}`}
                 </DialogTitle>
                 <DialogDescription className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                  {entityLabel} 是当前脑图的顶层节点，名称按业务实际直接填写。
+                  {entityLabel} 读取产品侧模板，名称随模板主数据显示。
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
           <div className='grid gap-4 md:grid-cols-2'>
+            <div className='space-y-2 md:col-span-2'>
+              <Label
+                htmlFor='production-line-profile-product-template'
+                className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'
+              >
+                产品模板
+              </Label>
+              <Select
+                value={form.productTemplateId || undefined}
+                onValueChange={(id) => {
+                  const template = selectableProductTemplates.find(
+                    (item) => item.id === id
+                  )
+                  if (template) {
+                    handleProductTemplateChange(template)
+                  }
+                }}
+                disabled={isLoadingProductTemplates || isSubmitting}
+              >
+                <SelectTrigger
+                  id='production-line-profile-product-template'
+                  className='h-11 rounded-2xl border-none bg-muted/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
+                >
+                  <SelectValue
+                    placeholder={
+                      isLoadingProductTemplates
+                        ? '正在读取产品模板'
+                        : '选择产品模板'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectableProductTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} ({template.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {productTemplateError && (
+                <p className='ml-1 text-xs text-destructive'>
+                  产品模板读取失败，请关闭后重试。
+                </p>
+              )}
+            </div>
             <div className='space-y-2'>
               <Label
                 htmlFor='production-line-profile-name'
@@ -204,10 +281,10 @@ export function ProductionLineProfileDialog({
               </Label>
               <Input
                 id='production-line-profile-name'
-                value={form.name}
-                onChange={(event) => handleNameChange(event.target.value)}
-                placeholder={`请输入 ${entityLabel} 名称`}
-                className='h-11 rounded-2xl border-none bg-muted/50 font-medium shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
+                value={selectedProductTemplate?.name ?? form.name}
+                readOnly
+                placeholder='选择产品模板后读取名称'
+                className='h-11 rounded-2xl border-none bg-muted/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
             </div>
             <div className='space-y-2'>
@@ -228,7 +305,7 @@ export function ProductionLineProfileDialog({
                   }))
                 }
                 placeholder={`自动生成或填写 ${entityLabel} 编码`}
-                className='h-11 rounded-2xl border-none bg-muted/50 font-maple-ui font-black tracking-tight shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
+                className='h-11 rounded-2xl border-none bg-muted/50 font-maple-ui shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
               <p className='ml-1 text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                 新增时会根据名称生成编码，编辑时可手动修正。
@@ -251,7 +328,7 @@ export function ProductionLineProfileDialog({
                   }))
                 }
                 placeholder={`补充 ${entityLabel} 说明`}
-                className='min-h-24 resize-none rounded-2xl border-none bg-muted/50 font-medium shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
+                className='min-h-24 resize-none rounded-2xl border-none bg-muted/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/20'
               />
             </div>
           </div>
@@ -262,15 +339,19 @@ export function ProductionLineProfileDialog({
               variant='outline'
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
-              className='h-11 rounded-full border-muted px-8 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full border-muted px-8'
             >
               取消
             </Button>
             <Button
               type='button'
               onClick={() => void handleSubmit()}
-              disabled={!form.name.trim() || isSubmitting}
-              className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20'
+              disabled={
+                !form.productTemplateId ||
+                !canSaveSelectedProductTemplate ||
+                isSubmitting
+              }
+              className='h-11 rounded-full px-8 shadow-xl shadow-blue-500/20'
             >
               {isEditing ? '保存' : '确认新增'}
             </Button>

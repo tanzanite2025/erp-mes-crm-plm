@@ -1,3 +1,5 @@
+import type { ProductionBOMBranchOperation } from '../../../data/production-line'
+
 export type MindmapLevel = 1 | 2 | 3
 export type MindmapNodeActionType = 'none' | 'open_dialog'
 export type MindmapNodeSourceType = 'segment' | 'process'
@@ -8,7 +10,16 @@ export interface LineMindmapReadonlyMeta {
   isActive?: boolean
   lineId?: string
   lineName?: string
+  productId?: string
+  productSKU?: string
+  productName?: string
+  bomOwnerType?: string
+  bomOwnerCustomerId?: string
+  bomOwnerCustomerName?: string
+  bomVersionLevel?: string
   sortOrder?: number
+  branchOperations?: ProductionBOMBranchOperation[]
+  processLibraryId?: string
 }
 
 export interface LineMindmapNode {

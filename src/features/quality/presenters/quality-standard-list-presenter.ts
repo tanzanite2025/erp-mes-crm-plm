@@ -1,10 +1,9 @@
 import type { useLanguage } from '@/context/language-provider'
-import type { Standard } from '../data/schema'
+import type { QualityStandardListSummary } from '../adapters/quality-standard-api-adapter'
 import {
   formatQualityActorName,
   formatQualityDateTime,
   getQualityAuditMeta,
-  getQualityStandardTypeLabel,
   getStatusMeta,
   isQualityStandardEditable,
   normalizeQualityStandardStatus,
@@ -16,12 +15,11 @@ interface QualityStandardListPresenterContext {
 }
 
 export interface QualityStandardListItemPresenter {
-  source: Standard
+  source: QualityStandardListSummary
   id: string
   code: string
   name: string
   versionText: string
-  typeLabel: string
   statusMeta: ReturnType<typeof getStatusMeta>
   auditMeta: ReturnType<typeof getQualityAuditMeta>
   hasApprovalRequest: boolean
@@ -40,7 +38,10 @@ export interface QualityStandardListItemPresenter {
   canEdit: boolean
 }
 
-function buildProcessSummaryLabel(locale: string, standard: Standard) {
+function buildProcessSummaryLabel(
+  locale: string,
+  standard: QualityStandardListSummary
+) {
   const summary = standard.approvalRequestSummary
   if (!summary) {
     return undefined
@@ -69,7 +70,7 @@ function buildProcessSummaryLabel(locale: string, standard: Standard) {
   return locale === 'zh-CN' ? '审批请求已消费' : 'Approval Consumed'
 }
 
-function buildProcessSummaryClassName(standard: Standard) {
+function buildProcessSummaryClassName(standard: QualityStandardListSummary) {
   const summary = standard.approvalRequestSummary
   if (!summary) {
     return undefined
@@ -90,7 +91,7 @@ function buildProcessSummaryClassName(standard: Standard) {
   return 'bg-slate-500/10 text-slate-500'
 }
 
-function buildProcessSummaryHint(standard: Standard) {
+function buildProcessSummaryHint(standard: QualityStandardListSummary) {
   const summary = standard.approvalRequestSummary
   if (!summary) {
     return undefined
@@ -118,7 +119,10 @@ function buildQualityStandardApprovalRequestClassName(
     : 'bg-slate-500/10 text-slate-500'
 }
 
-function buildDecisionSummary(locale: string, status: Standard['status']) {
+function buildDecisionSummary(
+  locale: string,
+  status: QualityStandardListSummary['status']
+) {
   const normalizedStatus = normalizeQualityStandardStatus(status)
 
   if (normalizedStatus === 'REJECTED') {
@@ -144,7 +148,7 @@ function buildDecisionSummary(locale: string, status: Standard['status']) {
   return undefined
 }
 
-function buildDecisionReason(standard: Standard) {
+function buildDecisionReason(standard: QualityStandardListSummary) {
   return (
     standard.rejectReason?.trim() ||
     standard.archiveReason?.trim() ||
@@ -153,7 +157,7 @@ function buildDecisionReason(standard: Standard) {
   )
 }
 
-function buildDecisionActor(standard: Standard) {
+function buildDecisionActor(standard: QualityStandardListSummary) {
   return (
     formatQualityActorName(standard.archivedBy) ||
     formatQualityActorName(standard.publishedBy) ||
@@ -162,7 +166,7 @@ function buildDecisionActor(standard: Standard) {
   )
 }
 
-function buildDecisionTimestamp(standard: Standard) {
+function buildDecisionTimestamp(standard: QualityStandardListSummary) {
   return (
     formatQualityDateTime(standard.archivedAt) ||
     formatQualityDateTime(standard.publishedAt) ||
@@ -172,7 +176,7 @@ function buildDecisionTimestamp(standard: Standard) {
 }
 
 export function buildQualityStandardListItemPresenter(
-  standard: Standard,
+  standard: QualityStandardListSummary,
   { t, locale }: QualityStandardListPresenterContext
 ): QualityStandardListItemPresenter {
   const hasApprovalRequest = Boolean(standard.approvalRequestSummary?.id)
@@ -191,7 +195,6 @@ export function buildQualityStandardListItemPresenter(
     code: standard.code,
     name: standard.name,
     versionText: `VER ${standard.version?.toFixed(1) || '1.0'}`,
-    typeLabel: getQualityStandardTypeLabel(t, standard.type),
     statusMeta: getStatusMeta(t, standard.status),
     auditMeta: getQualityAuditMeta(locale, standard.status, standard.auditor),
     hasApprovalRequest,
@@ -220,7 +223,7 @@ export function buildQualityStandardListItemPresenter(
 }
 
 export function buildQualityStandardListPresenter(
-  standards: Standard[],
+  standards: QualityStandardListSummary[],
   context: QualityStandardListPresenterContext
 ) {
   return standards.map((standard) =>

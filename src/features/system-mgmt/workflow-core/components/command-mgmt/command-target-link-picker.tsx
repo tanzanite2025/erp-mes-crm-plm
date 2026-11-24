@@ -102,12 +102,12 @@ export function CommandTargetLinkPicker({
             variant='outline'
             role='combobox'
             aria-expanded={open}
-            className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-4 text-left text-[13px] font-bold shadow-inner hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-4 text-left shadow-inner hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-primary/20'
           >
             <div className='min-w-0 flex-1 text-left'>
               <div
                 className={cn(
-                  'truncate text-[13px] font-bold',
+                  'truncate',
                   !selectedRouteOption && 'text-muted-foreground'
                 )}
               >
@@ -140,7 +140,7 @@ export function CommandTargetLinkPicker({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder='搜索页面名称、模块或路径'
-                className='h-9 rounded-2xl border-none bg-muted/50 pl-9 text-[11px] font-bold shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+                className='h-9 rounded-2xl border-none bg-muted/50 pl-9 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
               />
             </div>
           </div>
@@ -155,9 +155,7 @@ export function CommandTargetLinkPicker({
                   : 'border-muted/50 bg-muted/10 hover:bg-muted/30'
               )}
             >
-              <span className='text-[11px] font-black tracking-widest uppercase'>
-                暂不设置跳转
-              </span>
+              <span>暂不设置跳转</span>
               <Check
                 className={cn(
                   'size-4',
@@ -189,10 +187,8 @@ export function CommandTargetLinkPicker({
                   >
                     <div className='flex items-start justify-between gap-2'>
                       <div className='min-w-0 space-y-0.5'>
-                        <div className='truncate text-[12px] leading-none font-black tracking-tight'>
-                          {option.label}
-                        </div>
-                        <div className='truncate text-[8px] leading-none font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                        <div className='truncate'>{option.label}</div>
+                        <div className='truncate text-muted-foreground/55'>
                           {option.parentLabel}
                         </div>
                       </div>
@@ -205,7 +201,7 @@ export function CommandTargetLinkPicker({
                         )}
                       />
                     </div>
-                    <div className='mt-1 truncate font-maple-ui text-[8px] leading-none text-muted-foreground/70'>
+                    <div className='mt-1 truncate font-maple-ui text-muted-foreground/70'>
                       {option.value}
                     </div>
                   </button>

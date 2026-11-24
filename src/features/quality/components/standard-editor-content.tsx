@@ -3,23 +3,14 @@ import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { Standard } from '../data/schema'
 import type { ControlledProtocolInspectionCriterionFormValue } from '../services/controlled-protocol-inspection-criteria-editor'
 import {
-  getQualityStandardTypeLabel,
   getQualityStandardStatusLabel,
-  normalizeQualityStandardType,
   normalizeQualityStandardStatus,
 } from '../utils/quality-utils'
-import { ControlledProtocolInspectionCriteriaEditor } from './controlled-protocol-inspection-criteria-editor'
+import { QualityStandardInspectionRulesEditor } from './quality-standard-inspection-rules-editor'
 
 interface StandardEditorContentProps {
   mode: 'create' | 'edit'
@@ -32,8 +23,8 @@ interface StandardEditorContentProps {
   ) => void
   onCodeChange: (value: string) => void
   onNameChange: (value: string) => void
-  onTypeChange: (value: Standard['type']) => void
   onRemarksChange: (value: string) => void
+  showInspectionRules?: boolean
 }
 
 export function StandardEditorContent({
@@ -45,8 +36,8 @@ export function StandardEditorContent({
   onInspectionCriteriaChange,
   onCodeChange,
   onNameChange,
-  onTypeChange,
   onRemarksChange,
+  showInspectionRules = true,
 }: StandardEditorContentProps) {
   const { t } = useLanguage()
   const isEdit = mode === 'edit'
@@ -61,7 +52,11 @@ export function StandardEditorContent({
           <p className='mt-1 text-sm font-medium text-muted-foreground/70'>
             {readOnly
               ? t('quality.standards.workspace.readOnlyHint')
-              : t('quality.standards.workspace.editorFormDescription')}
+              : t(
+                  showInspectionRules
+                    ? 'quality.standards.workspace.editorFormDescription'
+                    : 'quality.standards.workspace.basicInformationFormDescription'
+                )}
           </p>
         </div>
         {isDirty && !readOnly ? (
@@ -122,49 +117,14 @@ export function StandardEditorContent({
                 placeholder={t(
                   'quality.standards.dialog.action.placeholders.name'
                 )}
-                className='h-11 rounded-xl border-none bg-muted/30 font-bold shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
+                className='h-11 rounded-xl border-none bg-muted/30 shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
                 value={formData.name || ''}
                 disabled={readOnly}
                 onChange={(event) => onNameChange(event.target.value)}
               />
             </div>
 
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-              <div className='space-y-2'>
-                <Label className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
-                  {t('quality.standards.dialog.action.fields.type')}
-                </Label>
-                <Select
-                  value={normalizeQualityStandardType(formData.type)}
-                  onValueChange={(value: Standard['type']) =>
-                    onTypeChange(value)
-                  }
-                  disabled={readOnly}
-                >
-                  <SelectTrigger className='h-11 rounded-xl border-none bg-muted/30 shadow-inner transition-all focus:ring-2 focus:ring-primary/20'>
-                    <SelectValue
-                      placeholder={t(
-                        'quality.standards.dialog.action.placeholders.type'
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent className='rounded-xl border-white/5 bg-background text-[11px] font-black'>
-                    <SelectItem value='IQC'>
-                      {getQualityStandardTypeLabel(t, 'IQC')} (IQC)
-                    </SelectItem>
-                    <SelectItem value='IPQC'>
-                      {getQualityStandardTypeLabel(t, 'IPQC')} (IPQC)
-                    </SelectItem>
-                    <SelectItem value='FQC'>
-                      {getQualityStandardTypeLabel(t, 'FQC')} (FQC)
-                    </SelectItem>
-                    <SelectItem value='OQC'>
-                      {getQualityStandardTypeLabel(t, 'OQC')} (OQC)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div>
               <div className='space-y-2'>
                 <Label className='ml-1 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'>
                   {t('quality.standards.dialog.action.fields.status')}
@@ -197,7 +157,7 @@ export function StandardEditorContent({
                 placeholder={t(
                   'quality.standards.dialog.action.placeholders.remarks'
                 )}
-                className='rounded-xl border-none bg-muted/30 p-4 text-sm shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
+                className='rounded-xl border-none bg-muted/30 p-4 shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
                 disabled={readOnly}
                 value={formData.remarks || ''}
                 onChange={(event) => onRemarksChange(event.target.value)}
@@ -224,11 +184,11 @@ export function StandardEditorContent({
           </div>
         </div>
       </div>
-      {inspectionCriteria !== null ? (
-        <ControlledProtocolInspectionCriteriaEditor
-          criteria={inspectionCriteria}
+      {showInspectionRules && inspectionCriteria !== null ? (
+        <QualityStandardInspectionRulesEditor
+          inspectionCriteria={inspectionCriteria}
           readOnly={readOnly}
-          onCriteriaChange={onInspectionCriteriaChange}
+          onInspectionCriteriaChange={onInspectionCriteriaChange}
         />
       ) : null}
     </div>

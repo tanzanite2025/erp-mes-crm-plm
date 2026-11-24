@@ -801,7 +801,7 @@ function SalesReturnCreateSheetBody({
                                   )
                                 }}
                                 placeholder='0'
-                                className='h-9 w-[128px] border-none bg-transparent px-1.5 text-right font-black tabular-nums shadow-none focus-visible:ring-0'
+                                className='h-9 w-[128px] border-none bg-transparent px-1.5 text-right tabular-nums shadow-none focus-visible:ring-0'
                                 disabled={line.remainingReturnableQuantity <= 0}
                               />
                             </div>
@@ -818,7 +818,7 @@ function SalesReturnCreateSheetBody({
                               }
                               placeholder='可粘贴多个条码，用空格、换行或逗号分隔'
                               rows={2}
-                              className='min-h-[60px] rounded-2xl bg-background/70 text-xs font-bold'
+                              className='min-h-[60px] rounded-2xl bg-background/70'
                             />
                           </div>
                         </div>

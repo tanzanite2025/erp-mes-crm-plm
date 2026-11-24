@@ -32,7 +32,7 @@ export function AssignmentSummary({
 
   return (
     <div className='rounded-2xl border border-dashed border-muted/50 bg-background px-3 py-2.5 shadow-inner'>
-      <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
+      <div className='flex min-w-0 flex-wrap items-center justify-between gap-2'>
         <div className='min-w-0'>
           <p className='text-[9px] font-black tracking-[0.18em] text-muted-foreground/50 uppercase'>
             {t('sidebarCommandConfig.summary.currentAccount')}
@@ -47,7 +47,7 @@ export function AssignmentSummary({
         <div className='flex flex-wrap gap-2'>
           <Button
             variant='outline'
-            className='h-7 gap-1.5 rounded-full border-dashed px-3 text-[9px] font-black tracking-widest'
+            className='control-typography-compact h-7 gap-1.5 rounded-full border-dashed px-3'
             disabled={!hasSelectedAccount}
             onClick={onSelectAll}
           >
@@ -56,7 +56,7 @@ export function AssignmentSummary({
           </Button>
           <Button
             variant='ghost'
-            className='h-7 gap-1.5 rounded-full px-3 text-[9px] font-black tracking-widest'
+            className='control-typography-compact h-7 gap-1.5 rounded-full px-3'
             disabled={!hasSelectedAccount}
             onClick={onClear}
           >
@@ -66,7 +66,7 @@ export function AssignmentSummary({
         </div>
       </div>
 
-      <div className='mt-2 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5'>
+      <div className='mt-2 grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-1.5'>
         <div className='flex items-center justify-between gap-2 rounded-full bg-muted/25 px-2.5 py-1.5'>
           <p className='text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandConfig.summary.assigned')}

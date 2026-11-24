@@ -1,18 +1,26 @@
 export const codeCenter = {
   title: '编码中心',
   linearBarcode: {
+    symbols: {
+      linearBarcode: '一维码',
+      qrCode: '二维码',
+      pairedSymbols: '一维码 / 二维码',
+      sameCode: '一维码与二维码内容一致：{{code}}',
+      loading: '正在生成码图',
+      renderFailed: '码图生成失败',
+    },
     tabs: {
       protocol: '协议规则',
       print: '打印',
-      status: '一维码状态',
+      status: '编码状态',
       numbering: '业务编号',
     },
     print: {
       page: {
-        title: '一维码打印中心',
-        subtitle: 'LINEAR BARCODE PRINT / 唯一码发号、批次留痕与 Code128 预览',
+        title: '产品编码打印中心',
+        subtitle: '唯一码发号、批次留痕与一维码 / 二维码预览',
         notice:
-          '每次打印会在同一事务内批量保留唯一流水号、生成 15 位码并逐码写入可用库存；打印预览只使用已落库的唯一条码。',
+          '每枚产品编码只发号一次，同时生成内容一致的一维码与二维码。打印窗口可选择单码或双码标签；已有编码可在下方库存中补打。',
         badges: {
           placeholder: '骨架占位',
           awaitingOrder: '等待选择订单',
@@ -74,12 +82,15 @@ export const codeCenter = {
         preview: {
           title: '解析预览区',
           description:
-            '按订单行设置独立预打数量，并一次生成对应数量的唯一 Code128 标签。',
+            '按订单行设置独立预打数量，每枚唯一编码同时生成一维码与二维码，并在同一窗口预览。',
           placeholder: '预打数量独立于订单数量，单次支持 1 到 200 枚唯一条码。',
           actions: {
             printNow: '立即打印 {{quantity}} 张',
             printing: '正在生成预览 ({{quantity}})...',
             previewReady: '打印预览已生成',
+            loadingIssuanceSummary: '正在读取签发数量',
+            unattributedIssuedInventory: '历史编码归属未确认',
+            orderQuantityReached: '已达到订单数量',
             batchPrintAll: '整单批量打印',
             batchPrinting: '整单打印中',
           },
@@ -103,7 +114,8 @@ export const codeCenter = {
               '浏览器阻止了打印预览窗口，请允许本站打开弹窗后重试。',
             previewClosed:
               '打印预览窗口已关闭；如批次已创建，系统会自动将其报废。',
-            renderFailed: 'Code128 标签渲染失败，未创建打印批次。',
+            renderFailed:
+              '一维码或二维码渲染失败，请重试；新签发批次将按原打印规则作报废处理。',
           },
           states: {
             awaitingSelection: '请选择订单后查看解析结果。',
@@ -111,6 +123,8 @@ export const codeCenter = {
             noLines: '当前订单没有可用于解析的订单行。',
             lineReady: '可解析',
             lineBlocked: '已阻断',
+            unattributedIssuedInventory:
+              '有 {{quantity}} 个有效历史编码无法确认所属订单行，完成库存核对前暂不能继续签发。',
           },
           fields: {
             lineNo: '订单行',
@@ -120,7 +134,9 @@ export const codeCenter = {
             holeCount: '孔数',
             quantity: '数量',
             orderQuantity: '订单数量',
-            printQuantity: '预打数量（1-200）',
+            issuedQuantity: '有效已签发',
+            remainingQuantity: '剩余可签发',
+            printQuantity: '本次预打数量',
             sequenceRuleKey: '发号规则键',
             mockSerial: '预览流水号',
             barcodeSerial: '打印配置流水号',
@@ -181,15 +197,19 @@ export const codeCenter = {
           },
         },
         inventory: {
-          title: '一维码库存',
+          title: '产品编码库存',
           description:
-            '逐枚展示已发号条码、所属批次、订单行、可用状态与失效时间。',
+            '同一行展示每枚已签发编码的一维码与二维码。补打使用原编码，不重复发号。',
+          actions: {
+            reprint: '补打原编码',
+            reprintCode: '补打原编码 {{code}}',
+          },
           total: '库存 {{count}}',
           available: '可用 {{count}}',
-          refresh: '刷新一维码库存',
-          loading: '一维码库存加载中',
-          loadFailed: '一维码库存加载失败，请重试。',
-          empty: '当前范围内还没有已生成的一维码库存。',
+          refresh: '刷新产品编码库存',
+          loading: '产品编码库存加载中',
+          loadFailed: '产品编码库存加载失败，请重试。',
+          empty: '当前范围内还没有已生成的产品编码库存。',
           fields: {
             code: '完整条码',
             batchNo: '打印批次',
@@ -209,8 +229,9 @@ export const codeCenter = {
     },
     status: {
       page: {
-        title: '一维码状态定义',
-        description: '定义一维码在打印库存与生产执行中的状态含义、来源和边界',
+        title: '产品编码状态定义',
+        description:
+          '定义产品编码在打印库存与生产执行中的状态；Code128 一维码和 QR 二维码使用同一编码、共享同一状态',
         badges: {
           definitionOnly: '状态定义',
         },
@@ -219,10 +240,10 @@ export const codeCenter = {
         retryContract: '重新加载契约',
       },
       states: {
-        loadingContract: '正在读取后端一维码状态契约',
-        contractLoadFailed: '一维码状态契约加载失败',
+        loadingContract: '正在读取后端产品编码状态契约',
+        contractLoadFailed: '产品编码状态契约加载失败',
         contractLoadFailedDescription:
-          '状态定义不再使用前端兜底数组；如果这里加载失败，需要先修复后端契约接口，避免页面展示与真实状态机不一致。',
+          '状态定义不再使用前端兜底数组；如果这里加载失败，需要先修复后端契约接口，避免页面展示与真实状态机不一致。二维码与一维码共用这套状态。',
       },
       metrics: {
         total: '状态总数',
@@ -233,12 +254,12 @@ export const codeCenter = {
         inventory: {
           title: '打印库存状态',
           description:
-            '描述一维码号码从打印生成到绑定、失效或作废的库存侧状态。',
+            '描述产品编码从打印生成到绑定、失效或作废的库存侧状态；一维码和二维码共用同一库存记录。',
         },
         production: {
           title: '生产执行状态',
           description:
-            '描述绑定产品后，一维码在生产执行、转移、挂起和返工链路中的状态。',
+            '描述产品编码在生产执行、转移、挂起和返工链路中的状态；生产开工不要求先完成卷材绑定，扫描任一图形都会进入同一状态。',
         },
       },
       location: {
@@ -284,16 +305,16 @@ export const codeCenter = {
       flow: {
         title: '生命周期说明',
         description:
-          '先把状态边界定义清楚，后续扫码、委外、转移和追溯只引用这些状态，不各自发明一套含义。',
-        printStageTitle: '1. 打印发号',
+          '库存状态与生产状态分别由各自业务事实承载。产品绑定是可选的卷材追溯关联，不是生产开工前置。',
+        printStageTitle: '产品编码签发',
         printStageDescription:
-          '打印 TAB 生成一维码库存，状态落在 linear_barcode_inventory_items。',
-        bindingStageTitle: '2. 产品绑定',
+          '打印 TAB 为每枚产品编码建立库存记录，库存状态落在 linear_barcode_inventory_items。',
+        bindingStageTitle: '可选：产品与卷材绑定',
         bindingStageDescription:
-          '产品绑定把号码与产品建立关系，库存状态从可用进入已绑定。',
-        executionStageTitle: '3. 生产执行',
+          '产品绑定将编码与已激活的预浸料卷实例关联；成功后库存从可用进入已绑定，不代表生产已开工。',
+        executionStageTitle: '独立的生产执行履历',
         executionStageDescription:
-          '扫码、转移、委外和工序执行写入 product_barcode_states / events。',
+          '生产状态初始化及扫码/工序命令写入生产状态、操作和事件；开工不要求产品绑定，也不修改编码库存。',
       },
       fields: {
         phase: '阶段',
@@ -307,21 +328,22 @@ export const codeCenter = {
           AVAILABLE: {
             label: '可用',
             description:
-              '号码已经生成并保留在打印库存中，但还没有绑定到具体产品。',
-            phase: '打印后待绑定',
+              '产品编码已生成并保留在打印库存中，尚未与预浸料卷实例建立绑定。',
+            phase: '打印后可用',
             trigger: '批量打印成功后自动写入',
           },
           BOUND: {
             label: '已绑定',
-            description: '号码已经绑定到产品，不能再次作为空白号码重复绑定。',
-            phase: '产品绑定后',
+            description:
+              '产品编码已与预浸料卷实例建立追溯关系，不能再次绑定到另一卷。',
+            phase: '卷材追溯绑定后',
             trigger: '产品绑定动作成功后写入',
           },
           EXPIRED: {
             label: '已失效',
             description: '预打号码超过有效期，不应再被绑定到新产品。',
             phase: '库存失效',
-            trigger: '查询或绑定前刷新有效期时写入',
+            trigger: '过期编码查询时显示为已过期，扫码绑定检查时写入过期状态',
           },
           SCRAPPED: {
             label: '已报废',
@@ -334,36 +356,35 @@ export const codeCenter = {
         production: {
           NOT_STARTED: {
             label: '未开始',
-            description:
-              '产品一维码已有生产状态记录，但还没有进入具体工序执行。',
+            description: '产品编码已有生产状态记录，但还没有进入具体工序执行。',
             phase: '生产待启动',
-            trigger: '初始化状态或绑定后进入生产前置状态',
+            trigger: '初始化生产状态或路线步骤前进后写入',
           },
           IN_PROGRESS: {
             label: '执行中',
             description:
-              '产品一维码已经进入某个工序或执行动作，表示当前正在生产流转中。',
+              '产品编码已经进入某个工序或执行动作，表示当前正在生产流转中。',
             phase: '工序执行',
             trigger: '扫码开始、工序执行或转移到新工序时写入',
           },
           COMPLETED: {
             label: '已完成',
             description:
-              '产品一维码对应的当前生产执行已经完成，可以进入后续验收、出货或归档判断。',
+              '产品编码对应的当前生产执行已经完成，可以进入后续验收、出货或归档判断。',
             phase: '执行完成',
             trigger: '工序完成或生产完成动作写入',
           },
           HOLD: {
             label: '已挂起',
             description:
-              '产品一维码暂时停在当前状态，需要人工确认、异常处理或等待后续动作。',
+              '产品编码暂时停在当前状态，需要人工确认、异常处理或等待后续动作。',
             phase: '异常等待',
             trigger: '异常挂起、暂停或等待处理时写入',
           },
           REWORK: {
             label: '返工中',
             description:
-              '产品一维码进入返工链路，后续仍需要通过扫码或执行动作回到明确状态。',
+              '产品编码进入返工链路，后续仍需要通过扫码或执行动作回到明确状态。',
             phase: '返工处理',
             trigger: '品质异常、返工指令或返工转移时写入',
           },
@@ -450,17 +471,17 @@ export const codeCenter = {
     numberingEngine: {
       page: {
         title: '共享发号引擎',
-        description: '集中承载当前共享发号配置与一维码发号规则入口',
-        notice: '当前共享页仅保留一维码共享发号规则配置。',
+        description: '集中承载当前共享发号配置与产品编码发号规则入口',
+        notice: '当前共享页仅保留产品编码共享发号规则配置。',
         badges: {
-          linearBarcode: '一维码',
+          linearBarcode: '产品编码',
         },
       },
       sections: {
         linearBarcode: {
-          title: '一维码发号规则',
+          title: '产品编码发号规则',
           description:
-            '复用当前一维码发号规则与后端 /numbering/rules 配置能力。',
+            '复用当前产品编码发号规则与后端 /numbering/rules 配置能力。',
           status: '后端发号已接入',
         },
       },

@@ -71,7 +71,7 @@ export function SettlementLedgerDetailDialogBody({
             <Button
               type='button'
               variant='outline'
-              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed px-4'
               onClick={onRetryFinanceResources}
             >
               重试

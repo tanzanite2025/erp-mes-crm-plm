@@ -258,7 +258,7 @@ function OpenCurrentUserPasswordChangeDialog({
             variant='ghost'
             disabled={isSubmitting}
             onClick={() => onOpenChange(false)}
-            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-8'
           >
             {t('common.actions.cancel')}
           </Button>
@@ -266,7 +266,7 @@ function OpenCurrentUserPasswordChangeDialog({
             type='submit'
             form='change-current-user-password-form'
             disabled={isSubmitting}
-            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all active:scale-95'
+            className='h-11 rounded-full px-8 shadow-lg shadow-primary/20 transition-all active:scale-95'
           >
             {isSubmitting && (
               <Loader2 className='size-4 animate-spin' aria-hidden='true' />

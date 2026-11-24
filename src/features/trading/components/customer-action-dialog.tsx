@@ -156,7 +156,7 @@ export function CustomerActionDialog({
                 <Input
                   id='name'
                   placeholder={t('trading.customers.dialog.placeholders.name')}
-                  className='h-10 rounded-2xl border-none bg-muted/50 pl-10 text-[12px] font-bold sm:h-11'
+                  className='h-10 rounded-2xl border-none bg-muted/50 pl-10 sm:h-11'
                   value={formData.name}
                   onChange={(event) => updateField('name', event.target.value)}
                 />
@@ -173,7 +173,7 @@ export function CustomerActionDialog({
               <Input
                 id='code'
                 placeholder={t('trading.customers.dialog.placeholders.code')}
-                className='h-10 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px] font-bold sm:h-11'
+                className='h-10 rounded-2xl border-none bg-muted/50 font-maple-ui sm:h-11'
                 value={formData.code}
                 onChange={(event) => updateField('code', event.target.value)}
               />
@@ -195,7 +195,7 @@ export function CustomerActionDialog({
                   placeholder={t(
                     'trading.customers.dialog.placeholders.contactPerson'
                   )}
-                  className='h-11 rounded-2xl border-none bg-muted/50 pl-10 font-bold'
+                  className='h-11 rounded-2xl border-none bg-muted/50 pl-10'
                   value={formData.contactPerson}
                   onChange={(event) =>
                     updateField('contactPerson', event.target.value)
@@ -218,7 +218,7 @@ export function CustomerActionDialog({
                     updateField('status', value as Customer['status'])
                   }}
                 >
-                  <SelectTrigger className='h-10 w-full rounded-2xl border-none bg-muted/50 text-[10px] font-black tracking-widest uppercase sm:h-11'>
+                  <SelectTrigger className='h-10 w-full rounded-2xl border-none bg-muted/50 sm:h-11'>
                     <SelectValue
                       placeholder={t(
                         'trading.customers.dialog.placeholders.status'
@@ -230,7 +230,7 @@ export function CustomerActionDialog({
                       <SelectItem
                         key={option.value}
                         value={option.value}
-                        className='rounded-xl py-2 text-[10px] font-black tracking-widest uppercase'
+                        className='rounded-xl py-2'
                       >
                         {option.label}
                       </SelectItem>
@@ -253,7 +253,7 @@ export function CustomerActionDialog({
                     placeholder={t(
                       'trading.customers.dialog.placeholders.contactPhone'
                     )}
-                    className='h-10 rounded-2xl border-none bg-muted/50 pl-8 text-[12px] font-bold sm:h-11 sm:pl-10 sm:text-sm'
+                    className='h-10 rounded-2xl border-none bg-muted/50 pl-8 sm:h-11 sm:pl-10'
                     value={formData.contactPhone}
                     onChange={(event) =>
                       updateField('contactPhone', event.target.value)
@@ -290,7 +290,7 @@ export function CustomerActionDialog({
                     placeholder={t(
                       'trading.customers.dialog.placeholders.email'
                     )}
-                    className='h-11 rounded-2xl border-none bg-background pl-10 font-bold'
+                    className='h-11 rounded-2xl border-none bg-background pl-10'
                     value={formData.email}
                     onChange={(event) =>
                       updateField('email', event.target.value)
@@ -309,7 +309,7 @@ export function CustomerActionDialog({
                 <Input
                   id='wechat'
                   placeholder='请输入微信号'
-                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  className='h-11 rounded-2xl border-none bg-background'
                   value={formData.wechat}
                   onChange={(event) =>
                     updateField('wechat', event.target.value)
@@ -327,7 +327,7 @@ export function CustomerActionDialog({
                 <Input
                   id='whatsapp'
                   placeholder='请输入 WhatsApp 号码或账号'
-                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  className='h-11 rounded-2xl border-none bg-background'
                   value={formData.whatsapp}
                   onChange={(event) =>
                     updateField('whatsapp', event.target.value)
@@ -345,7 +345,7 @@ export function CustomerActionDialog({
                 <Input
                   id='facebook'
                   placeholder='请输入 Facebook 链接或账号名'
-                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  className='h-11 rounded-2xl border-none bg-background'
                   value={formData.facebook}
                   onChange={(event) =>
                     updateField('facebook', event.target.value)
@@ -363,7 +363,7 @@ export function CustomerActionDialog({
                 <Input
                   id='instagram'
                   placeholder='请输入 Instagram 账号'
-                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  className='h-11 rounded-2xl border-none bg-background'
                   value={formData.instagram}
                   onChange={(event) =>
                     updateField('instagram', event.target.value)
@@ -381,7 +381,7 @@ export function CustomerActionDialog({
                 <Input
                   id='telegram'
                   placeholder='请输入 Telegram 用户名或链接'
-                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  className='h-11 rounded-2xl border-none bg-background'
                   value={formData.telegram}
                   onChange={(event) =>
                     updateField('telegram', event.target.value)
@@ -404,7 +404,7 @@ export function CustomerActionDialog({
                 id='address'
                 placeholder={t('trading.customers.dialog.placeholders.address')}
                 rows={3}
-                className='resize-none rounded-2xl border-none bg-muted/50 pl-10 text-xs leading-relaxed font-medium'
+                className='resize-none rounded-2xl border-none bg-muted/50 pl-10'
                 value={formData.address}
                 onChange={(event) => updateField('address', event.target.value)}
               />

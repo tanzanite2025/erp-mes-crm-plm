@@ -224,7 +224,7 @@ export function LabelingActionDialog({
             </Label>
             <Input
               placeholder='例如：DT-SWISS-2025-V1-Water'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-teal-500/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner focus-visible:ring-teal-500/20'
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
@@ -273,7 +273,7 @@ export function LabelingActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui text-xs'
+              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui'
               value={formData.id ?? '--'}
             />
           </div>
@@ -283,7 +283,7 @@ export function LabelingActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui text-xs'
+              className='h-10 rounded-xl border-none bg-muted/20 px-5 font-maple-ui'
               value={`REV.${formData.version ?? 1}`}
             />
           </div>

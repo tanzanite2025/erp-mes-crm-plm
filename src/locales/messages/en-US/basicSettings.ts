@@ -1,9 +1,9 @@
 export const basicSettings = {
   tabs: {
-    linearBarcode: 'Linear Barcode',
+    linearBarcode: 'Product Codes',
     units: 'Unit Management',
     knowledgeBase: 'Knowledge Base',
-    sequences: 'Linear Barcode Numbering Rules',
+    sequences: 'Product Code Numbering Rules',
     enterprise: 'Enterprise Info',
     security: 'Security Settings',
   },
@@ -79,7 +79,7 @@ export const basicSettings = {
   },
   sequences: {
     page: {
-      title: 'Linear Barcode Numbering Rule Center',
+      title: 'Product Code Numbering Rule Center',
       subtitle:
         'Maintain the rule keys, reset strategy, and persisted issuance logic used by shared linear-barcode numbering.',
     },
@@ -375,7 +375,7 @@ export const basicSettings = {
   },
   linearBarcode: {
     page: {
-      title: 'Linear Barcode Rule Center',
+      title: 'Product Code Rule Center',
       subtitle:
         'LINEAR_BARCODE_PROTOCOL / Maintain the persisted Code128 wheel-barcode protocol for date, model, appearance, hole prefix, hole count, and 4-digit sequence.',
       badges: {
@@ -435,7 +435,7 @@ export const basicSettings = {
       },
     },
     simulation: {
-      title: 'Dynamic Linear Barcode Simulation',
+      title: 'Dynamic Code128 and QR Simulation',
       subtitle:
         'Year + Month + Day + Model + Appearance + Hole Prefix + Hole Count + Sequence',
       codeLabel: 'CODE',
@@ -486,7 +486,7 @@ export const basicSettings = {
       },
     },
     footer: {
-      title: 'Linear Barcode Implementation Notes',
+      title: 'Product Code Implementation Notes',
       description:
         'This page defines the standard 15-character wheel barcode structure: year + month + day + model + appearance + hole prefix + hole count + serial. The hole prefix occupies 1 character and the hole count occupies 2 characters. The serial reuses numbering rule {{key}} so PDA and scan-ingest clients share the same persisted defaults.',
     },
@@ -508,7 +508,7 @@ export const basicSettings = {
       sequenceRuleMissing:
         'Please create numbering rule {{key}} first and configure it with pattern={SEQ} plus padding=4.',
       saveSuccess: 'Linear barcode protocol synced to backend config center.',
-      saveFailed: 'Failed to save linear barcode protocol.',
+      saveFailed: 'Failed to save product code protocol.',
       resetSuccess: 'Linear barcode defaults restored.',
     },
     dialog: {

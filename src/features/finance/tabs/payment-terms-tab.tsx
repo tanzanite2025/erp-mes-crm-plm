@@ -100,7 +100,7 @@ export function PaymentTermsTab() {
             variant='outline'
             size='sm'
             onClick={() => void refresh()}
-            className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
+            className='h-9 rounded-full border-dashed transition-all hover:bg-primary/5 hover:text-primary'
           >
             <RefreshCcw
               className={`mr-2 size-3 ${isLoading ? 'animate-spin' : ''}`}
@@ -110,7 +110,7 @@ export function PaymentTermsTab() {
           <Button
             size='sm'
             onClick={openAdd}
-            className='h-9 rounded-full bg-primary text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95'
+            className='h-9 rounded-full bg-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95'
           >
             <Plus className='mr-2 size-3' />
             {t('finance.paymentTerms.page.addPlan')}

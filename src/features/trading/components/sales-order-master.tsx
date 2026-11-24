@@ -264,7 +264,7 @@ export function SalesOrderMaster({
                             type='button'
                             variant='default'
                             data-order-row-action='true'
-                            className='h-9 w-full justify-center rounded-full px-4 text-[10px] font-black tracking-widest xl:h-8 xl:w-auto'
+                            className='h-9 w-full justify-center rounded-full px-4 xl:h-8 xl:w-auto'
                             onClick={() => onSelect(order.id)}
                           >
                             {t('tradingSalesOrder.master.actions.viewDetail')}
@@ -275,7 +275,7 @@ export function SalesOrderMaster({
                             variant='ghost'
                             disabled={!canPreassembleScan}
                             data-order-row-action='true'
-                            className='col-span-2 min-h-9 w-full justify-center rounded-full px-3 text-[10px] leading-5 font-black tracking-widest whitespace-normal xl:col-span-1 xl:h-8 xl:w-auto'
+                            className='col-span-2 min-h-9 w-full justify-center rounded-full px-3 whitespace-normal xl:col-span-1 xl:h-8 xl:w-auto'
                             onClick={() => {
                               if (!canPreassembleScan) return
                               openScanPreassemble(order)
@@ -290,7 +290,7 @@ export function SalesOrderMaster({
                             variant='ghost'
                             disabled={!onViewReceivable}
                             data-order-row-action='true'
-                            className='col-span-2 h-9 w-full justify-center rounded-full px-3 text-[10px] font-black tracking-widest xl:col-span-1 xl:h-8 xl:w-auto'
+                            className='col-span-2 h-9 w-full justify-center rounded-full px-3 xl:col-span-1 xl:h-8 xl:w-auto'
                             onClick={() => onViewReceivable?.(order)}
                           >
                             <FileText className='mr-1.5 size-3 text-emerald-600' />
@@ -319,7 +319,7 @@ export function SalesOrderMaster({
                                       e.stopPropagation()
                                       onEdit?.(order)
                                     }}
-                                    className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                                    className='gap-2 rounded-xl px-3 py-2'
                                   >
                                     <Edit2 className='size-3 text-blue-500' />
                                     {t('tradingSalesOrder.master.editOrder')}
@@ -331,7 +331,7 @@ export function SalesOrderMaster({
                                       e.stopPropagation()
                                       onDelete?.(order.id)
                                     }}
-                                    className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
+                                    className='gap-2 rounded-xl px-3 py-2 text-rose-500 focus:text-rose-600'
                                   >
                                     <Trash2 className='size-3' />
                                     {order.status === 'Canceled'

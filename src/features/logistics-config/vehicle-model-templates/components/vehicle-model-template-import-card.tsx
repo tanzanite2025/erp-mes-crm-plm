@@ -204,7 +204,7 @@ export function VehicleModelTemplateImportCard({
               onValueChange={handleSeedChange}
               disabled={isLoading || vehicleSpecs.length === 0}
             >
-              <SelectTrigger className='h-10 rounded-xl text-[13px]'>
+              <SelectTrigger className='h-10 rounded-xl'>
                 <SelectValue
                   placeholder={t(
                     'logisticsConfig.vehicleModelTemplates.seedVehicle'
@@ -233,7 +233,7 @@ export function VehicleModelTemplateImportCard({
                   ? `${selectedVehicleSpec.name} 模板`
                   : t('logisticsConfig.vehicleModelTemplates.templateName')
               }
-              className='h-10 rounded-xl border-border/70 bg-background text-[13px]'
+              className='h-10 rounded-xl border-border/70 bg-background'
             />
           </div>
 
@@ -322,7 +322,7 @@ export function VehicleModelTemplateImportCard({
                 </div>
                 <button
                   type='button'
-                  className='rounded-xl bg-primary px-3 py-2 text-[10px] font-black tracking-[0.14em] text-primary-foreground uppercase disabled:cursor-not-allowed disabled:opacity-50'
+                  className='rounded-xl bg-primary px-3 py-2 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
                   disabled={
                     !canManageTemplates ||
                     !sourceAsset ||

@@ -39,6 +39,9 @@ func ExecuteSalesOrderTransactionHandler(c *gin.Context) {
 		if respondToProtectedProductionMaterialIssuanceOrderSource(c, err) {
 			return
 		}
+		if respondToProtectedIssuedProductCodeSalesOrder(c, err) {
+			return
+		}
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] 订单不存在"})

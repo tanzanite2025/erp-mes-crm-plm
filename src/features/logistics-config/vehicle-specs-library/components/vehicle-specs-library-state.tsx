@@ -28,7 +28,7 @@ export function VehicleSpecsLibraryErrorState({
       <button
         type='button'
         onClick={onRetry}
-        className='mt-3 uds-chip border-destructive/40 text-[10px] text-destructive'
+        className='mt-3 uds-chip border-destructive/40 text-destructive'
       >
         {t('logisticsConfig.vehicleSpecsLibrary.retry')}
       </button>

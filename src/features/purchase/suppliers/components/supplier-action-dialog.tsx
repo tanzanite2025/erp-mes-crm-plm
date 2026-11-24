@@ -161,10 +161,10 @@ export function SupplierActionDialog({
   const fieldLabelClass =
     'pl-1 text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'
   const inputClass =
-    'h-10 rounded-xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+    'h-10 rounded-xl border-none bg-muted/50 transition-all focus:ring-2 focus:ring-primary/20'
   const iconInputClass = `${inputClass} pl-10`
   const selectTriggerClass =
-    'h-10 rounded-xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'
+    'h-10 rounded-xl border-none bg-muted/50 transition-all focus:ring-2 focus:ring-primary/20'
 
   return (
     <ActionDialogShell
@@ -266,7 +266,7 @@ export function SupplierActionDialog({
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  className='py-3 text-[11px] font-black uppercase'
+                  className='py-3'
                 >
                   {option.label}
                 </SelectItem>
@@ -294,7 +294,7 @@ export function SupplierActionDialog({
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  className='py-3 text-[11px] font-black uppercase'
+                  className='py-3'
                 >
                   {option.label}
                 </SelectItem>
@@ -318,7 +318,7 @@ export function SupplierActionDialog({
               {product}
               <button
                 onClick={() => removeProduct(product)}
-                className='text-[10px] transition-colors hover:text-destructive'
+                className='transition-colors hover:text-destructive'
               >
                 ×
               </button>
@@ -335,7 +335,7 @@ export function SupplierActionDialog({
             <Box className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
             <Input
               placeholder={t('purchase.suppliers.fields.productPlaceholder')}
-              className='h-10 rounded-xl border-none bg-muted/50 pl-10 text-[11px] font-black transition-all focus:ring-2 focus:ring-primary/20'
+              className='h-10 rounded-xl border-none bg-muted/50 pl-10 transition-all focus:ring-2 focus:ring-primary/20'
               value={productInput}
               onChange={(e) => setProductInput(e.target.value)}
               onKeyDown={(e) => {
@@ -349,7 +349,7 @@ export function SupplierActionDialog({
             variant='outline'
             size='sm'
             onClick={addProduct}
-            className='h-10 rounded-xl border-dashed px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
+            className='h-10 rounded-xl border-dashed px-6 transition-all hover:bg-primary/5 hover:text-primary'
           >
             {t('purchase.suppliers.fields.addProduct')}
           </Button>
@@ -495,7 +495,7 @@ export function SupplierActionDialog({
             id='address'
             placeholder={t('purchase.suppliers.fields.addressPlaceholder')}
             rows={2}
-            className='min-h-18 resize-none rounded-xl border-none bg-muted/50 py-3 pr-4 pl-10 text-sm leading-relaxed font-bold transition-all focus:ring-2 focus:ring-primary/20'
+            className='min-h-18 resize-none rounded-xl border-none bg-muted/50 py-3 pr-4 pl-10 transition-all focus:ring-2 focus:ring-primary/20'
             value={formData.address}
             onChange={(e) => updateField('address', e.target.value)}
           />

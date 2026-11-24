@@ -534,7 +534,7 @@ export function TrackingNumberInput({
               setScannerError(null)
               setScannerOpen((current) => !current)
             }}
-            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full border-dashed px-4'
           >
             <ScanLine className='mr-2 size-3.5' />
             {copy.cameraScan}
@@ -544,7 +544,7 @@ export function TrackingNumberInput({
             variant='outline'
             disabled={disabled || isDecodingImage}
             onClick={() => fileInputRef.current?.click()}
-            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full border-dashed px-4'
           >
             {isDecodingImage ? (
               <Loader2 className='mr-2 size-3.5 animate-spin' />

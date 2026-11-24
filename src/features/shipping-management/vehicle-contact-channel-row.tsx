@@ -66,7 +66,7 @@ export function VehicleContactChannelRow({
         }
         disabled={isTypeLocked}
       >
-        <SelectTrigger className='h-10 w-full rounded-xl border border-input bg-background/50 text-xs font-black shadow-sm disabled:cursor-not-allowed disabled:opacity-100'>
+        <SelectTrigger className='h-10 w-full rounded-xl border border-input bg-background/50 shadow-sm disabled:cursor-not-allowed disabled:opacity-100'>
           <SelectValue placeholder='联系方式类型' />
         </SelectTrigger>
         <SelectContent className='rounded-xl border border-border/60 shadow-xl'>
@@ -74,7 +74,7 @@ export function VehicleContactChannelRow({
             <SelectItem
               key={value}
               value={value}
-              className='rounded-lg px-3 py-2 text-xs font-bold'
+              className='rounded-lg px-3 py-2'
             >
               {CHANNEL_LABELS[value]}
             </SelectItem>
@@ -85,7 +85,7 @@ export function VehicleContactChannelRow({
         value={channel.value}
         onChange={(e) => onValueChange(index, e.target.value)}
         placeholder={valuePlaceholder}
-        className='h-10 rounded-xl text-xs font-bold'
+        className='h-10 rounded-xl'
       />
       <div className='flex flex-wrap items-center gap-2'>
         {primaryControlMode === 'radio' ? (
@@ -116,7 +116,7 @@ export function VehicleContactChannelRow({
           <Button
             type='button'
             variant='outline'
-            className='h-10 rounded-xl px-4 text-[10px] font-black tracking-wider uppercase'
+            className='h-10 rounded-xl px-4'
             onClick={() => onRemove(index)}
           >
             删除

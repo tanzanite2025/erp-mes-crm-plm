@@ -100,7 +100,7 @@ export function ProductBindingFormSection(
               placeholder={t(
                 'cuttingOperations.productBinding.form.qr.placeholder'
               )}
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-medium tracking-normal placeholder:font-medium placeholder:tracking-normal placeholder:normal-case'
+              className='h-12 rounded-2xl border-none bg-muted/50'
               disabled={isSubmitting}
             />
             <p className='text-xs leading-5 font-medium text-muted-foreground'>
@@ -125,7 +125,7 @@ export function ProductBindingFormSection(
           type='button'
           onClick={onSubmit}
           disabled={isSubmitting}
-          className='h-11 rounded-full px-6 text-xs font-bold tracking-normal'
+          className='h-11 rounded-full px-6'
         >
           <Link2 className='size-4' />
           {isSubmitting

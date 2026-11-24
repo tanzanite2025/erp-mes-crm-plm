@@ -29,7 +29,7 @@ import { useActiveBOM } from '@/features/product-structure/hooks/use-active-bom'
 import type { PackagingProfileDraft } from '../packaging-profile-form'
 
 const packagingFieldClass =
-  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-[11px] font-semibold tracking-tight leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 disabled:opacity-100 disabled:bg-muted/20 disabled:text-foreground/70'
+  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 disabled:opacity-100 disabled:bg-muted/20 disabled:text-foreground/70'
 const packagingSelectClass = `${packagingFieldClass} justify-between data-[size=default]:h-11`
 const packagingSelectContentClass =
   'min-w-[12rem] rounded-2xl border-none shadow-xl [&_[data-slot=select-item]]:text-[10px] [&_[data-slot=select-item]]:font-medium [&_[data-slot=select-item]]:tracking-tight'
@@ -562,7 +562,7 @@ export function PackagingProfileFormDialog({
               {t('logisticsPackagingManagement.packagingRules.fields.notes')}
             </Label>
             <Textarea
-              className='min-h-[72px] resize-none rounded-2xl border border-border/50 bg-muted/40 px-4 py-2.5 text-[11px] font-medium tracking-tight shadow-sm shadow-black/5 transition-all duration-200 focus-visible:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary/15'
+              className='min-h-[72px] resize-none rounded-2xl border border-border/50 bg-muted/40 px-4 py-2.5 shadow-sm shadow-black/5 transition-all duration-200 focus-visible:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary/15'
               value={draft.notes ?? ''}
               onChange={(event) =>
                 onDraftChange((current) => ({
@@ -577,13 +577,13 @@ export function PackagingProfileFormDialog({
           <DialogFooter className='pt-1'>
             <Button
               variant='ghost'
-              className='h-11 px-8 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 px-8'
               onClick={() => onOpenChange(false)}
             >
               {t('logisticsPackagingManagement.packagingRules.cancel')}
             </Button>
             <Button
-              className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all active:scale-95'
+              className='h-11 rounded-full px-8 shadow-lg shadow-primary/20 transition-all active:scale-95'
               onClick={onSave}
               disabled={savePending}
             >

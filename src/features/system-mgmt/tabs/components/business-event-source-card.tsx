@@ -501,7 +501,7 @@ export function BusinessEventSourceCard({
             <TabsList className='mb-4 h-auto w-full justify-start gap-1 rounded-2xl bg-muted/40 p-1'>
               <TabsTrigger
                 value='actions'
-                className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                className='gap-2 rounded-xl px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm'
               >
                 动作
                 <Badge
@@ -516,7 +516,7 @@ export function BusinessEventSourceCard({
               </TabsTrigger>
               <TabsTrigger
                 value='statuses'
-                className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                className='gap-2 rounded-xl px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm'
               >
                 状态
                 <Badge
@@ -531,7 +531,7 @@ export function BusinessEventSourceCard({
               </TabsTrigger>
               <TabsTrigger
                 value='fields'
-                className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                className='gap-2 rounded-xl px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm'
               >
                 字段
                 <Badge
@@ -546,7 +546,7 @@ export function BusinessEventSourceCard({
               </TabsTrigger>
               <TabsTrigger
                 value='resolvers'
-                className='gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                className='gap-2 rounded-xl px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm'
               >
                 动态接收人
                 <Badge
@@ -561,7 +561,7 @@ export function BusinessEventSourceCard({
               </TabsTrigger>
               <TabsTrigger
                 value='base'
-                className='ml-auto gap-2 rounded-xl px-4 py-2 text-xs font-black data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                className='ml-auto gap-2 rounded-xl px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm'
               >
                 基础配置
                 {diff.general.dirty && (

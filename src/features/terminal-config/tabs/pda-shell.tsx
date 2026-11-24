@@ -593,7 +593,7 @@ export function PDAShellTab() {
           <CardContent className='space-y-5 p-5 md:p-6'>
             <div className='flex flex-wrap gap-3'>
               <Button
-                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-6'
                 onClick={async () => {
                   const next = !lockMode
                   setLockMode(next)
@@ -617,7 +617,7 @@ export function PDAShellTab() {
 
               <Button
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-6'
                 onClick={() => setKeepAwake((current) => !current)}
               >
                 <Zap className='mr-2 size-4' />
@@ -628,7 +628,7 @@ export function PDAShellTab() {
 
               <Button
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-6'
                 onClick={() => {
                   setScannerWakeSignal((current) => current + 1)
                   setStatusTone('idle')
@@ -641,7 +641,7 @@ export function PDAShellTab() {
 
               <Button
                 variant='outline'
-                className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-6'
                 onClick={() => triggerRetryQueued(currentScene)}
                 disabled={isRetrying || !currentSceneQueue.length}
               >
@@ -764,7 +764,7 @@ export function PDAShellTab() {
             {!lockMode ? (
               <div className='flex flex-wrap gap-3'>
                 <Button
-                  className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                  className='h-11 rounded-full px-6'
                   variant='outline'
                   onClick={() => {
                     void (async () => {
@@ -784,7 +784,7 @@ export function PDAShellTab() {
                 </Button>
 
                 <Button
-                  className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+                  className='h-11 rounded-full px-6'
                   variant='outline'
                   onClick={() => {
                     void (async () => {
@@ -802,10 +802,7 @@ export function PDAShellTab() {
                 </Button>
 
                 {canOpenWorkbench ? (
-                  <Button
-                    asChild
-                    className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
-                  >
+                  <Button asChild className='h-11 rounded-full px-6'>
                     <Link to='/terminal-config/pda'>
                       <Workflow className='mr-2 size-4' />
                       {t('terminalConfig.pdaShell.actions.openWorkbench')}
@@ -850,7 +847,7 @@ export function PDAShellTab() {
                     <Button
                       size='sm'
                       variant='outline'
-                      className='mt-3 rounded-full text-[10px] font-black tracking-widest uppercase'
+                      className='mt-3 rounded-full'
                       onClick={() => triggerRetryQueued(group.scene)}
                     >
                       {t('terminalConfig.pdaShell.actions.retryBucket')}
@@ -892,7 +889,7 @@ export function PDAShellTab() {
                       <Button
                         size='sm'
                         variant='ghost'
-                        className='rounded-full text-[10px] font-black tracking-widest uppercase'
+                        className='rounded-full'
                         onClick={() => triggerRetryQueued(item.scene)}
                       >
                         <RefreshCw className='mr-1 size-3.5' />
@@ -901,7 +898,7 @@ export function PDAShellTab() {
                       <Button
                         size='sm'
                         variant='ghost'
-                        className='rounded-full text-[10px] font-black tracking-widest uppercase'
+                        className='rounded-full'
                         onClick={() => {
                           void (async () => {
                             await removePDAShellRetry(item.id)
@@ -921,11 +918,7 @@ export function PDAShellTab() {
 
         {!lockMode && canOpenWorkbench ? (
           <div className='flex items-center justify-center'>
-            <Button
-              asChild
-              variant='ghost'
-              className='rounded-full text-[10px] font-black tracking-widest uppercase'
-            >
+            <Button asChild variant='ghost' className='rounded-full'>
               <Link to='/terminal-config/pda'>
                 <MoveUpRight className='mr-2 size-3.5' />
                 {t('terminalConfig.pdaShell.actions.backToWorkbench')}

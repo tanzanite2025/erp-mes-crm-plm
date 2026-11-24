@@ -399,7 +399,7 @@ export function EmployeeManagementList() {
               placeholder={t('orgPersonnel.list.searchPlaceholder')}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className='h-12 w-full rounded-2xl border border-dashed border-muted bg-muted/10 pr-10 pl-11 text-sm font-bold shadow-none transition-all placeholder:text-muted-foreground/20 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:ring-offset-0'
+              className='h-12 w-full rounded-2xl border border-dashed border-muted bg-muted/10 pr-10 pl-11 shadow-none transition-all placeholder:text-muted-foreground/20 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:ring-offset-0'
             />
             {searchValue && (
               <Button
@@ -458,7 +458,7 @@ export function EmployeeManagementList() {
             module={AUDIT_MODULES.employee}
             targetName={t('orgPersonnel.org.personnelProfile.title')}
             label={t('common.audit.trigger')}
-            className='h-10 w-full justify-center rounded-xl border-muted px-3 text-[10px] font-black tracking-tighter normal-case shadow-sm transition-all hover:bg-muted active:scale-95 sm:w-auto'
+            className='h-10 w-full justify-center rounded-xl border-muted px-3 shadow-sm transition-all hover:bg-muted active:scale-95 sm:w-auto'
           />
           <Button
             variant='outline'
@@ -466,9 +466,7 @@ export function EmployeeManagementList() {
             className='h-10 w-full justify-center rounded-xl border-dashed border-muted px-3 shadow-sm transition-all hover:bg-muted active:scale-95 sm:w-auto'
           >
             <Share className='size-3 text-emerald-600' />
-            <span className='text-[10px] leading-none font-black tracking-tighter'>
-              {t('orgPersonnel.list.exportData')}
-            </span>
+            <span>{t('orgPersonnel.list.exportData')}</span>
           </Button>
           <Button
             variant='outline'
@@ -476,9 +474,7 @@ export function EmployeeManagementList() {
             className='h-10 w-full justify-center rounded-xl border-dashed border-muted px-3 shadow-sm transition-all hover:bg-muted active:scale-95 sm:w-auto'
           >
             <Download className='size-3 text-blue-600' />
-            <span className='text-[10px] leading-none font-black tracking-tighter'>
-              {t('orgPersonnel.list.downloadTemplate')}
-            </span>
+            <span>{t('orgPersonnel.list.downloadTemplate')}</span>
           </Button>
           <Button
             variant='outline'
@@ -486,9 +482,7 @@ export function EmployeeManagementList() {
             className='h-10 w-full justify-center rounded-xl border-dashed border-blue-200 bg-blue-500/5 px-3 shadow-sm transition-all hover:bg-muted active:scale-95 sm:w-auto'
           >
             <FileSpreadsheet className='size-3 text-blue-600' />
-            <span className='text-[10px] leading-none font-black tracking-tighter'>
-              {t('orgPersonnel.list.batchSync')}
-            </span>
+            <span>{t('orgPersonnel.list.batchSync')}</span>
           </Button>
           <Button
             onClick={() => {
@@ -498,9 +492,7 @@ export function EmployeeManagementList() {
             className='h-10 w-full justify-center rounded-xl px-3 shadow-xl shadow-blue-500/10 transition-all active:scale-95 sm:w-auto'
           >
             <Plus className='size-3' />
-            <span className='text-[10px] leading-none font-black tracking-tighter'>
-              {t('orgPersonnel.list.addEmployee')}
-            </span>
+            <span>{t('orgPersonnel.list.addEmployee')}</span>
           </Button>
         </div>
       </div>
@@ -605,7 +597,7 @@ export function EmployeeManagementList() {
                 void handleUndoRecentResign()
               }}
               disabled={isUndoingRecentResign}
-              className='h-11 rounded-full border-amber-200 bg-amber-100/50 text-[10px] font-black tracking-widest text-amber-700 uppercase shadow-sm hover:bg-amber-100'
+              className='h-11 rounded-full border-amber-200 bg-amber-100/50 text-amber-700 shadow-sm hover:bg-amber-100'
             >
               {isUndoingRecentResign
                 ? t('orgPersonnel.list.undoing')

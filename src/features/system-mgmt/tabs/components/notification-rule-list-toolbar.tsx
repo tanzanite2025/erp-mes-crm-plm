@@ -32,11 +32,11 @@ export function NotificationRuleListToolbar({
           value={keyword}
           onChange={(event) => onKeywordChange(event.target.value)}
           placeholder='按规则名搜索'
-          className='h-10 rounded-2xl pl-9 text-sm font-bold'
+          className='h-10 rounded-2xl pl-9'
         />
       </div>
       <Select value={sourceCodeFilter} onValueChange={onSourceCodeFilterChange}>
-        <SelectTrigger className='h-10 rounded-2xl text-xs font-black'>
+        <SelectTrigger className='h-10 rounded-2xl'>
           <SelectValue placeholder='按业务源筛选' />
         </SelectTrigger>
         <SelectContent>

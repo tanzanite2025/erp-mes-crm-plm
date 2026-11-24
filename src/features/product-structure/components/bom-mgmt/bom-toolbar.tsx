@@ -55,7 +55,7 @@ export function BOMToolbar({
             >
               <SelectTrigger
                 aria-label={t('engineering.bomArchive.filter.ownerLabel')}
-                className='min-h-9 w-full min-w-0 rounded-xl border-dashed border-indigo-200 bg-indigo-50/40 px-3 text-[11px] font-bold whitespace-normal text-indigo-700 shadow-sm hover:bg-indigo-50 data-[size=default]:h-auto *:data-[slot=select-value]:line-clamp-none *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-all sm:min-w-[180px] lg:w-[210px]'
+                className='min-h-9 w-full min-w-0 rounded-xl border-dashed border-indigo-200 bg-indigo-50/40 px-3 whitespace-normal text-indigo-700 shadow-sm hover:bg-indigo-50 data-[size=default]:h-auto *:data-[slot=select-value]:line-clamp-none *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:text-left *:data-[slot=select-value]:break-all sm:min-w-[180px] lg:w-[210px]'
               >
                 <SelectValue
                   placeholder={t(
@@ -68,7 +68,7 @@ export function BOMToolbar({
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    className='text-[11px] font-medium whitespace-normal *:[span]:last:break-all'
+                    className='whitespace-normal *:[span]:last:break-all'
                   >
                     {option.label}
                   </SelectItem>
@@ -99,9 +99,7 @@ export function BOMToolbar({
         >
           <div className='flex items-center justify-center gap-1 whitespace-nowrap'>
             <Download className='size-3 text-blue-600' />
-            <span className='text-[9px] font-black tracking-tight sm:text-[10px]'>
-              {t('engineering.bomToolbar.downloadTemplate')}
-            </span>
+            <span>{t('engineering.bomToolbar.downloadTemplate')}</span>
           </div>
         </Button>
         <Button
@@ -111,9 +109,7 @@ export function BOMToolbar({
         >
           <div className='flex items-center justify-center gap-1 whitespace-nowrap'>
             <Upload className='size-3 text-blue-600' />
-            <span className='text-[9px] font-black tracking-tight sm:text-[10px]'>
-              {t('engineering.bomToolbar.importFormula')}
-            </span>
+            <span>{t('engineering.bomToolbar.importFormula')}</span>
           </div>
         </Button>
         <Button
@@ -122,9 +118,7 @@ export function BOMToolbar({
         >
           <div className='flex items-center justify-center gap-1 whitespace-nowrap'>
             <Plus className='size-3 text-white' />
-            <span className='text-[9px] font-black tracking-tight sm:text-[10px]'>
-              {t('engineering.bomToolbar.createBom')}
-            </span>
+            <span>{t('engineering.bomToolbar.createBom')}</span>
           </div>
         </Button>
       </div>

@@ -267,7 +267,7 @@ export function CuttingSizeInventoryTab() {
                 </Button>
                 <Button
                   onClick={openRecordDialog}
-                  className='h-9 rounded-full px-4 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/10'
+                  className='h-9 rounded-full px-4 shadow-lg shadow-primary/10'
                 >
                   <Plus className='size-4' />
                   {t('cuttingOperations.sizeInventory.actions.recordInventory')}
@@ -501,14 +501,14 @@ export function CuttingSizeInventoryTab() {
               <Button
                 variant='outline'
                 onClick={() => setDialogOpen(false)}
-                className='rounded-full px-6 font-black'
+                className='rounded-full px-6'
               >
                 {t('cuttingOperations.sizeInventory.dialog.cancel')}
               </Button>
               <Button
                 onClick={handleRecordInventory}
                 disabled={recordMutation.isPending}
-                className='rounded-full px-8 font-black'
+                className='rounded-full px-8'
               >
                 {recordMutation.isPending
                   ? t('cuttingOperations.sizeInventory.dialog.saving')

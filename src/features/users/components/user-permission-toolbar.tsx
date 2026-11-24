@@ -53,7 +53,7 @@ export function UserPermissionToolbar({
       </div>
       <div className='space-y-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:space-y-0'>
         <Input
-          className='h-10 rounded-2xl border-none bg-background/80 px-4 text-[12px] shadow-sm placeholder:text-muted-foreground/35 sm:min-w-[220px] sm:flex-1 md:text-sm'
+          className='h-10 rounded-2xl border-none bg-background/80 px-4 shadow-sm placeholder:text-muted-foreground/35 sm:min-w-[220px] sm:flex-1'
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={t('users.permissionAssignments.placeholders.search')}
@@ -62,7 +62,7 @@ export function UserPermissionToolbar({
           <Button
             type='button'
             variant={allPermissionsSelected ? 'outline' : 'default'}
-            className='h-9 w-full justify-center rounded-full px-2 text-[10px] font-black tracking-[0.12em] uppercase shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3 sm:tracking-widest'
+            className='h-9 w-full justify-center rounded-full px-2 shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3'
             onClick={allPermissionsSelected ? onClearAll : onSelectAll}
             disabled={!canSelectPermissions}
           >
@@ -74,7 +74,7 @@ export function UserPermissionToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-9 w-full justify-center rounded-full px-2 text-[10px] font-black tracking-[0.12em] uppercase shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3 sm:tracking-widest'
+            className='h-9 w-full justify-center rounded-full px-2 shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3'
             onClick={onExpandAll}
           >
             {t('users.permissionAssignments.actions.expandAll')}
@@ -82,7 +82,7 @@ export function UserPermissionToolbar({
           <Button
             type='button'
             variant='outline'
-            className='h-9 w-full justify-center rounded-full px-2 text-[10px] font-black tracking-[0.12em] uppercase shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3 sm:tracking-widest'
+            className='h-9 w-full justify-center rounded-full px-2 shadow-sm transition-all active:scale-95 sm:h-10 sm:w-auto sm:px-3'
             onClick={onCollapseAll}
           >
             {t('users.permissionAssignments.actions.collapseAll')}

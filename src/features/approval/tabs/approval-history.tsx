@@ -104,7 +104,7 @@ export function ApprovalHistory() {
           <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             placeholder={t('approval.history.searchPlaceholder')}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

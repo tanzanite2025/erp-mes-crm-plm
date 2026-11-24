@@ -203,7 +203,7 @@ export function OrgMgmt() {
                     <Button
                       variant='ghost'
                       size='sm'
-                      className='h-9 rounded-full border border-dashed border-muted-foreground/20 px-5 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-background'
+                      className='h-9 rounded-full border border-dashed border-muted-foreground/20 px-5 transition-all hover:bg-background'
                       onClick={() => {
                         setDialogMode('edit')
                         setDialogOpen(true)
@@ -215,7 +215,7 @@ export function OrgMgmt() {
                     <Button
                       variant='ghost'
                       size='sm'
-                      className='h-9 rounded-full border border-dashed border-muted-foreground/20 px-5 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-background'
+                      className='h-9 rounded-full border border-dashed border-muted-foreground/20 px-5 transition-all hover:bg-background'
                       onClick={() => {
                         setDialogMode('add')
                         setOrganizationCreationParentNode(
@@ -233,7 +233,7 @@ export function OrgMgmt() {
                       <Button
                         variant='destructive'
                         size='sm'
-                        className='h-9 rounded-full border-none px-5 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-rose-500/10'
+                        className='h-9 rounded-full border-none px-5 shadow-lg shadow-rose-500/10'
                         onClick={() => setDeleteConfirmOpen(true)}
                       >
                         <Trash2 className='mr-2 size-4' />{' '}
@@ -322,7 +322,7 @@ export function OrgMgmt() {
                               <Button
                                 variant='ghost'
                                 size='sm'
-                                className='h-8 rounded-full border border-dashed border-muted-foreground/10 px-4 text-[10px] font-black uppercase hover:bg-background'
+                                className='h-8 rounded-full border border-dashed border-muted-foreground/10 px-4 hover:bg-background'
                                 onClick={() => setSelectedNode(child)}
                               >
                                 {t('orgPersonnel.org.manageDetail')}
@@ -351,7 +351,7 @@ export function OrgMgmt() {
                     <Button
                       variant='ghost'
                       size='sm'
-                      className='h-8 rounded-full border border-dashed border-muted-foreground/20 px-4 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-background'
+                      className='h-8 rounded-full border border-dashed border-muted-foreground/20 px-4 transition-all hover:bg-background'
                       onClick={() => setSelectorOpen(true)}
                     >
                       {t('orgPersonnel.org.manageLinks')}

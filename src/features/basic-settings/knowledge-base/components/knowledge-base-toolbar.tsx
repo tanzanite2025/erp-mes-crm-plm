@@ -36,7 +36,7 @@ export function KnowledgeBaseToolbar({
             placeholder={t(
               'basicSettings.knowledgeBase.page.searchPlaceholder'
             )}
-            className='h-9 rounded-xl border-none bg-background pl-9 text-[12px] font-bold shadow-sm focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-9 rounded-xl border-none bg-background pl-9 shadow-sm focus-visible:ring-1 focus-visible:ring-primary/20'
           />
         </div>
 
@@ -47,7 +47,7 @@ export function KnowledgeBaseToolbar({
               type='button'
               onClick={() => onCategoryChange(category.value)}
               className={cn(
-                'rounded-full px-3 py-1 text-[10px] font-black whitespace-nowrap transition-colors',
+                'rounded-full px-3 py-1 whitespace-nowrap transition-colors',
                 categoryFilter === category.value
                   ? 'bg-background text-primary shadow-sm'
                   : 'text-muted-foreground/50 hover:text-foreground'
@@ -59,10 +59,7 @@ export function KnowledgeBaseToolbar({
         </div>
       </div>
 
-      <Button
-        className='h-9 rounded-full px-4 text-[11px] font-black'
-        onClick={onCreate}
-      >
+      <Button className='h-9 rounded-full px-4' onClick={onCreate}>
         <Plus className='mr-1.5 size-3.5' />
         {t('basicSettings.knowledgeBase.actions.create')}
       </Button>

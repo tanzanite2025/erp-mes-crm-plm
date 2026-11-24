@@ -363,7 +363,7 @@ function BOMPerformanceVersionOptionManagementDialogSession({
                         {productWeightContext?.versionWeights.has(
                           option.value
                         ) && (
-                          <span className='block text-[10px] font-normal text-muted-foreground'>
+                          <span className='block text-muted-foreground'>
                             {productWeightContext.versionWeights.get(
                               option.value
                             )!.isCurrentBOM
@@ -383,7 +383,7 @@ function BOMPerformanceVersionOptionManagementDialogSession({
                       {productWeightContext?.versionWeights.has(
                         option.value
                       ) && (
-                        <span className='shrink-0 text-xs font-bold tabular-nums'>
+                        <span className='shrink-0 tabular-nums'>
                           {formatBOMProductPerformanceVersionWeight(
                             productWeightContext.versionWeights.get(
                               option.value
@@ -393,7 +393,7 @@ function BOMPerformanceVersionOptionManagementDialogSession({
                         </span>
                       )}
                       {!option.active && (
-                        <span className='shrink-0 text-xs text-muted-foreground'>
+                        <span className='shrink-0 text-muted-foreground'>
                           {isZh ? '已停用' : 'Disabled'}
                         </span>
                       )}

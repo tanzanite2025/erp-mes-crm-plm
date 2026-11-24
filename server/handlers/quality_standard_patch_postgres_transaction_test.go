@@ -49,9 +49,10 @@ func createIsolatedQualityStandardPatchPostgresDatabase(t *testing.T) *gorm.DB {
 	t.Cleanup(func() { require.NoError(t, connection.Close()) })
 	database, err := gorm.Open(postgres.New(postgres.Config{Conn: connection}), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	require.NoError(t, err)
-	require.NoError(t, database.AutoMigrate(&models.InspectionStandard{}, &models.AuditLog{}, &models.Unit{}))
+	require.NoError(t, database.AutoMigrate(&models.InspectionStandard{}, &models.AuditLog{}, &models.Unit{}, &models.QualityInspectionStage{}))
 	require.NoError(t, database.Create(&models.Unit{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "G", Name: "克", Status: "active"}).Error)
 	require.NoError(t, database.Exec(`CREATE TABLE approval_requests (id UUID PRIMARY KEY, target_id TEXT, created_at TIMESTAMP, deleted_at TIMESTAMP)`).Error)
+	require.NoError(t, database.Create(&models.QualityInspectionStage{BaseModel: models.BaseModel{ID: "11111111-1111-4111-8111-111111111111"}, Code: "INNER_WEIGHT", Name: "内圈重", NormalizedName: "内圈重", Active: true, Version: 1}).Error)
 	previousDatabase := db.DB
 	db.DB = database
 	t.Cleanup(func() { db.DB = previousDatabase })
@@ -76,10 +77,10 @@ func TestQualityStandardPatchPostgresSharesRowLockWithSaveAndRollsBackOnAuditFai
 	standard := models.InspectionStandard{
 		BaseModel: models.BaseModel{ID: uuid.NewString()},
 		Code:      "QCP-TRANSACTION-REGRESSION", Name: "Weight protocol", Type: "FQC", Status: "DRAFT", Version: 1,
-		Items: json.RawMessage(`[{"id":"weight","centerValue":450,"levels":[{"level":"A","min":445,"max":455},{"level":"S","min":444,"max":456}]}]`),
+		Items: json.RawMessage(`[{"id":"weight","name":"轮圈重量","inspectionStageId":"11111111-1111-4111-8111-111111111111","inspectionStageName":"内圈重","unit":"G","centerValue":450,"gradingMode":"DEVIATION_BANDS","levels":[{"level":"S","lowerTolerance":0,"upperTolerance":0,"result":"PASS"},{"level":"A","lowerTolerance":5,"upperTolerance":5,"result":"PASS"},{"level":"B","lowerTolerance":10,"upperTolerance":10,"result":"PASS"}]}]`),
 	}
 	require.NoError(t, database.Create(&standard).Error)
-	correctedItems := json.RawMessage(`[{"id":"weight","name":"重量","unit":"G","centerValue":450,"levels":[{"level":"S","tolerance":0,"min":450,"max":450},{"level":"A","deviationMinExclusive":0,"tolerance":5,"min":445,"max":455},{"level":"B","deviationMinExclusive":5,"tolerance":6,"min":444,"max":456}]}]`)
+	correctedItems := json.RawMessage(`[{"id":"weight","name":"重量","inspectionStageId":"11111111-1111-4111-8111-111111111111","inspectionStageName":"内圈重","unit":"G","centerValue":450,"gradingMode":"DEVIATION_BANDS","levels":[{"level":"S","lowerTolerance":0,"upperTolerance":0,"result":"PASS"},{"level":"A","lowerTolerance":5,"upperTolerance":5,"result":"PASS"},{"level":"B","lowerTolerance":10,"upperTolerance":10,"result":"PASS"}]}]`)
 	deltaItem, err := json.Marshal(map[string]any{"o": standard.Items, "n": correctedItems})
 	require.NoError(t, err)
 	payload := InspectionStandardPatchRequest{

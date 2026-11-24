@@ -15,6 +15,16 @@ export type CuttingIssuanceOrderLine = {
   requestedQuantity: number
 }
 
+export type CuttingIssuanceProductionBOMBranch = {
+  productId: string
+  productSKU: string
+  productName: string
+  bomOwnerType: 'INTERNAL' | 'CUSTOMER'
+  bomOwnerCustomerId: string
+  bomOwnerCustomerName: string
+  bomVersionLevel: string
+}
+
 export type CuttingIssuanceTemplate = {
   id: string
   planName: string

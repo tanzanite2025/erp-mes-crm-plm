@@ -136,7 +136,7 @@ export function DashboardOverviewTab() {
         <Button
           variant='outline'
           onClick={() => void refetch()}
-          className='h-9 rounded-full border-destructive/20 px-8 text-[10px] font-black tracking-widest text-destructive uppercase hover:bg-destructive/10'
+          className='h-9 rounded-full border-destructive/20 px-8 text-destructive hover:bg-destructive/10'
         >
           {t('common.actions.retry')}
         </Button>
@@ -320,7 +320,7 @@ export function DashboardOverviewTab() {
               <Button
                 type='submit'
                 onClick={() => void handleSaveConfig()}
-                className='h-11 w-full rounded-full text-[10px] font-black tracking-widest uppercase'
+                className='h-11 w-full rounded-full'
               >
                 {t('common.actions.save')}
               </Button>

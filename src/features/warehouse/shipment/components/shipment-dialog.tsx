@@ -159,7 +159,7 @@ export function ShipmentDialog({
               <Button
                 type='button'
                 variant='outline'
-                className='h-9 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+                className='h-9 rounded-full border-dashed px-5'
                 onClick={onRetryInventoryContext}
               >
                 重试
@@ -197,7 +197,7 @@ export function ShipmentDialog({
                         }))
                       }
                     >
-                      <SelectTrigger className='h-10 rounded-xl border-none bg-muted/30 text-sm font-bold focus:ring-blue-500'>
+                      <SelectTrigger className='h-10 rounded-xl border-none bg-muted/30 focus:ring-blue-500'>
                         <SelectValue
                           placeholder={t(
                             'warehouse.shipment.dialog.selectArea'
@@ -212,10 +212,8 @@ export function ShipmentDialog({
                             className='mx-1 my-1 rounded-xl transition-colors focus:bg-blue-500 focus:text-white'
                           >
                             <div className='flex w-full items-center justify-between gap-8 pr-2'>
-                              <span className='text-[11px] font-black tracking-widest uppercase'>
-                                {cat.label}
-                              </span>
-                              <span className='font-maple-ui text-[9px] opacity-40'>
+                              <span>{cat.label}</span>
+                              <span className='font-maple-ui opacity-40'>
                                 {t('warehouse.shipment.dialog.available', {
                                   count:
                                     readyInventoryContext?.inventoryBreakdown[
@@ -238,7 +236,7 @@ export function ShipmentDialog({
                     <div className='group relative'>
                       <Input
                         type='number'
-                        className='h-10 rounded-xl border-none bg-muted/30 pr-20 font-maple-ui text-lg font-black text-blue-600 focus-visible:ring-blue-500'
+                        className='h-10 rounded-xl border-none bg-muted/30 pr-20 font-maple-ui text-blue-600 focus-visible:ring-blue-500'
                         value={formData.quantity}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -255,7 +253,7 @@ export function ShipmentDialog({
                           type='button'
                           variant='ghost'
                           size='sm'
-                          className='h-7 rounded-lg bg-blue-500/10 px-2 text-[9px] font-black tracking-widest text-blue-600 uppercase hover:bg-blue-500/20'
+                          className='control-typography-compact h-7 rounded-lg bg-blue-500/10 px-2 text-blue-600 hover:bg-blue-500/20'
                           onClick={() =>
                             setFormData({
                               quantity:
@@ -317,7 +315,7 @@ export function ShipmentDialog({
                     </Label>
                     <Input
                       type='date'
-                      className='h-10 rounded-xl border-none bg-muted/30 text-sm font-bold focus:ring-blue-500'
+                      className='h-10 rounded-xl border-none bg-muted/30 focus:ring-blue-500'
                       value={formData.shipmentDate}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -339,7 +337,7 @@ export function ShipmentDialog({
                         setFormData((prev) => ({ ...prev, orderNo: val }))
                       }
                     >
-                      <SelectTrigger className='h-10 rounded-xl border-none bg-muted/30 text-sm font-bold focus:ring-blue-500'>
+                      <SelectTrigger className='h-10 rounded-xl border-none bg-muted/30 focus:ring-blue-500'>
                         <SelectValue
                           placeholder={t(
                             'warehouse.shipment.dialog.selectOrder'
@@ -358,10 +356,8 @@ export function ShipmentDialog({
                               className='mx-1 my-1 rounded-xl transition-colors focus:bg-blue-500 focus:text-white'
                             >
                               <div className='flex flex-col items-start gap-0.5'>
-                                <span className='text-[11px] font-black tracking-widest uppercase'>
-                                  {order.orderNo}
-                                </span>
-                                <span className='text-[9px] font-medium uppercase opacity-60'>
+                                <span>{order.orderNo}</span>
+                                <span className='opacity-60'>
                                   {order.customerName}
                                 </span>
                               </div>
@@ -388,7 +384,7 @@ export function ShipmentDialog({
                     placeholder={t(
                       'warehouse.shipment.dialog.batchPlaceholder'
                     )}
-                    className='h-10 rounded-xl border-none bg-muted/30 text-sm font-bold focus:ring-blue-500'
+                    className='h-10 rounded-xl border-none bg-muted/30 focus:ring-blue-500'
                     value={formData.batchNo}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -405,7 +401,7 @@ export function ShipmentDialog({
                   </Label>
                   <Input
                     disabled
-                    className='h-10 rounded-xl border-none bg-muted/50 text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'
+                    className='h-10 rounded-xl border-none bg-muted/50 text-muted-foreground/40'
                     value={auditUtils.getOperatorInfo().label}
                   />
                 </div>
@@ -419,7 +415,7 @@ export function ShipmentDialog({
                   placeholder={t(
                     'warehouse.shipment.dialog.remarksPlaceholder'
                   )}
-                  className='h-10 rounded-xl border-none bg-muted/30 text-sm font-bold focus:focus-visible:ring-blue-500'
+                  className='h-10 rounded-xl border-none bg-muted/30 focus:focus-visible:ring-blue-500'
                   value={formData.remarks}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -433,7 +429,7 @@ export function ShipmentDialog({
               <div className='flex shrink-0 flex-wrap justify-end gap-2.5 pt-4'>
                 <Button
                   variant='ghost'
-                  className='rounded-full px-4 text-[8px] font-black tracking-widest uppercase transition-all md:px-6 md:text-[9px]'
+                  className='rounded-full px-4 transition-all md:px-6'
                   onClick={() => onOpenChange(false)}
                 >
                   {t('warehouse.shipment.dialog.exit')}
@@ -441,7 +437,7 @@ export function ShipmentDialog({
                 {!isVirtualLock && (
                   <Button
                     variant='outline'
-                    className='gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-6 text-[9px] font-black tracking-widest text-amber-600 uppercase transition-all hover:bg-amber-500/20'
+                    className='gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-6 text-amber-600 transition-all hover:bg-amber-500/20'
                     onClick={() => onSubmit('DRAFT')}
                   >
                     <Save className='size-3' />{' '}
@@ -449,7 +445,7 @@ export function ShipmentDialog({
                   </Button>
                 )}
                 <Button
-                  className='transform gap-2 rounded-full bg-blue-600 px-8 text-[9px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95'
+                  className='transform gap-2 rounded-full bg-blue-600 px-8 text-white shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95'
                   onClick={() => onSubmit('COMMITTED')}
                 >
                   <Send className='size-3' />{' '}

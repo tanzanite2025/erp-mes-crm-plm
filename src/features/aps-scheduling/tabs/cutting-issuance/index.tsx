@@ -22,6 +22,9 @@ export function ApsCuttingIssuanceTab() {
     isExecutionOrTraceRefreshing,
     selectedOrder,
     compatibleTemplates,
+    candidateBOMBranches,
+    bomBranchIdentityKey,
+    setBOMBranchIdentityKey,
     orderId,
     setOrderId,
     lineNo,
@@ -79,7 +82,7 @@ export function ApsCuttingIssuanceTab() {
               <Button
                 type='button'
                 variant='outline'
-                className='h-8 shrink-0 rounded-full border-amber-300/70 bg-amber-50/40 px-3 text-[10px] font-black tracking-widest text-amber-700 uppercase hover:bg-amber-100/70 hover:text-amber-800'
+                className='h-8 shrink-0 rounded-full border-amber-300/70 bg-amber-50/40 px-3 text-amber-700 hover:bg-amber-100/70 hover:text-amber-800'
                 onClick={handleOpenCuttingPlan}
               >
                 <ExternalLink className='size-3.5' />
@@ -96,13 +99,16 @@ export function ApsCuttingIssuanceTab() {
           orders={orders}
           templates={compatibleTemplates}
           selectedOrder={selectedOrder}
+          bomBranches={candidateBOMBranches}
           orderId={orderId}
           lineNo={lineNo}
           templateId={templateId}
+          bomBranchIdentityKey={bomBranchIdentityKey}
           templateMatchHint={templateMatchHint}
           onOrderIdChange={setOrderId}
           onLineNoChange={setLineNo}
           onTemplateIdChange={setTemplateId}
+          onBOMBranchIdentityKeyChange={setBOMBranchIdentityKey}
           onCreateExecution={handleCreateExecution}
         />
 

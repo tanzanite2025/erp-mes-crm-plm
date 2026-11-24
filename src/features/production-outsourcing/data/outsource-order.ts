@@ -32,11 +32,6 @@ export const outsourceOrderLineSchema = z.object({
   specification: z.string(),
   quantity: z.number(),
   uom: z.string(),
-  segmentId: z.string(),
-  segmentName: z.string(),
-  processStepId: z.string(),
-  processCode: z.string(),
-  processName: z.string(),
   status: z.enum(outsourceOrderStatuses),
   sentQuantity: z.number(),
   returnedQuantity: z.number(),
@@ -86,11 +81,6 @@ export interface OutsourceOrderLineFormValues {
   specification: string
   quantity: number
   uom: string
-  segmentId: string
-  segmentName: string
-  processStepId: string
-  processCode: string
-  processName: string
   status?: OutsourceOrderStatus
   notes: string
 }
@@ -184,6 +174,7 @@ export interface OutsourceTransferFormValues {
 
 export interface OutsourceInspectionFormValues {
   productBarcode: string
+  productionWorkLocationId: string
   result: OutsourceInspectionResult
   disposition: OutsourceInspectionDisposition
   inspectedQuantity: number
@@ -218,11 +209,6 @@ export function createEmptyOutsourceOrderLine(): OutsourceOrderLineFormValues {
     specification: '',
     quantity: 0,
     uom: '',
-    segmentId: '',
-    segmentName: '',
-    processStepId: '',
-    processCode: '',
-    processName: '',
     status: undefined,
     notes: '',
   }

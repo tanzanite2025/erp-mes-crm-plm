@@ -430,6 +430,19 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     icon: ShieldCheck,
     children: [
       {
+        id: 'quality-handbook-group',
+        titleKey: 'sidebar.groups.qualityHandbook',
+        icon: BookOpen,
+        children: [
+          {
+            id: 'quality-standard-creation-handbook',
+            titleKey: 'quality.standardCreationGuide.title',
+            url: '/quality/standard-creation-guide',
+            icon: BookOpen,
+          },
+        ],
+      },
+      {
         id: 'quality-standards-group',
         titleKey: 'sidebar.groups.qualityStandards',
         icon: Scale,
@@ -438,6 +451,10 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'quality-audit',
             titleKey: 'sidebar.items.qualityAudit',
             url: '/quality',
+            activeMatches: [
+              '/quality/standards',
+              '/quality/defect-configuration',
+            ],
             icon: Scale,
             permissionId: permissionIdForPath('/quality'),
           },
@@ -479,6 +496,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             id: 'bom-creation-handbook',
             titleKey: 'engineering.tabs.bomCreationGuide',
             url: '/engineering/bom-creation-guide',
+            icon: BookOpen,
+          },
+          {
+            id: 'product-code-linear-barcode-and-qr-code-operation-guide',
+            titleKey: 'productCodeLinearBarcodeAndQrCodeOperationGuide.title',
+            url: '/code-center/product-code-linear-barcode-and-qr-code-operation-guide',
             icon: BookOpen,
           },
         ],

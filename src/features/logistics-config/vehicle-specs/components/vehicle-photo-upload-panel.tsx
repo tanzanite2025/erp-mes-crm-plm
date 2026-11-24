@@ -80,7 +80,7 @@ export function VehiclePhotoUploadPanel({ vehicle }: Props) {
         value={viewType}
         onValueChange={(value) => setViewType(value as VehiclePhotoViewType)}
       >
-        <SelectTrigger className='h-9 rounded-xl text-[12px]'>
+        <SelectTrigger className='h-9 rounded-xl'>
           <SelectValue
             placeholder={t('logisticsConfig.vehiclePhotos.selectViewType')}
           />
@@ -97,7 +97,7 @@ export function VehiclePhotoUploadPanel({ vehicle }: Props) {
       <Button
         type='button'
         variant='outline'
-        className='h-9 gap-2 rounded-xl text-[10px] font-black tracking-[0.18em] uppercase'
+        className='h-9 gap-2 rounded-xl'
         disabled={uploadMutation.isPending}
         onClick={() => fileInputRef.current?.click()}
       >

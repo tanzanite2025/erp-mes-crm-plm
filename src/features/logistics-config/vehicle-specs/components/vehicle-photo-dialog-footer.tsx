@@ -15,7 +15,7 @@ export function VehiclePhotoDialogFooter({ onClose }: Props) {
           type='button'
           variant='outline'
           onClick={onClose}
-          className='h-9 rounded-xl text-[10px] font-black tracking-[0.18em] uppercase'
+          className='h-9 rounded-xl'
         >
           {t('common.actions.close')}
         </Button>

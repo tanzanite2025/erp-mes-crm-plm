@@ -119,7 +119,7 @@ export function BusinessEventSourceCardHeader({
             <Textarea
               value={description ?? ''}
               onChange={(event) => onDescriptionChange(event.target.value)}
-              className='mt-3 min-h-16 rounded-2xl text-xs font-bold text-muted-foreground'
+              className='mt-3 min-h-16 rounded-2xl text-muted-foreground'
               placeholder='说明这个业务事件源负责监听什么对象、什么生命周期。'
             />
           ) : (
@@ -134,7 +134,7 @@ export function BusinessEventSourceCardHeader({
         <Button
           size='sm'
           variant='outline'
-          className='h-10 rounded-2xl text-xs font-black'
+          className='h-10 rounded-2xl'
           onClick={() => onExpandedChange(!expanded)}
         >
           {expanded ? (
@@ -147,7 +147,7 @@ export function BusinessEventSourceCardHeader({
         <Switch checked={enabled} onCheckedChange={onEnabledChange} />
         <Button
           size='sm'
-          className='h-10 rounded-2xl text-xs font-black'
+          className='h-10 rounded-2xl'
           disabled={savingAll || hasValidationErrors || !hasDirtyChanges}
           onClick={onSaveAll}
         >
@@ -157,7 +157,7 @@ export function BusinessEventSourceCardHeader({
         <Button
           size='sm'
           variant='outline'
-          className='h-10 rounded-2xl text-xs font-black'
+          className='h-10 rounded-2xl'
           onClick={onDuplicate}
         >
           <Copy className='size-3.5' />
@@ -167,7 +167,7 @@ export function BusinessEventSourceCardHeader({
           <Button
             size='sm'
             variant='ghost'
-            className='h-10 rounded-2xl text-xs font-black text-destructive'
+            className='h-10 rounded-2xl text-destructive'
             onClick={onDelete}
           >
             <Trash2 className='size-3.5' />

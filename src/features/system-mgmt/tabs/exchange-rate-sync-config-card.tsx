@@ -93,7 +93,7 @@ export function ExchangeRateSyncConfigCard({
               type='button'
               onClick={onAddProvider}
               disabled={isLoading || isSaving}
-              className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-5'
             >
               <Plus className='mr-2 size-4' />
               {t(
@@ -164,7 +164,7 @@ export function ExchangeRateSyncConfigCard({
                         variant='outline'
                         onClick={() => onRemoveProvider(provider.id)}
                         disabled={isLoading || isSaving}
-                        className='h-11 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest text-rose-600 uppercase hover:bg-rose-500/10 hover:text-rose-700'
+                        className='h-11 rounded-full border-dashed px-4 text-rose-600 hover:bg-rose-500/10 hover:text-rose-700'
                       >
                         <Trash2 className='mr-2 size-4' />
                         {t(
@@ -217,7 +217,7 @@ export function ExchangeRateSyncConfigCard({
                         'systemManagement.apiManagement.exchangeRateApi.apiBaseUrlPlaceholder'
                       )}
                       disabled={isLoading || isSaving}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px]'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-3'>
@@ -239,7 +239,7 @@ export function ExchangeRateSyncConfigCard({
                         'systemManagement.apiManagement.exchangeRateApi.apiKeyPlaceholder'
                       )}
                       disabled={isLoading || isSaving}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px]'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui'
                     />
                   </div>
                   <div className='space-y-1 lg:col-span-3'>
@@ -261,7 +261,7 @@ export function ExchangeRateSyncConfigCard({
                         'systemManagement.apiManagement.exchangeRateApi.latestPathTemplatePlaceholder'
                       )}
                       disabled={isLoading || isSaving}
-                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-[12px]'
+                      className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui'
                     />
                   </div>
                 </div>
@@ -287,7 +287,7 @@ export function ExchangeRateSyncConfigCard({
               void onSave()
             }}
             disabled={isLoading || isSaving}
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
           >
             <Save className='mr-2 size-4' />
             {isSaving

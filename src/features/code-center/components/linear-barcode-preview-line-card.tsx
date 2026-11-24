@@ -5,10 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { type LinearBarcodeResolvedPrintLine } from '../utils/linear-barcode-print-resolver'
 
+interface LinearBarcodePrintPreviewLine extends LinearBarcodeResolvedPrintLine {
+  issuanceSummaryReady: boolean
+  hasUnattributedIssuedInventory: boolean
+  issuedQuantity: number
+  remainingQuantity: number
+  maxPrintQuantity: number
+}
+
 interface LinearBarcodePreviewLineCardProps {
-  line: LinearBarcodeResolvedPrintLine
+  line: LinearBarcodePrintPreviewLine
   hasOpenedPreview: boolean
   isPrinting: boolean
+  isProductCodeIssuanceInProgress: boolean
   onQuantityChange: (quantity: number) => void
   onPrint: () => void | Promise<void>
 }
@@ -17,6 +26,7 @@ export function LinearBarcodePreviewLineCard({
   line,
   hasOpenedPreview,
   isPrinting,
+  isProductCodeIssuanceInProgress,
   onQuantityChange,
   onPrint,
 }: LinearBarcodePreviewLineCardProps) {
@@ -54,23 +64,40 @@ export function LinearBarcodePreviewLineCard({
             <Button
               type='button'
               onClick={() => void onPrint()}
-              disabled={isPrinting || hasOpenedPreview}
-              className='bg-blue-600 font-bold text-white hover:bg-blue-700'
+              disabled={
+                !line.issuanceSummaryReady ||
+                line.maxPrintQuantity < 1 ||
+                isProductCodeIssuanceInProgress ||
+                hasOpenedPreview
+              }
+              className='bg-blue-600 text-white hover:bg-blue-700'
             >
               <Printer className='mr-2 h-4 w-4' />
-              {hasOpenedPreview
+              {!line.issuanceSummaryReady
                 ? t(
-                    'codeCenter.linearBarcode.print.sections.preview.actions.previewReady'
+                    'codeCenter.linearBarcode.print.sections.preview.actions.loadingIssuanceSummary'
                   )
-                : isPrinting
+                : line.hasUnattributedIssuedInventory
                   ? t(
-                      'codeCenter.linearBarcode.print.sections.preview.actions.printing',
-                      { quantity: line.printInput.quantity }
+                      'codeCenter.linearBarcode.print.sections.preview.actions.unattributedIssuedInventory'
                     )
-                  : t(
-                      'codeCenter.linearBarcode.print.sections.preview.actions.printNow',
-                      { quantity: line.printInput.quantity }
-                    )}
+                  : line.remainingQuantity < 1
+                    ? t(
+                        'codeCenter.linearBarcode.print.sections.preview.actions.orderQuantityReached'
+                      )
+                    : hasOpenedPreview
+                      ? t(
+                          'codeCenter.linearBarcode.print.sections.preview.actions.previewReady'
+                        )
+                      : isPrinting
+                        ? t(
+                            'codeCenter.linearBarcode.print.sections.preview.actions.printing',
+                            { quantity: line.printInput.quantity }
+                          )
+                        : t(
+                            'codeCenter.linearBarcode.print.sections.preview.actions.printNow',
+                            { quantity: line.printInput.quantity }
+                          )}
             </Button>
           ) : null}
         </div>
@@ -107,6 +134,24 @@ export function LinearBarcodePreviewLineCard({
             )}
             : {`${line.orderQuantity.toLocaleString()} ${line.uom}`}
           </div>
+          <div>
+            {t(
+              'codeCenter.linearBarcode.print.sections.preview.fields.issuedQuantity'
+            )}
+            :{' '}
+            {line.issuanceSummaryReady && !line.hasUnattributedIssuedInventory
+              ? `${line.issuedQuantity.toLocaleString()} ${line.uom}`
+              : '--'}
+          </div>
+          <div>
+            {t(
+              'codeCenter.linearBarcode.print.sections.preview.fields.remainingQuantity'
+            )}
+            :{' '}
+            {line.issuanceSummaryReady && !line.hasUnattributedIssuedInventory
+              ? `${line.remainingQuantity.toLocaleString()} ${line.uom}`
+              : '--'}
+          </div>
           <label className='grid gap-1'>
             <span>
               {t(
@@ -116,13 +161,19 @@ export function LinearBarcodePreviewLineCard({
             <Input
               type='number'
               min={1}
-              max={200}
+              max={line.maxPrintQuantity}
               value={line.quantity}
-              disabled={!line.isReady || isPrinting || hasOpenedPreview}
+              disabled={
+                !line.isReady ||
+                !line.issuanceSummaryReady ||
+                line.maxPrintQuantity < 1 ||
+                isProductCodeIssuanceInProgress ||
+                hasOpenedPreview
+              }
               onChange={(event) =>
                 onQuantityChange(Number.parseInt(event.target.value || '1', 10))
               }
-              className='h-8 bg-background px-2 text-[11px] font-bold'
+              className='h-8 bg-background px-2'
             />
           </label>
         </div>

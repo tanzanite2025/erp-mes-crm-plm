@@ -22,7 +22,7 @@ export function LogisticsSupplierToolbar({
         variant='outline'
         onClick={onRefresh}
         disabled={isFetching}
-        className='rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+        className='rounded-full px-5'
       >
         {isFetching ? (
           <Loader2 className='size-4 animate-spin' />
@@ -35,7 +35,7 @@ export function LogisticsSupplierToolbar({
       <Button
         type='button'
         onClick={onAdd}
-        className='rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20'
+        className='rounded-full px-6 shadow-xl shadow-primary/20'
       >
         <Plus className='size-4' />
         {t('logisticsConfig.suppliers.actions.add')}

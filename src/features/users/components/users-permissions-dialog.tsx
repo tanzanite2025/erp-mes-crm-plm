@@ -60,7 +60,7 @@ export function UsersPermissionsDialog({
               <Button
                 type='button'
                 variant='outline'
-                className='h-10 min-w-0 rounded-full px-2 text-[9px] font-black tracking-tight whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4 sm:text-[10px] sm:tracking-widest'
+                className='h-10 min-w-0 rounded-full px-2 whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4'
                 onClick={editor.resetDraft}
                 disabled={
                   !editor.canEditPermissions ||
@@ -72,7 +72,7 @@ export function UsersPermissionsDialog({
               </Button>
               <Button
                 type='button'
-                className='h-10 min-w-0 rounded-full px-2 text-[9px] font-black tracking-tight whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4 sm:text-[10px] sm:tracking-widest'
+                className='h-10 min-w-0 rounded-full px-2 whitespace-nowrap shadow-sm transition-all active:scale-95 sm:h-9 sm:px-4'
                 onClick={editor.save}
                 disabled={
                   !editor.canEditPermissions ||

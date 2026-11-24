@@ -95,7 +95,7 @@ export function StocktakeMgmt() {
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            className='mt-5 h-10 rounded-full border-dashed px-6'
             onClick={() => {
               void retryRead()
             }}
@@ -159,7 +159,7 @@ export function StocktakeMgmt() {
             onOpenChange={handleCreateDialogOpenChange}
           >
             <DialogTrigger asChild>
-              <Button className='h-10 shrink-0 gap-2 rounded-full px-4 text-[9px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:h-11 md:px-6 md:text-[10px]'>
+              <Button className='h-10 shrink-0 gap-2 rounded-full px-4 shadow-xl shadow-blue-500/20 transition-all active:scale-95 md:h-11 md:px-6'>
                 <Plus className='size-3.5 md:size-4' />
                 <span className='truncate'>
                   {t('warehouse.stocktake.initiate')}
@@ -192,7 +192,7 @@ export function StocktakeMgmt() {
                         'warehouse.stocktake.createDialog.sessionTitlePlaceholder'
                       )}
                       required
-                      className='h-10 rounded-xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                      className='h-10 rounded-xl border-none bg-muted/50 px-4 shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5'
                     />
                   </div>
                   <div className='space-y-2 md:space-y-3'>
@@ -200,7 +200,7 @@ export function StocktakeMgmt() {
                       {t('warehouse.stocktake.createDialog.scopeLabel')}
                     </Label>
                     <Select name='category' required>
-                      <SelectTrigger className='h-10 rounded-xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner focus:ring-blue-600 md:h-11 md:px-5 md:text-sm'>
+                      <SelectTrigger className='h-10 rounded-xl border-none bg-muted/50 px-4 shadow-inner focus:ring-blue-600 md:h-11 md:px-5'>
                         <SelectValue
                           placeholder={t(
                             'warehouse.stocktake.createDialog.selectCategory'
@@ -209,11 +209,7 @@ export function StocktakeMgmt() {
                       </SelectTrigger>
                       <SelectContent className='rounded-xl border-none p-1 shadow-2xl md:p-2'>
                         {stocktakeCategories.length === 0 ? (
-                          <SelectItem
-                            value='_'
-                            disabled
-                            className='text-[9px] md:text-[10px]'
-                          >
+                          <SelectItem value='_' disabled>
                             {t('warehouse.stocktake.createDialog.noCategories')}
                           </SelectItem>
                         ) : (
@@ -222,7 +218,7 @@ export function StocktakeMgmt() {
                               <SelectItem
                                 key={cat.code}
                                 value={cat.code}
-                                className='rounded-lg py-2 text-[9px] font-black tracking-widest uppercase md:py-2.5 md:text-[10px]'
+                                className='rounded-lg py-2 md:py-2.5'
                               >
                                 {cat.name} ({cat.code})
                               </SelectItem>
@@ -247,7 +243,7 @@ export function StocktakeMgmt() {
                       placeholder={t(
                         'warehouse.stocktake.createDialog.remarksPlaceholder'
                       )}
-                      className='h-10 rounded-xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5 md:text-sm'
+                      className='h-10 rounded-xl border-none bg-muted/50 px-4 shadow-inner focus-visible:ring-blue-600 md:h-11 md:px-5'
                     />
                   </div>
                 </div>
@@ -255,7 +251,7 @@ export function StocktakeMgmt() {
                   <Button
                     type='submit'
                     disabled={isCreating}
-                    className='h-10 flex-1 rounded-full bg-blue-600 text-[9px] font-black tracking-widest uppercase shadow-lg shadow-blue-500/20 transition-all active:scale-95 md:h-11 md:text-[10px]'
+                    className='h-10 flex-1 rounded-full bg-blue-600 shadow-lg shadow-blue-500/20 transition-all active:scale-95 md:h-11'
                   >
                     {isCreating
                       ? t('warehouse.stocktake.createDialog.creating')
@@ -360,7 +356,7 @@ export function StocktakeMgmt() {
                   <Button
                     onClick={handleRequestAdjustmentSubmission}
                     disabled={isSubmittingAdjustment}
-                    className='h-9 shrink-0 gap-2 self-start rounded-full bg-amber-600 px-4 text-[9px] font-black tracking-widest uppercase shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-700 active:scale-95 sm:self-auto md:h-10 md:px-6 md:text-[10px]'
+                    className='h-9 shrink-0 gap-2 self-start rounded-full bg-amber-600 px-4 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-700 active:scale-95 sm:self-auto md:h-10 md:px-6'
                   >
                     <Send className='size-3 md:size-3.5' />{' '}
                     {t('warehouse.stocktake.submitRecon')}
@@ -383,7 +379,7 @@ export function StocktakeMgmt() {
                       <Button
                         type='button'
                         variant='outline'
-                        className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+                        className='mt-5 h-10 rounded-full border-dashed px-6'
                         onClick={() => {
                           void retryItems()
                         }}

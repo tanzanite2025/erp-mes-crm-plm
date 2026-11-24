@@ -51,7 +51,7 @@ export function LogisticsPlatformDashboard() {
             variant='outline'
             onClick={() => void refetch()}
             disabled={isFetching}
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
           >
             {isFetching ? (
               <Loader2 className='mr-2 size-4 animate-spin' />
@@ -62,7 +62,7 @@ export function LogisticsPlatformDashboard() {
           </Button>
 
           <Button
-            className='h-11 rounded-full bg-slate-900 px-6 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-slate-900/20 transition-all'
+            className='h-11 rounded-full bg-slate-900 px-6 shadow-lg shadow-slate-900/20 transition-all'
             onClick={openCreateDialog}
           >
             <Plus className='mr-2 size-4' />

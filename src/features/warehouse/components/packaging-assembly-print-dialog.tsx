@@ -262,14 +262,14 @@ export function PackagingAssemblyPrintDialog({
           <Button
             type='button'
             variant='outline'
-            className='rounded-full text-xs font-black'
+            className='rounded-full'
             onClick={() => onOpenChange(false)}
           >
             {copy.close}
           </Button>
           <Button
             type='button'
-            className='rounded-full text-xs font-black'
+            className='rounded-full'
             disabled={!normalizedPackageCode}
             onClick={() => reactToPrint()}
           >

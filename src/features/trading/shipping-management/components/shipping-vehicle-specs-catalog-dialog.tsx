@@ -80,7 +80,7 @@ export function ShippingVehicleSpecsCatalogDialog({
                   type='button'
                   variant='outline'
                   size='sm'
-                  className='h-9 gap-2 rounded-xl border-dashed px-3 text-[10px] font-black tracking-[0.16em] uppercase'
+                  className='h-9 gap-2 rounded-xl border-dashed px-3'
                   onClick={() => void reload()}
                 >
                   <RefreshCw className='size-4' />
@@ -89,7 +89,7 @@ export function ShippingVehicleSpecsCatalogDialog({
                 <Button
                   type='button'
                   size='sm'
-                  className='h-9 gap-2 rounded-xl px-3 text-[10px] font-black tracking-[0.16em] uppercase'
+                  className='h-9 gap-2 rounded-xl px-3'
                   onClick={openVehicleSpecsLibraryPage}
                 >
                   <ExternalLink className='size-4' />
@@ -109,7 +109,7 @@ export function ShippingVehicleSpecsCatalogDialog({
                   placeholder={t(
                     'trading.shippingManagement.vehicleMatch.catalog.searchPlaceholder'
                   )}
-                  className='h-10 rounded-xl border-border/70 bg-background pl-9 text-[13px]'
+                  className='h-10 rounded-xl border-border/70 bg-background pl-9'
                 />
               </div>
               <div className='uds-chip text-[10px] whitespace-nowrap'>

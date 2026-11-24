@@ -71,7 +71,7 @@ export function BOMSharedSectionManagementPanel({
             placeholder={t('engineering.bomSectionConfig.searchPlaceholder')}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className='h-9 rounded-xl border-transparent bg-muted/40 pl-9 text-xs'
+            className='h-9 rounded-xl border-transparent bg-muted/40 pl-9'
           />
         </div>
         <div className='custom-scrollbar max-h-28 min-h-0 space-y-1 overflow-y-auto md:max-h-none md:flex-1'>
@@ -93,19 +93,17 @@ export function BOMSharedSectionManagementPanel({
               )}
             >
               <span className='min-w-0'>
-                <span className='block truncate text-sm font-semibold'>
-                  {section.name}
-                </span>
-                <span className='block truncate text-[10px] text-muted-foreground'>
+                <span className='block truncate'>{section.name}</span>
+                <span className='block truncate text-muted-foreground'>
                   {section.code}
                 </span>
               </span>
               {section.isDefault ? (
-                <span className='shrink-0 text-[10px]'>
+                <span className='shrink-0'>
                   {t('engineering.bomSectionConfig.fields.isDefault')}
                 </span>
               ) : !section.active ? (
-                <span className='shrink-0 text-[10px] text-muted-foreground'>
+                <span className='shrink-0 text-muted-foreground'>
                   {t('engineering.bomSectionConfig.inactiveLabel')}
                 </span>
               ) : null}

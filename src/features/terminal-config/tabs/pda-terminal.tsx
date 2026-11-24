@@ -395,7 +395,7 @@ export function PDATerminalTab() {
                   </div>
                   <Button
                     variant='outline'
-                    className='rounded-full text-[10px] font-black tracking-widest uppercase'
+                    className='rounded-full'
                     onClick={() => void handleSaveDefaults()}
                     disabled={isSavingDefaults}
                   >
@@ -639,7 +639,7 @@ export function PDATerminalTab() {
               </div>
 
               <Button
-                className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-8'
                 onClick={() => void submitIngest()}
                 disabled={isSubmitting || !normalizedRawCode}
               >

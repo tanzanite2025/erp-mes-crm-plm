@@ -51,17 +51,17 @@ export function PrivateToolsPanel() {
           </p>
         </div>
       </div>
-      <div className='grid gap-2 sm:grid-cols-3'>
+      <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2'>
         {privateSidebarTools.map((tool) => {
           return (
             <div
               key={tool.id}
               className='flex items-center gap-2.5 rounded-xl bg-background/70 px-3 py-2 shadow-sm'
             >
-              <span className='flex size-8 items-center justify-center rounded-xl bg-muted'>
+              <span className='flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted'>
                 <PrivateToolIcon toolId={tool.id} className='size-4' />
               </span>
-              <span className='text-sm font-black tracking-tight'>
+              <span className='min-w-0 text-sm font-black tracking-tight wrap-break-word'>
                 {getToolTitle(tool.id)}
               </span>
             </div>

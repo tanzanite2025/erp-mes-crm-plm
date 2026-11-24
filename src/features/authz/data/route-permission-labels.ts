@@ -95,7 +95,9 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering-reference/hubs': 'engineering.hubs.overview.title',
   '/engineering-reference/nipples': 'engineering.nipples.overview.title',
   '/quality': 'sidebar.items.qualityAudit',
+  '/quality/standard-creation-guide': 'quality.standardCreationGuide.title',
   '/quality/standards': 'quality.layout.tabs.standards',
+  '/quality/defect-configuration': 'quality.defectConfiguration.title',
   '/quality/standards/new': 'quality.standards.workspace.editorCreateTitle',
   '/quality/standards/:standardid/edit':
     'quality.standards.workspace.editorEditTitle',
@@ -132,6 +134,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
     'productionArchitecture.layout.tabs.topology',
   '/production-architecture/routes':
     'productionArchitecture.layout.tabs.routes',
+  '/production-architecture/process-library':
+    'productionArchitecture.layout.tabs.processLibrary',
   '/production-execution': 'productionExecution.page.title',
   '/production-outsourcing': 'sidebar.items.productionOutsourcing',
   '/production-outsourcing/orders': 'productionOutsourcing.layout.tabs.orders',
@@ -190,6 +194,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/finance-management/taxation': 'finance.layout.tabs.taxation',
   '/finance-settlements': 'finance.layout.tabs.settlements',
   '/code-center': 'sidebar.groups.codeCenter',
+  '/code-center/product-code-linear-barcode-and-qr-code-operation-guide':
+    'productCodeLinearBarcodeAndQrCodeOperationGuide.title',
   '/code-center/linear-barcode': 'sidebar.items.linearBarcode',
   '/code-center/linear-barcode/protocol':
     'codeCenter.linearBarcode.tabs.protocol',

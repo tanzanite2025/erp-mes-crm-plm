@@ -277,7 +277,7 @@ export function NotificationRuleList({
                 value={selectedCreateSourceCode}
                 onValueChange={setCreateSourceCode}
               >
-                <SelectTrigger className='h-12 rounded-2xl bg-background px-5 text-sm font-black'>
+                <SelectTrigger className='h-12 rounded-2xl bg-background px-5'>
                   <SelectValue placeholder='选择业务源' />
                 </SelectTrigger>
                 <SelectContent>
@@ -315,7 +315,7 @@ export function NotificationRuleList({
 
           <Button
             size='lg'
-            className='h-12 w-full gap-2 rounded-2xl px-6 text-xs font-black xl:w-auto'
+            className='h-12 w-full gap-2 rounded-2xl px-6 xl:w-auto'
             onClick={handleAddNewRule}
           >
             <Plus className='size-4' /> 建立监控规则

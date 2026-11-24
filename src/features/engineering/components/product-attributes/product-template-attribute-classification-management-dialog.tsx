@@ -80,7 +80,7 @@ export function ProductTemplateAttributeClassificationManagementDialog({
         >
           <Button
             type='button'
-            className='h-11 rounded-full px-6 text-[11px] font-black'
+            className='h-11 rounded-full px-6'
             onClick={() => onOpenChange(false)}
           >
             {isZh ? '完成' : 'Done'}

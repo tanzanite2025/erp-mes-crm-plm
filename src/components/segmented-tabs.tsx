@@ -48,7 +48,7 @@ export function SegmentedTabs({
             key={tab.value}
             value={tab.value}
             className={cn(
-              'inline-flex items-center justify-center gap-2 rounded-full px-6 py-1.5 text-sm font-medium transition-all duration-300',
+              'inline-flex items-center justify-center gap-2 rounded-full px-6 py-1.5 transition-all duration-300',
               'text-muted-foreground hover:text-foreground',
               'dark:text-slate-400 dark:hover:text-white',
               'data-[state=active]:border data-[state=active]:border-slate-200 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md',

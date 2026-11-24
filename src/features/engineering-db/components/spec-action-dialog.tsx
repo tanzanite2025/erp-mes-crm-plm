@@ -46,7 +46,7 @@ const DEFAULT_SPEC: Partial<TechnicalSpec> = {
 }
 
 const technicalSpecificationDocumentInputClassName =
-  'h-10 rounded-xl text-[13px] placeholder:text-[13px] placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground placeholder:normal-case placeholder:opacity-100 md:text-[13px]'
+  'h-10 rounded-xl placeholder:text-muted-foreground placeholder:opacity-100 '
 
 function buildSpecDelta(before: TechnicalSpec, after: TechnicalSpec): DeltaSet {
   const delta: DeltaSet = {}
@@ -308,7 +308,7 @@ export function SpecActionDialog({
             >
               <SelectTrigger
                 id={`${fieldId}-category`}
-                className='h-10 w-full rounded-xl text-[13px]'
+                className='h-10 w-full rounded-xl'
               >
                 <SelectValue />
               </SelectTrigger>

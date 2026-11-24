@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { failLoudly } from '@/lib/safe-catch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -9,36 +10,56 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { ProductionProcessStep } from '../../../data/production-process'
+import type { ProductionBOMBranchOperation } from '../../../data/production-line'
 import type { MindmapLevel } from '../data/line-mindmap-domain'
-import type { LineMindmapProcessDraft } from '../types'
 
 interface MindmapDetailProcessEntityEditorProps {
   levelNames: Record<MindmapLevel, string>
-  processEntity: ProductionProcessStep
-  onDeleteProcessEntity?: (
-    process: ProductionProcessStep
-  ) => void | Promise<void>
-  onSaveProcessEntity?: (process: ProductionProcessStep) => void | Promise<void>
+  processEntity: ProductionBOMBranchOperation
+  onSaveProcessEntity?: (
+    process: ProductionBOMBranchOperation
+  ) => void | Promise<unknown>
 }
 
 export function MindmapDetailProcessEntityEditor({
   levelNames,
   processEntity,
-  onDeleteProcessEntity,
   onSaveProcessEntity,
 }: MindmapDetailProcessEntityEditorProps) {
   const [processEntityDraft, setProcessEntityDraft] =
-    useState<LineMindmapProcessDraft>({
-      description: processEntity.description ?? '',
-      isActive: processEntity.isActive ?? true,
-      name: processEntity.name,
-    })
+    useState<ProductionBOMBranchOperation>({ ...processEntity })
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  async function saveBranchOperationAndPreserveDraftOnFailure() {
+    if (!onSaveProcessEntity || isSaving) return
+    setIsSaving(true)
+    setSaveError(null)
+    try {
+      await onSaveProcessEntity(processEntityDraft)
+    } catch (error) {
+      failLoudly(
+        error,
+        'MindmapDetailProcessEntityEditor.saveBranchOperation',
+        {
+          silentUI: true,
+        }
+      )
+      setSaveError(
+        error instanceof Error ? error.message : '工序保存失败，请重试'
+      )
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
-    <div className='space-y-3 border-t border-dashed border-muted/40 pt-4'>
+    <fieldset
+      disabled={isSaving}
+      className='min-w-0 space-y-3 border-t border-dashed border-muted/40 pt-4'
+    >
       <div className='text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-        {levelNames[3]}本体
+        {levelNames[3]}工序
       </div>
       <Input
         value={processEntityDraft.name}
@@ -63,6 +84,7 @@ export function MindmapDetailProcessEntityEditor({
         className='min-h-24 rounded-[24px] border-none bg-background/80'
       />
       <Select
+        disabled={isSaving}
         value={processEntityDraft.isActive ? 'active' : 'inactive'}
         onValueChange={(value) =>
           setProcessEntityDraft((current) => ({
@@ -79,41 +101,21 @@ export function MindmapDetailProcessEntityEditor({
           <SelectItem value='inactive'>停用</SelectItem>
         </SelectContent>
       </Select>
-      <div className='grid gap-3 sm:grid-cols-2'>
-        <Button
-          type='button'
-          className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
-          onClick={() => {
-            void onSaveProcessEntity?.({
-              id: processEntity.id,
-              code: processEntity.code,
-              description: processEntityDraft.description,
-              isActive: processEntityDraft.isActive,
-              name: processEntityDraft.name,
-            })
-          }}
-          disabled={!processEntityDraft.name.trim() || !onSaveProcessEntity}
-        >
-          保存{levelNames[3]}本体
-        </Button>
-        <Button
-          type='button'
-          variant='outline'
-          className='h-11 rounded-full border-dashed border-rose-300 bg-rose-500/10 px-5 text-[10px] font-black tracking-widest text-rose-700 uppercase hover:bg-rose-500/15 hover:text-rose-800'
-          onClick={() => {
-            void onDeleteProcessEntity?.({
-              id: processEntity.id,
-              code: processEntity.code,
-              description: processEntity.description,
-              isActive: processEntity.isActive,
-              name: processEntity.name,
-            })
-          }}
-          disabled={!onDeleteProcessEntity}
-        >
-          删除{levelNames[3]}本体
-        </Button>
-      </div>
-    </div>
+      {saveError ? (
+        <p role='alert' className='text-sm text-destructive'>
+          {saveError}
+        </p>
+      ) : null}
+      <Button
+        type='button'
+        className='h-11 w-full rounded-full px-5'
+        onClick={() => void saveBranchOperationAndPreserveDraftOnFailure()}
+        disabled={
+          isSaving || !processEntityDraft.name.trim() || !onSaveProcessEntity
+        }
+      >
+        {isSaving ? '正在保存…' : `保存${levelNames[3]}工序`}
+      </Button>
+    </fieldset>
   )
 }

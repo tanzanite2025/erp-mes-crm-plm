@@ -29,6 +29,7 @@ export interface QualityStandardsListMetadata {
 }
 
 export interface GetQualityStandardsParams {
+  productId?: string
   page: number
   pageSize: number
   type?: QualityStandardsTypeFilter

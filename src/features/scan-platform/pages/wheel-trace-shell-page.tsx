@@ -156,7 +156,7 @@ export function WheelTraceShellPage({
 
           <div className='flex flex-wrap gap-3'>
             <Button
-              className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
               onClick={() => void handleLookup()}
               disabled={isLoading}
             >
@@ -166,7 +166,7 @@ export function WheelTraceShellPage({
 
             <Button
               variant='outline'
-              className='h-11 rounded-full px-6 text-[11px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
               disabled={!install.canInstall && !install.isInstalled}
               onClick={() => void install.promptInstall()}
             >

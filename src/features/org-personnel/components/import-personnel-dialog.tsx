@@ -203,7 +203,7 @@ export function ImportPersonnelDialog({
             <Button
               variant='link'
               size='sm'
-              className='h-auto p-0 text-[10px] font-black tracking-widest text-blue-600 uppercase underline underline-offset-4 hover:text-blue-700'
+              className='h-auto p-0 text-blue-600 underline underline-offset-4 hover:text-blue-700'
               onClick={() => downloadPersonnelTemplate(locale)}
             >
               <FileSpreadsheet className='mr-1 size-3' />{' '}
@@ -254,7 +254,7 @@ export function ImportPersonnelDialog({
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='shrink-0 text-[10px] font-black text-rose-600 uppercase hover:bg-rose-100 hover:text-rose-700'
+                    className='shrink-0 text-rose-600 hover:bg-rose-100 hover:text-rose-700'
                     onClick={reset}
                   >
                     {t('orgPersonnel.importDialog.retry')}
@@ -279,7 +279,7 @@ export function ImportPersonnelDialog({
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='shrink-0 text-[10px] font-black uppercase'
+                    className='shrink-0'
                     onClick={reset}
                   >
                     {t('orgPersonnel.importDialog.changeFile')}
@@ -518,7 +518,7 @@ export function ImportPersonnelDialog({
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='h-11 px-8 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 px-8'
           >
             {t('orgPersonnel.importDialog.cancel')}
           </Button>
@@ -527,7 +527,7 @@ export function ImportPersonnelDialog({
             disabled={
               !preview || isImporting || isParsing || !!error || !confirmImpact
             }
-            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
+            className='h-11 rounded-full px-8 shadow-xl shadow-blue-500/20 transition-all active:scale-95'
           >
             {isImporting
               ? t('orgPersonnel.importDialog.syncing')

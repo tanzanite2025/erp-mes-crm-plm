@@ -160,7 +160,7 @@ export function OutsourcePartnerDialog({
                 value={values.code}
                 onChange={(event) => updateValue('code', event.target.value)}
                 placeholder='OS-001'
-                className='h-11 rounded-2xl font-maple-ui uppercase'
+                className='h-11 rounded-2xl font-maple-ui'
               />
             </div>
             <div className='space-y-2 md:col-span-2'>
@@ -184,7 +184,7 @@ export function OutsourcePartnerDialog({
                     event.target.value as OutsourcePartnerStatus
                   )
                 }
-                className='h-11 w-full rounded-2xl border border-input bg-background px-3 text-xs font-bold shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+                className='h-11 w-full rounded-2xl border border-input bg-background px-3 shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
               >
                 <option value='ACTIVE'>
                   {t('productionOutsourcing.partners.statuses.ACTIVE')}
@@ -209,7 +209,7 @@ export function OutsourcePartnerDialog({
                 onChange={(event) =>
                   updateValue('supplierId', event.target.value)
                 }
-                className='h-11 w-full rounded-2xl border border-input bg-background px-3 text-xs font-bold shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+                className='h-11 w-full rounded-2xl border border-input bg-background px-3 shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
               >
                 <option value=''>
                   {t('productionOutsourcing.partners.placeholders.supplier')}
@@ -235,7 +235,7 @@ export function OutsourcePartnerDialog({
                       : (event.target.value as OutsourcePartnerQualityGrade)
                   )
                 }
-                className='h-11 w-full rounded-2xl border border-input bg-background px-3 text-xs font-bold shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+                className='h-11 w-full rounded-2xl border border-input bg-background px-3 shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
               >
                 <option value='NONE'>
                   {t('productionOutsourcing.partners.qualityGrades.NONE')}

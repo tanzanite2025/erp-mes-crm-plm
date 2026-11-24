@@ -111,7 +111,7 @@ export function ProductCreationOperationGuidePage() {
                 <Button
                   asChild
                   variant='outline'
-                  className='h-auto min-h-9 min-w-0 flex-1 rounded-full border-sky-200 bg-background/80 px-2 py-2 text-xs whitespace-normal text-sky-800 @sm:flex-none @sm:px-5 @sm:text-sm dark:border-sky-800 dark:text-sky-200'
+                  className='h-auto min-h-9 min-w-0 flex-1 rounded-full border-sky-200 bg-background/80 px-2 py-2 whitespace-normal text-sky-800 @sm:flex-none @sm:px-5 dark:border-sky-800 dark:text-sky-200'
                 >
                   <Link to='/engineering/products'>
                     <Search
@@ -149,11 +149,11 @@ export function ProductCreationOperationGuidePage() {
             aria-label={t(
               `engineering.productCreationGuide.handbook.sections.${sectionKey}`
             )}
-            className='h-full min-h-9 min-w-0 flex-none flex-col justify-start gap-1 rounded-lg px-1 py-2 text-[11px] leading-4 font-medium whitespace-normal text-muted-foreground shadow-none transition-colors hover:bg-sky-50 hover:text-sky-800 data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none sm:h-auto sm:flex-row sm:justify-center sm:gap-2 sm:px-3 sm:text-sm sm:leading-5 dark:hover:bg-sky-950/40 dark:hover:text-sky-200 dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-sky-950 dark:data-[state=active]:text-sky-100'
+            className='h-full min-h-9 min-w-0 flex-none flex-col justify-start gap-1 rounded-lg px-1 py-2 whitespace-normal text-muted-foreground shadow-none transition-colors hover:bg-sky-50 hover:text-sky-800 data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none sm:h-auto sm:flex-row sm:justify-center sm:gap-2 sm:px-3 dark:hover:bg-sky-950/40 dark:hover:text-sky-200 dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-sky-950 dark:data-[state=active]:text-sky-100'
           >
             <span
               aria-hidden='true'
-              className='text-[11px] font-semibold text-sky-600/80 dark:text-sky-400'
+              className='text-sky-600/80 dark:text-sky-400'
             >
               {String(index + 1).padStart(2, '0')}
             </span>
@@ -462,7 +462,7 @@ export function ProductCreationOperationGuidePage() {
                       asChild
                       variant='link'
                       size='sm'
-                      className='h-auto p-0 text-xs text-sky-700 dark:text-sky-300'
+                      className='h-auto p-0 text-sky-700 dark:text-sky-300'
                     >
                       <Link to={topic.href}>
                         {t(

@@ -49,19 +49,19 @@ export function PurchaseOrders() {
         <TabsList className='no-scrollbar flex h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-2xl border border-dashed border-primary/20 bg-muted/50 p-1.5'>
           <TabsTrigger
             value='orders'
-            className='h-9 shrink-0 rounded-xl px-4 text-[10px] font-black tracking-widest whitespace-nowrap uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg sm:px-6'
+            className='h-9 shrink-0 rounded-xl px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg sm:px-6'
           >
             {t('purchase.orders.tabOrders')}
           </TabsTrigger>
           <TabsTrigger
             value='logs'
-            className='h-9 shrink-0 rounded-xl px-4 text-[10px] font-black tracking-widest whitespace-nowrap uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg sm:px-6'
+            className='h-9 shrink-0 rounded-xl px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg sm:px-6'
           >
             {t('purchase.orders.tabLogs')}
           </TabsTrigger>
           <TabsTrigger
             value='returns'
-            className='h-9 shrink-0 rounded-xl px-4 text-[10px] font-black tracking-widest whitespace-nowrap uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg sm:px-6'
+            className='h-9 shrink-0 rounded-xl px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg sm:px-6'
           >
             {t('purchase.orders.tabReturns')}
           </TabsTrigger>

@@ -191,7 +191,7 @@ export function MaintenanceRecordList({
         <Button
           size='sm'
           variant='outline'
-          className='h-7 text-[10px] font-black'
+          className='control-typography-compact h-7'
           onClick={() => setIsCreateDialogOpen(true)}
         >
           <Plus className='mr-1 size-3' />
@@ -254,16 +254,12 @@ export function MaintenanceRecordList({
                   value={record.status}
                   onValueChange={(value) => handleStatusChange(record, value)}
                 >
-                  <SelectTrigger className='h-6 w-[120px] text-[10px] font-bold'>
+                  <SelectTrigger className='control-typography-compact h-6 w-[120px]'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {getValidNextStatuses(record.status).map((status) => (
-                      <SelectItem
-                        key={status}
-                        value={status}
-                        className='text-[10px]'
-                      >
+                      <SelectItem key={status} value={status}>
                         {getStatusLabel(status)}
                       </SelectItem>
                     ))}
@@ -276,7 +272,7 @@ export function MaintenanceRecordList({
                 <div className='space-y-2'>
                   <Textarea
                     defaultValue={record.remarks}
-                    className='min-h-[60px] text-[10px]'
+                    className='min-h-[60px]'
                     placeholder='备注...'
                     onBlur={(e) => handleRemarksUpdate(record, e.target.value)}
                   />

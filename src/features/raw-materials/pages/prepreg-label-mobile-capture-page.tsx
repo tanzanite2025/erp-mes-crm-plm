@@ -159,7 +159,7 @@ export function PrepregLabelMobileCapturePage({
                 className='max-h-[280px] w-full object-contain'
               />
             ) : (
-              <div className='flex flex-col items-center gap-3 text-sm font-black text-muted-foreground'>
+              <div className='flex flex-col items-center gap-3 text-muted-foreground'>
                 <ImageIcon className='size-10 opacity-60' />
                 {t('rawMaterials.catalog.mobileCapture.imagePlaceholder')}
               </div>
@@ -178,7 +178,7 @@ export function PrepregLabelMobileCapturePage({
             placeholder={t(
               'rawMaterials.catalog.mobileCapture.textPlaceholder'
             )}
-            className='min-h-[160px] rounded-2xl text-base leading-7 font-semibold'
+            className='min-h-[160px] rounded-2xl'
           />
           <div className='mt-3 flex flex-wrap gap-2'>
             {entries.length === 0 ? (
@@ -212,7 +212,7 @@ export function PrepregLabelMobileCapturePage({
           type='button'
           onClick={handleSubmit}
           disabled={submitting}
-          className='h-14 w-full rounded-full text-sm font-black tracking-widest'
+          className='h-14 w-full rounded-full'
         >
           {submitting ? (
             <Loader2 className='size-4 animate-spin' />

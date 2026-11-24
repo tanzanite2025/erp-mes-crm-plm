@@ -83,7 +83,7 @@ export function Combobox({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              'flex h-11 w-full items-center justify-between rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20',
+              'flex h-11 w-full items-center justify-between rounded-2xl border-none bg-muted/50 px-4 shadow-inner transition-all focus-visible:ring-primary/20',
               className
             )}
           >
@@ -98,10 +98,7 @@ export function Combobox({
             role='combobox'
             aria-expanded={open}
             disabled={disabled}
-            className={cn(
-              'h-8 w-full justify-between px-2 text-xs font-normal',
-              className
-            )}
+            className={cn('h-8 w-full justify-between px-2', className)}
           >
             <span className='truncate text-left'>
               {selectedOption ? selectedOption.label : placeholder}
@@ -123,27 +120,27 @@ export function Combobox({
             <Search className='mr-2 h-4 w-4 shrink-0 opacity-50' />
             <CommandInput
               placeholder={searchPlaceholder}
-              className='h-9 border-none text-xs outline-none focus:ring-0'
+              className='h-9 border-none outline-none focus:ring-0'
               value={search}
               onValueChange={setSearch}
             />
           </div>
           <CommandList className='relative max-h-[48dvh] min-h-[12rem] w-full overflow-y-auto sm:max-h-[400px] sm:min-h-[300px]'>
             {isLoading ? (
-              <div className='animate-pulse py-12 text-center text-xs font-black tracking-widest text-muted-foreground uppercase sm:py-20'>
+              <div className='animate-pulse py-12 text-center text-xs leading-5 text-muted-foreground sm:py-20'>
                 Loading Archive / 数据加载中...
               </div>
             ) : filteredOptions.length === 0 ? (
               <div className='px-4 py-12 text-center text-xs text-muted-foreground sm:py-20'>
                 <div
                   data-slot='combobox-empty-title'
-                  className='mb-1 font-black tracking-tight uppercase'
+                  className='control-typography mb-1'
                 >
                   {emptyText}
                 </div>
                 <div
                   data-slot='combobox-empty-subtitle'
-                  className='truncate text-[10px] uppercase opacity-40'
+                  className='truncate text-xs leading-5 text-muted-foreground'
                 >
                   No matching records found
                 </div>
@@ -154,7 +151,7 @@ export function Combobox({
                   <CommandItem
                     key={option.value}
                     value={`${option.label} ${option.secondaryLabel ?? ''} ${option.keywords ?? ''}`}
-                    className='mb-1 flex w-full cursor-pointer items-center justify-between py-2 text-xs hover:bg-slate-50'
+                    className='mb-1 flex w-full cursor-pointer items-center justify-between py-2 hover:bg-slate-50'
                     onSelect={() => {
                       onValueChange(option.value === value ? '' : option.value)
                       setOpen(false)
@@ -175,7 +172,7 @@ export function Combobox({
                         <div className='flex w-full items-center justify-between'>
                           <span
                             data-slot='combobox-option-label'
-                            className='truncate font-bold text-slate-700'
+                            className='truncate text-slate-700'
                           >
                             {option.label}
                           </span>
@@ -185,13 +182,13 @@ export function Combobox({
                             <div className='flex shrink-0 items-center gap-1'>
                               <span
                                 data-slot='combobox-option-secondary-badge'
-                                className='rounded bg-emerald-50 px-0.5 text-[9px] font-black tracking-tight text-emerald-600 uppercase'
+                                className='rounded bg-emerald-50 px-0.5 text-xs leading-4 font-medium text-emerald-600'
                               >
                                 规格
                               </span>
                               <span
                                 data-slot='combobox-option-secondary-text'
-                                className='max-w-[150px] truncate text-[10px] font-bold text-emerald-600'
+                                className='max-w-[150px] truncate text-xs leading-4 font-medium text-emerald-600'
                               >
                                 {option.secondaryLabel}
                               </span>
@@ -200,7 +197,7 @@ export function Combobox({
                           {option.tertiaryLabel && (
                             <span
                               data-slot='combobox-option-tertiary'
-                              className='shrink-0 font-maple-ui text-[10px] opacity-30'
+                              className='shrink-0 text-xs leading-4 text-muted-foreground'
                             >
                               #{option.tertiaryLabel}
                             </span>
@@ -224,13 +221,13 @@ export function Combobox({
                               >
                                 <span
                                   data-slot='combobox-option-stats-stage'
-                                  className='mb-0.5 text-[9px] leading-none font-bold'
+                                  className='mb-0.5 text-xs leading-4 font-medium'
                                 >
                                   {stat.stage}
                                 </span>
                                 <span
                                   data-slot='combobox-option-stats-value'
-                                  className='text-[10px] leading-none font-black'
+                                  className='text-xs leading-4 font-medium'
                                 >
                                   {stat.percentage}%
                                 </span>
@@ -240,7 +237,7 @@ export function Combobox({
                         ) : (
                           <span
                             data-slot='combobox-option-stats-empty'
-                            className='text-[10px] text-slate-300'
+                            className='text-xs leading-4 text-muted-foreground'
                           >
                             标准档案
                           </span>

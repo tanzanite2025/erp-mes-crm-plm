@@ -106,7 +106,7 @@ export function PrepregCatalogList({
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
             placeholder={t('rawMaterials.catalog.searchPlaceholder')}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-[10px] font-black tracking-[0.16em] shadow-inner placeholder:text-muted-foreground/45'
+            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner placeholder:text-muted-foreground/45'
           />
         </div>
         <div className='flex flex-wrap gap-3'>
@@ -114,15 +114,12 @@ export function PrepregCatalogList({
             type='button'
             variant='outline'
             onClick={onScanBind}
-            className='h-11 rounded-full px-7 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-7'
           >
             <ScanLine className='size-4' />
             {t('rawMaterials.catalog.actions.scanBind')}
           </Button>
-          <Button
-            onClick={onCreate}
-            className='h-11 rounded-full px-7 text-[10px] font-black tracking-widest uppercase'
-          >
+          <Button onClick={onCreate} className='h-11 rounded-full px-7'>
             <Plus className='size-4' />
             {t('rawMaterials.catalog.actions.create')}
           </Button>
@@ -163,22 +160,20 @@ export function PrepregCatalogList({
             >
               <div className='space-y-1'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <span className='font-maple-ui text-[10px] font-black tracking-[0.2em] text-foreground/80'>
+                  <span className='font-maple-ui text-foreground/80'>
                     {spec.code}
                   </span>
                   <Badge className='rounded-full border-none bg-primary/10 font-maple-ui text-[10px] tracking-widest text-primary uppercase'>
                     {statusLabel(spec.status)}
                   </Badge>
                 </div>
-                <div className='text-sm font-black tracking-tighter text-foreground/90'>
+                <div className='text-foreground/90'>
                   {spec.displayAlias || spec.name}
                 </div>
                 {spec.displayAlias ? (
-                  <div className='text-[10px] font-semibold text-muted-foreground/80'>
-                    {spec.name}
-                  </div>
+                  <div className='text-muted-foreground/80'>{spec.name}</div>
                 ) : null}
-                <div className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                <div className='text-muted-foreground/60'>
                   {prepregSpecSummary(spec) ||
                     t('rawMaterials.catalog.table.summaryEmpty')}
                 </div>

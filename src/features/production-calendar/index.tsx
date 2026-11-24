@@ -117,7 +117,7 @@ export default function ProductionCalendar() {
             </div>
             <Button
               variant='outline'
-              className='h-8 rounded-full border-dashed text-xs'
+              className='h-8 rounded-full border-dashed'
               onClick={() => {
                 void retryLoadStats()
               }}

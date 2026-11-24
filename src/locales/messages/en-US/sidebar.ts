@@ -8,6 +8,9 @@ export const sidebar = {
   },
   navigation: {
     categories: 'Business categories',
+    mobileDescription:
+      'Choose a business category, then select a destination. Use the side arrow to collapse navigation.',
+    collapseSidebar: 'Collapse navigation',
     noAvailableEntries: 'No available destinations in this category',
     collapseDirectory: 'Hide directory',
     expandDirectory: 'Show directory',
@@ -36,6 +39,7 @@ export const sidebar = {
     engineeringManagement: 'Engineering Management',
     engineeringDatabase: 'General Database',
     qualityManagement: 'Quality Management',
+    qualityHandbook: 'Quality Handbook',
     qualityStandards: 'Quality Standards',
     qualityOperations: 'Quality Operations',
     warehouseManagement: 'Warehouse',
@@ -122,7 +126,7 @@ export const sidebar = {
     basicSettings: 'Basic Settings',
     financeCenter: 'Finance Config',
     financeSettlements: 'AR / AP',
-    linearBarcode: 'Linear Barcode',
+    linearBarcode: 'Product Codes',
     sharedCodeSource: 'Shared Code Source',
   },
 }

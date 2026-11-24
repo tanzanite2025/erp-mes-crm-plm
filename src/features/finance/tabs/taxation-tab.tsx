@@ -72,7 +72,7 @@ export function TaxationTab() {
             variant='outline'
             size='sm'
             onClick={() => void refresh()}
-            className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase transition-all hover:bg-emerald-500/5 hover:text-emerald-600'
+            className='h-9 rounded-full border-dashed transition-all hover:bg-emerald-500/5 hover:text-emerald-600'
           >
             <RefreshCcw
               className={`mr-2 size-3 ${isLoading ? 'animate-spin' : ''}`}
@@ -82,7 +82,7 @@ export function TaxationTab() {
           <Button
             size='sm'
             onClick={openAdd}
-            className='h-9 rounded-full bg-emerald-600 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95'
+            className='h-9 rounded-full bg-emerald-600 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95'
           >
             <Plus className='mr-2 size-3' />
             {t('finance.taxation.page.add')}

@@ -141,7 +141,7 @@ export function RemovedItemsPanel({
                   type='button'
                   size='sm'
                   variant='outline'
-                  className='h-8 rounded-2xl border-destructive/20 text-xs font-black text-destructive hover:bg-destructive/5'
+                  className='h-8 rounded-2xl border-destructive/20 text-destructive hover:bg-destructive/5'
                   onClick={() => onRestoreItem(item.id)}
                 >
                   <RotateCcw className='size-3.5' />
@@ -184,7 +184,7 @@ export function SectionActions({
           type='button'
           size='sm'
           variant='outline'
-          className='h-8 rounded-2xl text-xs font-black'
+          className='h-8 rounded-2xl'
           disabled={undoDisabled || undoing}
           onClick={onUndo}
         >
@@ -196,7 +196,7 @@ export function SectionActions({
         <Button
           type='button'
           size='sm'
-          className='h-8 rounded-2xl text-xs font-black'
+          className='h-8 rounded-2xl'
           disabled={saveDisabled || saving}
           onClick={onSave}
         >
@@ -209,7 +209,7 @@ export function SectionActions({
           type='button'
           size='sm'
           variant='outline'
-          className='h-8 rounded-2xl text-xs font-black'
+          className='h-8 rounded-2xl'
           onClick={onEdit}
         >
           <Edit3 className='size-3.5' />
@@ -434,7 +434,7 @@ export function EditableList({
               type='button'
               size='sm'
               variant='outline'
-              className='h-8 rounded-2xl text-xs font-black'
+              className='h-8 rounded-2xl'
               onClick={onAdd}
             >
               <Plus className='size-3.5' />
@@ -491,7 +491,7 @@ export function MiniToggle({
       type='button'
       onClick={onClick}
       className={cn(
-        'h-9 rounded-2xl border px-2 text-xs font-black',
+        'h-9 rounded-2xl border px-2',
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-input bg-background text-muted-foreground'

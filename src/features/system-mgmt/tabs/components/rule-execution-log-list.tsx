@@ -137,7 +137,7 @@ export function RuleExecutionLogList({
                     type='button'
                     size='sm'
                     variant='outline'
-                    className='h-8 rounded-full border-dashed border-rose-200 px-3 text-[10px] font-black tracking-widest text-rose-700 uppercase hover:bg-rose-50 hover:text-rose-800'
+                    className='h-8 rounded-full border-dashed border-rose-200 px-3 text-rose-700 hover:bg-rose-50 hover:text-rose-800'
                     disabled={
                       isFetching || isRetrying || !canRetryNotificationLogs
                     }
@@ -210,7 +210,7 @@ export function RuleExecutionLogList({
         {hasMore ? (
           <button
             type='button'
-            className='inline-flex h-9 items-center justify-center rounded-full border border-dashed border-muted-foreground/20 bg-muted/30 px-3.5 text-[10px] font-black tracking-widest text-foreground uppercase transition hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50'
+            className='inline-flex h-9 items-center justify-center rounded-full border border-dashed border-muted-foreground/20 bg-muted/30 px-3.5 text-foreground transition hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50'
             disabled={isFetching}
             onClick={onLoadMore}
           >

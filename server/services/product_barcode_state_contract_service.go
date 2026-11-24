@@ -29,8 +29,9 @@ type ProductBarcodeStateWritePolicyContract struct {
 }
 
 // ProductBarcodeStateContractResponse is the read-only contract used by code
-// center pages to display barcode status definitions without duplicating the
-// state machine in frontend data files.
+// center pages to display product-code status definitions without duplicating
+// the state machine in frontend data files. Code128 and QR are two symbols for
+// the same ProductBarcode value and therefore share these statuses.
 type ProductBarcodeStateContractResponse struct {
 	InventoryStatuses         []ProductBarcodeStateDefinitionContract        `json:"inventoryStatuses"`
 	ProductionStatuses        []ProductBarcodeStateDefinitionContract        `json:"productionStatuses"`
@@ -65,13 +66,13 @@ func buildLinearBarcodeInventoryStatusContracts() []ProductBarcodeStateDefinitio
 			Trigger:     "product_binding_success",
 			SourceTable: "linear_barcode_inventory_items",
 			Tone:        "info",
-			IsTerminal:  false,
+			IsTerminal:  true,
 		},
 		{
 			Code:        LinearBarcodeInventoryStatusExpired,
 			Kind:        "inventory",
 			Phase:       "inventory_expired",
-			Trigger:     "expiry_refresh_before_query_or_binding",
+			Trigger:     "binding_scan_expiry_check",
 			SourceTable: "linear_barcode_inventory_items",
 			Tone:        "warning",
 			IsTerminal:  true,
@@ -153,9 +154,15 @@ func buildProductBarcodeProductionLocationAnchorContracts() []ProductBarcodeStat
 			Required:    true,
 		},
 		{
-			Code:        "L3_PROCESS",
-			Field:       "currentProcessStepId",
-			SourceTable: "process_steps",
+			Code:        "L3_BRANCH_OPERATION",
+			Field:       "currentBranchOperationId",
+			SourceTable: "production_bom_branch_operations",
+			Required:    true,
+		},
+		{
+			Code:        "PRODUCTION_WORK_LOCATION",
+			Field:       "productionWorkLocationId",
+			SourceTable: "production_work_locations",
 			Required:    true,
 		},
 		{
@@ -175,11 +182,11 @@ func buildProductBarcodeStateWritePolicyContracts() []ProductBarcodeStateWritePo
 		},
 		{
 			Code:        "PRODUCTION_STATUS_WITH_LOCATION",
-			Description: "Production status is the first-level state; routeStepId and currentProcessStepId are the second-level location under that state.",
+			Description: "Production status is the first-level state; routeStepId and currentBranchOperationId identify the route position, while productionWorkLocationId records the actual work location.",
 		},
 		{
 			Code:        "ROUTE_STEP_IS_PRECISE_L3_ANCHOR",
-			Description: "The UI may show L3 selection, but writes should persist the selected production route step because one process can appear in multiple route steps.",
+			Description: "Writes persist both routeStepId and branchOperationId; routeStepId identifies the ordered route position when one branch operation appears more than once.",
 		},
 		{
 			Code:        "WRITE_THROUGH_SCAN_OR_EXECUTION_COMMAND",

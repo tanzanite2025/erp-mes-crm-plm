@@ -21,36 +21,27 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { ProductionProcessStep } from '../../data/production-process'
-import type {
-  ProductionRoute,
-  ProductionRouteExecutionMode,
-  ProductionRouteQualityDisposition,
-  ProductionRouteQualityGate,
-  ProductionRouteStatus,
-  ProductionRouteStep,
+import type { ProductionBOMBranchOperation } from '../../data/production-line'
+import {
+  getProductionRouteBOMBranchIdentityKey,
+  type ProductionRoute,
+  type ProductionRouteBOMBranch,
+  type ProductionRouteExecutionMode,
+  type ProductionRouteQualityDisposition,
+  type ProductionRouteQualityGate,
+  type ProductionRouteStep,
 } from '../../data/production-route'
-
-export interface ProductionRouteSegmentOption {
-  id: string
-  label: string
-  processes: ProductionProcessStep[]
-}
 
 interface ProductionRouteDialogProps {
   open: boolean
   route: ProductionRoute | null
   routes: ProductionRoute[]
-  segments: ProductionRouteSegmentOption[]
+  bomBranches: ProductionRouteBOMBranch[]
+  isLoadingBOMBranches?: boolean
   onOpenChange: (open: boolean) => void
   onSave: (route: ProductionRoute) => Promise<void>
 }
 
-const statusOptions: ProductionRouteStatus[] = [
-  'DRAFT',
-  'PUBLISHED',
-  'ARCHIVED',
-]
 const executionModeOptions: ProductionRouteExecutionMode[] = [
   'IN_HOUSE',
   'OUTSOURCE_ALLOWED',
@@ -82,11 +73,19 @@ function createDraftRoute(routes: ProductionRoute[]): ProductionRoute {
   const now = new Date().toISOString()
   return {
     id: '',
+    routeFamilyId: '',
+    revisionNo: 1,
+    basedOnRouteId: '',
+    isCurrentRevision: false,
     code: createRouteCode(routes),
     name: '',
     productId: '',
+    productSKU: '',
     productName: '',
-    productTemplateId: '',
+    bomOwnerType: '',
+    bomOwnerCustomerId: '',
+    bomOwnerCustomerName: '',
+    bomVersionLevel: '',
     description: '',
     version: 1,
     status: 'DRAFT',
@@ -98,19 +97,15 @@ function createDraftRoute(routes: ProductionRoute[]): ProductionRoute {
 
 function createRouteStep(
   sequence: number,
-  segment?: ProductionRouteSegmentOption
+  operation?: ProductionBOMBranchOperation
 ): ProductionRouteStep {
   const now = new Date().toISOString()
-  const process = segment?.processes[0]
   return {
     id: crypto.randomUUID(),
     routeId: '',
     sequence,
-    processStepId: process?.id ?? '',
-    processCode: process?.code ?? '',
-    processName: process?.name ?? '',
-    segmentId: segment?.id ?? '',
-    segmentName: segment?.label ?? '',
+    branchOperationId: operation?.id ?? '',
+    branchOperationName: operation?.name ?? '',
     executionMode: 'IN_HOUSE',
     qualityGate: 'NONE',
     qualityRouting: undefined,
@@ -130,7 +125,8 @@ export function ProductionRouteDialog({
   open,
   route,
   routes,
-  segments,
+  bomBranches,
+  isLoadingBOMBranches = false,
   onOpenChange,
   onSave,
 }: ProductionRouteDialogProps) {
@@ -152,9 +148,36 @@ export function ProductionRouteDialog({
     setIsSubmitting(false)
   }, [open, route, routes])
 
-  const segmentById = useMemo(
-    () => new Map(segments.map((item) => [item.id, item])),
-    [segments]
+  const getBOMBranchDisplayName = (branch: ProductionRouteBOMBranch) => {
+    const versionLabel =
+      branch.bomVersionLevel ||
+      t('productionArchitecture.routes.bomBranch.unspecifiedVersion')
+    const ownerLabel =
+      branch.bomOwnerType === 'CUSTOMER'
+        ? `${t('productionArchitecture.routes.bomBranch.customer')}: ${branch.bomOwnerCustomerName || branch.bomOwnerCustomerId}`
+        : t('productionArchitecture.routes.bomBranch.internal')
+
+    return `${branch.productSKU} · ${branch.productName} · ${versionLabel} · ${ownerLabel}`
+  }
+  const selectedBOMBranchKey = getProductionRouteBOMBranchIdentityKey(draft)
+  const branchByIdentityKey = new Map(
+    bomBranches.map((branch) => [
+      getProductionRouteBOMBranchIdentityKey(branch),
+      branch,
+    ])
+  )
+  const selectedBOMBranch = branchByIdentityKey.get(selectedBOMBranchKey)
+  const branchOperations = useMemo(() => {
+    return (selectedBOMBranch?.branchOperations ?? [])
+      .filter((operation) => operation.isActive)
+      .sort(
+        (left, right) =>
+          left.sortOrder - right.sortOrder ||
+          left.name.localeCompare(right.name)
+      )
+  }, [selectedBOMBranch])
+  const branchOperationById = new Map(
+    branchOperations.map((operation) => [operation.id, operation])
   )
 
   const updateRoute = <TKey extends keyof ProductionRoute>(
@@ -177,43 +200,41 @@ export function ProductionRouteDialog({
     }))
   }
 
-  const handleSegmentChange = (stepId: string, segmentId: string) => {
-    const segment = segmentById.get(segmentId)
-    const process = segment?.processes[0]
+  const handleBranchOperationChange = (stepId: string, operationId: string) => {
+    const operation = branchOperationById.get(operationId)
     setDraft((current) => ({
       ...current,
       steps: current.steps.map((step) =>
         step.id === stepId
           ? {
               ...step,
-              segmentId: segment?.id ?? '',
-              segmentName: segment?.label ?? '',
-              processStepId: process?.id ?? '',
-              processCode: process?.code ?? '',
-              processName: process?.name ?? '',
+              branchOperationId: operation?.id ?? '',
+              branchOperationName: operation?.name ?? '',
             }
           : step
       ),
     }))
   }
 
-  const handleProcessChange = (stepId: string, processId: string) => {
+  const handleBOMBranchChange = (branchIdentityKey: string) => {
+    const branch = branchByIdentityKey.get(branchIdentityKey)
+    if (!branch) {
+      return
+    }
+
     setDraft((current) => ({
       ...current,
-      steps: current.steps.map((step) => {
-        if (step.id !== stepId) {
-          return step
-        }
-        const process = segmentById
-          .get(step.segmentId)
-          ?.processes.find((item) => item.id === processId)
-        return {
-          ...step,
-          processStepId: process?.id ?? '',
-          processCode: process?.code ?? '',
-          processName: process?.name ?? '',
-        }
-      }),
+      productId: branch.productId,
+      productSKU: branch.productSKU,
+      productName: branch.productName,
+      bomOwnerType: branch.bomOwnerType,
+      bomOwnerCustomerId: branch.bomOwnerCustomerId,
+      bomOwnerCustomerName: branch.bomOwnerCustomerName,
+      bomVersionLevel: branch.bomVersionLevel,
+      steps:
+        getProductionRouteBOMBranchIdentityKey(current) === branchIdentityKey
+          ? current.steps
+          : [],
     }))
   }
 
@@ -252,12 +273,8 @@ export function ProductionRouteDialog({
         if (targetRouteStepId === 'NO_TARGET') {
           delete routing[disposition]
         } else {
-          const targetStep = current.steps.find(
-            (candidate) => candidate.id === targetRouteStepId
-          )
           routing[disposition] = {
             targetRouteStepId,
-            targetProcessStepId: targetStep?.processStepId || undefined,
           }
         }
         return {
@@ -273,7 +290,7 @@ export function ProductionRouteDialog({
       ...current,
       steps: [
         ...current.steps,
-        createRouteStep(current.steps.length + 1, segments[0]),
+        createRouteStep(current.steps.length + 1, branchOperations[0]),
       ],
     }))
   }
@@ -315,11 +332,14 @@ export function ProductionRouteDialog({
   }
 
   const handleSave = async () => {
-    if (!draft.name.trim() || !draft.code.trim()) {
+    if (!draft.name.trim() || !draft.code.trim() || draft.steps.length === 0) {
+      return
+    }
+    if (!selectedBOMBranchKey) {
       return
     }
     const steps = rebuildStepSequence(draft.steps).filter(
-      (step) => step.processStepId && step.segmentId
+      (step) => step.branchOperationId
     )
     if (steps.length !== draft.steps.length) {
       return
@@ -364,7 +384,7 @@ export function ProductionRouteDialog({
             </div>
           </DialogHeader>
 
-          <div className='grid gap-4 md:grid-cols-[1.2fr_0.8fr_0.8fr]'>
+          <div className='grid gap-4 md:grid-cols-[1.2fr_0.8fr]'>
             <label className='space-y-2'>
               <Label>{t('productionArchitecture.routes.fields.name')}</Label>
               <Input
@@ -384,43 +404,48 @@ export function ProductionRouteDialog({
                 }
               />
             </label>
-            <label className='space-y-2'>
-              <Label>{t('productionArchitecture.routes.fields.status')}</Label>
+          </div>
+
+          <div className='grid gap-4 md:grid-cols-[1.2fr_0.8fr]'>
+            <div className='space-y-2'>
+              <Label>
+                {t('productionArchitecture.routes.fields.productBranch')}
+              </Label>
               <Select
-                value={draft.status}
-                onValueChange={(value) =>
-                  updateRoute('status', value as ProductionRouteStatus)
+                value={selectedBOMBranchKey || undefined}
+                onValueChange={handleBOMBranchChange}
+                disabled={
+                  isLoadingBOMBranches ||
+                  Boolean(route && route.status !== 'DRAFT')
                 }
               >
                 <SelectTrigger className='w-full'>
-                  <SelectValue />
+                  <SelectValue
+                    placeholder={t(
+                      'productionArchitecture.routes.fields.productBranchPlaceholder'
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {t(`productionArchitecture.routes.statuses.${status}`)}
+                  {bomBranches.map((branch) => {
+                    const identityKey =
+                      getProductionRouteBOMBranchIdentityKey(branch)
+                    return (
+                      <SelectItem key={identityKey} value={identityKey}>
+                        {getBOMBranchDisplayName(branch)}
+                      </SelectItem>
+                    )
+                  })}
+                  {bomBranches.length === 0 ? (
+                    <SelectItem value='NO_AVAILABLE_BRANCH' disabled>
+                      {t(
+                        'productionArchitecture.routes.bomBranch.noneAvailable'
+                      )}
                     </SelectItem>
-                  ))}
+                  ) : null}
                 </SelectContent>
               </Select>
-            </label>
-          </div>
-
-          <div className='grid gap-4 md:grid-cols-[0.8fr_1.2fr]'>
-            <label className='space-y-2'>
-              <Label>
-                {t('productionArchitecture.routes.fields.productName')}
-              </Label>
-              <Input
-                value={draft.productName}
-                onChange={(event) =>
-                  updateRoute('productName', event.target.value)
-                }
-                placeholder={t(
-                  'productionArchitecture.routes.fields.productPlaceholder'
-                )}
-              />
-            </label>
+            </div>
             <label className='space-y-2'>
               <Label>
                 {t('productionArchitecture.routes.fields.description')}
@@ -449,7 +474,9 @@ export function ProductionRouteDialog({
                 type='button'
                 size='sm'
                 onClick={addStep}
-                disabled={segments.length === 0}
+                disabled={
+                  !selectedBOMBranchKey || branchOperations.length === 0
+                }
                 className='rounded-full'
               >
                 <Plus className='mr-2 size-4' />
@@ -457,9 +484,13 @@ export function ProductionRouteDialog({
               </Button>
             </div>
 
-            {segments.length === 0 ? (
+            {!selectedBOMBranchKey ? (
               <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
-                {t('productionArchitecture.routes.steps.noSegments')}
+                {t('productionArchitecture.routes.steps.noBranchSelected')}
+              </div>
+            ) : branchOperations.length === 0 ? (
+              <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
+                {t('productionArchitecture.routes.steps.noProcess')}
               </div>
             ) : draft.steps.length === 0 ? (
               <div className='rounded-2xl bg-background/70 p-5 text-center text-xs font-bold text-muted-foreground'>
@@ -468,8 +499,9 @@ export function ProductionRouteDialog({
             ) : (
               <div className='space-y-2'>
                 {draft.steps.map((step, index) => {
-                  const selectedSegment = segmentById.get(step.segmentId)
-                  const processes = selectedSegment?.processes ?? []
+                  const hasActiveOperation = branchOperationById.has(
+                    step.branchOperationId
+                  )
                   return (
                     <div
                       key={step.id}
@@ -480,32 +512,10 @@ export function ProductionRouteDialog({
                         {index + 1}
                       </div>
                       <Select
-                        value={step.segmentId}
+                        value={step.branchOperationId || 'NO_OPERATION'}
                         onValueChange={(value) =>
-                          handleSegmentChange(step.id, value)
+                          handleBranchOperationChange(step.id, value)
                         }
-                      >
-                        <SelectTrigger className='w-full'>
-                          <SelectValue
-                            placeholder={t(
-                              'productionArchitecture.routes.steps.segment'
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {segments.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={step.processStepId || 'NO_PROCESS'}
-                        onValueChange={(value) =>
-                          handleProcessChange(step.id, value)
-                        }
-                        disabled={processes.length === 0}
                       >
                         <SelectTrigger className='w-full'>
                           <SelectValue
@@ -515,19 +525,17 @@ export function ProductionRouteDialog({
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {processes.length === 0 ? (
-                            <SelectItem value='NO_PROCESS' disabled>
-                              {t(
-                                'productionArchitecture.routes.steps.noProcess'
-                              )}
+                          {!hasActiveOperation && step.branchOperationId ? (
+                            <SelectItem value={step.branchOperationId} disabled>
+                              {step.branchOperationName ||
+                                step.branchOperationId}
                             </SelectItem>
-                          ) : (
-                            processes.map((process) => (
-                              <SelectItem key={process.id} value={process.id}>
-                                {process.name}
-                              </SelectItem>
-                            ))
-                          )}
+                          ) : null}
+                          {branchOperations.map((operation) => (
+                            <SelectItem key={operation.id} value={operation.id}>
+                              {operation.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <Select
@@ -639,11 +647,6 @@ export function ProductionRouteDialog({
                                 step.qualityRouting?.[disposition]
                               const targetRouteStepId =
                                 configuredTarget?.targetRouteStepId ||
-                                draft.steps.find(
-                                  (candidate) =>
-                                    candidate.processStepId ===
-                                    configuredTarget?.targetProcessStepId
-                                )?.id ||
                                 'NO_TARGET'
                               return (
                                 <label key={disposition} className='space-y-1'>
@@ -675,9 +678,8 @@ export function ProductionRouteDialog({
                                           value={targetStep.id}
                                         >
                                           {targetStep.sequence}.{' '}
-                                          {targetStep.processName ||
-                                            targetStep.processCode ||
-                                            targetStep.processStepId}
+                                          {targetStep.branchOperationName ||
+                                            targetStep.branchOperationId}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -707,7 +709,11 @@ export function ProductionRouteDialog({
               type='button'
               onClick={() => void handleSave()}
               disabled={
-                isSubmitting || !draft.name.trim() || !draft.code.trim()
+                isSubmitting ||
+                !draft.name.trim() ||
+                !draft.code.trim() ||
+                !selectedBOMBranchKey ||
+                draft.steps.length === 0
               }
             >
               {isSubmitting

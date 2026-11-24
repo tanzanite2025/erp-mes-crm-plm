@@ -53,7 +53,7 @@ export function DocumentFooterStats({
         {canSave ? (
           <Button
             onClick={onSave}
-            className='order-1 h-10 rounded-full bg-slate-950 px-8 text-[11px] font-black text-white uppercase shadow-xl shadow-slate-950/20 transition-all active:scale-95 sm:order-2 sm:px-12'
+            className='order-1 h-10 rounded-full bg-slate-950 px-8 text-white shadow-xl shadow-slate-950/20 transition-all active:scale-95 sm:order-2 sm:px-12'
           >
             {t('tradingSalesOrder.footer.save')}
           </Button>
@@ -61,7 +61,7 @@ export function DocumentFooterStats({
         <Button
           variant='ghost'
           onClick={onCancel}
-          className='order-2 h-10 rounded-full border border-muted-foreground/10 px-6 text-[11px] font-bold uppercase transition-all hover:bg-muted/50 sm:order-1'
+          className='order-2 h-10 rounded-full border border-muted-foreground/10 px-6 transition-all hover:bg-muted/50 sm:order-1'
         >
           {t('tradingSalesOrder.footer.cancel')}
         </Button>

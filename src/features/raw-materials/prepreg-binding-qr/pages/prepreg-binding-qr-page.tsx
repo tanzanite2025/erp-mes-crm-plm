@@ -139,7 +139,7 @@ export function PrepregBindingQrPage() {
               variant='outline'
               onClick={handleClear}
               disabled={!items.length}
-              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
             >
               <Trash2 className='size-4' />
               {t('rawMaterials.bindingQr.actions.clear')}
@@ -149,7 +149,7 @@ export function PrepregBindingQrPage() {
               variant='outline'
               onClick={handlePrint}
               disabled={!items.length}
-              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
             >
               <Printer className='size-4' />
               {t('rawMaterials.bindingQr.actions.print')}
@@ -158,7 +158,7 @@ export function PrepregBindingQrPage() {
               type='button'
               onClick={() => void handleGenerate()}
               disabled={isGenerating}
-              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
             >
               <QrCode className='size-4' />
               {isGenerating
@@ -219,7 +219,7 @@ export function PrepregBindingQrPage() {
                 max={200}
                 value={quantityInput}
                 onChange={(event) => setQuantityInput(event.target.value)}
-                className='h-12 rounded-2xl border-none bg-muted/50 text-sm'
+                className='h-12 rounded-2xl border-none bg-muted/50'
               />
               <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('rawMaterials.bindingQr.form.quantityHint')}

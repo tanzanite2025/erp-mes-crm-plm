@@ -72,7 +72,7 @@ export function SalesReturnRecordSpotlight({
             variant='outline'
             size='sm'
             onClick={() => setIsEditOpen(true)}
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
           >
             <FilePenLine className='mr-1 size-3.5' />
             {t('trading.salesReturns.queryShell.editAction')}
@@ -82,7 +82,7 @@ export function SalesReturnRecordSpotlight({
             variant='outline'
             size='sm'
             onClick={onClearSelection}
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
           >
             {t('trading.salesReturns.queryShell.closePanel')}
           </Button>

@@ -139,7 +139,7 @@ function DialogBody({
                 onClick={handleAddMapping}
                 variant='ghost'
                 size='sm'
-                className='h-7 rounded-lg text-[10px] font-black tracking-widest text-blue-600 uppercase hover:bg-blue-500/10'
+                className='control-typography-compact h-7 rounded-lg text-blue-600 hover:bg-blue-500/10'
               >
                 <Plus className='mr-1 size-3' />{' '}
                 {t(`${translationPrefix}.dialog.addMapping` as TranslationKey)}
@@ -182,7 +182,7 @@ function DialogBody({
                           placeholder={t(
                             `${translationPrefix}.dialog.placeholderKey` as TranslationKey
                           )}
-                          className='h-8 rounded-xl border-muted/30 bg-background text-[11px] font-black focus-visible:ring-blue-500/30'
+                          className='h-8 rounded-xl border-muted/30 bg-background focus-visible:ring-blue-500/30'
                         />
                       </TableCell>
                       <TableCell className='p-1.5'>
@@ -198,7 +198,7 @@ function DialogBody({
                           placeholder={t(
                             `${translationPrefix}.dialog.placeholderValue` as TranslationKey
                           )}
-                          className='h-8 rounded-xl border-muted/30 bg-muted/30 font-maple-ui text-[11px] font-black text-blue-600 uppercase focus-visible:ring-blue-500/30'
+                          className='h-8 rounded-xl border-muted/30 bg-muted/30 font-maple-ui text-blue-600 focus-visible:ring-blue-500/30'
                         />
                       </TableCell>
                       <TableCell className='p-1.5 pr-4'>
@@ -235,7 +235,7 @@ function DialogBody({
                   placeholder={t(
                     `${translationPrefix}.dialog.autoDescriptionPlaceholder` as TranslationKey
                   )}
-                  className='h-10 rounded-xl border-muted/30 bg-background text-[11px] font-black focus-visible:ring-blue-500/30'
+                  className='h-10 rounded-xl border-muted/30 bg-background focus-visible:ring-blue-500/30'
                 />
               </div>
               <div className='flex gap-2'>
@@ -274,13 +274,13 @@ function DialogBody({
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)}
-            className='h-9 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full px-6'
           >
             {t('common.actions.cancel')}
           </Button>
           <Button
             onClick={handleSave}
-            className='h-9 rounded-full bg-blue-600 px-10 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95'
+            className='h-9 rounded-full bg-blue-600 px-10 shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95'
           >
             {t(`${translationPrefix}.dialog.save` as TranslationKey)}
           </Button>

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 	appdb "xdfc-server/db"
 	"xdfc-server/models"
 
@@ -30,6 +31,10 @@ func openSalesOrderStableLineIdentityTransactionTestDatabase(t *testing.T) (*gor
 		requirements TEXT, evidences JSON, created_at DATETIME, updated_at DATETIME, deleted_at DATETIME,
 		updated_by TEXT, version INTEGER)`).Error)
 	require.NoError(t, database.AutoMigrate(&models.SalesOrderLine{}, &models.AuditLog{}, &models.ProductionMaterialIssuanceActiveSourceCoverage{}))
+	require.NoError(t, database.Exec(`CREATE TABLE linear_barcode_inventory_items (
+		id TEXT PRIMARY KEY, sales_order_id TEXT, sales_order_line_id INTEGER NOT NULL DEFAULT 0,
+		status TEXT, expires_at DATETIME, deleted_at DATETIME
+	)`).Error)
 	require.NoError(t, database.Exec(`CREATE TABLE packaging_profile_targets (entity_type TEXT, entity_id TEXT, deleted_at DATETIME)`).Error)
 	require.NoError(t, database.Exec(`INSERT INTO sales_orders (id, order_no, barcode, status, version, quantity, amount, evidences)
 		VALUES ('order-1','SO-1','SO-1','Pending',4,30,80,X'5B5D'), ('order-2','SO-2','SO-2','Pending',1,1,1,X'5B5D')`).Error)
@@ -96,6 +101,43 @@ func TestSalesOrderStableLineIdentityDeleteReindexAndAddDoesNotReuseDeletedIdent
 	_, err = executeSalesOrderStableIdentityTestCommand(t, database, SalesTransactionIntentOrderLinesChange, 5,
 		SalesOrderLinesChangePayload{Lines: []SalesOrderLineRequest{{ID: 101, LineNo: 1}}})
 	require.ErrorIs(t, err, ErrSalesTransactionInvalidPayload)
+}
+
+func TestSalesOrderLineProductCodeInventoryGuardProtectsIssuedQuantityAndLineIdentity(t *testing.T) {
+	database, order := openSalesOrderStableLineIdentityTransactionTestDatabase(t)
+	now := time.Now()
+	require.NoError(t, database.Exec(`INSERT INTO linear_barcode_inventory_items
+		(id, sales_order_id, sales_order_line_id, status, expires_at) VALUES
+		('available-1', 'order-1', 101, 'AVAILABLE', ?),
+		('available-2', 'order-1', 101, 'AVAILABLE', ?),
+		('expired-available', 'order-1', 101, 'AVAILABLE', ?),
+		('bound-expired', 'order-1', 101, 'BOUND', ?)`,
+		now.Add(time.Hour), now.Add(time.Hour), now.Add(-time.Hour), now.Add(-time.Hour)).Error)
+
+	updatedLines := append([]models.SalesOrderLine(nil), order.Lines...)
+	updatedLines[0].Qty = 2
+	err := database.Transaction(func(tx *gorm.DB) error {
+		return validateSalesOrderLineQuantityAgainstIssuedProductCodeInventoryTx(tx, order.ID, order.Lines, updatedLines)
+	})
+	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByIssuedProductCodeInventory)
+	require.Contains(t, err.Error(), "有效已签发编码数量 3")
+
+	updatedLines[0].Qty = 3
+	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
+		return validateSalesOrderLineQuantityAgainstIssuedProductCodeInventoryTx(tx, order.ID, order.Lines, updatedLines)
+	}))
+
+	removedLines := []models.SalesOrderLine{order.Lines[1]}
+	err = database.Transaction(func(tx *gorm.DB) error {
+		return validateSalesOrderLineQuantityAgainstIssuedProductCodeInventoryTx(tx, order.ID, order.Lines, removedLines)
+	})
+	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByIssuedProductCodeInventory)
+	require.Contains(t, err.Error(), "不能删除该订单行")
+	err = database.Transaction(func(tx *gorm.DB) error {
+		return rejectSalesOrderDeletionWithIssuedProductCodeInventoryTx(tx, order.ID)
+	})
+	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByIssuedProductCodeInventory)
+	require.Contains(t, err.Error(), "不能删除订单")
 }
 
 func TestSalesOrderStableLineIdentityReorderPreservesContentAndPersistsZeroValues(t *testing.T) {

@@ -30,13 +30,13 @@ export function SettlementsTab() {
         <TabsList className='h-12 gap-1 rounded-2xl border border-dashed border-primary/20 bg-muted/50 p-1.5'>
           <TabsTrigger
             value='receivables'
-            className='h-9 rounded-xl px-6 text-[10px] font-black tracking-widest uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg'
+            className='h-9 rounded-xl px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg'
           >
             {t('finance.settlements.tabs.receivables')}
           </TabsTrigger>
           <TabsTrigger
             value='payables'
-            className='h-9 rounded-xl px-6 text-[10px] font-black tracking-widest uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg'
+            className='h-9 rounded-xl px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg'
           >
             {t('finance.settlements.tabs.payables')}
           </TabsTrigger>

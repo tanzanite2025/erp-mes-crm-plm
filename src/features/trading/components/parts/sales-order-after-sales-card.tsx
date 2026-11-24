@@ -157,7 +157,7 @@ export function SalesOrderAfterSalesCard({
           <Button
             type='button'
             variant='secondary'
-            className='h-8 rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='h-8 rounded-full'
             disabled={readonly}
             onClick={() => onOpenReturns(order)}
           >
@@ -168,7 +168,7 @@ export function SalesOrderAfterSalesCard({
           <Button
             type='button'
             variant='secondary'
-            className='h-8 rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='h-8 rounded-full'
             disabled={readonly}
             onClick={() => onOpenExchanges(order)}
           >

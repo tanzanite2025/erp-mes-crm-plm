@@ -210,34 +210,75 @@ func ensureBusinessEventSourceCodeUniqueIndex() {
 	}
 }
 
-// ensureInspectionTaskOutsourceSourceUniqueIndex limits the one-task-per-barcode
-// rule to outsource tasks, leaving legacy quality tasks with blank source fields
-// unconstrained.
-func ensureInspectionTaskOutsourceSourceUniqueIndex() {
-	if DB == nil || DB.Dialector.Name() != "postgres" || !DB.Migrator().HasTable(&models.InspectionTask{}) {
+// ensureOutsourceExecutionRoundUniqueIndexes scopes outsource identities to
+// their physical cycle and inspection round.
+func ensureOutsourceExecutionRoundUniqueIndexes() {
+	if DB == nil || DB.Dialector.Name() != "postgres" ||
+		!DB.Migrator().HasTable(&models.InspectionTask{}) ||
+		!DB.Migrator().HasTable(&models.OutsourceTransfer{}) ||
+		!DB.Migrator().HasTable(&models.OutsourceInspection{}) {
 		return
 	}
 
 	if err := DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026072901)").Error; err != nil {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026112301)").Error; err != nil {
 			return err
 		}
-		if err := tx.Exec("DROP INDEX IF EXISTS idx_inspection_task_source_barcode").Error; err != nil {
+		if err := tx.Exec("UPDATE production_outsource_transfers SET cycle_no = 1 WHERE cycle_no IS NULL OR cycle_no < 1").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("UPDATE production_outsource_inspections SET cycle_no = 1 WHERE cycle_no IS NULL OR cycle_no < 1").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("UPDATE production_outsource_inspections SET inspection_round_no = 1 WHERE inspection_round_no IS NULL OR inspection_round_no < 1").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("UPDATE inspection_tasks SET source_cycle_no = 1 WHERE source_cycle_no IS NULL OR source_cycle_no < 1").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("UPDATE inspection_tasks SET inspection_round_no = 1 WHERE inspection_round_no IS NULL OR inspection_round_no < 1").Error; err != nil {
+			return err
+		}
+		for _, indexName := range []string{
+			"idx_inspection_task_source_barcode",
+			"idx_inspection_task_outsource_source_barcode",
+			"idx_inspection_task_outsource_round_identity",
+			"idx_outsource_transfer_line_type_barcode",
+			"idx_outsource_inspection_line_barcode",
+			"idx_outsource_transfer_cycle_identity",
+			"idx_outsource_inspection_round_identity",
+		} {
+			if err := tx.Exec("DROP INDEX IF EXISTS " + indexName).Error; err != nil {
+				return err
+			}
+		}
+		if err := tx.Exec(`
+			CREATE UNIQUE INDEX idx_outsource_transfer_cycle_identity
+			ON production_outsource_transfers (outsource_order_line_id, transfer_type, product_barcode, cycle_no)
+		`).Error; err != nil {
 			return err
 		}
 		if err := tx.Exec(`
-			CREATE UNIQUE INDEX IF NOT EXISTS idx_inspection_task_outsource_source_barcode
-			ON inspection_tasks (source_line_id, product_barcode)
+			CREATE UNIQUE INDEX idx_outsource_inspection_round_identity
+			ON production_outsource_inspections (outsource_order_line_id, product_barcode, cycle_no, inspection_round_no)
+		`).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(`
+			CREATE UNIQUE INDEX idx_inspection_task_outsource_round_identity
+			ON inspection_tasks (source_line_id, product_barcode, source_cycle_no, inspection_round_no)
 			WHERE source_type = 'PRODUCTION_OUTSOURCE'
 			  AND btrim(COALESCE(source_line_id, '')) <> ''
 			  AND btrim(COALESCE(product_barcode, '')) <> ''
+			  AND source_cycle_no > 0
+			  AND inspection_round_no > 0
 			  AND deleted_at IS NULL
 		`).Error; err != nil {
 			return err
 		}
 		return nil
 	}); err != nil {
-		log.Fatal("Failed to enforce outsource inspection task uniqueness:", err)
+		log.Fatal("Failed to enforce outsource execution round uniqueness:", err)
 	}
 }
 
@@ -1479,6 +1520,7 @@ func cleanupDeletedProductionTopologySchema() {
 	statements := []string{
 		`DROP TABLE IF EXISTS job_category_process_mappings CASCADE`,
 		`DROP TABLE IF EXISTS job_categories CASCADE`,
+		`DROP TABLE IF EXISTS line_segment_process_mappings CASCADE`,
 		`DROP TABLE IF EXISTS process_step_allowed_positions CASCADE`,
 		`ALTER TABLE IF EXISTS production_route_steps DROP COLUMN IF EXISTS job_category_id`,
 		`ALTER TABLE IF EXISTS line_segments DROP COLUMN IF EXISTS hierarchy_option_id`,
@@ -1509,6 +1551,12 @@ func InitDB(dsn string) {
 	fmt.Println("Migrating database schemas...")
 	failOnDuplicatePackagingRules()
 	migrateAccountPermissionPresetSchemaNames()
+	if err := PrepareProductionBOMBranchOperationExecutionIdentityMigration(DB); err != nil {
+		log.Fatal("Failed to cut over production execution to branch operation identity:", err)
+	}
+	if err := PrepareProductionLineSegmentProductBindingSchemaMigration(DB); err != nil {
+		log.Fatal("Failed to prepare production line segment product bindings:", err)
+	}
 
 	err = DB.AutoMigrate(
 		&models.User{},
@@ -1560,8 +1608,13 @@ func InitDB(dsn string) {
 		&models.NumberingRule{},
 		&models.Position{},
 		&models.ProcessStep{},
+		&models.ProductionBOMBranchOperation{},
+		&models.ProductionBOMBranchOperationProcessLibrarySelection{},
+		&models.ProductionWorkLocation{},
 		&models.ProductionLine{},
+		&models.ProductionTopologyTemplate{},
 		&models.LineSegment{},
+		&models.ProductionRouteFamily{},
 		&models.ProductionRoute{},
 		&models.ProductionRouteStep{},
 		&models.OutsourcePartner{},
@@ -1652,6 +1705,9 @@ func InitDB(dsn string) {
 
 		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍ㄧ矌閻棗顭块懜闈涘闁?闂傚倷娴囧畷鍨叏閻㈢绀夐柟杈剧畱缁€澶愭煙鏉堝墽鐣遍梻鍌ゅ灦閺屟嗙疀閹剧纭€婵炴垶鎸哥粔褰掑蓟閵娿儮妲堟俊顖欒娴犻箖姊?(Quality Management)
 		&models.InspectionStandard{},
+		&models.QualityInspectionStage{},
+		&models.QualityDefectType{},
+		&models.QualityInspectionStageDefectTypeBinding{},
 		&models.WorkflowNotificationOutboxEntry{},
 		&models.SystemNotificationInboxEntry{},
 		&models.SystemAlertNotificationOccurrence{},
@@ -1701,6 +1757,9 @@ func InitDB(dsn string) {
 	if err := EnsureProductionExecutionRequestReplayIntegrity(DB); err != nil {
 		log.Fatal("Failed to enforce production execution replay integrity:", err)
 	}
+	if err := EnsureProductionRouteFamilyRevisionIntegrity(DB); err != nil {
+		log.Fatal("Failed to establish production route revision families:", err)
+	}
 	if err := EnsureIndependentPieceworkPayrollStorageContract(DB); err != nil {
 		log.Fatal("Failed to enforce independent payroll storage contract:", err)
 	}
@@ -1738,7 +1797,7 @@ func InitDB(dsn string) {
 	cleanupDuplicateProductAttributeOptions()
 	ensureProductAttributeOptionValueUniqueIndex()
 	ensureBusinessEventSourceCodeUniqueIndex()
-	ensureInspectionTaskOutsourceSourceUniqueIndex()
+	ensureOutsourceExecutionRoundUniqueIndexes()
 	ensureVehicleModelTemplateParseTaskActiveUniqueIndex()
 	fmt.Println("Database migration completed.")
 	sqlDB, err := DB.DB()
@@ -1793,6 +1852,9 @@ func InitDB(dsn string) {
 	ensureDefaultUnits()
 	ensureDefaultWarehouseCategories()
 	ensureDefaultBOMSections()
+	if err := EnsureDefaultQualityInspectionStages(DB); err != nil {
+		log.Fatal("Failed to initialize quality inspection stages: ", err)
+	}
 
 	// 6. 闂傚倸鍊风粈渚€骞夐敍鍕殰婵°倕鍟畷鏌ユ煕瀹€鈧崕鎴犵礊閺嶎厽鐓欓梺顓ㄧ畱閺嬫盯鎮楅崹顐ゅ弨闁哄被鍊栭幈銊╁箛椤戣棄浜炬俊銈呮噹閺勩儵鏌ｅΟ鑲╁笡闁绘挻娲樼换娑㈠幢濡ゅ啰顔囬梺閫炲苯澧紓宥咃工椤?Seed
 	var configCount int64

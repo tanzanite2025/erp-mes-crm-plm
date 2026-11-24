@@ -1,16 +1,15 @@
-import { ClipboardCheck, Hash, Info, Layers } from 'lucide-react'
+import { ClipboardCheck, Hash, Layers } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
-import type { Standard } from '../data/schema'
+import type { QualityStandardListSummary } from '../adapters/quality-standard-api-adapter'
 import {
   getQualityStandardStatusLabel,
-  getQualityStandardTypeLabel,
   getStatusMeta,
 } from '../utils/quality-utils'
 import { StandardPreviewInfoCard } from './standard-preview-info-card'
 
 interface StandardPreviewHeroProps {
-  standard: Standard
+  standard: QualityStandardListSummary
 }
 
 export function StandardPreviewHero({ standard }: StandardPreviewHeroProps) {
@@ -52,7 +51,7 @@ export function StandardPreviewHero({ standard }: StandardPreviewHeroProps) {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4'>
+      <div className='grid grid-cols-1 gap-3 sm:grid-cols-3 lg:gap-4'>
         <StandardPreviewInfoCard
           icon={Hash}
           label={t('quality.standards.dialog.detail.fields.code')}
@@ -63,12 +62,6 @@ export function StandardPreviewHero({ standard }: StandardPreviewHeroProps) {
           label={t('quality.standards.dialog.detail.fields.name')}
           value={standard.name}
           className='sm:col-span-2'
-        />
-        <StandardPreviewInfoCard
-          icon={Info}
-          label={t('quality.standards.dialog.detail.fields.type')}
-          value={getQualityStandardTypeLabel(t, standard.type)}
-          highlight
         />
       </div>
     </div>

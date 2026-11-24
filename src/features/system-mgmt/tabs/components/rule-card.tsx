@@ -427,7 +427,7 @@ export function RuleCard({
                     )
                   }
                   className={cn(
-                    'rounded-full border px-3 py-1 text-[10px] font-black transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                    'rounded-full border px-3 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                     statusFilter === 'incomplete'
                       ? 'border-amber-400 bg-amber-100 text-amber-800 shadow-sm'
                       : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
@@ -466,7 +466,7 @@ export function RuleCard({
                 onChange={(event) =>
                   void handleSourceChange(event.target.value)
                 }
-                className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-black'
+                className='h-10 rounded-2xl border border-input bg-background px-3'
               >
                 {eventSources.map((source) => (
                   <option key={source.code} value={source.code}>
@@ -479,7 +479,7 @@ export function RuleCard({
                 onChange={(event) =>
                   void handleActionChange(event.target.value)
                 }
-                className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-black'
+                className='h-10 rounded-2xl border border-input bg-background px-3'
               >
                 {currentSource.config.actions.map((action) => (
                   <option key={action.code} value={action.code}>
@@ -490,7 +490,7 @@ export function RuleCard({
               <Button
                 variant='outline'
                 size='sm'
-                className='h-10 rounded-2xl text-xs font-black'
+                className='h-10 rounded-2xl'
                 onClick={() => setShowAdvanced((value) => !value)}
               >
                 {showAdvanced ? (
@@ -505,7 +505,7 @@ export function RuleCard({
           <Button
             variant='outline'
             size='sm'
-            className='h-10 rounded-2xl text-xs font-black'
+            className='h-10 rounded-2xl'
             onClick={() => setIsExpanded((value) => !value)}
           >
             {expanded ? (
@@ -536,7 +536,7 @@ export function RuleCard({
                 </span>
                 <button
                   type='button'
-                  className='rounded-full border border-amber-300 bg-background px-3 py-1 text-[11px] font-black text-amber-800 hover:bg-amber-100'
+                  className='rounded-full border border-amber-300 bg-background px-3 py-1 text-amber-800 hover:bg-amber-100'
                   onClick={() => setStatusFilter('all')}
                 >
                   显示全部

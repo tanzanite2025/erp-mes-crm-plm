@@ -163,7 +163,7 @@ export function EnterpriseMgmt() {
               placeholder={t(
                 'basicSettings.enterprisePage.form.namePlaceholder'
               )}
-              className='h-12 rounded-2xl border-none bg-background px-4 text-sm font-bold shadow-inner transition-all outline-none focus:ring-2 focus:ring-primary/20'
+              className='h-12 rounded-2xl border-none bg-background px-4 shadow-inner transition-all outline-none focus:ring-2 focus:ring-primary/20'
             />
           </div>
           <div className='space-y-3'>
@@ -180,7 +180,7 @@ export function EnterpriseMgmt() {
               placeholder={t(
                 'basicSettings.enterprisePage.form.planPlaceholder'
               )}
-              className='h-12 rounded-2xl border-none bg-background px-4 text-sm font-bold shadow-inner transition-all outline-none focus:ring-2 focus:ring-primary/20'
+              className='h-12 rounded-2xl border-none bg-background px-4 shadow-inner transition-all outline-none focus:ring-2 focus:ring-primary/20'
             />
           </div>
           <div className='space-y-3'>
@@ -212,7 +212,7 @@ export function EnterpriseMgmt() {
                   type='button'
                   variant='outline'
                   disabled={uploadingLogo || saving}
-                  className='h-10 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-10 rounded-full border-dashed px-4'
                   asChild
                 >
                   <Label htmlFor='enterprise-logo-upload'>
@@ -244,7 +244,7 @@ export function EnterpriseMgmt() {
                     uploadingLogo ||
                     logoUrl === DEFAULT_ENTERPRISE_LOGO_URL
                   }
-                  className='h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-10 rounded-full px-4'
                   onClick={() => {
                     void handleResetLogo()
                   }}
@@ -261,7 +261,7 @@ export function EnterpriseMgmt() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className='h-11 rounded-full px-10 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all active:scale-95'
+            className='h-11 rounded-full px-10 shadow-xl shadow-primary/20 transition-all active:scale-95'
           >
             {saving ? (
               <Loader2 className='mr-2 size-3.5 animate-spin' />

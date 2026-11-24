@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Activity,
   CheckCircle2,
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { QualityAbnormalityDisposalConfirmationDialog } from '@/features/quality/components/quality-abnormality-disposal-confirmation-dialog'
 import {
   useGetAbnormalities,
   type QualityAbnormality,
@@ -93,7 +95,14 @@ function getDisposalLabel(
 
 export function QualityAbnormalities() {
   const { t } = useLanguage()
-  const { data: abnormalities, error, isLoading } = useGetAbnormalities()
+  const {
+    data: abnormalities,
+    error,
+    isLoading,
+    refetch,
+  } = useGetAbnormalities()
+  const [selectedAbnormality, setSelectedAbnormality] =
+    useState<QualityAbnormality | null>(null)
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -168,7 +177,7 @@ export function QualityAbnormalities() {
           abnormalities?.map((ab: QualityAbnormality) => (
             <Card
               key={ab.id}
-              className='group relative cursor-pointer overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background transition-all hover:bg-muted/5 active:scale-[0.99]'
+              className='group relative overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background transition-all hover:bg-muted/5'
             >
               <div
                 className={cn(
@@ -244,6 +253,8 @@ export function QualityAbnormalities() {
                     <Button
                       variant='ghost'
                       size='icon'
+                      aria-label={`${t('quality.disposal.title')}: ${ab.description}`}
+                      onClick={() => setSelectedAbnormality(ab)}
                       className='size-9 shrink-0 rounded-full border border-dashed border-transparent transition-all hover:border-primary/20 hover:bg-primary/10 hover:text-primary active:scale-95'
                     >
                       <ArrowRight className='size-4' />
@@ -255,6 +266,21 @@ export function QualityAbnormalities() {
           ))
         )}
       </div>
+      {error ? (
+        <div role='alert' className='space-y-2 text-sm text-destructive'>
+          <p>{t('quality.disposal.loadFailed')}</p>
+          <Button variant='outline' onClick={() => void refetch()}>
+            {t('common.actions.retry')}
+          </Button>
+        </div>
+      ) : null}
+      {selectedAbnormality ? (
+        <QualityAbnormalityDisposalConfirmationDialog
+          key={selectedAbnormality.id}
+          abnormality={selectedAbnormality}
+          onClose={() => setSelectedAbnormality(null)}
+        />
+      ) : null}
     </div>
   )
 }

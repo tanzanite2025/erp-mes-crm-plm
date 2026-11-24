@@ -1,14 +1,15 @@
-import { Layers, User, Clock, MoreHorizontal } from 'lucide-react'
+import { Layers, User, Clock, SquarePen } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
-import type { Standard } from '../data/schema'
+import type { QualityStandardListSummary } from '../adapters/quality-standard-api-adapter'
 import type { QualityStandardListItemPresenter } from '../presenters/quality-standard-list-presenter'
 
 interface QualityStandardsMobileViewProps {
   standards: QualityStandardListItemPresenter[]
-  onViewDetail: (standard: Standard) => void
-  onEdit: (standard: Standard) => void
+  onViewDetail: (standard: QualityStandardListSummary) => void
+  onEdit: (standard: QualityStandardListSummary) => void
 }
 
 export function QualityStandardsMobileView({
@@ -16,6 +17,7 @@ export function QualityStandardsMobileView({
   onViewDetail,
   onEdit,
 }: QualityStandardsMobileViewProps) {
+  const { t } = useLanguage()
   return (
     <div className='grid grid-cols-1 gap-4'>
       {standards.map((standard) => (
@@ -44,9 +46,6 @@ export function QualityStandardsMobileView({
                 <div className='inline-flex h-5 items-center justify-center rounded-lg border border-primary/10 bg-primary/5 px-1.5 font-maple-ui text-[8px] font-black tracking-tighter text-primary uppercase'>
                   {standard.versionText}
                 </div>
-                <span className='rounded-md bg-muted/20 px-2 py-0.5 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                  {standard.typeLabel}
-                </span>
               </div>
             </div>
 
@@ -130,13 +129,15 @@ export function QualityStandardsMobileView({
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='size-9 rounded-xl hover:bg-primary/10 hover:text-primary active:scale-95'
+                  aria-label={`${t('quality.standards.workspace.openEditor')} ${standard.name}`}
+                  title={t('quality.standards.workspace.openEditor')}
+                  className='rounded-full'
                   onClick={(event) => {
                     event.stopPropagation()
                     onEdit(standard.source)
                   }}
                 >
-                  <MoreHorizontal className='size-4' />
+                  <SquarePen className='size-4' />
                 </Button>
               ) : null}
             </div>

@@ -86,7 +86,7 @@ const amountFormatter = new Intl.NumberFormat('zh-CN', {
 
 const fieldLabelClassName =
   'text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground/60'
-const controlClassName = 'h-10 rounded-xl text-xs'
+const controlClassName = 'h-10 rounded-xl '
 
 export function LedgerSearchDialog({
   open,
@@ -410,14 +410,14 @@ export function LedgerSearchDialog({
           <Button
             type='button'
             variant='outline'
-            className='h-10 rounded-full border-dashed px-5 text-[10px] font-black tracking-[0.14em]'
+            className='h-10 rounded-full border-dashed px-5'
             onClick={() => onOpenChange(false)}
           >
             取消
           </Button>
           <Button
             type='button'
-            className='h-10 rounded-full px-5 text-[10px] font-black tracking-[0.14em]'
+            className='h-10 rounded-full px-5'
             onClick={() => onConfirm(pendingLedgerId)}
             disabled={!canConfirm}
           >

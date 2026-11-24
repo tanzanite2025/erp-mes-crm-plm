@@ -52,7 +52,7 @@ export function BOMEditorProductInformationAndRecipeLayout({
                 aria-controls={`${panelId}-${step.value}`}
                 onClick={() => setActiveMobileStep(step.value)}
                 className={cn(
-                  'flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  'flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                   activeMobileStep === step.value
                     ? 'bg-background text-blue-600 shadow-sm dark:text-blue-400'
                     : 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
@@ -60,7 +60,7 @@ export function BOMEditorProductInformationAndRecipeLayout({
               >
                 <span
                   className={cn(
-                    'flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
+                    'flex size-6 shrink-0 items-center justify-center rounded-full',
                     activeMobileStep === step.value
                       ? 'bg-blue-600 text-white'
                       : 'bg-muted text-muted-foreground'

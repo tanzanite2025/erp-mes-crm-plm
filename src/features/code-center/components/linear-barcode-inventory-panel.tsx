@@ -1,12 +1,20 @@
+import { useState } from 'react'
 import type { TranslationKey } from '@/locales'
-import { Database, Loader2, RefreshCw } from 'lucide-react'
+import { Database, Loader2, Printer, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
+import { type IssuedProductCodeRecord } from '@/lib/product-code/issued-product-code-inventory-contracts'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { type LinearBarcodeInventoryItem } from '@/features/print-mgmt/services/print-record-service'
+import { ProductCodeLinearBarcodeAndQrCodePreview } from '@/components/product-code-linear-barcode-and-qr-code-preview'
+import {
+  canReprintIssuedProductCodeLabel,
+  reprintIssuedProductCodeLinearBarcodeAndQrCodeLabels,
+} from '../services/reprint-issued-product-code-linear-barcode-and-qr-code-labels'
+import { resolveLinearBarcodePrintErrorMessage } from '../utils/linear-barcode-print-feedback'
 
 interface LinearBarcodeInventoryPanelProps {
-  items: LinearBarcodeInventoryItem[]
+  items: IssuedProductCodeRecord[]
   total: number
   isLoading: boolean
   isRefreshing: boolean
@@ -19,7 +27,7 @@ function formatInventoryTime(value: string) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
-function getStatusClassName(status: LinearBarcodeInventoryItem['status']) {
+function getStatusClassName(status: IssuedProductCodeRecord['status']) {
   if (status === 'AVAILABLE') return 'bg-emerald-500/10 text-emerald-700'
   if (status === 'BOUND') return 'bg-sky-500/10 text-sky-700'
   if (status === 'EXPIRED') return 'bg-amber-500/10 text-amber-700'
@@ -27,7 +35,7 @@ function getStatusClassName(status: LinearBarcodeInventoryItem['status']) {
 }
 
 function getStatusTranslationKey(
-  status: LinearBarcodeInventoryItem['status']
+  status: IssuedProductCodeRecord['status']
 ): TranslationKey {
   switch (status) {
     case 'AVAILABLE':
@@ -50,9 +58,24 @@ export function LinearBarcodeInventoryPanel({
   onRefresh,
 }: LinearBarcodeInventoryPanelProps) {
   const { t } = useLanguage()
+  const [reprintingItemId, setReprintingItemId] = useState<string>()
   const availableCount = items.filter(
     (item) => item.status === 'AVAILABLE'
   ).length
+
+  const handleReprintIssuedProductCodeLabel = async (
+    item: IssuedProductCodeRecord
+  ) => {
+    if (reprintingItemId) return
+    setReprintingItemId(item.id)
+    try {
+      await reprintIssuedProductCodeLinearBarcodeAndQrCodeLabels([item])
+    } catch (error) {
+      toast.error(resolveLinearBarcodePrintErrorMessage(error, t))
+    } finally {
+      setReprintingItemId(undefined)
+    }
+  }
 
   return (
     <section className='rounded-xl border border-dashed border-muted/50 bg-muted/5 p-5'>
@@ -111,9 +134,12 @@ export function LinearBarcodeInventoryPanel({
           </div>
         ) : (
           <div className='max-h-[420px] overflow-auto'>
-            <table className='w-full min-w-[860px] border-collapse text-left text-[11px]'>
+            <table className='w-full min-w-[1200px] border-collapse text-left text-[11px]'>
               <thead className='sticky top-0 z-10 bg-muted/90 backdrop-blur'>
                 <tr>
+                  <th className='px-3 py-2 font-black'>
+                    {t('codeCenter.linearBarcode.symbols.pairedSymbols')}
+                  </th>
                   <th className='px-3 py-2 font-black'>
                     {t(
                       'codeCenter.linearBarcode.print.sections.inventory.fields.code'
@@ -144,12 +170,23 @@ export function LinearBarcodeInventoryPanel({
                       'codeCenter.linearBarcode.print.sections.inventory.fields.createdAt'
                     )}
                   </th>
+                  <th className='px-3 py-2 font-black'>
+                    {t(
+                      'codeCenter.linearBarcode.print.sections.inventory.actions.reprint'
+                    )}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} className='border-t'>
-                    <td className='px-3 py-2 font-maple-ui font-bold text-foreground'>
+                    <td className='px-3 py-2'>
+                      <ProductCodeLinearBarcodeAndQrCodePreview
+                        code={item.code}
+                        compact
+                      />
+                    </td>
+                    <td className='px-3 py-2 font-maple-ui font-bold whitespace-nowrap text-foreground'>
                       {item.code}
                     </td>
                     <td className='px-3 py-2 font-maple-ui'>{item.batchNo}</td>
@@ -166,6 +203,33 @@ export function LinearBarcodeInventoryPanel({
                     </td>
                     <td className='px-3 py-2'>
                       {formatInventoryTime(item.createdAt)}
+                    </td>
+                    <td className='px-3 py-2'>
+                      <Button
+                        type='button'
+                        size='sm'
+                        variant='outline'
+                        disabled={
+                          Boolean(reprintingItemId) ||
+                          !canReprintIssuedProductCodeLabel(item)
+                        }
+                        aria-label={t(
+                          'codeCenter.linearBarcode.print.sections.inventory.actions.reprintCode',
+                          { code: item.code }
+                        )}
+                        onClick={() =>
+                          void handleReprintIssuedProductCodeLabel(item)
+                        }
+                      >
+                        {reprintingItemId === item.id ? (
+                          <Loader2 className='mr-1 size-3.5 animate-spin' />
+                        ) : (
+                          <Printer className='mr-1 size-3.5' />
+                        )}
+                        {t(
+                          'codeCenter.linearBarcode.print.sections.inventory.actions.reprint'
+                        )}
+                      </Button>
                     </td>
                   </tr>
                 ))}

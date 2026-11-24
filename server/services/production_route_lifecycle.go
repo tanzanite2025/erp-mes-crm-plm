@@ -1,8 +1,6 @@
 package services
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,104 +12,26 @@ import (
 const (
 	productionRouteStatusDraft     = "DRAFT"
 	productionRouteStatusPublished = "PUBLISHED"
-	productionRouteStatusArchived  = "ARCHIVED"
 )
 
 func validateProductionRouteStatusTransition(currentStatus string, requestedStatus string, isCreate bool) error {
 	currentStatus = strings.ToUpper(strings.TrimSpace(currentStatus))
 	requestedStatus = strings.ToUpper(strings.TrimSpace(requestedStatus))
-
-	if isCreate {
-		if requestedStatus != productionRouteStatusDraft && requestedStatus != productionRouteStatusPublished {
-			return fmt.Errorf("%w: new routes must start as DRAFT or PUBLISHED", ErrInvalidProductionRouteStatus)
-		}
-		return nil
+	if requestedStatus != productionRouteStatusDraft {
+		return fmt.Errorf("%w: production routes can only be saved as DRAFT", ErrInvalidProductionRouteStatus)
 	}
-
-	switch currentStatus {
-	case productionRouteStatusDraft:
-		if requestedStatus != productionRouteStatusDraft && requestedStatus != productionRouteStatusPublished {
-			return fmt.Errorf("%w: DRAFT routes can only remain DRAFT or become PUBLISHED", ErrInvalidProductionRouteStatus)
-		}
-	case productionRouteStatusPublished:
-		if requestedStatus != productionRouteStatusArchived {
-			return fmt.Errorf("%w: PUBLISHED routes can only become ARCHIVED", ErrProductionRouteImmutable)
-		}
-	case productionRouteStatusArchived:
-		return fmt.Errorf("%w: ARCHIVED routes are read-only", ErrProductionRouteImmutable)
-	default:
-		return fmt.Errorf("%w: unsupported current route status %q", ErrInvalidProductionRouteStatus, currentStatus)
+	if !isCreate && currentStatus != productionRouteStatusDraft {
+		return fmt.Errorf("%w: only DRAFT production routes can be edited", ErrProductionRouteImmutable)
 	}
-
 	return nil
 }
 
-func validatePublishedRouteArchival(existing models.ProductionRoute, requested models.ProductionRoute) error {
-	if !sameProductionRouteHeader(existing, requested) {
-		return fmt.Errorf("%w: archiving a published route cannot change route fields", ErrProductionRouteImmutable)
+func productionRouteIsPublishedTx(tx *gorm.DB, routeID string) (bool, error) {
+	var route models.ProductionRoute
+	if err := tx.Select("status").First(&route, "id = ?", strings.TrimSpace(routeID)).Error; err != nil {
+		return false, err
 	}
-
-	if len(existing.Steps) != len(requested.Steps) {
-		return fmt.Errorf("%w: archiving a published route cannot add or remove route steps", ErrProductionRouteImmutable)
-	}
-
-	existingSteps := make(map[string]models.ProductionRouteStep, len(existing.Steps))
-	for _, step := range existing.Steps {
-		existingSteps[strings.TrimSpace(step.ID)] = step
-	}
-
-	for _, requestedStep := range requested.Steps {
-		stepID := strings.TrimSpace(requestedStep.ID)
-		if stepID == "" || strings.HasPrefix(stepID, "temp-") {
-			return fmt.Errorf("%w: published route steps must retain their existing IDs", ErrProductionRouteImmutable)
-		}
-
-		existingStep, ok := existingSteps[stepID]
-		if !ok || !sameProductionRouteStepDefinition(existingStep, requestedStep) {
-			return fmt.Errorf("%w: published route steps are immutable", ErrProductionRouteImmutable)
-		}
-	}
-
-	return nil
-}
-
-func sameProductionRouteHeader(left models.ProductionRoute, right models.ProductionRoute) bool {
-	return strings.TrimSpace(left.Code) == strings.TrimSpace(right.Code) &&
-		strings.TrimSpace(left.Name) == strings.TrimSpace(right.Name) &&
-		strings.TrimSpace(left.ProductID) == strings.TrimSpace(right.ProductID) &&
-		strings.TrimSpace(left.ProductName) == strings.TrimSpace(right.ProductName) &&
-		strings.TrimSpace(left.ProductTemplateID) == strings.TrimSpace(right.ProductTemplateID) &&
-		strings.TrimSpace(left.Description) == strings.TrimSpace(right.Description)
-}
-
-func sameProductionRouteStepDefinition(left models.ProductionRouteStep, right models.ProductionRouteStep) bool {
-	return strings.TrimSpace(left.ID) == strings.TrimSpace(right.ID) &&
-		left.Sequence == right.Sequence &&
-		strings.TrimSpace(left.SegmentID) == strings.TrimSpace(right.SegmentID) &&
-		strings.TrimSpace(left.ProcessStepID) == strings.TrimSpace(right.ProcessStepID) &&
-		strings.ToUpper(strings.TrimSpace(left.ExecutionMode)) == strings.ToUpper(strings.TrimSpace(right.ExecutionMode)) &&
-		strings.ToUpper(strings.TrimSpace(left.QualityGate)) == strings.ToUpper(strings.TrimSpace(right.QualityGate)) &&
-		canonicalProductionRouteJSON([]byte(left.QualityRouting)) == canonicalProductionRouteJSON([]byte(right.QualityRouting)) &&
-		left.EstimatedMinutes == right.EstimatedMinutes &&
-		left.TransferRequired == right.TransferRequired &&
-		strings.TrimSpace(left.Description) == strings.TrimSpace(right.Description)
-}
-
-func canonicalProductionRouteJSON(value json.RawMessage) string {
-	trimmed := bytes.TrimSpace(value)
-	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
-		return ""
-	}
-
-	var decoded interface{}
-	if err := json.Unmarshal(trimmed, &decoded); err != nil {
-		return string(trimmed)
-	}
-	canonical, err := json.Marshal(decoded)
-	if err != nil {
-		return string(trimmed)
-	}
-	return string(canonical)
+	return strings.EqualFold(strings.TrimSpace(route.Status), productionRouteStatusPublished), nil
 }
 
 func validateProductionRouteStepIdentities(

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func TestCreateProductBarcodeBindingClaimsIssuedInventoryAtomically(t *testing.T
 
 	schemaStatements := []string{
 		`CREATE TABLE print_batches (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, batch_no text UNIQUE, template_name text, product_id text, bom_id text, start_sn text, end_sn text, full_code text, sales_order_id text, sales_order_line_no integer, quantity integer, activated_count integer, status text, expires_at datetime, version integer)`,
-		`CREATE TABLE linear_barcode_inventory_items (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, batch_id text, product_id text, sales_order_id text, sales_order_line_no integer, code text UNIQUE, serial_number text, status text, expires_at datetime, bound_at datetime, version integer)`,
+		`CREATE TABLE linear_barcode_inventory_items (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, batch_id text, product_id text, sales_order_id text, sales_order_line_id integer NOT NULL DEFAULT 0, sales_order_line_no integer, code text UNIQUE, serial_number text, status text, expires_at datetime, bound_at datetime, version integer)`,
 		`CREATE TABLE prepreg_roll_instances (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, binding_token text UNIQUE, spec_id text, spec_code text, spec_name text, resin_content_percent text, supplier_batch_no text, width_mm text, length_m text, nominal_area_m2 text, inspector text, box_no text, production_date text, ocr_raw_payload text, activated_at datetime, activated_by text, status text)`,
 		`CREATE TABLE prepreg_binding_tokens (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, token text UNIQUE, bound_spec_id text, bound_roll_instance_id text, bound_at datetime, expires_at datetime)`,
 		`CREATE TABLE product_barcode_bindings (id text PRIMARY KEY, created_at datetime, updated_at datetime, deleted_at datetime, product_barcode text UNIQUE, prepreg_roll_instance_id text, prepreg_binding_token text, prepreg_qr_code text, barcode_protocol text, barcode_summary text, bound_at datetime, bound_by text, source text, status text)`,
@@ -124,6 +125,19 @@ func TestCreateProductBarcodeBindingClaimsIssuedInventoryAtomically(t *testing.T
 	if eventCount != 1 {
 		t.Fatalf("expected 1 binding event, got %d", eventCount)
 	}
+	var bindingEvent models.ProductBarcodeBindingEvent
+	if err := testDB.Where("binding_id = ?", response.ID).First(&bindingEvent).Error; err != nil {
+		t.Fatalf("load product barcode binding event: %v", err)
+	}
+	var eventSnapshot map[string]string
+	if err := json.Unmarshal([]byte(bindingEvent.PayloadSnapshot), &eventSnapshot); err != nil {
+		t.Fatalf("decode product barcode binding event snapshot: %v", err)
+	}
+	if bindingEvent.ProductBarcode != code || bindingEvent.PrepregRollInstanceID != rollID ||
+		eventSnapshot["prepregBindingToken"] != token || eventSnapshot["prepregRollInstanceId"] != rollID ||
+		eventSnapshot["barcodeProtocol"] == "" || eventSnapshot["barcodeSummary"] == "" {
+		t.Fatalf("binding event lost its source snapshot: event=%+v snapshot=%+v", bindingEvent, eventSnapshot)
+	}
 
 	repeated, err := CreateProductBarcodeBinding(CreateProductBarcodeBindingRequest{
 		ProductBarcode: code,
@@ -141,6 +155,34 @@ func TestCreateProductBarcodeBindingClaimsIssuedInventoryAtomically(t *testing.T
 	if batch.ActivatedCount != 1 || batch.Version != 2 {
 		t.Fatalf("duplicate binding changed batch counters: %+v", batch)
 	}
+	const (
+		otherRollID = "8c3247b6-1cf1-475e-a469-846dfacd3e43"
+		otherToken  = "PREPREG-BIND-TOKEN-002"
+	)
+	if err := testDB.Exec(
+		"INSERT INTO prepreg_roll_instances (id, binding_token, spec_id, spec_code, spec_name, status) VALUES (?, ?, ?, ?, ?, ?)",
+		otherRollID, otherToken, "spec-2", "CF-300", "Carbon Fabric 300", "ACTIVE",
+	).Error; err != nil {
+		t.Fatalf("create other prepreg roll: %v", err)
+	}
+	if err := testDB.Exec(
+		"INSERT INTO prepreg_binding_tokens (id, token, bound_roll_instance_id, bound_at, expires_at) VALUES (?, ?, ?, ?, ?)",
+		"2a0d96d2-4a19-4db3-8aa4-6d19660419af", otherToken, otherRollID, time.Now(), expiresAt,
+	).Error; err != nil {
+		t.Fatalf("create other prepreg binding token: %v", err)
+	}
+	if _, err := CreateProductBarcodeBinding(CreateProductBarcodeBindingRequest{
+		ProductBarcode: code,
+		PrepregQrCode:  otherToken,
+	}, "tester"); !errors.Is(err, ErrProductBarcodeBindingProductConflict) {
+		t.Fatalf("expected conflicting roll binding, got %v", err)
+	}
+	if err := testDB.Model(&models.ProductBarcodeBindingEvent{}).Count(&eventCount).Error; err != nil {
+		t.Fatalf("recount binding events after conflict: %v", err)
+	}
+	if eventCount != 1 {
+		t.Fatalf("conflicting binding created an event, got %d", eventCount)
+	}
 
 	if _, err := CreateProductBarcodeBinding(CreateProductBarcodeBindingRequest{
 		ProductBarcode: expiredCode,
@@ -153,5 +195,57 @@ func TestCreateProductBarcodeBindingClaimsIssuedInventoryAtomically(t *testing.T
 	}
 	if unscannedInventory.Status != LinearBarcodeInventoryStatusExpired || unscannedInventory.Version != 2 {
 		t.Fatalf("scanned expired inventory was not refreshed: %+v", unscannedInventory)
+	}
+
+	const (
+		failedBatchID = "d93628f6-9438-41d3-bbe1-34f977f928a3"
+		failedCode    = "26719011R140025"
+	)
+	if err := testDB.Exec(
+		"INSERT INTO print_batches (id, batch_no, template_name, quantity, activated_count, status, version) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		failedBatchID, "P20260719-003", "SO-LINEAR-TEST-L3", 1, 0, "Printed", 1,
+	).Error; err != nil {
+		t.Fatalf("create failure-case print batch: %v", err)
+	}
+	if err := testDB.Exec(
+		"INSERT INTO linear_barcode_inventory_items (id, batch_id, product_id, sales_order_id, sales_order_line_no, code, serial_number, status, expires_at, version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"45ff7487-2f4c-43ad-8795-7e7b67c928b3", failedBatchID, rollID, "7cf1cb7f-1f13-45c5-b15a-39bc3c8572f6", 3, failedCode, "0025", LinearBarcodeInventoryStatusAvailable, expiresAt, 1,
+	).Error; err != nil {
+		t.Fatalf("create failure-case inventory: %v", err)
+	}
+	if err := testDB.Exec(`
+		CREATE TRIGGER reject_product_barcode_binding_event
+		BEFORE INSERT ON product_barcode_binding_events
+		WHEN NEW.product_barcode = '26719011R140025'
+		BEGIN SELECT RAISE(ABORT, 'forced binding event failure'); END;
+	`).Error; err != nil {
+		t.Fatalf("create failure-case event trigger: %v", err)
+	}
+	if _, err := CreateProductBarcodeBinding(CreateProductBarcodeBindingRequest{
+		ProductBarcode: failedCode,
+		PrepregQrCode:  token,
+	}, "tester"); err == nil {
+		t.Fatal("expected event persistence failure")
+	}
+	var failedInventory models.LinearBarcodeInventoryItem
+	if err := testDB.Where("code = ?", failedCode).First(&failedInventory).Error; err != nil {
+		t.Fatalf("load failed binding inventory: %v", err)
+	}
+	if failedInventory.Status != LinearBarcodeInventoryStatusAvailable || failedInventory.Version != 1 || failedInventory.BoundAt != nil {
+		t.Fatalf("failed binding left inventory claimed: %+v", failedInventory)
+	}
+	var failedBatch models.PrintBatch
+	if err := testDB.Where("id = ?", failedBatchID).First(&failedBatch).Error; err != nil {
+		t.Fatalf("load failed binding batch: %v", err)
+	}
+	if failedBatch.ActivatedCount != 0 || failedBatch.Status != "Printed" || failedBatch.Version != 1 {
+		t.Fatalf("failed binding changed batch counters: %+v", failedBatch)
+	}
+	var failedBindingCount int64
+	if err := testDB.Model(&models.ProductBarcodeBinding{}).Where("product_barcode = ?", failedCode).Count(&failedBindingCount).Error; err != nil {
+		t.Fatalf("count failed binding records: %v", err)
+	}
+	if failedBindingCount != 0 {
+		t.Fatalf("failed binding persisted a binding record, got %d", failedBindingCount)
 	}
 }

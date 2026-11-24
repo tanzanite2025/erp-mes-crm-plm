@@ -337,17 +337,13 @@ export function SalesOrderPackagingEntryView({
                         >
                           <SelectTrigger
                             disabled={readonly}
-                            className='h-11 rounded-2xl border-none bg-muted/50 text-[10px] font-black tracking-widest uppercase'
+                            className='h-11 rounded-2xl border-none bg-muted/50'
                           >
                             <SelectValue placeholder='选择包装定义' />
                           </SelectTrigger>
                           <SelectContent className='rounded-[24px] border border-dashed'>
                             {optionProfiles.map((profile) => (
-                              <SelectItem
-                                key={profile.id}
-                                value={profile.id}
-                                className='text-[10px] font-black tracking-widest uppercase'
-                              >
+                              <SelectItem key={profile.id} value={profile.id}>
                                 {profile.name}
                               </SelectItem>
                             ))}
@@ -366,7 +362,7 @@ export function SalesOrderPackagingEntryView({
                         <Button
                           type='button'
                           variant='default'
-                          className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                          className='h-8 rounded-full px-4'
                           disabled={
                             readonly || isSelectionPending || isFormSavePending
                           }
@@ -385,7 +381,7 @@ export function SalesOrderPackagingEntryView({
                         <Button
                           type='button'
                           variant='ghost'
-                          className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+                          className='h-8 rounded-full px-4'
                           disabled={readonly}
                           onClick={() => {
                             onEditRule(editableProfile)

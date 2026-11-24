@@ -104,7 +104,7 @@ export function LogisticsProviderFormDialog({
           <Button
             onClick={onSave}
             disabled={!isFormValid || savePending}
-            className='h-11 w-full rounded-full bg-blue-600 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40'
+            className='h-11 w-full rounded-full bg-blue-600 shadow-lg shadow-blue-500/20 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40'
           >
             {savePending ? (
               <Loader2 className='mr-2 size-4 animate-spin' />

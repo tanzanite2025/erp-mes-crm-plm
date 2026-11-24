@@ -221,7 +221,7 @@ function PurchaseLogisticsDetailSheet({
                 targetId={record.id}
                 targetName={record.trackingNo || record.orderNo}
                 label={t('common.audit.trigger')}
-                className='h-9 rounded-full px-4 text-[10px]'
+                className='h-9 rounded-full px-4'
               />
               <Button
                 type='button'
@@ -230,7 +230,7 @@ function PurchaseLogisticsDetailSheet({
                 disabled={
                   !record.trackingNo || refreshTrackingMutation.isPending
                 }
-                className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                className='h-9 rounded-full border-dashed px-4'
               >
                 {refreshTrackingMutation.isPending ? (
                   <Loader2 className='me-2 size-3.5 animate-spin' />
@@ -490,7 +490,7 @@ export function PurchaseLogisticsList() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('purchase.logistics.searchPlaceholder')}
-                className='h-9 w-64 rounded-full border-dashed border-slate-200 bg-white pr-4 pl-9 text-[11px] font-black tracking-tight'
+                className='h-9 w-64 rounded-full border-dashed border-slate-200 bg-white pr-4 pl-9'
               />
             </div>
           </div>

@@ -18,11 +18,6 @@ type OutsourceOrderLineDTO struct {
 	Specification    string    `json:"specification"`
 	Quantity         float64   `json:"quantity"`
 	UOM              string    `json:"uom"`
-	SegmentID        string    `json:"segmentId"`
-	SegmentName      string    `json:"segmentName"`
-	ProcessStepID    string    `json:"processStepId"`
-	ProcessCode      string    `json:"processCode"`
-	ProcessName      string    `json:"processName"`
 	Status           string    `json:"status"`
 	SentQuantity     float64   `json:"sentQuantity"`
 	ReturnedQuantity float64   `json:"returnedQuantity"`
@@ -97,11 +92,6 @@ func mapOutsourceOrderLineToDTO(line models.OutsourceOrderLine) OutsourceOrderLi
 		Specification:    line.Specification,
 		Quantity:         line.Quantity,
 		UOM:              line.UOM,
-		SegmentID:        line.SegmentID,
-		SegmentName:      line.SegmentName,
-		ProcessStepID:    line.ProcessStepID,
-		ProcessCode:      line.ProcessCode,
-		ProcessName:      line.ProcessName,
 		Status:           line.Status,
 		SentQuantity:     line.SentQuantity,
 		ReturnedQuantity: line.ReturnedQuantity,
@@ -173,11 +163,6 @@ func mapOutsourceOrderLineDTOToModel(line OutsourceOrderLineDTO) models.Outsourc
 		Specification:    line.Specification,
 		Quantity:         line.Quantity,
 		UOM:              line.UOM,
-		SegmentID:        line.SegmentID,
-		SegmentName:      line.SegmentName,
-		ProcessStepID:    line.ProcessStepID,
-		ProcessCode:      line.ProcessCode,
-		ProcessName:      line.ProcessName,
 		Status:           line.Status,
 		SentQuantity:     line.SentQuantity,
 		ReturnedQuantity: line.ReturnedQuantity,

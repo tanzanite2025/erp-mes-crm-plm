@@ -77,7 +77,7 @@ export function SettlementAllocationHistorySection({
             value={historySearchTerm}
             onChange={(event) => onHistorySearchTermChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className='h-9 rounded-xl text-xs'
+            className='h-9 rounded-xl'
           />
         </div>
         <div className='grid max-h-[320px] gap-3 overflow-auto pr-1'>

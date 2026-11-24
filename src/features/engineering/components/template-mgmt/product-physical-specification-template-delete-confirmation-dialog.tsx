@@ -93,7 +93,7 @@ export function ProductPhysicalSpecificationTemplateDeleteConfirmationDialog({
           placeholder='DELETE'
           value={confirmationInput}
           onChange={(event) => setConfirmationInput(event.target.value)}
-          className='h-11 rounded-xl border-input/60 bg-muted/20 text-center font-semibold tracking-widest shadow-none'
+          className='h-11 rounded-xl border-input/60 bg-muted/20 text-center shadow-none'
         />
       </div>
     </ConfirmDialog>

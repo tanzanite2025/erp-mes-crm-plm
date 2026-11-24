@@ -21,10 +21,9 @@ func TestValidateProductionRouteDTORequiresTransferForOutsource(t *testing.T) {
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			SegmentID:     "segment-1",
-			ProcessStepID: "process-1",
-			ExecutionMode: "OUTSOURCE_REQUIRED",
-			QualityGate:   "NONE",
+			BranchOperationID: "branch-operation-1",
+			ExecutionMode:     "OUTSOURCE_REQUIRED",
+			QualityGate:       "NONE",
 		}},
 	}
 
@@ -45,15 +44,42 @@ func TestValidateProductionRouteDTORequiresStepsBeforePublish(t *testing.T) {
 	}
 }
 
+func TestValidateProductionRouteDTORequiresAtLeastOneBranchOperation(t *testing.T) {
+	route := ProductionRouteDTO{
+		Code:   "route-001",
+		Name:   "Standard Route",
+		Status: "DRAFT",
+	}
+
+	if err := validateProductionRouteDTO(route); err == nil {
+		t.Fatal("expected a draft route without branch operation steps to be rejected")
+	}
+}
+
+func TestValidateProductionRouteDTORequiresBranchOperationIdentity(t *testing.T) {
+	route := ProductionRouteDTO{
+		Code:   "route-001",
+		Name:   "Standard Route",
+		Status: "DRAFT",
+		Steps: []ProductionRouteStepDTO{{
+			ExecutionMode: "IN_HOUSE",
+			QualityGate:   "NONE",
+		}},
+	}
+
+	if err := validateProductionRouteDTO(route); err == nil {
+		t.Fatal("expected a route step without branchOperationId to be rejected")
+	}
+}
+
 func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 	route := normalizeProductionRouteDTO(ProductionRouteDTO{
 		Code: " route-001 ",
 		Name: " Standard Route ",
 		Steps: []ProductionRouteStepDTO{{
-			SegmentID:     " segment-1 ",
-			ProcessStepID: " process-1 ",
-			ExecutionMode: "in_house",
-			QualityGate:   "",
+			BranchOperationID: " branch-operation-1 ",
+			ExecutionMode:     "in_house",
+			QualityGate:       "",
 		}},
 	})
 
@@ -78,19 +104,17 @@ func TestNormalizeProductionRouteDTOCanonicalizesQualityRouting(t *testing.T) {
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{
 			{
-				ID:             "step-a",
-				SegmentID:      "segment-1",
-				ProcessStepID:  "process-1",
-				ExecutionMode:  "IN_HOUSE",
-				QualityGate:    "REQUIRED",
-				QualityRouting: json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
+				ID:                "step-a",
+				BranchOperationID: "branch-operation-1",
+				ExecutionMode:     "IN_HOUSE",
+				QualityGate:       "REQUIRED",
+				QualityRouting:    json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
 			},
 			{
-				ID:            "step-b",
-				SegmentID:     "segment-2",
-				ProcessStepID: "process-2",
-				ExecutionMode: "IN_HOUSE",
-				QualityGate:   "NONE",
+				ID:                "step-b",
+				BranchOperationID: "branch-operation-2",
+				ExecutionMode:     "IN_HOUSE",
+				QualityGate:       "NONE",
 			},
 		},
 	})
@@ -114,16 +138,34 @@ func TestValidateProductionRouteDTORejectsQualityRoutingOutsideRoute(t *testing.
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			ID:             "step-a",
-			SegmentID:      "segment-1",
-			ProcessStepID:  "process-1",
-			ExecutionMode:  "IN_HOUSE",
-			QualityGate:    "REQUIRED",
-			QualityRouting: json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
+			ID:                "step-a",
+			BranchOperationID: "branch-operation-1",
+			ExecutionMode:     "IN_HOUSE",
+			QualityGate:       "REQUIRED",
+			QualityRouting:    json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
 		}},
 	}
 
 	if err := validateProductionRouteDTO(route); err == nil {
 		t.Fatal("expected quality routing target outside route to be rejected")
+	}
+}
+
+func TestValidateProductionRouteDTORejectsProcessStepQualityTargets(t *testing.T) {
+	route := ProductionRouteDTO{
+		Code:   "route-001",
+		Name:   "Standard Route",
+		Status: "DRAFT",
+		Steps: []ProductionRouteStepDTO{{
+			ID:                "step-a",
+			BranchOperationID: "branch-operation-a",
+			ExecutionMode:     "IN_HOUSE",
+			QualityGate:       "REQUIRED",
+			QualityRouting:    json.RawMessage(`{"REWORK":{"targetProcessStepId":"legacy-process"}}`),
+		}},
+	}
+
+	if err := validateProductionRouteDTO(route); err == nil {
+		t.Fatal("expected targetProcessStepId to be rejected for route configuration")
 	}
 }

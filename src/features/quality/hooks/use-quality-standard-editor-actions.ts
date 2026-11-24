@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -23,6 +23,7 @@ interface UseQualityStandardEditorActionsOptions {
   buildSubmitPayloadWithOverrides: (
     overrides?: Partial<Standard>
   ) => StandardEditorSubmitPayload | null
+  onSaved?: (standard: Standard) => void
 }
 
 export function useQualityStandardEditorActions({
@@ -33,12 +34,29 @@ export function useQualityStandardEditorActions({
   isReadOnly,
   buildSubmitPayload,
   buildSubmitPayloadWithOverrides,
+  onSaved,
 }: UseQualityStandardEditorActionsOptions) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { t } = useLanguage()
   const { saveStandardMutation } = useQualityMutations()
+  const [isApprovalSubmissionPending, setIsApprovalSubmissionPending] =
+    useState(false)
   const isEdit = mode === 'edit'
+
+  const finishSavingQualityStandard = useCallback(
+    (saved: Standard) => {
+      if (onSaved) {
+        onSaved(saved)
+        return
+      }
+      navigate({
+        to: '/quality/standards/$standardId/preview',
+        params: { standardId: saved.id },
+      })
+    },
+    [navigate, onSaved]
+  )
 
   const handleBack = useCallback(() => {
     navigate({ to: '/quality/standards' })
@@ -53,6 +71,7 @@ export function useQualityStandardEditorActions({
   }, [navigate, standardId])
 
   const handleSave = useCallback(async () => {
+    if (isApprovalSubmissionPending || saveStandardMutation.isPending) return
     if (isReadOnly) {
       handleOpenPreview()
       return
@@ -62,32 +81,36 @@ export function useQualityStandardEditorActions({
 
     if (!payload) {
       if (isEdit && !isDirty) {
-        handleOpenPreview()
+        finishSavingQualityStandard(formData)
       }
       return
     }
 
     try {
       const saved = await saveStandardMutation.mutateAsync(payload)
-      navigate({
-        to: '/quality/standards/$standardId/preview',
-        params: { standardId: saved.id },
-      })
+      finishSavingQualityStandard(saved)
     } catch {
       return
     }
   }, [
     buildSubmitPayload,
+    finishSavingQualityStandard,
+    formData,
     handleOpenPreview,
     isDirty,
     isEdit,
     isReadOnly,
-    navigate,
+    isApprovalSubmissionPending,
     saveStandardMutation,
   ])
 
   const handleSubmitForApproval = useCallback(async () => {
-    if (isReadOnly) return
+    if (
+      isReadOnly ||
+      isApprovalSubmissionPending ||
+      saveStandardMutation.isPending
+    )
+      return
     const workflowChangeSet = buildQualityStandardWorkflowChangeSet({
       type: 'submitForApproval',
     })
@@ -109,6 +132,7 @@ export function useQualityStandardEditorActions({
     }
 
     try {
+      setIsApprovalSubmissionPending(true)
       const result = await submitQualityStandardWithConfirmedApprovalRequest({
         savePendingStandard: () =>
           saveStandardMutation.mutateAsync({
@@ -119,24 +143,24 @@ export function useQualityStandardEditorActions({
       await queryClient.invalidateQueries({ queryKey: ['quality_standard'] })
       await queryClient.invalidateQueries({ queryKey: ['quality_standards'] })
       toast.success(t('quality.hooks.submitForApprovalSuccess'))
-      navigate({
-        to: '/quality/standards/$standardId/preview',
-        params: { standardId: result.standard.id },
-      })
+      finishSavingQualityStandard(result.standard)
     } catch (error) {
       if (error instanceof QualityStandardApprovalResponseNotConfirmedError) {
         toast.error(t('quality.hooks.approvalResponseNotConfirmed'))
       }
       return
+    } finally {
+      setIsApprovalSubmissionPending(false)
     }
   }, [
     buildSubmitPayloadWithOverrides,
+    finishSavingQualityStandard,
     formData.status,
     handleOpenPreview,
     isDirty,
     isEdit,
     isReadOnly,
-    navigate,
+    isApprovalSubmissionPending,
     queryClient,
     saveStandardMutation,
     t,
@@ -144,6 +168,8 @@ export function useQualityStandardEditorActions({
 
   return {
     saveStandardMutation,
+    isSavingStandard:
+      saveStandardMutation.isPending || isApprovalSubmissionPending,
     handleBack,
     handleOpenPreview,
     handleSave,

@@ -133,16 +133,10 @@ export function SidebarCommandLibraryPage() {
         className='gap-5'
       >
         <TabsList className='grid h-11 w-full max-w-md grid-cols-2 rounded-full bg-muted/50 p-1'>
-          <TabsTrigger
-            value='commands'
-            className='rounded-full text-[10px] font-black tracking-widest'
-          >
+          <TabsTrigger value='commands' className='rounded-full'>
             {t('sidebarCommandConfig.library.sections.commands')}
           </TabsTrigger>
-          <TabsTrigger
-            value='categories'
-            className='rounded-full text-[10px] font-black tracking-widest'
-          >
+          <TabsTrigger value='categories' className='rounded-full'>
             {t('sidebarCommandConfig.library.sections.categories')}
           </TabsTrigger>
         </TabsList>

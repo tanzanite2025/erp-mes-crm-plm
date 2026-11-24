@@ -104,7 +104,7 @@ export function AiRoutePermissionsCard({
               aria-label={t(
                 'aiAssistant.accessControl.permissions.searchPlaceholder'
               )}
-              className='h-9 rounded-xl border-slate-200 bg-slate-50 pr-10 pl-9 text-xs'
+              className='h-9 rounded-xl border-slate-200 bg-slate-50 pr-10 pl-9'
             />
             {searchQuery ? (
               <Button
@@ -186,7 +186,7 @@ export function AiRoutePermissionsCard({
                         type='button'
                         variant={allSelected ? 'ghost' : 'outline'}
                         size='sm'
-                        className='h-8 rounded-lg px-2 text-[9px] font-black tracking-wider uppercase sm:px-3 sm:text-[10px]'
+                        className='h-8 rounded-lg px-2 sm:px-3'
                         onClick={() => onTogglePermissions(group.permissionIds)}
                       >
                         {allSelected ? (

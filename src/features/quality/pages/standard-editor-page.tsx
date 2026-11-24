@@ -118,7 +118,7 @@ export function StandardEditorPage({
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <Button
             variant='outline'
-            className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full'
             onClick={handleBack}
           >
             <ArrowLeft className='size-3.5' />
@@ -148,7 +148,7 @@ export function StandardEditorPage({
           <CardContent>
             <Button
               variant='outline'
-              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full'
               onClick={handleBack}
             >
               <ArrowLeft className='size-3.5' />
@@ -165,7 +165,7 @@ export function StandardEditorPage({
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <Button
           variant='outline'
-          className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+          className='h-9 rounded-full'
           onClick={handleBack}
         >
           <ArrowLeft className='size-3.5' />
@@ -182,10 +182,7 @@ export function StandardEditorPage({
             />
           ) : null}
           {isEdit ? (
-            <Button
-              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
-              onClick={handleOpenPreview}
-            >
+            <Button className='h-9 rounded-full' onClick={handleOpenPreview}>
               <Eye className='size-3.5' />
               {t('quality.standards.workspace.backToPreview')}
             </Button>
@@ -209,14 +206,13 @@ export function StandardEditorPage({
           onInspectionCriteriaChange={updateInspectionCriteria}
           onCodeChange={(value) => updateField('code', value)}
           onNameChange={(value) => updateField('name', value)}
-          onTypeChange={(value) => updateField('type', value)}
           onRemarksChange={(value) => updateField('remarks', value)}
         />
 
         <div className='mt-8 flex flex-col-reverse gap-3 border-t border-dashed border-muted/50 pt-6 sm:flex-row sm:items-center sm:justify-end'>
           <Button
             variant='outline'
-            className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full'
             onClick={isEdit ? handleOpenPreview : handleBack}
           >
             <ArrowLeft className='size-3.5' />
@@ -227,7 +223,7 @@ export function StandardEditorPage({
           {availableActions.canSubmitForApproval ? (
             <Button
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed'
               disabled={saveStandardMutation.isPending}
               onClick={handleSubmitForApproval}
             >
@@ -241,7 +237,7 @@ export function StandardEditorPage({
           ) : null}
           {!isReadOnly ? (
             <Button
-              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full'
               disabled={saveStandardMutation.isPending}
               onClick={handleSave}
             >

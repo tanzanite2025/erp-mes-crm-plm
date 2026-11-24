@@ -31,14 +31,14 @@ export function ShippingPlaceholderCard({
       <div className='mt-6 flex flex-wrap gap-3'>
         <Button
           type='button'
-          className='h-10 rounded-full bg-primary px-5 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20'
+          className='h-10 rounded-full bg-primary px-5 text-primary-foreground shadow-lg shadow-primary/20'
         >
           {actionLabel}
         </Button>
         <Button
           type='button'
           variant='outline'
-          className='h-10 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+          className='h-10 rounded-full border-dashed px-5'
         >
           预留按钮
         </Button>
@@ -128,7 +128,7 @@ export function VirtualShipmentRow({
       <div className='mt-5 flex flex-wrap gap-3'>
         <Button
           type='button'
-          className='h-10 rounded-full bg-primary px-5 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/20'
+          className='h-10 rounded-full bg-primary px-5 text-primary-foreground shadow-lg shadow-primary/20'
           onClick={() => onMatchVehicle?.(item)}
         >
           车型匹配
@@ -137,14 +137,14 @@ export function VirtualShipmentRow({
         <Button
           type='button'
           variant='outline'
-          className='h-10 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+          className='h-10 rounded-full border-dashed px-5'
         >
           查看详情
         </Button>
         <Button
           type='button'
           variant='outline'
-          className='h-10 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+          className='h-10 rounded-full border-dashed px-5'
         >
           <PhoneCall className='mr-2 size-4' />
           车型联系人

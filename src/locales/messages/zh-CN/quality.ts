@@ -1,4 +1,17 @@
+import { qualityAbnormalityDisposal } from './quality-abnormality-disposal'
+import {
+  qualityConfigurableGrading,
+  qualityMeasurementSubmission,
+} from './quality-configurable-grading-and-measurement'
+import { qualityDefectTypeConfiguration } from './quality-defect-type-configuration'
+import { qualityStandardCreationOperationGuide } from './quality-standard-creation-operation-guide'
+
 export const quality = {
+  defectConfiguration: qualityDefectTypeConfiguration,
+  disposal: qualityAbnormalityDisposal,
+  grading: qualityConfigurableGrading,
+  measurement: qualityMeasurementSubmission,
+  standardCreationGuide: qualityStandardCreationOperationGuide,
   layout: {
     title: '品质基准',
     tabs: {
@@ -13,6 +26,40 @@ export const quality = {
     unknown: '未知',
   },
   standards: {
+    inspectionStages: {
+      manage: '检验站管理',
+      title: '品质检验站',
+      description:
+        '维护品质检验站的名称、说明、显示顺序和启用状态。系统默认提供成型、机加、精细、涂装四个检验站，可按需要调整。',
+      stage: '所属检验站',
+      stageGroup: '检验站',
+      groupedRulesTitle: '检验站与重量标准',
+      groupedRulesDescription:
+        '先选择检验站，在检验站内维护重量项目，再配置各项目的等级规则。不同项目的重量和等级独立保存。',
+      newItemStage: '新增重量项目的检验站',
+      chooseStage: '请选择检验站',
+      addWeightItem: '新增重量项目',
+      list: '检验站目录',
+      name: '检验站名称',
+      namePlaceholder: '例如：成型检验站、机加检验站',
+      sortOrder: '显示顺序（数字越小越靠前）',
+      notes: '检验站说明',
+      active: '启用',
+      inactive: '已停用',
+      add: '新增检验站',
+      edit: '编辑检验站',
+      save: '保存检验站',
+      refresh: '刷新目录',
+      retry: '重试',
+      loading: '正在加载检验站…',
+      loadFailed: '检验站目录加载失败，请重试。',
+      empty: '暂无检验站，请在品质标准的检验站管理中新增。',
+      saved: '检验站已保存。',
+      validation: '请填写检验站名称及 0 到 1000000 之间的整数顺序。',
+      historyHint:
+        '停用后不再供新项目选择。已保存标准保留当时的检验站名称，不会随目录改名自动变化。',
+      readOnly: '当前账号可查看检验站目录；维护权限与品质标准的管理权限一致。',
+    },
     page: {
       title: '品质标准体系',
       description: '集中化管理各项检验标准、公差协议与品质受控文档',
@@ -24,6 +71,8 @@ export const quality = {
       filterType: '筛选类型',
       allTypes: '全部类型',
       empty: '暂无匹配协议',
+      loadFailed:
+        '品质标准加载失败，请重试。当前无法确认数量，不代表没有标准。',
       totalRecords: '总记录数',
       statusViewTitle: '状态视图',
       statusViewDescription: '按标准状态切换列表视图，统一走服务端查询语义。',
@@ -70,8 +119,24 @@ export const quality = {
     },
     workspace: {
       backToList: '返回标准列表',
-      openPreview: '查看预览页',
-      openEditor: '进入编辑工作台',
+      openPreview: '查看标准',
+      openEditor: '编辑检验站与规则',
+      inspectionRulesEditorTitle: '编辑检验站与检验规则',
+      inspectionRulesNeedConfigurationTitle: '检验规则需要重新配置',
+      inspectionRulesNeedConfigurationDescription:
+        '该标准的检验项目不符合当前配置要求。基础信息和审核履历可以查看，请重新设置检验站、重量项目和等级规则后保存。',
+      reconfigureInspectionRules: '重新配置检验站与规则',
+      inspectionRulesReplacementNotice:
+        '请按当前结构重新配置检验站、重量项目和等级。确认保存后替换原规则；关闭或取消不会修改原标准。',
+      inspectionRulesReconfigurationReadOnly:
+        '当前版本不可编辑。请新建草稿配置完整规则，原版本继续保留供追溯。',
+      inspectionRulesEditorDescription:
+        '配置所属检验站、中心值、单位及允许偏差。',
+      editBasicInformation: '编辑基础信息',
+      saveBasicInformation: '保存基础信息',
+      basicInformationFormDescription:
+        '维护编号、名称和备注；检验站与检验规则通过独立弹窗编辑。',
+      collapseDetails: '收起详情',
       submitForApproval: '提交审批',
       approve: '审批通过',
       approveDescription:
@@ -88,14 +153,18 @@ export const quality = {
       rejectReasonPlaceholder: '请填写本次驳回原因...',
       archiveReasonLabel: '归档原因',
       archiveReasonPlaceholder: '请填写本次归档原因...',
-      editorCreateTitle: '新建品质标准工作台',
-      editorEditTitle: '编辑品质标准工作台',
+      editorCreateTitle: '新建品质标准',
+      editorEditTitle: '编辑品质标准',
       editorCreateDescription: '填写标准信息，保存后预览确认。',
-      editorEditDescription:
-        '维护标准信息与受控协议的检验规则，保存后预览确认。',
+      editorEditDescription: '维护标准信息、所属检验站与检验规则。',
+      discardChangesTitle: '关闭前放弃未保存的修改？',
+      discardChangesDescription:
+        '当前修改尚未保存，可以继续编辑或放弃修改并关闭。',
+      keepEditing: '继续编辑',
+      discardAndClose: '放弃修改并关闭',
       editorFormTitle: '标准基础信息',
       editorFormDescription:
-        '请核对标准信息；受控协议的中心值、单位及 A/B 级允许偏差可在下方修改。',
+        '请核对标准信息；数值检验项目的中心值、单位和等级规则可在下方修改。',
       editorDirty: '存在未保存变更',
       approvalControlledHint:
         '保存用于记录标准变更；提交审批需先配置品质标准的审批规则与审批人。',
@@ -108,7 +177,7 @@ export const quality = {
       editorMissingTitle: '未找到可编辑的品质标准',
       editorMissingDescription:
         '当前标准可能已被删除，或你当前不可访问该标准。',
-      previewTitle: '品质标准预览页',
+      previewTitle: '品质标准详情',
       previewDescription: '查看检验规则、审批进度及发布与归档记录。',
       previewLoadFailedTitle: '品质标准预览加载失败',
       previewLoadFailedDescription:
@@ -155,26 +224,22 @@ export const quality = {
         titleEdit: '编辑受控协议',
         titleView: '查看受控协议',
         description:
-          '以中心值为 S 级，按绝对偏差划分 A、B 级，超过 B 级允许偏差判定报废。',
+          '每个项目独立配置等级名称、上下允许偏差及合格判定，超出全部等级范围记为不合格。',
         gradingHint:
-          '正负偏差使用同一规则：中心值为 S；0 < 偏差 ≤ A 级允许偏差为 A；A 级允许偏差 < 偏差 ≤ B 级允许偏差为 B；超过 B 级允许偏差报废。偏差单位与检验项目一致。',
+          '每个检验项目分别设置所属检验站、中心值、单位和等级规则。等级仅用于所在项目，检验站目录不保存等级或偏差。',
         fields: {
           product: '关联产品',
           qualityCriteria: '检验规则',
           selectedWeights: '检验项目与判定规则',
           itemName: '检验项目',
-          targetWeight: '中心值（S 级）',
+          targetWeight: '中心值',
           unit: '单位',
-          aLevelTolerance: 'A 级允许偏差（±）',
-          bLevelTolerance: 'B 级允许偏差（±）',
         },
         placeholders: {
           product: '请选择产品',
-          itemName: '如：成品重量',
+          itemName: '如：内圈重、涂装无标重',
           targetWeight: '目标值',
           unit: '选择单位',
-          aLevelTolerance: '如：5',
-          bLevelTolerance: '如：10',
         },
         actions: {
           addCriterion: '新增检验项',
@@ -184,12 +249,13 @@ export const quality = {
           close: '关闭',
         },
         empty: {
-          criteria: '尚未添加检验项目，请先新增一条重量或尺寸等判定规则。',
+          criteria: '尚未添加重量项目，请先选择检验站并新增重量项目。',
           units: '暂无可用单位，请先在单位设置中新增或启用。',
         },
         validation: {
           productRequired: '请先选择产品。',
           criterionRequired: '请至少添加一个检验项目。',
+          inspectionStageRequired: '请为每个重量项目选择检验站。',
           itemNameRequired: '请为每个检验项目填写名称。',
           unitRequired: '请为每个检验项目选择系统中已启用的单位。',
           unitUnavailable: '请重新选择单位。',
@@ -197,7 +263,7 @@ export const quality = {
           unitsLoadFailed: '单位加载失败，请重试。',
           weightRequired: '请为每个检验项目填写有效的中心值。',
           deviationLimitsInvalid:
-            '请填写有效的允许偏差，必须满足：0 < A 级允许偏差 < B 级允许偏差。',
+            '请检查等级名称和非负上下偏差，各级偏差须分别递增，不合格后不能再设合格。',
         },
         toastCreated: '受控品质协议已生成品质标准，共 {{count}} 项。',
       },
@@ -209,7 +275,7 @@ export const quality = {
           '展示当前标准的责任人、最近更新时间与审核确认信息，便于品质追溯。',
         auditPending: '待审核',
         deviationGradingHint:
-          '|Δ| 表示测量值与中心值的绝对偏差，正负方向使用同一规则；各级偏差上限均包含边界值。',
+          '按从严到宽的顺序取首个匹配等级，边界值包含在该级；下偏差和上偏差可分别配置。超出所有范围为不合格，处置另行记录。',
         fields: {
           code: '标准编码',
           name: '标准名称',
@@ -231,12 +297,9 @@ export const quality = {
           order: '顺序',
           centerValue: '中心值',
           level: '标准级别',
-          tolerance: '正负公差',
           deviationRule: '偏差判定 / 公差',
           min: '最小值(下限)',
           max: '最大值(上限)',
-          errorCodeLower: '异常代码(下限)',
-          errorCodeUpper: '异常代码(上限)',
           unit: '单位',
           required: '检验需求',
           remarks: '备注说明',

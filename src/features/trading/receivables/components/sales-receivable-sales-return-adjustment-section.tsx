@@ -59,18 +59,16 @@ export function SalesReceivableSalesReturnAdjustmentSection({
             >
               <div className='flex items-start justify-between gap-3'>
                 <div>
-                  <p className='text-sm font-black text-foreground'>
-                    {record.returnNo}
-                  </p>
-                  <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                  <p className='text-foreground'>{record.returnNo}</p>
+                  <p className='mt-1 text-muted-foreground/60'>
                     {record.salesOrderNo}
                   </p>
                 </div>
                 <div className='text-right'>
-                  <p className='text-sm font-black text-primary'>
+                  <p className='text-primary'>
                     {formatSettlementMoney(record.amount, detail.currency)}
                   </p>
-                  <p className='mt-1 font-maple-ui text-[8px] text-muted-foreground'>
+                  <p className='mt-1 font-maple-ui text-muted-foreground'>
                     {record.recordedAt.replace('T', ' ').slice(0, 16)}
                   </p>
                 </div>
@@ -78,33 +76,31 @@ export function SalesReceivableSalesReturnAdjustmentSection({
 
               <div className='mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                  <div className='flex items-center gap-2 text-muted-foreground/60'>
                     <CalendarDays className='size-3.5' />
                     {t(
                       'trading.salesReturns.queryShell.actualAmountRecordedAt'
                     )}
                   </div>
-                  <p className='text-xs font-black text-foreground'>
+                  <p className='text-foreground'>
                     {record.recordedAt.replace('T', ' ').slice(0, 16)}
                   </p>
                 </div>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                  <div className='flex items-center gap-2 text-muted-foreground/60'>
                     <User className='size-3.5' />
                     {t(
                       'trading.salesReturns.queryShell.actualAmountRecordedBy'
                     )}
                   </div>
-                  <p className='text-xs font-black text-foreground'>
-                    {record.recordedBy}
-                  </p>
+                  <p className='text-foreground'>{record.recordedBy}</p>
                 </div>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                  <div className='flex items-center gap-2 text-muted-foreground/60'>
                     <FileStack className='size-3.5' />
                     {t('trading.receivables.returnAdjustments.note')}
                   </div>
-                  <p className='line-clamp-2 text-xs leading-5 font-bold text-foreground'>
+                  <p className='line-clamp-2 text-foreground'>
                     {record.note?.trim() || '--'}
                   </p>
                 </div>

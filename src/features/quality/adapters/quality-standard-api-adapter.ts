@@ -1,4 +1,8 @@
-import type { ApprovalRequestSummary, Standard } from '../data/schema'
+import {
+  standardItemSchema,
+  type ApprovalRequestSummary,
+  type Standard,
+} from '../data/schema'
 
 export interface ApprovalRequestSummaryApiDTO {
   id: string
@@ -73,6 +77,22 @@ export interface QualityStandardsListApiResponseDTO {
   [key: string]: unknown
 }
 
+export type QualityStandardListSummary = Omit<Standard, 'items'>
+
+export class QualityStandardInspectionRulesValidationError extends Error {
+  readonly kind = 'invalid_response'
+
+  constructor(
+    readonly standardSummary: QualityStandardListSummary,
+    readonly originalInspectionItems: unknown
+  ) {
+    super(
+      'Quality standard inspection rules do not match the current configuration format'
+    )
+    this.name = 'QualityStandardInspectionRulesValidationError'
+  }
+}
+
 function normalizeStandardType(type?: string): Standard['type'] {
   if (type === 'IQC' || type === 'IPQC' || type === 'FQC' || type === 'OQC')
     return type
@@ -90,10 +110,6 @@ function normalizeStandardStatus(status?: string): Standard['status'] {
   )
     return status
   throw new Error('Invalid quality standard status received from the server')
-}
-
-function normalizeStandardItems(items: unknown): Standard['items'] {
-  return Array.isArray(items) ? (items as Standard['items']) : []
 }
 
 function normalizeApprovalRequestSummary(
@@ -147,9 +163,9 @@ export function createDefaultStandard(): Standard {
   }
 }
 
-export function toQualityStandardContract(
+export function toQualityStandardListSummary(
   dto: QualityStandardApiDTO
-): Standard {
+): QualityStandardListSummary {
   return {
     id: dto.id,
     code: dto.code || '',
@@ -174,7 +190,23 @@ export function toQualityStandardContract(
     approvalRequestSummary: normalizeApprovalRequestSummary(
       dto.approvalRequestSummary
     ),
-    items: normalizeStandardItems(dto.items),
+  }
+}
+
+export function toQualityStandardContract(
+  dto: QualityStandardApiDTO
+): Standard {
+  const standardSummary = toQualityStandardListSummary(dto)
+  const inspectionItems = standardItemSchema.array().safeParse(dto.items ?? [])
+  if (!inspectionItems.success) {
+    throw new QualityStandardInspectionRulesValidationError(
+      standardSummary,
+      dto.items
+    )
+  }
+  return {
+    ...standardSummary,
+    items: inspectionItems.data,
   }
 }
 

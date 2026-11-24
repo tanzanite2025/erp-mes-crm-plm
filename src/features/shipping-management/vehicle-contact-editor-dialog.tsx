@@ -271,7 +271,7 @@ export function VehicleContactEditorDialog({
             value={form.vehicleId || undefined}
             onValueChange={(value) => updateFormField('vehicleId', value)}
           >
-            <SelectTrigger className='h-10 w-full rounded-xl border border-input bg-background/50 text-xs font-black shadow-sm'>
+            <SelectTrigger className='h-10 w-full rounded-xl border border-input bg-background/50 shadow-sm'>
               <SelectValue placeholder='请选择车型' />
             </SelectTrigger>
             <SelectContent className='rounded-xl border border-border/60 shadow-xl'>
@@ -279,7 +279,7 @@ export function VehicleContactEditorDialog({
                 <SelectItem
                   key={item.value}
                   value={item.value}
-                  className='rounded-lg px-3 py-2 text-xs font-bold'
+                  className='rounded-lg px-3 py-2'
                 >
                   {item.label}
                 </SelectItem>
@@ -295,7 +295,7 @@ export function VehicleContactEditorDialog({
             value={form.supplierName}
             onChange={(e) => updateFormField('supplierName', e.target.value)}
             placeholder='可选'
-            className='h-10 rounded-xl text-xs font-bold'
+            className='h-10 rounded-xl'
           />
         </div>
         <div className='space-y-2'>
@@ -306,7 +306,7 @@ export function VehicleContactEditorDialog({
             value={form.contactName}
             onChange={(e) => updateFormField('contactName', e.target.value)}
             placeholder='必填'
-            className='h-10 rounded-xl text-xs font-bold'
+            className='h-10 rounded-xl'
           />
         </div>
         <div className='space-y-2'>
@@ -323,7 +323,7 @@ export function VehicleContactEditorDialog({
             value={form.region}
             onChange={(e) => updateFormField('region', e.target.value)}
             placeholder='可选'
-            className='h-10 rounded-xl text-xs font-bold'
+            className='h-10 rounded-xl'
           />
         </div>
         <div className='space-y-2'>
@@ -336,20 +336,14 @@ export function VehicleContactEditorDialog({
               updateFormField('enabled', value === 'true')
             }
           >
-            <SelectTrigger className='h-10 w-full rounded-xl border border-input bg-background/50 text-xs font-black shadow-sm'>
+            <SelectTrigger className='h-10 w-full rounded-xl border border-input bg-background/50 shadow-sm'>
               <SelectValue placeholder='请选择状态' />
             </SelectTrigger>
             <SelectContent className='rounded-xl border border-border/60 shadow-xl'>
-              <SelectItem
-                value='true'
-                className='rounded-lg px-3 py-2 text-xs font-bold'
-              >
+              <SelectItem value='true' className='rounded-lg px-3 py-2'>
                 启用
               </SelectItem>
-              <SelectItem
-                value='false'
-                className='rounded-lg px-3 py-2 text-xs font-bold'
-              >
+              <SelectItem value='false' className='rounded-lg px-3 py-2'>
                 停用
               </SelectItem>
             </SelectContent>
@@ -365,7 +359,7 @@ export function VehicleContactEditorDialog({
           <Button
             type='button'
             variant='outline'
-            className='h-8 rounded-xl px-4 text-[10px] font-black tracking-wider uppercase'
+            className='h-8 rounded-xl px-4'
             onClick={addChannel}
           >
             添加联系方式
@@ -413,7 +407,7 @@ export function VehicleContactEditorDialog({
             调度建议
           </Label>
           <textarea
-            className='min-h-[96px] w-full rounded-xl border border-input bg-background/50 px-3 py-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-primary'
+            className='min-h-[96px] w-full rounded-xl border border-input bg-background/50 px-3 py-2 shadow-sm outline-none focus:ring-1 focus:ring-primary'
             value={form.dispatchAdvice}
             onChange={(e) => updateFormField('dispatchAdvice', e.target.value)}
           />
@@ -421,7 +415,7 @@ export function VehicleContactEditorDialog({
         <div className='space-y-2'>
           <Label className='ml-1 text-[10px] font-black uppercase'>备注</Label>
           <textarea
-            className='min-h-[96px] w-full rounded-xl border border-input bg-background/50 px-3 py-2 text-xs font-medium shadow-sm outline-none focus:ring-1 focus:ring-primary'
+            className='min-h-[96px] w-full rounded-xl border border-input bg-background/50 px-3 py-2 shadow-sm outline-none focus:ring-1 focus:ring-primary'
             value={form.note}
             onChange={(e) => updateFormField('note', e.target.value)}
           />

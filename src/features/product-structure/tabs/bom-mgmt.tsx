@@ -216,7 +216,7 @@ export function BOMMgmt() {
           <AuditTimelineTriggerButton
             module={AUDIT_MODULES.bom}
             targetName={t('engineering.bomArchive.header.title')}
-            className='h-11 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full border-dashed bg-background/80 px-4'
           />
         </div>
         <p className='text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-60'>

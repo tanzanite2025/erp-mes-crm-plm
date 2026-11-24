@@ -18,7 +18,6 @@ export const productionOutsourcing = {
     limit: 'A line can register up to 1000 barcodes.',
     remove: 'Remove barcode {{barcode}}',
     saved: 'Line barcode registration saved',
-    processUnbound: 'Process not specified',
     pickRegistered: 'Choose a registered barcode or scan directly',
   },
   layout: {
@@ -88,9 +87,6 @@ export const productionOutsourcing = {
       specification: 'Specification',
       quantity: 'Quantity',
       uom: 'UOM',
-      segmentName: 'Segment/L2',
-      processName: 'Current process',
-      processCode: 'Process code',
       lineNotes: 'Line notes',
       notes: 'Task notes',
     },
@@ -99,7 +95,6 @@ export const productionOutsourcing = {
       source: 'Select source document',
       sourceLine: 'Select the order line to outsource',
       partner: 'Select outsource partner',
-      segmentName: 'Optional, later linked to topology',
     },
     dialog: {
       createTitle: 'New outsource task',
@@ -134,6 +129,8 @@ export const productionOutsourcing = {
     review: {
       read: 'Read barcode and review',
       currentProcess: 'Current barcode process',
+      cycle: 'Outsource cycle {{value}}',
+      inspectionRound: 'Inspection round {{value}}',
       available: 'Maximum available for this barcode',
       inspectionDestination: 'After inspection confirmation: {{process}}',
       routeCompleted: 'Route completed',

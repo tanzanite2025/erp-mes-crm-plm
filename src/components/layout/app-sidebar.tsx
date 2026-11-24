@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ChevronLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { useLayout } from '@/context/layout-provider'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Sidebar,
   SidebarContent,
@@ -25,8 +26,15 @@ export function AppSidebar() {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const pathname = useLocation({ select: (location) => location.pathname })
-  const { isMobile, openMobile, state, secondaryOpen, setSecondaryOpen } =
-    useSidebar()
+  const {
+    isMobile,
+    openMobile,
+    setOpenMobile,
+    state,
+    secondaryOpen,
+    setSecondaryOpen,
+  } = useSidebar()
+  const isNarrowMobile = useIsMobile(375)
   const {
     sidebarData: localizedSidebarData,
     renderedNavGroups,
@@ -40,6 +48,7 @@ export function AppSidebar() {
   const { activePath, selectedCategoryId, selectSidebarCategory } =
     useSidebarCategorySelection(renderedNavGroups, pathname)
   const navViewportRef = useRef<HTMLDivElement>(null)
+  const [mobileDirectoryOpen, setMobileDirectoryOpen] = useState(false)
 
   /**
    * 品牌信息加载：对接后端 EnterpriseService，移除 StorageService 依赖。
@@ -100,6 +109,16 @@ export function AppSidebar() {
     }
   }
 
+  function activateMobileSidebarCategory(categoryId: string) {
+    selectSidebarCategory(categoryId)
+    if (categoryId === 'home') {
+      void navigate({ to: '/home' })
+      setOpenMobile(false)
+      return
+    }
+    if (isNarrowMobile) setMobileDirectoryOpen(true)
+  }
+
   useSidebarActiveCenter({
     viewportRef: navViewportRef,
     activePathKey: activePath?.key,
@@ -108,11 +127,16 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
-      <div className='sidebar-navigation-columns'>
+      <div
+        className='sidebar-navigation-columns'
+        data-mobile-directory-open={mobileDirectoryOpen}
+      >
         <div className='sidebar-primary-navigation'>
-          <SidebarHeader className='shrink-0'>
-            <SidebarBrand team={activeTeam} />
-          </SidebarHeader>
+          {!isMobile && (
+            <SidebarHeader className='shrink-0'>
+              <SidebarBrand team={activeTeam} />
+            </SidebarHeader>
+          )}
           <SidebarContent className='min-h-0 overflow-hidden'>
             <div
               ref={navViewportRef}
@@ -128,8 +152,13 @@ export function AppSidebar() {
                     key={props.id}
                     {...props}
                     onDesktopCategoryActivate={activateDesktopSidebarCategory}
+                    onMobileCategoryActivate={activateMobileSidebarCategory}
                     selectedCategoryId={
-                      secondaryOpen ? selectedCategoryId : null
+                      isMobile
+                        ? selectedCategoryId
+                        : secondaryOpen
+                          ? selectedCategoryId
+                          : null
                     }
                   />
                 ))}
@@ -173,10 +202,37 @@ export function AppSidebar() {
               pathname={pathname}
             />
           ) : (
-            <div className='desktop-sidebar-secondary-navigation p-4 text-sm text-muted-foreground'>
+            <div className='desktop-sidebar-secondary-navigation p-4 text-[15px] text-muted-foreground'>
               {t('sidebar.navigation.noAvailableEntries')}
             </div>
           )
+        ) : null}
+        {isMobile && selectedCategory ? (
+          <div className='mobile-sidebar-secondary-pane'>
+            {isNarrowMobile ? (
+              <header className='mobile-sidebar-directory-header'>
+                <button
+                  type='button'
+                  className='mobile-sidebar-directory-back'
+                  aria-label={t('sidebar.navigation.categories')}
+                  onClick={() => setMobileDirectoryOpen(false)}
+                >
+                  <ChevronLeft className='size-5 shrink-0' aria-hidden='true' />
+                  <span>{t('sidebar.navigation.categories')}</span>
+                </button>
+                <h2 className='mobile-sidebar-directory-title'>
+                  {selectedCategory.title}
+                </h2>
+              </header>
+            ) : null}
+            <DesktopSidebarSecondaryNavigation
+              key={selectedCategory.id}
+              id='mobile-sidebar-secondary-navigation'
+              category={selectedCategory}
+              pathname={pathname}
+              onDestinationSelected={() => setOpenMobile(false)}
+            />
+          </div>
         ) : null}
       </div>
     </Sidebar>

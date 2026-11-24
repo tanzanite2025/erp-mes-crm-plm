@@ -1,5 +1,12 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import type {
+  IssueProductCodeBatchInput,
+  IssuedProductCodeRecord,
+  IssuedProductCodeInventoryList,
+  IssuedProductCodeInventoryStatus,
+  IssuedProductCodeOrderLineIssuanceSummary,
+} from '@/lib/product-code/issued-product-code-inventory-contracts'
 
 export interface PrintBatch {
   id: string
@@ -18,39 +25,6 @@ export interface PrintBatch {
   createdAt: string
   expiresAt?: string
   version: number
-}
-
-export type LinearBarcodeInventoryStatus =
-  | 'AVAILABLE'
-  | 'BOUND'
-  | 'EXPIRED'
-  | 'SCRAPPED'
-
-export interface LinearBarcodeInventoryItem {
-  id: string
-  batchId: string
-  batchNo: string
-  productId: string
-  salesOrderId: string
-  salesOrderLineNo: number
-  code: string
-  serialNumber: string
-  status: LinearBarcodeInventoryStatus
-  expiresAt: string
-  boundAt?: string
-  createdAt: string
-  version: number
-}
-
-export interface CreateLinearBarcodeBatchInput {
-  salesOrderId: string
-  salesOrderLineNo: number
-  quantity: number
-}
-
-export interface LinearBarcodeInventoryList {
-  items: LinearBarcodeInventoryItem[]
-  total: number
 }
 
 interface PrintBatchApiDTO {
@@ -72,7 +46,7 @@ interface PrintBatchApiDTO {
   version?: number
 }
 
-interface LinearBarcodeInventoryItemApiDTO {
+interface IssuedProductCodeInventoryApiDTO {
   id: string
   batchId: string
   batchNo: string
@@ -81,11 +55,19 @@ interface LinearBarcodeInventoryItemApiDTO {
   salesOrderLineNo: number
   code: string
   serialNumber: string
-  status: LinearBarcodeInventoryStatus
+  status: IssuedProductCodeInventoryStatus
   expiresAt: string
   boundAt?: string
   createdAt: string
   version?: number
+}
+
+interface IssuedProductCodeOrderLineIssuanceSummaryApiDTO {
+  salesOrderLineId: number
+  salesOrderLineNo: number
+  orderQuantity: number
+  issuedQuantity: number
+  remainingQuantity: number
 }
 
 interface PrintBatchActivateRequestApiDTO {
@@ -115,9 +97,9 @@ function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
   }
 }
 
-function toLinearBarcodeInventoryItem(
-  dto: LinearBarcodeInventoryItemApiDTO
-): LinearBarcodeInventoryItem {
+function normalizeIssuedProductCodeInventoryRecord(
+  dto: IssuedProductCodeInventoryApiDTO
+): IssuedProductCodeRecord {
   return {
     ...dto,
     batchNo: String(dto.batchNo ?? '').trim(),
@@ -145,15 +127,13 @@ function toPrintBatchContracts(dtos: PrintBatchApiDTO[]): PrintBatch[] {
 }
 
 export const PrintRecordService = {
-  async createLinearBarcodeBatch(
-    input: CreateLinearBarcodeBatchInput
-  ): Promise<{
+  async createLinearBarcodeBatch(input: IssueProductCodeBatchInput): Promise<{
     batch: PrintBatch
-    items: LinearBarcodeInventoryItem[]
+    items: IssuedProductCodeRecord[]
   }> {
     const res = await apiFetch<{
       batch: PrintBatchApiDTO
-      items: LinearBarcodeInventoryItemApiDTO[]
+      items: IssuedProductCodeInventoryApiDTO[]
     }>('/print-batches/linear-barcode', {
       method: 'POST',
       body: JSON.stringify(input),
@@ -161,7 +141,7 @@ export const PrintRecordService = {
     const checked = ensureObjectResponse<
       {
         batch: PrintBatchApiDTO
-        items: LinearBarcodeInventoryItemApiDTO[]
+        items: IssuedProductCodeInventoryApiDTO[]
       } & Record<string, unknown>
     >(res, 'PrintRecordService.createLinearBarcodeBatch')
 
@@ -172,29 +152,33 @@ export const PrintRecordService = {
     }
     return {
       batch: toPrintBatchContract(checked.batch),
-      items: checked.items.map(toLinearBarcodeInventoryItem),
+      items: checked.items.map(normalizeIssuedProductCodeInventoryRecord),
     }
   },
 
   async getLinearBarcodeInventory(input?: {
     salesOrderId?: string
     batchId?: string
-    status?: LinearBarcodeInventoryStatus
+    status?: IssuedProductCodeInventoryStatus
     limit?: number
-  }): Promise<LinearBarcodeInventoryList> {
+  }): Promise<IssuedProductCodeInventoryList> {
     const query = new URLSearchParams()
     if (input?.salesOrderId) query.set('salesOrderId', input.salesOrderId)
     if (input?.batchId) query.set('batchId', input.batchId)
     if (input?.status) query.set('status', input.status)
     query.set('limit', String(input?.limit ?? 200))
     const res = await apiFetch<{
-      items: LinearBarcodeInventoryItemApiDTO[]
+      items: IssuedProductCodeInventoryApiDTO[]
       total: number
+      unattributedIssuedQuantity?: number
+      orderLineIssuanceSummaries?: IssuedProductCodeOrderLineIssuanceSummaryApiDTO[]
     }>(`/print-batches/linear-barcode-inventory?${query.toString()}`)
     const checked = ensureObjectResponse<
       {
-        items: LinearBarcodeInventoryItemApiDTO[]
+        items: IssuedProductCodeInventoryApiDTO[]
         total: number
+        unattributedIssuedQuantity?: number
+        orderLineIssuanceSummaries?: IssuedProductCodeOrderLineIssuanceSummaryApiDTO[]
       } & Record<string, unknown>
     >(res, 'PrintRecordService.getLinearBarcodeInventory')
     if (!Array.isArray(checked.items)) {
@@ -202,9 +186,34 @@ export const PrintRecordService = {
         '[API_CONTRACT] PrintRecordService.getLinearBarcodeInventory.items must be an array'
       )
     }
+    if (
+      input?.salesOrderId &&
+      !Array.isArray(checked.orderLineIssuanceSummaries)
+    ) {
+      throw new Error(
+        '[API_CONTRACT] PrintRecordService.getLinearBarcodeInventory.orderLineIssuanceSummaries must be an array for an order query'
+      )
+    }
     return {
-      items: checked.items.map(toLinearBarcodeInventoryItem),
+      items: checked.items.map(normalizeIssuedProductCodeInventoryRecord),
       total: Number(checked.total ?? checked.items.length),
+      unattributedIssuedQuantity:
+        checked.unattributedIssuedQuantity === undefined
+          ? undefined
+          : Number(checked.unattributedIssuedQuantity),
+      orderLineIssuanceSummaries: Array.isArray(
+        checked.orderLineIssuanceSummaries
+      )
+        ? checked.orderLineIssuanceSummaries.map(
+            (summary): IssuedProductCodeOrderLineIssuanceSummary => ({
+              salesOrderLineId: Number(summary.salesOrderLineId),
+              salesOrderLineNo: Number(summary.salesOrderLineNo),
+              orderQuantity: Number(summary.orderQuantity),
+              issuedQuantity: Number(summary.issuedQuantity),
+              remainingQuantity: Number(summary.remainingQuantity),
+            })
+          )
+        : undefined,
     }
   },
 

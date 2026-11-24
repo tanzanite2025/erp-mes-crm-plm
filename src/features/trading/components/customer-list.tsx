@@ -340,7 +340,7 @@ export function CustomerList() {
               )
             })
           }}
-          className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase'
+          className='h-12 rounded-full border-2 border-dashed px-10'
         >
           {locale === 'zh-CN' ? '重试加载' : 'Retry'}
         </Button>
@@ -367,7 +367,7 @@ export function CustomerList() {
           <Button
             type='button'
             variant='outline'
-            className='h-9 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full border-dashed px-5'
             onClick={() => {
               void Promise.all(
                 customerQuoteSummaryQueries.map((query) => query.refetch())
@@ -446,7 +446,7 @@ export function CustomerList() {
               setSearchTerm(event.target.value)
               setCustomerListPage(1)
             }}
-            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-[13px] font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20 sm:h-12'
+            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20 sm:h-12'
           />
         </div>
 
@@ -462,7 +462,7 @@ export function CustomerList() {
                   option !== 'all' && quoteSummaryCollectionStatus !== 'ready'
                 }
                 className={cn(
-                  'h-8 min-w-0 rounded-full px-1.5 text-[8px] font-black tracking-widest uppercase transition-all sm:h-9 sm:px-3 sm:text-[10px]',
+                  'h-8 min-w-0 rounded-full px-1.5 transition-all sm:h-9 sm:px-3',
                   quoteStatusFilter === option
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
@@ -484,7 +484,7 @@ export function CustomerList() {
                 setCustomerListPage(1)
               }}
               className={cn(
-                'h-10 min-w-0 flex-1 rounded-full px-3 text-[8px] font-black tracking-widest uppercase transition-all sm:h-11 sm:flex-none sm:px-6 sm:text-[10px]',
+                'h-10 min-w-0 flex-1 rounded-full px-3 transition-all sm:h-11 sm:flex-none sm:px-6',
                 showDeleted ? 'bg-primary/10 text-primary' : 'opacity-60'
               )}
             >
@@ -496,7 +496,7 @@ export function CustomerList() {
 
             <Button
               onClick={handleAddClick}
-              className='h-10 min-w-0 flex-1 rounded-full bg-primary px-3 text-[8px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:flex-none sm:px-8 sm:text-[10px]'
+              className='h-10 min-w-0 flex-1 rounded-full bg-primary px-3 text-primary-foreground shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:flex-none sm:px-8'
             >
               <Plus className='mr-1.5 size-3.5 sm:mr-2 sm:size-4' />
               {t('trading.customers.addCustomer')}
@@ -532,7 +532,7 @@ export function CustomerList() {
           <Button
             variant='outline'
             onClick={handleAddClick}
-            className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase transition-all duration-500 hover:bg-primary hover:text-primary-foreground'
+            className='h-12 rounded-full border-2 border-dashed px-10 transition-all duration-500 hover:bg-primary hover:text-primary-foreground'
           >
             {t('trading.customers.firstCustomer')}
           </Button>

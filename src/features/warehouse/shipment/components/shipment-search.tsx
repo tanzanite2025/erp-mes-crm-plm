@@ -51,7 +51,7 @@ export function ShipmentSearch({
           <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-blue-500' />
           <input
             placeholder={t('warehouse.shipment.search.placeholder')}
-            className='h-11 w-full rounded-xl border-none bg-muted/50 pr-10 pl-10 text-xs font-medium transition-all outline-none placeholder:text-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl md:text-sm'
+            className='h-11 w-full rounded-xl border-none bg-muted/50 pr-10 pl-10 transition-all outline-none placeholder:text-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl'
             autoFocus={autoFocus}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -87,7 +87,7 @@ export function ShipmentSearch({
                 <Button
                   type='button'
                   variant='outline'
-                  className='h-9 rounded-full px-4 text-[9px] font-black tracking-widest uppercase'
+                  className='h-9 rounded-full px-4'
                   onClick={onRetry}
                 >
                   {t('common.actions.retry')}
@@ -177,7 +177,7 @@ export function ShipmentSearch({
                   <Button
                     size='sm'
                     variant='ghost'
-                    className='h-9 shrink-0 gap-2 self-start rounded-full border border-blue-500/20 bg-blue-500/5 px-4 text-[9px] font-black tracking-widest text-blue-600 uppercase shadow-lg shadow-blue-500/10 transition-all group-hover:translate-x-0 group-hover:opacity-100 sm:translate-x-1 sm:self-auto sm:opacity-0'
+                    className='h-9 shrink-0 gap-2 self-start rounded-full border border-blue-500/20 bg-blue-500/5 px-4 text-blue-600 shadow-lg shadow-blue-500/10 transition-all group-hover:translate-x-0 group-hover:opacity-100 sm:translate-x-1 sm:self-auto sm:opacity-0'
                   >
                     {t('warehouse.shipment.search.initiate')}{' '}
                     <TrendingDown className='size-3' />

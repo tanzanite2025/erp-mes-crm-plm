@@ -155,7 +155,7 @@ export function ProductAppearanceManagementPanel({
             </p>
           </div>
           <Button
-            className='h-10 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-10 rounded-full px-5'
             disabled={isUpdatingCatalog}
             onClick={openProductAppearanceCreateDialog}
           >
@@ -325,7 +325,7 @@ export function ProductAppearanceManagementPanel({
                     <Button
                       type='button'
                       size='sm'
-                      className='mr-auto h-7 rounded-full px-3 text-[10px] font-black'
+                      className='control-typography-compact mr-auto h-7 rounded-full px-3'
                       disabled={!row.active || isUpdatingCatalog}
                       onClick={() => onAppearanceSelected(row)}
                     >
@@ -338,7 +338,7 @@ export function ProductAppearanceManagementPanel({
                     disabled={isUpdatingCatalog}
                     variant='outline'
                     size='sm'
-                    className='h-7 rounded-full px-2.5 text-[10px] font-black'
+                    className='control-typography-compact h-7 rounded-full px-2.5'
                     onClick={() => openProductAppearanceEditDialog(row)}
                   >
                     <Pencil className='mr-1.5 size-3' />
@@ -349,7 +349,7 @@ export function ProductAppearanceManagementPanel({
                     disabled={isUpdatingCatalog}
                     variant='outline'
                     size='sm'
-                    className='h-7 rounded-full px-2.5 text-[10px]'
+                    className='control-typography-compact h-7 rounded-full px-2.5'
                     onClick={() =>
                       void deleteProductAppearanceFromManagementPanel(row)
                     }

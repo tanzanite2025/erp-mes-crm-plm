@@ -58,7 +58,7 @@ export function BatchEngineControlPlanSection(
               updateControl('selectedCuttingPlanId', value)
             }
           >
-            <SelectTrigger className='h-9 rounded-lg bg-background text-xs font-semibold'>
+            <SelectTrigger className='h-9 rounded-lg bg-background'>
               <SelectValue
                 placeholder={
                   cuttingPlanLoading

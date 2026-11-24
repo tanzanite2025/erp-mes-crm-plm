@@ -272,7 +272,7 @@ export function StatusEditorContent({
           <Button
             type='button'
             variant='outline'
-            className='w-fit rounded-2xl text-xs font-black'
+            className='w-fit rounded-2xl'
             onClick={onAdd}
           >
             <Plus className='size-3.5' />
@@ -322,7 +322,7 @@ export function StatusEditorContent({
                           onUpdate(index, { code: event.target.value })
                         }
                         className={cn(
-                          'h-10 rounded-2xl border-none bg-background/85 font-maple-ui text-xs shadow-inner',
+                          'h-10 rounded-2xl border-none bg-background/85 font-maple-ui shadow-inner',
                           drawerReadonlyFieldClass(false)
                         )}
                         placeholder='Pending'
@@ -448,7 +448,7 @@ export function StatusEditorContent({
             <Button
               type='button'
               variant='outline'
-              className='rounded-2xl text-xs font-black'
+              className='rounded-2xl'
               onClick={onClose}
             >
               完成
@@ -476,11 +476,9 @@ export function StatusEditorContent({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className='gap-2'>
-            <AlertDialogCancel className='rounded-full text-[10px] font-black tracking-widest uppercase'>
-              取消
-            </AlertDialogCancel>
+            <AlertDialogCancel className='rounded-full'>取消</AlertDialogCancel>
             <AlertDialogAction
-              className='rounded-full bg-rose-600 text-[10px] font-black tracking-widest uppercase hover:bg-rose-700'
+              className='rounded-full bg-rose-600 hover:bg-rose-700'
               onClick={() => {
                 if (pendingDeleteIndex === null) {
                   return
@@ -512,11 +510,9 @@ export function StatusEditorContent({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className='gap-2'>
-            <AlertDialogCancel className='rounded-full text-[10px] font-black tracking-widest uppercase'>
-              取消
-            </AlertDialogCancel>
+            <AlertDialogCancel className='rounded-full'>取消</AlertDialogCancel>
             <AlertDialogAction
-              className='rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='rounded-full'
               onClick={() => {
                 setRenameConfirmOpen(false)
                 onSave?.()
@@ -599,7 +595,7 @@ export function FieldEditorContent({
         <Button
           type='button'
           variant='outline'
-          className='w-fit rounded-2xl text-xs font-black'
+          className='w-fit rounded-2xl'
           onClick={onAdd}
         >
           <Plus className='size-3.5' />
@@ -628,7 +624,7 @@ export function FieldEditorContent({
                     onUpdate(index, { key: event.target.value })
                   }
                   className={cn(
-                    'h-9 rounded-2xl font-maple-ui text-xs',
+                    'h-9 rounded-2xl font-maple-ui',
                     drawerReadonlyFieldClass(isFieldIdentityLocked)
                   )}
                   placeholder='orderNo'
@@ -638,7 +634,7 @@ export function FieldEditorContent({
                   onChange={(event) =>
                     onUpdate(index, { label: event.target.value })
                   }
-                  className='h-9 rounded-2xl text-xs font-bold'
+                  className='h-9 rounded-2xl'
                   placeholder='订单号'
                 />
                 <Input
@@ -648,7 +644,7 @@ export function FieldEditorContent({
                     onUpdate(index, { path: event.target.value })
                   }
                   className={cn(
-                    'h-9 rounded-2xl font-maple-ui text-xs',
+                    'h-9 rounded-2xl font-maple-ui',
                     drawerReadonlyFieldClass(isFieldIdentityLocked)
                   )}
                   placeholder='orderNo'
@@ -662,7 +658,7 @@ export function FieldEditorContent({
                     })
                   }
                   className={cn(
-                    'h-9 rounded-2xl border border-input bg-background px-2 text-xs font-bold',
+                    'h-9 rounded-2xl border border-input bg-background px-2',
                     drawerReadonlyFieldClass(isFieldIdentityLocked)
                   )}
                 >
@@ -677,7 +673,7 @@ export function FieldEditorContent({
                   onChange={(event) =>
                     onUpdate(index, { templateKey: event.target.value })
                   }
-                  className='h-9 rounded-2xl font-maple-ui text-xs'
+                  className='h-9 rounded-2xl font-maple-ui'
                   placeholder='OrderNo'
                 />
                 <MiniToggle
@@ -731,7 +727,7 @@ export function FieldEditorContent({
           <Button
             type='button'
             variant='outline'
-            className='rounded-2xl text-xs font-black'
+            className='rounded-2xl'
             onClick={onClose}
           >
             完成

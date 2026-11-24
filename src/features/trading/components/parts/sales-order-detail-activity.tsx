@@ -56,7 +56,7 @@ export function SalesOrderDetailActivity({
             <Button
               variant='ghost'
               size='sm'
-              className='min-h-9 gap-2 rounded-lg border border-destructive/20 px-4 text-sm font-medium text-destructive hover:bg-destructive/10'
+              className='min-h-9 gap-2 rounded-lg border border-destructive/20 px-4 text-destructive hover:bg-destructive/10'
               onClick={handleHardDelete}
             >
               <Trash2 className='size-3.5' />

@@ -173,7 +173,7 @@ export function SalesExchangeOldItemInboundDialog({
                 value={selectedTargetCategory}
                 onValueChange={setTargetCategory}
               >
-                <SelectTrigger className='h-11 rounded-2xl font-bold'>
+                <SelectTrigger className='h-11 rounded-2xl'>
                   <SelectValue placeholder='请选择仓库' />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,7 +193,7 @@ export function SalesExchangeOldItemInboundDialog({
                 type='date'
                 value={inboundDate}
                 onChange={(event) => setInboundDate(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2 sm:col-span-2'>
@@ -206,7 +206,7 @@ export function SalesExchangeOldItemInboundDialog({
                 step='0.01'
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}
-                className='h-11 rounded-2xl font-black'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2 sm:col-span-2'>
@@ -227,7 +227,7 @@ export function SalesExchangeOldItemInboundDialog({
               <Input
                 value={batchNo}
                 onChange={(event) => setBatchNo(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2 sm:col-span-2'>
@@ -247,14 +247,14 @@ export function SalesExchangeOldItemInboundDialog({
           <Button
             type='button'
             variant='ghost'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
             onClick={() => onOpenChange(false)}
           >
             取消
           </Button>
           <Button
             type='button'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
             disabled={
               isLoading ||
               confirmOldItemInboundMutation.isPending ||
@@ -395,7 +395,7 @@ export function SalesExchangeReplacementShipmentDialog({
                 value={selectedSourceCategory}
                 onValueChange={setSourceCategory}
               >
-                <SelectTrigger className='h-11 rounded-2xl font-bold'>
+                <SelectTrigger className='h-11 rounded-2xl'>
                   <SelectValue placeholder='请选择仓库' />
                 </SelectTrigger>
                 <SelectContent>
@@ -415,7 +415,7 @@ export function SalesExchangeReplacementShipmentDialog({
                 type='date'
                 value={shipmentDate}
                 onChange={(event) => setShipmentDate(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2'>
@@ -428,7 +428,7 @@ export function SalesExchangeReplacementShipmentDialog({
                 step='0.01'
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}
-                className='h-11 rounded-2xl font-black'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2'>
@@ -438,7 +438,7 @@ export function SalesExchangeReplacementShipmentDialog({
               <Input
                 value={batchNo}
                 onChange={(event) => setBatchNo(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2 sm:col-span-2'>
@@ -450,7 +450,7 @@ export function SalesExchangeReplacementShipmentDialog({
                 onChange={(event) =>
                   setReplacementTrackingNo(event.target.value)
                 }
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2 sm:col-span-2'>
@@ -481,14 +481,14 @@ export function SalesExchangeReplacementShipmentDialog({
           <Button
             type='button'
             variant='ghost'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
             onClick={() => onOpenChange(false)}
           >
             取消
           </Button>
           <Button
             type='button'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
             disabled={
               isLoading ||
               confirmReplacementShipmentMutation.isPending ||

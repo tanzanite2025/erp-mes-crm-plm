@@ -19,15 +19,8 @@ export function LanguageSwitch() {
       onClick={() => setLocale(nextLocale)}
       className='relative h-8.5 min-w-14 gap-1 rounded-full border border-dashed border-border/60 bg-background/90 px-2 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
     >
-      <span aria-hidden='true' className='text-sm leading-none'>
-        {locale === 'zh-CN' ? '🇨🇳' : '🇺🇸'}
-      </span>
-      <span
-        aria-hidden='true'
-        className='text-[11px] leading-none font-black tracking-tight'
-      >
-        {locale === 'zh-CN' ? 'ZH' : 'EN'}
-      </span>
+      <span aria-hidden='true'>{locale === 'zh-CN' ? '🇨🇳' : '🇺🇸'}</span>
+      <span aria-hidden='true'>{locale === 'zh-CN' ? 'ZH' : 'EN'}</span>
       <span className='sr-only'>{switchLanguageLabel}</span>
     </Button>
   )

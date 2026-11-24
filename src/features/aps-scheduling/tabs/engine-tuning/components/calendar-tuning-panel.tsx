@@ -82,7 +82,7 @@ export function CalendarTuningPanel() {
             type='number'
             value={workdayBonus}
             onChange={(e) => setWorkdayBonus(Number(e.target.value))}
-            className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-amber-500 focus:outline-hidden'
+            className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-amber-500 focus:outline-hidden'
             min='0'
           />
         </div>
@@ -95,7 +95,7 @@ export function CalendarTuningPanel() {
             type='number'
             value={overtimeBonus}
             onChange={(e) => setOvertimeBonus(Number(e.target.value))}
-            className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-amber-500 focus:outline-hidden'
+            className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-amber-500 focus:outline-hidden'
             min='0'
           />
         </div>
@@ -108,7 +108,7 @@ export function CalendarTuningPanel() {
             type='number'
             value={holidayPenalty}
             onChange={(e) => setHolidayPenalty(Number(e.target.value))}
-            className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-amber-500 focus:outline-hidden'
+            className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-amber-500 focus:outline-hidden'
             min='0'
           />
         </div>

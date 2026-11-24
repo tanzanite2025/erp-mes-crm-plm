@@ -79,7 +79,7 @@ export function PurchaseOrderSchedulePaymentFieldsGrid({
         <Input
           value={formData.purchaser}
           disabled
-          className='h-10 rounded-2xl border-none bg-white/50 font-black shadow-sm'
+          className='h-10 rounded-2xl border-none bg-white/50 shadow-sm'
         />
       </div>
 

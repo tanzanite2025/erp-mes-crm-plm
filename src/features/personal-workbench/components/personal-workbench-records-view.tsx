@@ -47,7 +47,7 @@ export function PersonalWorkbenchRecordsView({
       <div className='flex items-center justify-end'>
         <Button
           type='button'
-          className='h-8 shrink-0 rounded-full px-3 text-[10px] font-black tracking-widest md:h-9 md:px-4 md:text-[11px]'
+          className='h-8 shrink-0 rounded-full px-3 md:h-9 md:px-4'
           onClick={() => {
             setEditingRecord(undefined)
             setIsEditorOpen(true)

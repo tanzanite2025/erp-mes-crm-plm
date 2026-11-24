@@ -164,7 +164,7 @@ export function SalesReturnInboundDialog({
                 value={selectedTargetCategory}
                 onValueChange={setTargetCategory}
               >
-                <SelectTrigger className='h-11 rounded-2xl font-bold'>
+                <SelectTrigger className='h-11 rounded-2xl'>
                   <SelectValue placeholder='请选择仓库' />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,7 +184,7 @@ export function SalesReturnInboundDialog({
                 type='date'
                 value={inboundDate}
                 onChange={(event) => setInboundDate(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2'>
@@ -197,7 +197,7 @@ export function SalesReturnInboundDialog({
                 step='0.01'
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}
-                className='h-11 rounded-2xl font-black'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2'>
@@ -207,7 +207,7 @@ export function SalesReturnInboundDialog({
               <Input
                 value={batchNo}
                 onChange={(event) => setBatchNo(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
             <div className='space-y-2 sm:col-span-2'>
@@ -228,7 +228,7 @@ export function SalesReturnInboundDialog({
               <Input
                 value={remarks}
                 onChange={(event) => setRemarks(event.target.value)}
-                className='h-11 rounded-2xl font-bold'
+                className='h-11 rounded-2xl'
               />
             </div>
           </div>
@@ -238,14 +238,14 @@ export function SalesReturnInboundDialog({
           <Button
             type='button'
             variant='ghost'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
             onClick={() => onOpenChange(false)}
           >
             取消
           </Button>
           <Button
             type='button'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='rounded-full'
             disabled={
               isLoading || confirmInboundMutation.isPending || !targetLine
             }

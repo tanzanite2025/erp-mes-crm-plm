@@ -1,42 +1,52 @@
-import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
-import type { LineMindmapProcessOption } from '../types'
-import { MindmapDetailAddChildActions } from './mindmap-detail-add-child-actions'
-import { MindmapDetailStructureWriteback } from './mindmap-detail-structure-writeback'
+import type { ProductionBOMBranch } from '../../../data/production-bom-branch'
+import type { ProductionProcessStep } from '../../../data/production-process'
+import type { LineMindmapNode } from '../data/line-mindmap-domain'
+import { MindmapDetailBOMBranchBinding } from './mindmap-detail-bom-branch-binding'
+import { MindmapDetailProcessLibrarySelection } from './mindmap-detail-process-library-selection'
 
 interface MindmapDetailStructureActionsProps {
   selectedNode: LineMindmapNode
-  levelNames: Record<MindmapLevel, string>
-  processOptions: LineMindmapProcessOption[]
-  onAssignProcess?: (processId: string) => void | Promise<void>
+  bomBranches: ProductionBOMBranch[]
+  isLoadingBOMBranches: boolean
+  bomBranchQueryError?: Error | null
+  onBindBOMBranch?: (branch: ProductionBOMBranch) => void | Promise<void>
   onDeleteSelected?: () => void | Promise<void>
-  onRenameSelected?: (name: string) => void | Promise<void>
+  standardProcesses: ProductionProcessStep[]
+  onSaveProcessSelection?: (
+    segmentId: string,
+    processLibraryIds: string[]
+  ) => void | Promise<unknown>
 }
 
 export function MindmapDetailStructureActions({
   selectedNode,
-  levelNames,
-  processOptions,
-  onAssignProcess,
+  bomBranches,
+  isLoadingBOMBranches,
+  bomBranchQueryError,
+  onBindBOMBranch,
   onDeleteSelected,
-  onRenameSelected,
+  standardProcesses,
+  onSaveProcessSelection,
 }: MindmapDetailStructureActionsProps) {
   const canEditStructure = selectedNode.sourceType === 'segment'
 
   return (
     <>
-      <MindmapDetailAddChildActions
-        selectedNode={selectedNode}
-        levelNames={levelNames}
-        processOptions={processOptions}
-        onAssignProcess={onAssignProcess}
-      />
-
       {canEditStructure ? (
-        <MindmapDetailStructureWriteback
+        <MindmapDetailBOMBranchBinding
           selectedNode={selectedNode}
-          levelNames={levelNames}
+          branches={bomBranches}
+          isLoadingBranches={isLoadingBOMBranches}
+          branchQueryError={bomBranchQueryError}
+          onBindBranch={onBindBOMBranch}
           onDeleteSelected={onDeleteSelected}
-          onRenameSelected={onRenameSelected}
+        />
+      ) : null}
+      {canEditStructure ? (
+        <MindmapDetailProcessLibrarySelection
+          selectedNode={selectedNode}
+          standardProcesses={standardProcesses}
+          onSaveProcessSelection={onSaveProcessSelection}
         />
       ) : null}
     </>

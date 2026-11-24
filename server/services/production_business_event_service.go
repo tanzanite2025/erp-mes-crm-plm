@@ -131,24 +131,26 @@ func DispatchProductionOperationStatusChangedTx(tx *gorm.DB, operation models.Pr
 		operationOperator = strings.TrimSpace(operation.Operator)
 	}
 	metadata := map[string]any{
-		"operationExecutionId": operation.ID,
-		"productBarcode":       operation.ProductBarcode,
-		"routeId":              operation.RouteID,
-		"routeStepId":          operation.RouteStepID,
-		"processStepId":        operation.ProcessStepID,
-		"action":               operation.Action,
-		"result":               operation.Result,
-		"operator":             operationOperator,
+		"operationExecutionId":     operation.ID,
+		"productBarcode":           operation.ProductBarcode,
+		"routeId":                  operation.RouteID,
+		"routeStepId":              operation.RouteStepID,
+		"branchOperationId":        operation.BranchOperationID,
+		"productionWorkLocationId": operation.ProductionWorkLocationID,
+		"action":                   operation.Action,
+		"result":                   operation.Result,
+		"operator":                 operationOperator,
 	}
 	templateValues := map[string]string{
-		"OperationExecutionId": operation.ID,
-		"ProductBarcode":       operation.ProductBarcode,
-		"RouteId":              operation.RouteID,
-		"RouteStepId":          operation.RouteStepID,
-		"ProcessStepId":        operation.ProcessStepID,
-		"Action":               operation.Action,
-		"Result":               operation.Result,
-		"Operator":             operationOperator,
+		"OperationExecutionId":     operation.ID,
+		"ProductBarcode":           operation.ProductBarcode,
+		"RouteId":                  operation.RouteID,
+		"RouteStepId":              operation.RouteStepID,
+		"BranchOperationId":        operation.BranchOperationID,
+		"ProductionWorkLocationId": operation.ProductionWorkLocationID,
+		"Action":                   operation.Action,
+		"Result":                   operation.Result,
+		"Operator":                 operationOperator,
 	}
 	actionURL := renderTemplateValues("/production-architecture/routes?barcode=[ProductBarcode]", templateValues)
 	return DispatchBusinessStatusChangedTx(tx, BusinessStatusChangedEvent{
@@ -241,7 +243,7 @@ func DispatchOutsourceTransferStatusChangedTx(
 	metadata["uom"] = transfer.UOM
 	metadata["routeId"] = transfer.RouteID
 	metadata["routeStepId"] = transfer.RouteStepID
-	metadata["processStepId"] = transfer.ProcessStepID
+	metadata["branchOperationId"] = transfer.BranchOperationID
 	metadata["fromHolderType"] = transfer.FromHolderType
 	metadata["fromHolderId"] = transfer.FromHolderID
 	metadata["toHolderType"] = transfer.ToHolderType
@@ -261,7 +263,7 @@ func DispatchOutsourceTransferStatusChangedTx(
 	templateValues["UOM"] = transfer.UOM
 	templateValues["RouteId"] = transfer.RouteID
 	templateValues["RouteStepId"] = transfer.RouteStepID
-	templateValues["ProcessStepId"] = transfer.ProcessStepID
+	templateValues["BranchOperationId"] = transfer.BranchOperationID
 	templateValues["TransferEventId"] = transfer.TransferEventID
 	templateValues["PreviousOrderStatus"] = strings.TrimSpace(previousOrderStatus)
 	templateValues["OrderStatus"] = order.Status
@@ -307,7 +309,7 @@ func DispatchOutsourceInspectionStatusChangedTx(
 	metadata["uom"] = inspection.UOM
 	metadata["routeId"] = inspection.RouteID
 	metadata["routeStepId"] = inspection.RouteStepID
-	metadata["processStepId"] = inspection.ProcessStepID
+	metadata["branchOperationId"] = inspection.BranchOperationID
 	metadata["operationId"] = inspection.OperationID
 	metadata["previousOrderStatus"] = strings.TrimSpace(previousOrderStatus)
 	metadata["orderStatus"] = order.Status
@@ -329,7 +331,7 @@ func DispatchOutsourceInspectionStatusChangedTx(
 	templateValues["UOM"] = inspection.UOM
 	templateValues["RouteId"] = inspection.RouteID
 	templateValues["RouteStepId"] = inspection.RouteStepID
-	templateValues["ProcessStepId"] = inspection.ProcessStepID
+	templateValues["BranchOperationId"] = inspection.BranchOperationID
 	templateValues["OperationId"] = inspection.OperationID
 	templateValues["PreviousOrderStatus"] = strings.TrimSpace(previousOrderStatus)
 	templateValues["OrderStatus"] = order.Status
@@ -380,9 +382,6 @@ func buildOutsourceExecutionEventBase(order models.OutsourceOrder, line models.O
 		"productId":            line.ProductID,
 		"productCode":          line.ProductCode,
 		"productName":          line.ProductName,
-		"processStepId":        line.ProcessStepID,
-		"processCode":          line.ProcessCode,
-		"processName":          line.ProcessName,
 		"lineQuantity":         line.Quantity,
 		"quantity":             quantity,
 		"uom":                  uom,
@@ -404,9 +403,6 @@ func buildOutsourceExecutionEventBase(order models.OutsourceOrder, line models.O
 		"ProductId":            line.ProductID,
 		"ProductCode":          line.ProductCode,
 		"ProductName":          line.ProductName,
-		"ProcessStepId":        line.ProcessStepID,
-		"ProcessCode":          line.ProcessCode,
-		"ProcessName":          line.ProcessName,
 		"LineQuantity":         strconv.FormatFloat(line.Quantity, 'f', -1, 64),
 		"Quantity":             strconv.FormatFloat(quantity, 'f', -1, 64),
 		"UOM":                  uom,

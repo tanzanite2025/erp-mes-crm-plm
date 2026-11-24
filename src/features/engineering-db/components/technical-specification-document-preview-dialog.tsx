@@ -142,11 +142,7 @@ export function TechnicalSpecificationDocumentPreviewDialog({
                 </p>
               ) : (
                 <>
-                  <Button
-                    asChild
-                    variant='outline'
-                    className='rounded-full text-[13px]'
-                  >
+                  <Button asChild variant='outline' className='rounded-full'>
                     <a
                       href={sourceQuery.data}
                       target='_blank'

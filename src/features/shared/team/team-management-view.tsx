@@ -131,7 +131,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
             placeholder={texts.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className='h-12 rounded-2xl border-none bg-background pl-10 text-sm font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 rounded-2xl border-none bg-background pl-10 shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
           />
         </div>
         <div className='flex items-center gap-3'>
@@ -148,7 +148,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
               setEditingTeam(null)
               setIsDialogOpen(true)
             }}
-            className='h-11 gap-2 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95'
+            className='h-11 gap-2 rounded-full bg-primary px-8 text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95'
           >
             <Plus className='size-4' /> {texts.addButtonLabel}
           </Button>

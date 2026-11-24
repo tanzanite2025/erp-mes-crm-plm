@@ -89,7 +89,7 @@ function CurrentAccountSystemNotificationCenter({
       >
         <Bell className='size-5' />
         {unreadCount > 0 && (
-          <span className='absolute -top-1 -right-1 min-w-4 rounded-full bg-destructive px-1 text-[10px] leading-4 text-white'>
+          <span className='absolute -top-1 -right-1 min-w-4 rounded-full bg-destructive px-1 text-white'>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -138,7 +138,7 @@ function CurrentAccountSystemNotificationCenter({
                   size='sm'
                   variant={scope === value ? 'default' : 'ghost'}
                   aria-pressed={scope === value}
-                  className='h-9 rounded-full px-4 text-xs font-black shadow-none sm:px-5'
+                  className='h-9 rounded-full px-4 shadow-none sm:px-5'
                   onClick={() => {
                     setScope(value)
                     setCursors([''])
@@ -156,7 +156,7 @@ function CurrentAccountSystemNotificationCenter({
             <Button
               size='sm'
               variant='outline'
-              className='ml-auto h-9 rounded-full border-border/60 px-4 text-xs font-bold shadow-none'
+              className='ml-auto h-9 rounded-full border-border/60 px-4 shadow-none'
               aria-label='刷新消息'
               onClick={() => void inbox.refetch()}
             >
@@ -181,7 +181,7 @@ function CurrentAccountSystemNotificationCenter({
             >
               消息暂时无法同步，
               <button
-                className='rounded-full font-bold underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                className='rounded-full underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                 onClick={() => void inbox.refetch()}
               >
                 点击重试
@@ -270,7 +270,7 @@ function CurrentAccountSystemNotificationCenter({
                     <Button
                       size='sm'
                       variant='ghost'
-                      className='rounded-full px-3 text-xs font-bold'
+                      className='rounded-full px-3'
                       disabled={!isOnline || stateMutation.isPending}
                       onClick={() =>
                         void updateDisplayedNotificationState(
@@ -286,7 +286,7 @@ function CurrentAccountSystemNotificationCenter({
                     <Button
                       size='sm'
                       variant='outline'
-                      className='rounded-full border-border/60 px-3 text-xs font-bold shadow-none'
+                      className='rounded-full border-border/60 px-3 shadow-none'
                       disabled={!isOnline || stateMutation.isPending}
                       onClick={() =>
                         void updateDisplayedNotificationState(
@@ -305,7 +305,7 @@ function CurrentAccountSystemNotificationCenter({
                       new Date(message.expiresAt) > new Date()) && (
                       <Button
                         size='sm'
-                        className='rounded-full px-3 text-xs font-black shadow-none'
+                        className='rounded-full px-3 shadow-none'
                         disabled={!isOnline || stateMutation.isPending}
                         onClick={async () => {
                           if (
@@ -333,7 +333,7 @@ function CurrentAccountSystemNotificationCenter({
               <Button
                 size='sm'
                 variant='outline'
-                className='h-9 rounded-full border-border/60 px-4 text-xs font-bold shadow-none'
+                className='h-9 rounded-full border-border/60 px-4 shadow-none'
                 disabled={
                   !isOnline ||
                   stateMutation.isPending ||
@@ -355,7 +355,7 @@ function CurrentAccountSystemNotificationCenter({
                 <Button
                   size='sm'
                   variant='outline'
-                  className='h-9 rounded-full border-border/60 px-4 text-xs font-bold shadow-none'
+                  className='h-9 rounded-full border-border/60 px-4 shadow-none'
                   disabled={
                     !isOnline ||
                     stateMutation.isPending ||
@@ -380,7 +380,7 @@ function CurrentAccountSystemNotificationCenter({
               <Button
                 size='sm'
                 variant='outline'
-                className='h-9 rounded-full border-border/60 px-4 text-xs font-bold shadow-none'
+                className='h-9 rounded-full border-border/60 px-4 shadow-none'
                 disabled={cursors.length === 1 || inbox.isFetching}
                 onClick={() => setCursors((previous) => previous.slice(0, -1))}
               >
@@ -389,7 +389,7 @@ function CurrentAccountSystemNotificationCenter({
               <Button
                 size='sm'
                 variant='outline'
-                className='h-9 rounded-full border-border/60 px-4 text-xs font-bold shadow-none'
+                className='h-9 rounded-full border-border/60 px-4 shadow-none'
                 disabled={!inbox.data?.nextCursor || inbox.isFetching}
                 onClick={() => {
                   if (inbox.data?.nextCursor)

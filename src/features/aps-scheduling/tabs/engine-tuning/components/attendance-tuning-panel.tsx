@@ -65,7 +65,7 @@ export function AttendanceTuningPanel() {
               value={minRate}
               disabled={!enabled}
               onChange={(e) => setMinRate(Number(e.target.value))}
-              className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-40'
+              className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-40'
               min='0'
               max='100'
             />
@@ -86,7 +86,7 @@ export function AttendanceTuningPanel() {
               value={derate}
               disabled={!enabled}
               onChange={(e) => setDerate(Number(e.target.value))}
-              className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-40'
+              className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-40'
               min='0'
               max='100'
             />
@@ -105,7 +105,7 @@ export function AttendanceTuningPanel() {
             value={source}
             disabled={!enabled}
             onChange={(e) => setSource(e.target.value)}
-            className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-40'
+            className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-40'
           >
             <option value='simulated'>模拟考勤数据源</option>
             <option value='fingerprint'>车间生物指纹打卡机 API</option>

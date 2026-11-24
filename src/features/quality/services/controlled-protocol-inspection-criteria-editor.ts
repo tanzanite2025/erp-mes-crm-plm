@@ -1,30 +1,36 @@
 import type { StandardItem } from '../data/schema'
-import { hasValidControlledProtocolDeviationLimits } from './controlled-protocol-center-based-grading'
+import type { ControlledProtocolCriterion } from '../types/controlled-protocol'
+import {
+  buildConfigurableInspectionGradeRules,
+  createConfigurableInspectionGradeFormValues,
+  hasValidConfigurableInspectionGradeFormValues,
+  type ConfigurableInspectionGradeFormValue,
+} from './configurable-inspection-deviation-grade-rules'
 import { buildControlledProtocolInspectionStandardItem } from './controlled-protocol-standard-factory'
 
 export interface ControlledProtocolInspectionCriterionFormValue {
+  gradingMode: 'DEVIATION_BANDS'
+  grades: ConfigurableInspectionGradeFormValue[]
   id: string
   itemName: string
+  inspectionStageId: string
+  inspectionStageName: string
   targetWeight: string
   unit: string
-  aLevelTolerance: string
-  bLevelTolerance: string
 }
 
 export function createControlledProtocolInspectionCriteriaFormValues(
   items: StandardItem[]
 ): ControlledProtocolInspectionCriterionFormValue[] {
   return items.map((item) => ({
+    gradingMode: 'DEVIATION_BANDS',
+    grades: createConfigurableInspectionGradeFormValues(item.levels),
     id: item.id,
     itemName: item.name,
+    inspectionStageId: item.inspectionStageId,
+    inspectionStageName: item.inspectionStageName,
     targetWeight: item.centerValue?.toString() ?? '',
     unit: item.unit ?? '',
-    aLevelTolerance:
-      item.levels.find((level) => level.level === 'A')?.tolerance?.toString() ??
-      '',
-    bLevelTolerance:
-      item.levels.find((level) => level.level === 'B')?.tolerance?.toString() ??
-      '',
   }))
 }
 
@@ -33,6 +39,15 @@ export function getControlledProtocolInspectionCriteriaValidationError(
   activeConfiguredUnitCodes?: readonly string[]
 ) {
   if (criteria.length === 0) return 'criterionRequired'
+  if (
+    criteria.some(
+      (criterion) =>
+        !criterion.inspectionStageId.trim() ||
+        !criterion.inspectionStageName.trim()
+    )
+  ) {
+    return 'inspectionStageRequired'
+  }
   if (criteria.some((criterion) => !criterion.itemName.trim())) {
     return 'itemNameRequired'
   }
@@ -58,12 +73,9 @@ export function getControlledProtocolInspectionCriteriaValidationError(
   if (
     criteria.some(
       (criterion) =>
-        !criterion.aLevelTolerance.trim() ||
-        !criterion.bLevelTolerance.trim() ||
-        !hasValidControlledProtocolDeviationLimits(
-          Number(criterion.targetWeight),
-          Number(criterion.aLevelTolerance),
-          Number(criterion.bLevelTolerance)
+        !hasValidConfigurableInspectionGradeFormValues(
+          criterion.grades,
+          Number(criterion.targetWeight)
         )
     )
   ) {
@@ -83,22 +95,40 @@ export function buildEditedControlledProtocolInspectionStandardItems(
   const originalItemsById = new Map(
     originalItems.map((item) => [item.id, item])
   )
-  return criteria.map((criterion, index) => {
+  let nextNewInspectionItemOrder =
+    originalItems.reduce(
+      (maximumOrder, item) => Math.max(maximumOrder, item.order),
+      0
+    ) + 1
+  return criteria.map((criterion) => {
     const originalItem = originalItemsById.get(criterion.id)
+    const editedCriterion: ControlledProtocolCriterion = {
+      id: criterion.id,
+      gradingMode: 'DEVIATION_BANDS',
+      levels: buildConfigurableInspectionGradeRules(criterion.grades),
+      itemName: criterion.itemName.trim(),
+      inspectionStageId: criterion.inspectionStageId,
+      inspectionStageName: criterion.inspectionStageName,
+      targetWeight: Number(criterion.targetWeight),
+      unit: criterion.unit.trim(),
+    }
+    if (!originalItem) {
+      const newInspectionItem = buildControlledProtocolInspectionStandardItem(
+        editedCriterion,
+        nextNewInspectionItemOrder - 1
+      )
+      nextNewInspectionItemOrder += 1
+      return newInspectionItem
+    }
     return {
       ...originalItem,
-      ...buildControlledProtocolInspectionStandardItem(
-        {
-          id: criterion.id,
-          itemName: criterion.itemName.trim(),
-          targetWeight: Number(criterion.targetWeight),
-          unit: criterion.unit.trim(),
-          aLevelTolerance: Number(criterion.aLevelTolerance),
-          bLevelTolerance: Number(criterion.bLevelTolerance),
-        },
-        index
-      ),
-      isRequired: originalItem?.isRequired ?? true,
+      name: editedCriterion.itemName,
+      inspectionStageId: editedCriterion.inspectionStageId,
+      inspectionStageName: editedCriterion.inspectionStageName,
+      centerValue: editedCriterion.targetWeight,
+      gradingMode: editedCriterion.gradingMode,
+      levels: editedCriterion.levels,
+      unit: editedCriterion.unit,
     }
   })
 }

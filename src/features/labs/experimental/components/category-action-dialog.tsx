@@ -246,7 +246,7 @@ export function CategoryActionDialog({
                   placeholder={
                     isTopLevel ? '例如：压力感知中心' : 'PX-900 传感器'
                   }
-                  className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black focus-visible:ring-primary/30'
+                  className='h-12 rounded-2xl border-none bg-muted/40 px-5 focus-visible:ring-primary/30'
                   value={formData.name}
                   onChange={(e) => {
                     updateFormData({ name: e.target.value })
@@ -278,7 +278,7 @@ export function CategoryActionDialog({
               id='description'
               placeholder='请输入分类的详细描述、功能用途及相关标准...'
               rows={4}
-              className='resize-none rounded-2xl border-none bg-muted/40 p-5 text-[11px] leading-relaxed font-medium focus-visible:ring-primary/30'
+              className='resize-none rounded-2xl border-none bg-muted/40 p-5 focus-visible:ring-primary/30'
               value={formData.description}
               onChange={(e) => {
                 updateFormData({ description: e.target.value })

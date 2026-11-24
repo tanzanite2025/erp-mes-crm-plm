@@ -180,7 +180,7 @@ export function SalesReturnRecordMaster({
                     onKeyDown={(event) => {
                       event.stopPropagation()
                     }}
-                    className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                    className='h-8 rounded-full px-3'
                   >
                     {t(
                       'trading.salesReturns.queryShell.actualAmountEntryAction'
@@ -199,7 +199,7 @@ export function SalesReturnRecordMaster({
                         event.stopPropagation()
                       }}
                       disabled={deletingId === record.id}
-                      className='h-8 rounded-full border-rose-500/20 px-3 text-[10px] font-black tracking-widest text-rose-600 uppercase hover:text-rose-700'
+                      className='h-8 rounded-full border-rose-500/20 px-3 text-rose-600 hover:text-rose-700'
                     >
                       <Trash2 className='mr-1 size-3.5' />
                       {deletingId === record.id
@@ -246,13 +246,13 @@ export function SalesReturnRecordMaster({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className='gap-2'>
-              <AlertDialogCancel className='rounded-full text-[10px] font-black tracking-widest uppercase'>
+              <AlertDialogCancel className='rounded-full'>
                 {t('common.actions.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => void handleConfirmDelete()}
                 disabled={deletingId === pendingDeleteRecord.id}
-                className='rounded-full bg-rose-600 text-[10px] font-black tracking-widest uppercase hover:bg-rose-700'
+                className='rounded-full bg-rose-600 hover:bg-rose-700'
               >
                 {deletingId === pendingDeleteRecord.id
                   ? t('common.actions.loading')

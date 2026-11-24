@@ -329,7 +329,7 @@ export function ProductTypesMgmt() {
             setCurrentRow(undefined)
             setOpen(true)
           }}
-          className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
+          className='h-11 rounded-full px-6 shadow-xl shadow-blue-500/20 transition-all active:scale-95'
         >
           <Plus className='mr-2 size-4' />{' '}
           {t('engineering.categoryArchive.buttons.add')}

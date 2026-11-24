@@ -147,7 +147,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
             variant='ghost'
             onClick={() => void refreshRules()}
             disabled={isLoading}
-            className='h-11 w-full rounded-full px-8 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-muted sm:w-auto'
+            className='h-11 w-full rounded-full px-8 transition-all hover:bg-muted sm:w-auto'
           >
             <RefreshCw
               className={`mr-2 size-4 ${isLoading ? 'animate-spin' : ''}`}
@@ -156,7 +156,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
           </Button>
           <Button
             onClick={() => openEditDialog()}
-            className='h-11 w-full rounded-full bg-primary px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto md:px-10'
+            className='h-11 w-full rounded-full bg-primary px-6 shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto md:px-10'
           >
             <Plus className='mr-2 size-4' />{' '}
             {t('basicSettings.sequences.actions.addRule')}
@@ -267,7 +267,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                 {t('basicSettings.sequences.dialog.labels.ruleKey')}
               </Label>
               <Input
-                className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black tabular-nums transition-all focus:ring-1 focus:ring-primary/20'
+                className='h-12 rounded-2xl border-none bg-muted/50 tabular-nums transition-all focus:ring-1 focus:ring-primary/20'
                 value={editingRule?.ruleKey}
                 onChange={(e) =>
                   setEditingRule({ ...editingRule, ruleKey: e.target.value })
@@ -285,7 +285,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                   {t('basicSettings.sequences.dialog.labels.prefix')}
                 </Label>
                 <Input
-                  className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-bold focus:ring-1 focus:ring-primary/20'
+                  className='h-12 rounded-2xl border-none bg-muted/50 focus:ring-1 focus:ring-primary/20'
                   value={editingRule?.prefix}
                   onChange={(e) =>
                     setEditingRule({ ...editingRule, prefix: e.target.value })
@@ -301,7 +301,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                 </Label>
                 <Input
                   type='number'
-                  className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black focus:ring-1 focus:ring-primary/20'
+                  className='h-12 rounded-2xl border-none bg-muted/50 focus:ring-1 focus:ring-primary/20'
                   value={editingRule?.padding}
                   onChange={(e) =>
                     setEditingRule({
@@ -318,7 +318,7 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                 {t('basicSettings.sequences.dialog.labels.pattern')}
               </Label>
               <Input
-                className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui text-xs tabular-nums focus:ring-1 focus:ring-primary/20'
+                className='h-12 rounded-2xl border-none bg-muted/50 font-maple-ui tabular-nums focus:ring-1 focus:ring-primary/20'
                 value={editingRule?.pattern}
                 onChange={(e) =>
                   setEditingRule({ ...editingRule, pattern: e.target.value })
@@ -342,26 +342,17 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
                   })
                 }
               >
-                <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-bold focus:ring-1 focus:ring-primary/20'>
+                <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 focus:ring-1 focus:ring-primary/20'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className='rounded-[24px] border-none p-2 shadow-2xl'>
-                  <SelectItem
-                    value='MONTHLY'
-                    className='rounded-xl py-3 font-bold'
-                  >
+                  <SelectItem value='MONTHLY' className='rounded-xl py-3'>
                     {t('basicSettings.sequences.dialog.resetOptions.monthly')}
                   </SelectItem>
-                  <SelectItem
-                    value='YEARLY'
-                    className='rounded-xl py-3 font-bold'
-                  >
+                  <SelectItem value='YEARLY' className='rounded-xl py-3'>
                     {t('basicSettings.sequences.dialog.resetOptions.yearly')}
                   </SelectItem>
-                  <SelectItem
-                    value='NEVER'
-                    className='rounded-xl py-3 font-bold'
-                  >
+                  <SelectItem value='NEVER' className='rounded-xl py-3'>
                     {t('basicSettings.sequences.dialog.resetOptions.never')}
                   </SelectItem>
                 </SelectContent>
@@ -372,13 +363,13 @@ export function SequenceMgmt({ hideHeader = false }: SequenceMgmtProps) {
           <DialogFooter className='flex gap-4 bg-transparent p-8 pt-0 sm:justify-between'>
             <Button
               variant='ghost'
-              className='h-11 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-muted'
+              className='h-11 flex-1 rounded-full transition-colors hover:bg-muted'
               onClick={() => setIsDialogOpen(false)}
             >
               {t('basicSettings.sequences.dialog.actions.cancel')}
             </Button>
             <Button
-              className='h-11 flex-1 gap-2 rounded-full bg-primary text-[10px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95'
+              className='h-11 flex-1 gap-2 rounded-full bg-primary shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95'
               onClick={handleSaveRule}
               disabled={isSaving}
             >

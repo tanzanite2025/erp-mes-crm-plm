@@ -27,6 +27,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { QualityInspectionMeasurementSubmissionDialog } from '@/features/quality/components/quality-inspection-measurement-submission-dialog'
 import {
   useGetQualityTasks,
   useGetInspectionStats,
@@ -38,6 +39,9 @@ import { formatQualityActorName } from '@/features/quality/utils/quality-utils'
 export function QualityInspection() {
   const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
+  const [measurementEntry, setMeasurementEntry] = useState<{
+    task?: QualityTask
+  } | null>(null)
   const [selectedTask, setSelectedTask] = useState<QualityTask | null>(null)
   const [quantityForm, setQuantityForm] = useState({
     inputQuantity: '',
@@ -53,8 +57,7 @@ export function QualityInspection() {
   } = useGetQualityTasks(1, 100, searchTerm)
   const tasks = data?.items || []
   const { data: stats, isLoading: isStatsLoading } = useGetInspectionStats()
-  const { executeInspectionMutation, confirmQuantitySettlementMutation } =
-    useQualityMutations()
+  const { confirmQuantitySettlementMutation } = useQualityMutations()
 
   const isLoading = isTasksLoading || isStatsLoading
 
@@ -117,13 +120,6 @@ export function QualityInspection() {
     }
 
     try {
-      if (selectedTask.result === 'PENDING') {
-        await executeInspectionMutation.mutateAsync({
-          id: selectedTask.id,
-          result: 'PASS',
-          remarks: t('quality.inspection.page.quickPassRemark'),
-        })
-      }
       await confirmQuantitySettlementMutation.mutateAsync(payload)
       setSelectedTask(null)
     } catch (error) {
@@ -157,12 +153,15 @@ export function QualityInspection() {
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/30 transition-colors group-focus-within:text-primary' />
           <Input
             placeholder={t('quality.inspection.page.searchPlaceholder')}
-            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-[11px] font-bold tracking-tight uppercase shadow-inner transition-all focus:bg-background'
+            className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 shadow-inner transition-all focus:bg-background'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className='flex shrink-0 items-center gap-3'>
+          <Button onClick={() => setMeasurementEntry({})}>
+            {t('quality.measurement.start')}
+          </Button>
           <div className='flex w-full items-center justify-center gap-3 rounded-full border border-dashed border-muted/50 bg-muted/10 px-4 py-2 sm:w-auto'>
             <span className='text-[10px] leading-none font-black tracking-widest text-muted-foreground/30 uppercase'>
               {t('quality.inspection.page.pendingLoad')}
@@ -187,6 +186,10 @@ export function QualityInspection() {
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
           {tasks.map((task: QualityTask) => {
             const inspectorName = formatQualityActorName(task.inspector)
+            const isTaskAwaitingMeasurements =
+              task.result === 'PENDING' &&
+              task.status !== 'COMPLETED' &&
+              task.status !== 'CANCELLED'
             return (
               <Card
                 key={task.id}
@@ -196,7 +199,7 @@ export function QualityInspection() {
                     ? 'bg-emerald-500/[0.02]'
                     : task.result === 'FAIL'
                       ? 'bg-rose-500/[0.02]'
-                      : 'bg-background hover:bg-white'
+                      : 'bg-background hover:bg-muted/20'
                 )}
               >
                 <div
@@ -272,7 +275,7 @@ export function QualityInspection() {
                     </div>
                   </div>
 
-                  <div className='xs:flex-row xs:items-center flex flex-col justify-between gap-4 border-t border-dashed border-muted/50 pt-4'>
+                  <div className='flex flex-wrap items-center gap-3 border-t border-dashed border-muted/50 pt-4'>
                     <div className='flex flex-col gap-0.5'>
                       <span className='text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase'>
                         {t('quality.inspection.page.executor')}
@@ -286,22 +289,44 @@ export function QualityInspection() {
                       </div>
                     </div>
                     <Button
+                      variant='outline'
+                      size='sm'
+                      disabled={
+                        task.sourceType === 'PRODUCTION_OUTSOURCE' &&
+                        isTaskAwaitingMeasurements
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setMeasurementEntry({ task })
+                      }}
+                    >
+                      {t(
+                        isTaskAwaitingMeasurements
+                          ? 'quality.measurement.start'
+                          : 'quality.measurement.history'
+                      )}
+                    </Button>
+                    {task.sourceType === 'PRODUCTION_OUTSOURCE' &&
+                      isTaskAwaitingMeasurements && (
+                        <p className='text-xs text-muted-foreground'>
+                          {t('quality.measurement.source')}
+                        </p>
+                      )}
+                    <Button
                       size='sm'
                       disabled={
                         !task.productionPlanId ||
+                        task.result === 'PENDING' ||
                         !task.productId ||
-                        confirmQuantitySettlementMutation.isPending ||
-                        executeInspectionMutation.isPending
+                        confirmQuantitySettlementMutation.isPending
                       }
-                      className='xs:w-auto h-9 w-full gap-2 truncate rounded-xl bg-primary text-[9px] font-black tracking-widest uppercase shadow-lg shadow-primary/20 transition-all hover:scale-105'
+                      className='h-9 w-full gap-2 rounded-xl bg-primary shadow-lg shadow-primary/20 transition-all hover:scale-105 sm:w-auto'
                       onClick={(e) => {
                         e.stopPropagation()
                         openQuantitySettlement(task)
                       }}
                     >
-                      {task.result === 'PENDING'
-                        ? t('quality.inspection.page.confirmPassAndQuantity')
-                        : t('quality.inspection.page.recordQuantity')}
+                      {t('quality.inspection.page.recordQuantity')}
                       <ArrowRight className='size-3 shrink-0' />
                     </Button>
                     {/* The backend requires stable production and product links
@@ -319,6 +344,12 @@ export function QualityInspection() {
         </div>
       )}
 
+      {measurementEntry && (
+        <QualityInspectionMeasurementSubmissionDialog
+          task={measurementEntry.task}
+          onClose={() => setMeasurementEntry(null)}
+        />
+      )}
       <Dialog
         open={Boolean(selectedTask)}
         onOpenChange={(open) => {
@@ -334,9 +365,7 @@ export function QualityInspection() {
           <div className='p-6 sm:p-8'>
             <DialogHeader className='gap-3'>
               <DialogTitle className='text-xl font-black tracking-tight'>
-                {selectedTask?.result === 'PENDING'
-                  ? t('quality.inspection.page.quantityDialogTitle')
-                  : t('quality.inspection.page.recordQuantity')}
+                {t('quality.inspection.page.recordQuantity')}
               </DialogTitle>
               <DialogDescription className='text-sm leading-6'>
                 {t('quality.inspection.page.quantityDialogDescription', {
@@ -447,10 +476,7 @@ export function QualityInspection() {
                 <Button
                   type='submit'
                   className='rounded-xl'
-                  disabled={
-                    confirmQuantitySettlementMutation.isPending ||
-                    executeInspectionMutation.isPending
-                  }
+                  disabled={confirmQuantitySettlementMutation.isPending}
                 >
                   {t('quality.inspection.page.confirmQuantity')}
                 </Button>

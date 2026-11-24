@@ -29,7 +29,7 @@ export function AssignmentAccountList({
   const { t } = useLanguage()
 
   return (
-    <div className='flex min-h-0 flex-col rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 shadow-inner'>
+    <div className='flex max-h-96 min-h-0 min-w-0 flex-col rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 shadow-inner xl:max-h-none'>
       <div className='mb-5 flex items-center justify-between gap-3'>
         <div>
           <h2 className='text-sm font-black tracking-tighter'>
@@ -75,10 +75,8 @@ export function AssignmentAccountList({
                 onClick={() => onSelectAccount(account.id)}
                 className='min-w-0 flex-1 text-left'
               >
-                <span className='block truncate text-sm font-black tracking-tight'>
-                  {account.name}
-                </span>
-                <span className='mt-1 block truncate text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
+                <span className='block truncate'>{account.name}</span>
+                <span className='mt-1 block truncate text-muted-foreground/55'>
                   {account.username} / {account.accountLabel}
                 </span>
               </button>

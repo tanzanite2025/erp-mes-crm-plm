@@ -29,7 +29,7 @@ export function DocumentNotesSection({
         placeholder={t('tradingSalesOrder.dialog.memoPlaceholder')}
         rows={2}
         className={cn(
-          'resize-none rounded-2xl border-muted/60 px-3 py-2 text-xs leading-5 font-medium transition-shadow focus:shadow-xl',
+          'resize-none rounded-2xl border-muted/60 px-3 py-2 transition-shadow focus:shadow-xl',
           compact && 'rounded-[18px] py-1.5'
         )}
         value={value}

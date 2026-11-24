@@ -104,6 +104,8 @@ type InspectionStandardsListResponse struct {
 }
 
 type InspectionTaskRequest struct {
+	SubmissionKey    *string         `json:"submissionKey"`
+	StandardVersion  float64         `json:"standardVersion"`
 	ID               string          `json:"id"`
 	StandardID       string          `json:"standardId"`
 	Status           string          `json:"status"`
@@ -125,29 +127,35 @@ type InspectionTaskRequest struct {
 }
 
 type InspectionTaskResponse struct {
-	ID               string                      `json:"id"`
-	CreatedAt        time.Time                   `json:"createdAt"`
-	UpdatedAt        time.Time                   `json:"updatedAt"`
-	StandardID       string                      `json:"standardId"`
-	Standard         *InspectionStandardResponse `json:"standard,omitempty"`
-	ProductionPlanID string                      `json:"productionPlanId,omitempty"`
-	OrderID          string                      `json:"orderId,omitempty"`
-	BatchNo          string                      `json:"batchNo"`
-	ProductID        string                      `json:"productId"`
-	ProductName      string                      `json:"productName"`
-	SampleQty        float64                     `json:"sampleQty"`
-	Result           string                      `json:"result"`
-	Inspector        string                      `json:"inspector"`
-	Status           string                      `json:"status"`
-	SourceType       string                      `json:"sourceType,omitempty"`
-	SourceID         string                      `json:"sourceId,omitempty"`
-	SourceLineID     string                      `json:"sourceLineId,omitempty"`
-	ProductBarcode   string                      `json:"productBarcode,omitempty"`
-	ClaimedBy        string                      `json:"claimedBy,omitempty"`
-	ClaimedAt        *time.Time                  `json:"claimedAt,omitempty"`
-	InputData        json.RawMessage             `json:"inputData"`
-	Remarks          string                      `json:"remarks"`
-	CompletedAt      *time.Time                  `json:"completedAt"`
+	ID                string                      `json:"id"`
+	CreatedAt         time.Time                   `json:"createdAt"`
+	UpdatedAt         time.Time                   `json:"updatedAt"`
+	StandardID        string                      `json:"standardId"`
+	Standard          *InspectionStandardResponse `json:"standard,omitempty"`
+	ProductionPlanID  string                      `json:"productionPlanId,omitempty"`
+	OrderID           string                      `json:"orderId,omitempty"`
+	BatchNo           string                      `json:"batchNo"`
+	ProductID         string                      `json:"productId"`
+	ProductName       string                      `json:"productName"`
+	SampleQty         float64                     `json:"sampleQty"`
+	Result            string                      `json:"result"`
+	Inspector         string                      `json:"inspector"`
+	Status            string                      `json:"status"`
+	SourceType        string                      `json:"sourceType,omitempty"`
+	SourceID          string                      `json:"sourceId,omitempty"`
+	SourceLineID      string                      `json:"sourceLineId,omitempty"`
+	SourceCycleNo     int                         `json:"sourceCycleNo"`
+	InspectionRoundNo int                         `json:"inspectionRoundNo"`
+	ParentTaskID      string                      `json:"parentTaskId,omitempty"`
+	ProductBarcode    string                      `json:"productBarcode,omitempty"`
+	ClaimedBy         string                      `json:"claimedBy,omitempty"`
+	ClaimedAt         *time.Time                  `json:"claimedAt,omitempty"`
+	StandardVersion   float64                     `json:"standardVersion"`
+	StandardSnapshot  json.RawMessage             `json:"standardSnapshot"`
+	EvaluationData    json.RawMessage             `json:"evaluationData"`
+	InputData         json.RawMessage             `json:"inputData"`
+	Remarks           string                      `json:"remarks"`
+	CompletedAt       *time.Time                  `json:"completedAt"`
 }
 
 type InspectionTasksListResponse struct {
@@ -186,7 +194,8 @@ type QualityAbnormalityResponse struct {
 }
 
 // QualityAbnormalityDisposalRequest is the single command contract for recording
-// a quality abnormality's final disposal and its optional scrap fact.
+// a quality abnormality's final disposal and its optional scrap fact. Legacy
+// source fields are compatibility assertions; changing them is rejected.
 type QualityAbnormalityDisposalRequest struct {
 	DisposalMethod   string     `json:"disposalMethod"`
 	ScrapQuantity    *float64   `json:"scrapQuantity"`
@@ -313,6 +322,8 @@ func mapInspectionStandardsToResponse(items []models.InspectionStandard, approva
 
 func mapInspectionTaskRequestToModel(input InspectionTaskRequest) models.InspectionTask {
 	return models.InspectionTask{
+		SubmissionKey:    input.SubmissionKey,
+		StandardVersion:  input.StandardVersion,
 		BaseModel:        models.BaseModel{ID: input.ID},
 		StandardID:       input.StandardID,
 		Status:           input.Status,
@@ -341,29 +352,35 @@ func mapInspectionTaskToResponse(model models.InspectionTask) InspectionTaskResp
 		standard = &mapped
 	}
 	return InspectionTaskResponse{
-		ID:               model.ID,
-		CreatedAt:        model.CreatedAt,
-		UpdatedAt:        model.UpdatedAt,
-		StandardID:       model.StandardID,
-		Standard:         standard,
-		Status:           model.Status,
-		SourceType:       model.SourceType,
-		SourceID:         model.SourceID,
-		SourceLineID:     model.SourceLineID,
-		ProductBarcode:   model.ProductBarcode,
-		ProductionPlanID: model.ProductionPlanID,
-		OrderID:          model.OrderID,
-		BatchNo:          model.BatchNo,
-		ProductID:        model.ProductID,
-		ProductName:      model.ProductName,
-		SampleQty:        model.SampleQty,
-		Result:           model.Result,
-		Inspector:        model.Inspector,
-		ClaimedBy:        model.ClaimedBy,
-		ClaimedAt:        model.ClaimedAt,
-		InputData:        model.InputData,
-		Remarks:          model.Remarks,
-		CompletedAt:      model.CompletedAt,
+		ID:                model.ID,
+		CreatedAt:         model.CreatedAt,
+		UpdatedAt:         model.UpdatedAt,
+		StandardID:        model.StandardID,
+		Standard:          standard,
+		Status:            model.Status,
+		SourceType:        model.SourceType,
+		SourceID:          model.SourceID,
+		SourceLineID:      model.SourceLineID,
+		SourceCycleNo:     model.SourceCycleNo,
+		InspectionRoundNo: model.InspectionRoundNo,
+		ParentTaskID:      model.ParentTaskID,
+		ProductBarcode:    model.ProductBarcode,
+		ProductionPlanID:  model.ProductionPlanID,
+		OrderID:           model.OrderID,
+		BatchNo:           model.BatchNo,
+		ProductID:         model.ProductID,
+		ProductName:       model.ProductName,
+		SampleQty:         model.SampleQty,
+		Result:            model.Result,
+		Inspector:         model.Inspector,
+		ClaimedBy:         model.ClaimedBy,
+		ClaimedAt:         model.ClaimedAt,
+		StandardVersion:   model.StandardVersion,
+		StandardSnapshot:  model.StandardSnapshot,
+		EvaluationData:    model.EvaluationData,
+		InputData:         model.InputData,
+		Remarks:           model.Remarks,
+		CompletedAt:       model.CompletedAt,
 	}
 }
 

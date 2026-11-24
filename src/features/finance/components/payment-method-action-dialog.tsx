@@ -197,7 +197,7 @@ export function PaymentMethodActionDialog({
               onChange={(e) => {
                 updateFormData({ name: e.target.value })
               }}
-              className='h-12 rounded-2xl bg-muted/5 font-bold'
+              className='h-12 rounded-2xl bg-muted/5'
             />
           </div>
         </div>
@@ -229,7 +229,7 @@ export function PaymentMethodActionDialog({
               onChange={(e) => {
                 updateFormData({ sortOrder: Number(e.target.value || 0) })
               }}
-              className='h-12 rounded-2xl bg-muted/5 font-bold'
+              className='h-12 rounded-2xl bg-muted/5'
             />
           </div>
           <div className='space-y-2'>
@@ -243,7 +243,7 @@ export function PaymentMethodActionDialog({
                   status: e.target.value as PaymentMethod['status'],
                 })
               }}
-              className='h-12 w-full appearance-none rounded-2xl border border-dashed border-muted/20 bg-muted/5 px-4 text-[12px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20'
+              className='h-12 w-full appearance-none rounded-2xl border border-dashed border-muted/20 bg-muted/5 px-4 shadow-sm focus:ring-2 focus:ring-primary/20'
             >
               <option value='Active'>
                 {t('finance.paymentMethods.status.active')}

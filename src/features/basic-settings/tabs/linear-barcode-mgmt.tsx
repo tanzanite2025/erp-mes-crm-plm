@@ -6,6 +6,8 @@ import { Loader2, RotateCcw, Save, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
+import { parseProductCodeForDisplay } from '@/lib/product-code/product-code-parser'
+import { assembleProductCodeForRulePreview } from '@/lib/product-code/product-code-protocol'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +32,6 @@ import { BarcodeRuleConfigDialog } from '../components/barcode-rule-config-dialo
 import { BarcodeRulesTable } from '../components/barcode-rules-table'
 import { LinearBarcodeSimulationSection } from '../components/linear-barcode-simulation-section'
 import {
-  assembleLinearBarcodeCode,
   createDefaultLinearBarcodeProtocolConfig,
   DAY_OPTIONS,
   type LinearBarcodeProtocolConfig,
@@ -39,7 +40,6 @@ import {
 import { type BarcodeRuleSegment } from '../data/linear-barcode-rules-config'
 import { useAppearanceMapping } from '../hooks/use-appearance-mapping'
 import { useLinearBarcodeProtocol } from '../hooks/use-linear-barcode-protocol'
-import { parseLinearBarcodeCode } from '../utils/linear-barcode-parser'
 
 const logger = createLogger('LinearBarcodeMgmt')
 
@@ -109,12 +109,12 @@ export function LinearBarcodeMgmt() {
 
   const assembledCode = useMemo(() => {
     if (!mockInputs) return ''
-    return assembleLinearBarcodeCode(mockInputs)
+    return assembleProductCodeForRulePreview(mockInputs)
   }, [mockInputs])
 
   const parsedResult = useMemo(
     () =>
-      parseLinearBarcodeCode(assembledCode, {
+      parseProductCodeForDisplay(assembledCode, {
         appearanceMapping: appearanceMapping || undefined,
         products,
         holeCodeCombinationLabels: combinationLabelMap,
@@ -282,7 +282,7 @@ export function LinearBarcodeMgmt() {
             size='sm'
             onClick={() => void handleSaveProtocol()}
             disabled={isConfigSaving}
-            className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
+            className='h-9 rounded-full border-dashed transition-all hover:bg-primary/5 hover:text-primary'
           >
             <Save
               className={cn('mr-2 size-3', isConfigSaving && 'animate-pulse')}
@@ -305,7 +305,7 @@ export function LinearBarcodeMgmt() {
           {canOpenSharedNumberingEngine && (
             <Button
               variant='ghost'
-              className='h-11 w-full rounded-full px-8 text-[10px] font-black tracking-widest uppercase sm:w-auto'
+              className='h-11 w-full rounded-full px-8 sm:w-auto'
               onClick={() =>
                 navigate({
                   to: '/code-center/shared-code-source/numbering-engine',
@@ -318,7 +318,7 @@ export function LinearBarcodeMgmt() {
           )}
           <Button
             variant='ghost'
-            className='h-11 w-full rounded-full px-8 text-[10px] font-black tracking-widest uppercase hover:text-rose-600 sm:w-auto'
+            className='h-11 w-full rounded-full px-8 hover:text-rose-600 sm:w-auto'
             onClick={() => setIsResetDialogOpen(true)}
           >
             <RotateCcw className='mr-2 size-4' />
@@ -409,7 +409,7 @@ export function LinearBarcodeMgmt() {
               placeholder={t(
                 'basicSettings.linearBarcode.resetDialog.placeholder'
               )}
-              className='h-12 rounded-2xl text-center font-black'
+              className='h-12 rounded-2xl text-center'
             />
           </div>
 

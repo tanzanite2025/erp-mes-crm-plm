@@ -29,7 +29,7 @@ export function ApsToolbar({
           placeholder={t('apsScheduling.board.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
-          className='h-10 rounded-2xl border-none bg-background pl-11 text-sm font-medium shadow-inner focus-visible:ring-cyan-500/20'
+          className='h-10 rounded-2xl border-none bg-background pl-11 shadow-inner focus-visible:ring-cyan-500/20'
         />
       </div>
       <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>
@@ -44,14 +44,11 @@ export function ApsToolbar({
         </div>
       </div>
       <div className='flex flex-wrap items-center gap-2'>
-        <Button
-          variant='outline'
-          className='h-10 gap-2 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
-        >
+        <Button variant='outline' className='h-10 gap-2 rounded-full px-4'>
           <SlidersHorizontal className='size-4' />{' '}
           {t('apsScheduling.board.rules')}
         </Button>
-        <Button className='h-10 gap-2 rounded-full bg-cyan-600 px-6 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-cyan-600/20 transition-all hover:bg-cyan-700 active:scale-95'>
+        <Button className='h-10 gap-2 rounded-full bg-cyan-600 px-6 text-white shadow-xl shadow-cyan-600/20 transition-all hover:bg-cyan-700 active:scale-95'>
           <Plus className='size-4' /> {t('apsScheduling.board.create')}
         </Button>
       </div>

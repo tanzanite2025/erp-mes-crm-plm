@@ -22,6 +22,7 @@ describe('pdaProductionScanService', () => {
         metadata: {
           routeId: 'route-1',
           processStepId: 'process-1',
+          targetProcessStepId: 'legacy-target',
           action: 'START',
         },
       })
@@ -29,8 +30,6 @@ describe('pdaProductionScanService', () => {
       productBarcode: 'PDA-001',
       action: 'START',
       commandSource: 'PDA',
-      routeId: 'route-1',
-      processStepId: 'process-1',
     })
   })
 
@@ -46,12 +45,7 @@ describe('pdaProductionScanService', () => {
       productBarcode: 'PDA-002',
       action: 'START',
       commandSource: 'PDA',
-      executionLotId: undefined,
-      routeId: undefined,
-      routeStepId: undefined,
-      processStepId: undefined,
       targetRouteStepId: undefined,
-      targetProcessStepId: undefined,
       executionMode: undefined,
       partnerId: undefined,
       result: undefined,

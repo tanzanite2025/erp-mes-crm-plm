@@ -23,11 +23,17 @@ import { useQualityMutations } from './use-quality'
 interface UseQualityStandardPreviewActionsOptions {
   standard?: Standard
   standardId: string
+  onClose?: () => void
+  onOpenEditor?: (standardId: string) => void
+  onPreviewStandardChange?: (standardId: string) => void
 }
 
 export function useQualityStandardPreviewActions({
   standard,
   standardId,
+  onClose,
+  onOpenEditor,
+  onPreviewStandardChange,
 }: UseQualityStandardPreviewActionsOptions) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -50,6 +56,8 @@ export function useQualityStandardPreviewActions({
   const [rejectReason, setRejectReason] = useState('')
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [archiveReason, setArchiveReason] = useState('')
+  const [isWorkflowTransitionPending, setIsWorkflowTransitionPending] =
+    useState(false)
 
   const availableActions = useMemo(() => {
     const actions = getQualityStandardAvailableActions(standard?.status)
@@ -71,24 +79,36 @@ export function useQualityStandardPreviewActions({
 
   const navigateToPreview = useCallback(
     (nextStandardId: string) => {
+      if (onPreviewStandardChange) {
+        onPreviewStandardChange(nextStandardId)
+        return
+      }
       navigate({
         to: '/quality/standards/$standardId/preview',
         params: { standardId: nextStandardId },
       })
     },
-    [navigate]
+    [navigate, onPreviewStandardChange]
   )
 
   const handleBack = useCallback(() => {
+    if (onClose) {
+      onClose()
+      return
+    }
     navigate({ to: '/quality/standards' })
-  }, [navigate])
+  }, [navigate, onClose])
 
   const handleOpenEditor = useCallback(() => {
+    if (onOpenEditor) {
+      onOpenEditor(standardId)
+      return
+    }
     navigate({
       to: '/quality/standards/$standardId/edit',
       params: { standardId },
     })
-  }, [navigate, standardId])
+  }, [navigate, onOpenEditor, standardId])
 
   const runWorkflowAction = useCallback(
     async (
@@ -97,11 +117,12 @@ export function useQualityStandardPreviewActions({
         | QualityStandardReviewDecisionInput,
       successMessage: string
     ): Promise<Standard | null> => {
-      if (!standard) {
+      if (!standard || isWorkflowTransitionPending) {
         return null
       }
 
       try {
+        setIsWorkflowTransitionPending(true)
         if (action.type === 'approve' || action.type === 'reject') {
           const request = standard.approvalRequestSummary
           if (!request?.id) return null
@@ -161,10 +182,13 @@ export function useQualityStandardPreviewActions({
           handleServerError(error)
         }
         return null
+      } finally {
+        setIsWorkflowTransitionPending(false)
       }
     },
     [
       navigateToPreview,
+      isWorkflowTransitionPending,
       queryClient,
       submitReviewDecision,
       saveStandardMutation,
@@ -297,7 +321,9 @@ export function useQualityStandardPreviewActions({
   return {
     saveStandardMutation,
     isWorkflowActionPending:
-      saveStandardMutation.isPending || isReviewDecisionPending,
+      saveStandardMutation.isPending ||
+      isReviewDecisionPending ||
+      isWorkflowTransitionPending,
     availableActions,
     isApproveDialogOpen,
     setIsApproveDialogOpen,

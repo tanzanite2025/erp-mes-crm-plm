@@ -33,7 +33,7 @@ export function AssignmentCategoryGrid({
         <FolderTree className='size-4 text-muted-foreground' />
       </div>
 
-      <div className='grid gap-1.5 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-1.5'>
         {categories.map((category) => {
           const checked = selectedCategorySet.has(category.categoryId)
 
@@ -73,7 +73,7 @@ export function AssignmentCategoryGrid({
         })}
 
         {categories.length === 0 ? (
-          <div className='rounded-xl border border-dashed border-muted/50 bg-muted/5 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
+          <div className='col-span-full rounded-xl border border-dashed border-muted/50 bg-muted/5 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             {t('sidebarCommandConfig.categoryGrid.empty')}
           </div>
         ) : null}

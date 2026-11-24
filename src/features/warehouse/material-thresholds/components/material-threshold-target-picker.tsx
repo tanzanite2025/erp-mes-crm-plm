@@ -83,7 +83,7 @@ export function MaterialThresholdTargetPicker({
             disabled={disabled || disableTargetTypeChange}
             onClick={() => onTargetTypeChange('MATERIAL')}
             className={cn(
-              'h-11 rounded-2xl text-[10px] font-black tracking-widest uppercase',
+              'h-11 rounded-2xl',
               targetType === 'MATERIAL'
                 ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15'
                 : 'text-muted-foreground/70 hover:bg-muted/60'
@@ -98,7 +98,7 @@ export function MaterialThresholdTargetPicker({
             disabled={disabled || disableTargetTypeChange}
             onClick={() => onTargetTypeChange('BOM')}
             className={cn(
-              'h-11 rounded-2xl text-[10px] font-black tracking-widest uppercase',
+              'h-11 rounded-2xl',
               targetType === 'BOM'
                 ? 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/15'
                 : 'text-muted-foreground/70 hover:bg-muted/60'

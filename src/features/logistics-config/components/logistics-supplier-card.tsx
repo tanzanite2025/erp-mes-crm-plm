@@ -243,18 +243,11 @@ export function LogisticsSupplierCard({
         </div>
 
         <div className='flex flex-wrap gap-2'>
-          <Button
-            variant='outline'
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
-            onClick={onEdit}
-          >
+          <Button variant='outline' className='rounded-full' onClick={onEdit}>
             <PencilLine className='size-3.5' />
             {t('logisticsConfig.suppliers.actions.edit')}
           </Button>
-          <Button
-            asChild
-            className='rounded-full text-[10px] font-black tracking-widest uppercase'
-          >
+          <Button asChild className='rounded-full'>
             <Link to='/logistics-settings/platforms'>
               <MoveUpRight className='size-3.5' />
               {t('logisticsConfig.suppliers.actions.goToPlatforms')}

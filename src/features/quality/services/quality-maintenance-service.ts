@@ -7,10 +7,18 @@ import {
   type QualityStandardApiDTO,
 } from '../adapters/quality-standard-api-adapter'
 import type { Standard } from '../data/schema'
+import type { QualityAbnormality, QualityTask } from './quality-core-service'
 
 export interface ExecuteInspectionPayload {
   id: string
-  result?: 'PENDING' | 'PASS' | 'FAIL'
+  submissionKey?: string
+  standardId?: string
+  standardVersion?: number
+  productId?: string
+  batchNo?: string
+  inputData?: {
+    measurements: { itemId: string; value: number; unit: string }[]
+  }
   remarks?: string
 }
 
@@ -18,11 +26,6 @@ export interface RecordQualityAbnormalityDisposalPayload {
   disposalMethod: 'SCRAP' | 'REWORK' | 'CONCESSION'
   scrapQuantity?: number | null
   scrapUnit?: string
-  productionPlanId?: string
-  orderId?: string
-  productId?: string
-  batchNo?: string
-  occurredAt?: string
 }
 
 export interface ConfirmQualityBatchQuantitySettlementPayload {
@@ -90,21 +93,34 @@ export const QualityMaintenanceService = {
   /**
    * 执行质量检测任务
    */
-  executeInspection: async (data: ExecuteInspectionPayload): Promise<void> => {
-    await apiFetch('/quality/tasks', {
+  executeInspection: async (
+    data: ExecuteInspectionPayload
+  ): Promise<QualityTask> => {
+    const response = await apiFetch<QualityTask>('/quality/tasks', {
       method: 'POST',
       body: JSON.stringify(data),
     })
+    return ensureObjectResponse<QualityTask>(
+      response,
+      'QualityMaintenanceService.executeInspection'
+    )
   },
 
   recordAbnormalityDisposal: async (
     id: string,
     data: RecordQualityAbnormalityDisposalPayload
-  ) => {
-    return apiFetch(`/quality/abnormalities/${id}/disposal`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
+  ): Promise<QualityAbnormality> => {
+    const response = await apiFetch<QualityAbnormality>(
+      `/quality/abnormalities/${id}/disposal`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    )
+    return ensureObjectResponse<QualityAbnormality & Record<string, unknown>>(
+      response,
+      'QualityMaintenanceService.recordAbnormalityDisposal'
+    )
   },
 
   confirmQuantitySettlement: async (

@@ -1,19 +1,22 @@
 package repositories
 
 import (
-	"strings"
+	"errors"
+	"fmt"
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+var ErrProductionLineSegmentIdentityConflict = errors.New("production line L2 identity already exists")
 
 type ProductionTopologyRepository interface {
 	ListProductionLines(database *gorm.DB) ([]models.ProductionLine, error)
 	GetProductionLineByID(database *gorm.DB, id string) (models.ProductionLine, error)
-	DeleteLineSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error
 	DeleteLineSegmentsNotIn(database *gorm.DB, lineID string, segmentIDs []string) error
 	BumpProductionLineVersion(database *gorm.DB, id string, version int64) (bool, error)
-	SaveProductionLine(database *gorm.DB, line *models.ProductionLine) error
+	SaveProductionLine(database *gorm.DB, line *models.ProductionLine, existing *models.ProductionLine) error
 	DeleteProductionLine(database *gorm.DB, id string) error
 }
 
@@ -31,33 +34,10 @@ func (GormProductionRepository) GetProductionLineByID(database *gorm.DB, id stri
 
 func preloadProductionLineHierarchy(database *gorm.DB) *gorm.DB {
 	return database.
+		Preload("ProductTemplate").
 		Preload("Segments", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
-		}).
-		Preload("Segments.Processes", func(tx *gorm.DB) *gorm.DB {
-			return tx.Distinct(
-				"process_steps.id",
-				"process_steps.created_at",
-				"process_steps.updated_at",
-				"process_steps.deleted_at",
-				"process_steps.code",
-				"process_steps.name",
-				"process_steps.description",
-				"process_steps.sort_order",
-				"process_steps.is_active",
-			).Order("sort_order asc")
 		})
-}
-
-func (GormProductionRepository) DeleteLineSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
-	query := database.Table("line_segment_process_mappings").Where(
-		"line_segment_id IN (SELECT id FROM line_segments WHERE line_id = ?)",
-		lineID,
-	)
-	if len(processIDs) > 0 {
-		query = query.Not("process_step_id IN ?", processIDs)
-	}
-	return query.Delete(nil).Error
 }
 
 func (GormProductionRepository) DeleteLineSegmentsNotIn(database *gorm.DB, lineID string, segmentIDs []string) error {
@@ -75,80 +55,70 @@ func (GormProductionRepository) BumpProductionLineVersion(database *gorm.DB, id 
 	return result.RowsAffected > 0, result.Error
 }
 
-func (GormProductionRepository) SaveProductionLine(database *gorm.DB, line *models.ProductionLine) error {
+func (GormProductionRepository) SaveProductionLine(database *gorm.DB, line *models.ProductionLine, existing *models.ProductionLine) error {
 	updateFields := map[string]interface{}{
-		"name":        line.Name,
-		"code":        line.Code,
-		"description": line.Description,
-		"version":     line.Version,
-		"is_active":   line.IsActive,
-	}
-
-	for index := range line.Segments {
-		line.Segments[index].LineID = line.ID
-	}
-
-	shouldCreate := line.ID == "" || strings.HasPrefix(line.ID, "temp-")
-	if !shouldCreate {
-		var existingCount int64
-		if err := database.Model(&models.ProductionLine{}).Where("id = ?", line.ID).Count(&existingCount).Error; err != nil {
-			return err
-		}
-		shouldCreate = existingCount == 0
-	}
-
-	if shouldCreate {
-		return database.Transaction(func(tx *gorm.DB) error {
-			lineToCreate := *line
-			lineToCreate.Segments = nil
-			if err := tx.Create(&lineToCreate).Error; err != nil {
-				return err
-			}
-
-			line.ID = lineToCreate.ID
-			for index := range line.Segments {
-				if err := saveLineSegmentHierarchy(tx, &line.Segments[index], line.ID); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		})
+		"name":                line.Name,
+		"code":                line.Code,
+		"product_template_id": line.ProductTemplateID,
+		"description":         line.Description,
+		"version":             line.Version,
+		"is_active":           line.IsActive,
 	}
 
 	return database.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(line).Updates(updateFields).Error; err != nil {
-			return err
-		}
-
-		for index := range line.Segments {
-			if err := saveLineSegmentHierarchy(tx, &line.Segments[index], line.ID); err != nil {
+		existingSegments := make(map[string]models.LineSegment)
+		if existing == nil {
+			if err := tx.Omit(clause.Associations).Create(line).Error; err != nil {
 				return err
 			}
+		} else {
+			result := tx.Model(line).Omit(clause.Associations).Updates(updateFields)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected != 1 {
+				return gorm.ErrRecordNotFound
+			}
+			for _, segment := range existing.Segments {
+				existingSegments[segment.ID] = segment
+			}
 		}
-
+		for index := range line.Segments {
+			segment := &line.Segments[index]
+			segment.LineID = line.ID
+			if previous, exists := existingSegments[segment.ID]; exists {
+				segment.CreatedAt = previous.CreatedAt
+				result := tx.Model(segment).Where("line_id = ?", line.ID).
+					Select("Name", "ProductID", "ProductSKU", "ProductName", "BOMOwnerType", "BOMOwnerCustomerID", "BOMOwnerCustomerName",
+						"BOMVersionLevel", "Description", "SortOrder", "Attributes", "UpdatedAt").Updates(segment)
+				if result.Error != nil {
+					return result.Error
+				}
+				if result.RowsAffected != 1 {
+					return gorm.ErrRecordNotFound
+				}
+			} else {
+				// DO NOTHING detects a concurrent insertion without upserting or transferring ownership.
+				result := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoNothing: true}).Create(segment)
+				if result.Error != nil {
+					return result.Error
+				}
+				if result.RowsAffected != 1 {
+					return fmt.Errorf("%w: %s", ErrProductionLineSegmentIdentityConflict, segment.ID)
+				}
+			}
+		}
 		return nil
 	})
 }
 
-func saveLineSegmentHierarchy(tx *gorm.DB, segment *models.LineSegment, lineID string) error {
-	segment.LineID = lineID
-
-	segmentToSave := *segment
-	segmentToSave.Processes = nil
-	if err := tx.Save(&segmentToSave).Error; err != nil {
-		return err
-	}
-
-	segment.ID = segmentToSave.ID
-	segmentModel := models.LineSegment{BaseModel: models.BaseModel{ID: segment.ID}}
-	if err := tx.Model(&segmentModel).Association("Processes").Replace(segment.Processes); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (GormProductionRepository) DeleteProductionLine(database *gorm.DB, id string) error {
-	return database.Delete(&models.ProductionLine{}, "id = ?", id).Error
+	result := database.Delete(&models.ProductionLine{}, "id = ?", id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

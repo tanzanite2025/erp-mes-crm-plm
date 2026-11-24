@@ -3,16 +3,31 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import {
   toProductionRouteContract,
   toProductionRouteContracts,
+  toProductionRouteBOMBranchContracts,
   toSaveProductionRouteApiDTO,
 } from '../adapters/production-resource-api-adapter'
 import type {
   ProductionMessageApiDTO,
   ProductionRouteApiDTO,
+  ProductionRouteBOMBranchesResponseApiDTO,
   ProductionRoutesResponseApiDTO,
 } from '../contracts/production-resource-api-dto'
-import type { ProductionRoute } from '../data/production-route'
+import type {
+  ProductionRoute,
+  ProductionRouteBOMBranch,
+} from '../data/production-route'
 
 export const productionRoutesService = {
+  getBOMBranches: async (): Promise<ProductionRouteBOMBranch[]> => {
+    const response = await apiFetch<ProductionRouteBOMBranchesResponseApiDTO>(
+      '/production/routes/bom-branches'
+    )
+    const checked = ensureObjectResponse<
+      ProductionRouteBOMBranchesResponseApiDTO & Record<string, unknown>
+    >(response, 'productionRoutesService.getBOMBranches')
+    return toProductionRouteBOMBranchContracts(checked.items || [])
+  },
+
   getRoutes: async (): Promise<ProductionRoute[]> => {
     const res =
       await apiFetch<ProductionRoutesResponseApiDTO>('/production/routes')
@@ -32,6 +47,40 @@ export const productionRoutesService = {
       ensureObjectResponse<ProductionRouteApiDTO & Record<string, unknown>>(
         res,
         'productionRoutesService.saveRoute'
+      ) as ProductionRouteApiDTO
+    )
+  },
+
+  publishRoute: async (
+    routeId: string,
+    version: number
+  ): Promise<ProductionRoute> => {
+    const response = await apiFetch<ProductionRouteApiDTO>(
+      `/production/routes/${encodeURIComponent(routeId)}/publish`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ version }),
+      }
+    )
+
+    return toProductionRouteContract(
+      ensureObjectResponse<ProductionRouteApiDTO & Record<string, unknown>>(
+        response,
+        'productionRoutesService.publishRoute'
+      ) as ProductionRouteApiDTO
+    )
+  },
+
+  createRevision: async (routeId: string): Promise<ProductionRoute> => {
+    const response = await apiFetch<ProductionRouteApiDTO>(
+      `/production/routes/${encodeURIComponent(routeId)}/revisions`,
+      { method: 'POST' }
+    )
+
+    return toProductionRouteContract(
+      ensureObjectResponse<ProductionRouteApiDTO & Record<string, unknown>>(
+        response,
+        'productionRoutesService.createRevision'
       ) as ProductionRouteApiDTO
     )
   },

@@ -290,7 +290,7 @@ export function MaintenanceOverview() {
               <Button
                 variant='ghost'
                 size='sm'
-                className='h-6 px-2 text-[9px] font-black tracking-wider uppercase'
+                className='control-typography-compact h-6 px-2'
                 onClick={() =>
                   navigate({ to: '/equipment-maintenance/records' })
                 }
@@ -364,7 +364,7 @@ export function MaintenanceOverview() {
               <Button
                 variant='ghost'
                 size='sm'
-                className='h-6 px-2 text-[9px] font-black tracking-wider uppercase'
+                className='control-typography-compact h-6 px-2'
                 onClick={() =>
                   navigate({ to: '/equipment-maintenance/records' })
                 }

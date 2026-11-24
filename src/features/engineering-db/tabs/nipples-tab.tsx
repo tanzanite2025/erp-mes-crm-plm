@@ -282,7 +282,7 @@ export function NipplesTab() {
             <Search className='absolute top-1/2 left-4 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/40' />
             <Input
               placeholder={t('engineering.nipples.placeholders.search')}
-              className='h-11 rounded-2xl border-none bg-muted/30 pl-10 text-[11px] font-bold shadow-inner'
+              className='h-11 rounded-2xl border-none bg-muted/30 pl-10 shadow-inner'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

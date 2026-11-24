@@ -111,7 +111,7 @@ function AuthorizedProductionMaterialIssuanceFrozenDocumentQueries({
             aria-label={t(
               'mrp.productionMaterialIssuance.documentList.statusFilter'
             )}
-            className='h-10 max-w-full min-w-40 appearance-none rounded-full border border-dashed border-muted-foreground/20 bg-background pr-10 pl-4 text-[10px] font-black tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11'
+            className='h-10 max-w-full min-w-40 appearance-none rounded-full border border-dashed border-muted-foreground/20 bg-background pr-10 pl-4 outline-none focus-visible:ring-2 focus-visible:ring-primary/20 md:h-11'
             value={query.status}
             onChange={(event) => {
               const status = event.target.value
@@ -144,7 +144,7 @@ function AuthorizedProductionMaterialIssuanceFrozenDocumentQueries({
           type='button'
           size='sm'
           variant='outline'
-          className='h-10 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase active:scale-95 md:h-11 md:px-5'
+          className='h-10 rounded-full border-dashed px-4 active:scale-95 md:h-11 md:px-5'
           disabled={documents.isFetching}
           onClick={() => {
             selectProductionMaterialIssuanceOriginalDocument(null)
@@ -199,7 +199,7 @@ function AuthorizedProductionMaterialIssuanceFrozenDocumentQueries({
                     <Button
                       type='button'
                       variant='link'
-                      className='h-auto w-full min-w-0 justify-between gap-3 p-0 text-left font-maple-ui text-[11px] font-black tracking-wider wrap-anywhere whitespace-normal'
+                      className='h-auto w-full min-w-0 justify-between gap-3 p-0 text-left font-maple-ui wrap-anywhere whitespace-normal'
                       disabled={documents.isFetching}
                       aria-expanded={selectedDocumentID === document.id}
                       onClick={() =>
@@ -246,7 +246,7 @@ function AuthorizedProductionMaterialIssuanceFrozenDocumentQueries({
                   type='button'
                   size='sm'
                   variant='outline'
-                  className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-9 rounded-full border-dashed px-4'
                   disabled={documents.isFetching || query.page <= 1}
                   onClick={() =>
                     changeProductionMaterialIssuanceDocumentListPage(
@@ -261,7 +261,7 @@ function AuthorizedProductionMaterialIssuanceFrozenDocumentQueries({
                   type='button'
                   size='sm'
                   variant='outline'
-                  className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                  className='h-9 rounded-full border-dashed px-4'
                   disabled={
                     documents.isFetching ||
                     query.page * query.pageSize >= documents.data.total

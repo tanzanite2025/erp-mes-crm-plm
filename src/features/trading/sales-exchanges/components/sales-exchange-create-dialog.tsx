@@ -564,17 +564,17 @@ export function SalesExchangeCreateDialog({
                         >
                           <div className='flex items-start justify-between gap-3'>
                             <div className='min-w-0'>
-                              <p className='truncate text-sm font-black text-foreground'>
+                              <p className='truncate text-foreground'>
                                 {resolveSalesExchangeLineDisplayTitle(
                                   salesOrderLine
                                 )}
                               </p>
-                              <p className='mt-1 truncate text-xs font-bold text-muted-foreground'>
+                              <p className='mt-1 truncate text-muted-foreground'>
                                 {resolveSalesExchangeLineDisplaySubtitle(
                                   salesOrderLine
                                 )}
                               </p>
-                              <div className='mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-muted-foreground'>
+                              <div className='mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground'>
                                 <span>行号 {salesOrderLine.lineNo}</span>
                                 <span>
                                   订单 {salesOrderLine.qty.toLocaleString()}{' '}
@@ -645,11 +645,11 @@ export function SalesExchangeCreateDialog({
                         setScannerInputValue(event.target.value)
                       }
                       placeholder='也可以粘贴多个标签码、JSON 二维码内容或用逗号/换行分隔的标签码'
-                      className='min-h-[88px] rounded-xl text-xs'
+                      className='min-h-[88px] rounded-xl'
                     />
                     <Button
                       type='button'
-                      className='w-full rounded-full text-xs font-black'
+                      className='w-full rounded-full'
                       onClick={
                         handleRecognizeScannerInputAgainstSourceSalesOrder
                       }

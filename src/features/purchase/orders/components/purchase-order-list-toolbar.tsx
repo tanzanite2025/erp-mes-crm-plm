@@ -82,7 +82,7 @@ export function PurchaseOrderListToolbar({
               placeholder={t('purchase.orders.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
-              className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-[11px] font-bold shadow-inner transition-all focus:bg-background'
+              className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 shadow-inner transition-all focus:bg-background'
             />
           </div>
 
@@ -122,7 +122,7 @@ export function PurchaseOrderListToolbar({
                 onValueChange={onPaymentMethodFilterChange}
                 disabled={!isFinanceFilterReady}
               >
-                <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
+                <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 shadow-sm lg:w-[180px]'>
                   <SelectValue
                     placeholder={t('purchase.orders.filters.paymentMethod')}
                   />
@@ -144,7 +144,7 @@ export function PurchaseOrderListToolbar({
                 onValueChange={onPaymentTermFilterChange}
                 disabled={!isFinanceFilterReady}
               >
-                <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm lg:w-[180px]'>
+                <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 shadow-sm lg:w-[180px]'>
                   <SelectValue
                     placeholder={t('purchase.orders.filters.paymentTerm')}
                   />
@@ -167,7 +167,7 @@ export function PurchaseOrderListToolbar({
         <div className='flex w-full flex-row gap-1.5 sm:gap-2 xl:w-auto xl:flex-none xl:items-center xl:justify-end'>
           <Button
             size='sm'
-            className='h-10 flex-1 shrink-0 gap-1.5 rounded-full bg-primary px-3 text-[9px] font-black tracking-widest uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:gap-2 sm:px-8 sm:text-[10px] xl:w-auto xl:flex-none'
+            className='h-10 flex-1 shrink-0 gap-1.5 rounded-full bg-primary px-3 shadow-xl shadow-primary/20 transition-all active:scale-95 sm:h-11 sm:gap-2 sm:px-8 xl:w-auto xl:flex-none'
             onClick={onAddOrder}
           >
             <Plus className='h-4 w-4' />
@@ -177,7 +177,7 @@ export function PurchaseOrderListToolbar({
             module={AUDIT_MODULES.purchaseOrder}
             targetName={t('purchase.orders.title')}
             label={t('common.audit.trigger')}
-            className='h-10 flex-1 shrink-0 rounded-full px-3 text-[9px] sm:h-11 sm:px-6 sm:text-[10px] xl:w-auto xl:flex-none'
+            className='h-10 flex-1 shrink-0 rounded-full px-3 sm:h-11 sm:px-6 xl:w-auto xl:flex-none'
           />
         </div>
       </div>
@@ -194,7 +194,7 @@ export function PurchaseOrderListToolbar({
               type='button'
               variant='outline'
               size='sm'
-              className='h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase'
+              className='h-8 rounded-full border-dashed px-3'
               onClick={onRetryFinanceFilters}
             >
               重试

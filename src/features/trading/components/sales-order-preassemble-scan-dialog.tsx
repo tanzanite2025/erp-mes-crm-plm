@@ -602,7 +602,7 @@ export function SalesOrderPreassembleScanDialog({
               <Button
                 type='button'
                 variant='outline'
-                className='h-9 rounded-xl border-dashed px-3 text-[11px] font-black'
+                className='h-9 rounded-xl border-dashed px-3'
                 disabled={manualSelectedIds.size === 0 || submitting}
                 onClick={addManualSelectedToRecognized}
               >
@@ -649,9 +649,7 @@ export function SalesOrderPreassembleScanDialog({
                       }`}
                     >
                       <div className='flex items-center justify-between gap-2'>
-                        <p className='truncate text-xs font-black'>
-                          {entry.primaryCode}
-                        </p>
+                        <p className='truncate'>{entry.primaryCode}</p>
                         <div className='flex items-center gap-1.5'>
                           {recognized ? (
                             <Badge
@@ -671,10 +669,10 @@ export function SalesOrderPreassembleScanDialog({
                           </Badge>
                         </div>
                       </div>
-                      <p className='mt-1 truncate text-[11px] font-bold text-muted-foreground'>
+                      <p className='mt-1 truncate text-muted-foreground'>
                         {entry.materialCode} · {entry.materialName}
                       </p>
-                      <div className='mt-2 flex items-center justify-between text-[10px] font-semibold text-muted-foreground/80'>
+                      <div className='mt-2 flex items-center justify-between text-muted-foreground/80'>
                         <span>{entry.lineLabel}</span>
                         <span>数量 {entry.quantity}</span>
                       </div>
@@ -716,7 +714,7 @@ export function SalesOrderPreassembleScanDialog({
                 />
                 <Button
                   type='button'
-                  className='h-10 rounded-xl px-4 text-xs font-black'
+                  className='h-10 rounded-xl px-4'
                   onClick={() => handleScan(scanInput)}
                   disabled={submitting}
                 >
@@ -729,7 +727,7 @@ export function SalesOrderPreassembleScanDialog({
                 placeholder='也可粘贴二维码载荷内容（JSON 或 code 列表），点击“识别”'
                 value={scanInput}
                 onChange={(e) => setScanInput(e.target.value)}
-                className='min-h-[88px] rounded-xl border-dashed bg-background text-xs'
+                className='min-h-[88px] rounded-xl border-dashed bg-background'
               />
             </div>
 
@@ -794,7 +792,7 @@ export function SalesOrderPreassembleScanDialog({
               <Button
                 type='button'
                 variant='outline'
-                className='h-10 rounded-xl border-dashed text-xs font-black'
+                className='h-10 rounded-xl border-dashed'
                 onClick={clearSelection}
                 disabled={submitting}
               >
@@ -802,7 +800,7 @@ export function SalesOrderPreassembleScanDialog({
               </Button>
               <Button
                 type='button'
-                className='h-10 rounded-xl px-5 text-xs font-black'
+                className='h-10 rounded-xl px-5'
                 onClick={() => void completeScanSession()}
                 disabled={submitting}
               >

@@ -183,7 +183,7 @@ export function HubActionDialog({
             </Label>
             <Input
               placeholder='例如: SHIMANO-M8100'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-indigo-500/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner focus-visible:ring-indigo-500/20'
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
@@ -194,7 +194,7 @@ export function HubActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-bold opacity-60'
+              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui opacity-60'
               value={formData.id}
             />
           </div>
@@ -208,7 +208,7 @@ export function HubActionDialog({
             </Label>
             <Input
               placeholder='输入品牌名称'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner'
               value={formData.brand}
               onChange={(e) => updateField('brand', e.target.value)}
             />
@@ -219,7 +219,7 @@ export function HubActionDialog({
             </Label>
             <Input
               placeholder='输入型号编码'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner'
               value={formData.model}
               onChange={(e) => updateField('model', e.target.value)}
             />

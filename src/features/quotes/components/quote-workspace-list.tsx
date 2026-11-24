@@ -61,7 +61,7 @@ export function QuoteWorkspaceList({
           </div>
           <div className='flex items-center gap-2'>
             <Button
-              className='h-9 rounded-2xl px-3 text-xs font-black'
+              className='h-9 rounded-2xl px-3'
               size='sm'
               variant='outline'
             >
@@ -69,7 +69,7 @@ export function QuoteWorkspaceList({
               历史版本
             </Button>
             <Button
-              className='h-9 rounded-2xl px-3 text-xs font-black'
+              className='h-9 rounded-2xl px-3'
               size='sm'
               variant='outline'
             >
@@ -77,7 +77,7 @@ export function QuoteWorkspaceList({
               作废记录
             </Button>
             <Button
-              className='h-9 rounded-2xl px-3 text-xs font-black'
+              className='h-9 rounded-2xl px-3'
               size='sm'
               variant='outline'
             >
@@ -184,7 +184,7 @@ export function QuoteWorkspaceList({
                     <Button
                       size='sm'
                       variant='ghost'
-                      className='h-8 rounded-full px-3 text-xs font-bold'
+                      className='h-8 rounded-full px-3'
                       onClick={() => onSelectQuote(row.id)}
                     >
                       <MoreHorizontal className='mr-1 size-4' />
@@ -202,7 +202,7 @@ export function QuoteWorkspaceList({
                     </div>
                     <Button
                       size='sm'
-                      className='h-9 rounded-2xl px-4 text-xs font-black'
+                      className='h-9 rounded-2xl px-4'
                       onClick={onCreateQuote}
                     >
                       新建报价

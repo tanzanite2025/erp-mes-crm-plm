@@ -58,18 +58,14 @@ export function DataTablePagination<TData>({
                 table.setPageSize(Number(value))
               }}
             >
-              <SelectTrigger className='h-8 w-[68px] rounded-xl border-border/70 bg-background text-[11px] font-bold shadow-none'>
+              <SelectTrigger className='h-8 w-[68px] rounded-xl border-border/70 bg-background shadow-none'>
                 <SelectValue
                   placeholder={`${table.getState().pagination.pageSize}`}
                 />
               </SelectTrigger>
               <SelectContent side='top' className='rounded-xl'>
                 {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem
-                    key={pageSize}
-                    value={`${pageSize}`}
-                    className='text-[11px] font-semibold'
-                  >
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
                     {pageSize}
                   </SelectItem>
                 ))}
@@ -115,7 +111,7 @@ export function DataTablePagination<TData>({
                 ) : (
                   <Button
                     variant={currentPage === pageNumber ? 'default' : 'outline'}
-                    className='h-8 min-w-8 rounded-xl px-2 text-[11px] font-bold shadow-none'
+                    className='h-8 min-w-8 rounded-xl px-2 shadow-none'
                     onClick={() =>
                       table.setPageIndex((pageNumber as number) - 1)
                     }

@@ -69,7 +69,7 @@ export function ProductTemplateAttributeLevelOneCategoryCard({
             </div>
           </div>
           <Button
-            className='h-11 rounded-full px-6 text-[10px] font-black tracking-[0.2em] uppercase shadow-lg shadow-primary/10'
+            className='h-11 rounded-full px-6 shadow-lg shadow-primary/10'
             onClick={onCreateCategory}
           >
             <Plus className='mr-2 size-4' />
@@ -155,7 +155,7 @@ export function ProductTemplateAttributeLevelOneCategoryCard({
                     >
                       <span>{getLocalizedCategoryName(locale, row)}</span>
                       <span
-                        className='inline-flex min-w-6 items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary tabular-nums'
+                        className='inline-flex min-w-6 items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-primary tabular-nums'
                         aria-label={`${isZh ? '二级属性分类数量' : 'Level 2 attribute option count'}: ${optionCountByCategory.get(row.key) ?? 0}`}
                         title={
                           isZh

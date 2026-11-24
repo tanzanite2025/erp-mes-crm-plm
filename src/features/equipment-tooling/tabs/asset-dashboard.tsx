@@ -66,7 +66,7 @@ export function AssetDashboard() {
         <Button
           variant='outline'
           onClick={() => void refresh()}
-          className='h-10 rounded-full border-rose-500/30 px-8 text-[10px] font-bold text-rose-600 uppercase transition-all hover:bg-rose-500 hover:text-white'
+          className='h-10 rounded-full border-rose-500/30 px-8 text-rose-600 transition-all hover:bg-rose-500 hover:text-white'
         >
           <RotateCcw className='mr-2 size-3' />{' '}
           {t('equipmentTooling.dashboard.error.retry')}

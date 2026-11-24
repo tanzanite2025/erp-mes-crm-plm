@@ -65,7 +65,7 @@ export function SlackTimeTuningPanel() {
               value={thresholdDays}
               disabled={!enabled}
               onChange={(e) => setThresholdDays(Number(e.target.value))}
-              className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-cyan-500 focus:outline-hidden disabled:opacity-40'
+              className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-cyan-500 focus:outline-hidden disabled:opacity-40'
               min='0'
             />
             <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>
@@ -85,7 +85,7 @@ export function SlackTimeTuningPanel() {
               value={scalePenalty}
               disabled={!enabled}
               onChange={(e) => setScalePenalty(Number(e.target.value))}
-              className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-cyan-500 focus:outline-hidden disabled:opacity-40'
+              className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-cyan-500 focus:outline-hidden disabled:opacity-40'
               min='0'
             />
             <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>
@@ -105,7 +105,7 @@ export function SlackTimeTuningPanel() {
               value={overduePenalty}
               disabled={!enabled}
               onChange={(e) => setOverduePenalty(Number(e.target.value))}
-              className='h-8 w-full rounded-lg border-none bg-background px-3 text-[11px] font-black text-foreground shadow-sm focus:ring-1 focus:ring-cyan-500 focus:outline-hidden disabled:opacity-40'
+              className='h-8 w-full rounded-lg border-none bg-background px-3 text-foreground shadow-sm focus:ring-1 focus:ring-cyan-500 focus:outline-hidden disabled:opacity-40'
               min='0'
             />
             <span className='absolute right-4 text-[10px] font-black text-muted-foreground'>

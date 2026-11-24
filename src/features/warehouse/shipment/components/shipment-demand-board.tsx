@@ -162,7 +162,7 @@ export function ShipmentDemandBoard({
                       <Button
                         size='sm'
                         disabled={!canPrepare}
-                        className='h-8 rounded-full bg-blue-600 px-4 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-blue-500/10 hover:bg-blue-700 disabled:bg-muted disabled:text-muted-foreground'
+                        className='h-8 rounded-full bg-blue-600 px-4 text-white shadow-lg shadow-blue-500/10 hover:bg-blue-700 disabled:bg-muted disabled:text-muted-foreground'
                         onClick={() => onPrepare(demand)}
                       >
                         转入虚拟发货仓 <ArrowRight className='ml-2 size-3' />

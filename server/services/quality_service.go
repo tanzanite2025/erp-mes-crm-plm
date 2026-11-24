@@ -42,7 +42,7 @@ func ValidateQualityAbnormalityDisposal(abnormality *models.QualityAbnormality) 
 
 	switch method {
 	case "SCRAP":
-		if abnormality.ScrapQuantity == nil || *abnormality.ScrapQuantity <= 0 {
+		if abnormality.ScrapQuantity == nil || (*abnormality.ScrapQuantity <= 0 || math.IsNaN(*abnormality.ScrapQuantity) || math.IsInf(*abnormality.ScrapQuantity, 0)) {
 			return domainValidationError("报废处置必须填写大于 0 的报废数量")
 		}
 		if abnormality.ScrapUnit == "" {
@@ -75,7 +75,7 @@ func SaveInspectionTask(ctx context.Context, task *models.InspectionTask) error 
 func RecordQualityAbnormalityDisposal(
 	ctx context.Context,
 	id string,
-	disposal *models.QualityAbnormality,
+	disposal *QualityAbnormalityDisposalCommand,
 ) (models.QualityAbnormality, error) {
 	return defaultQualityService.RecordQualityAbnormalityDisposal(ctx, id, disposal)
 }
@@ -148,47 +148,32 @@ func nextQualityStandardVersion(current float64) float64 {
 }
 
 func (s *QualityService) SaveInspectionTask(ctx context.Context, task *models.InspectionTask) error {
-	actor, _ := audit.ActorFromContext(ctx)
-	task.Inspector = actor.Username
-	if task.Inspector == "" {
-		task.Inspector = actor.UserID
+	if task == nil {
+		return domainValidationError("实测提交不能为空")
 	}
-	if task.Inspector == "" {
-		task.Inspector = "system"
+	actor, ok := audit.ActorFromContext(ctx)
+	if !ok || actor.UserID == "" && actor.Username == "" {
+		return domainValidationError("实测提交必须关联当前检验人员")
 	}
-
-	task.Result = strings.ToUpper(strings.TrimSpace(task.Result))
-	if task.Result == "" {
-		task.Result = "PENDING"
-	}
-	if task.Status == "" {
-		task.Status = QualityInspectionTaskStatusOpen
-	}
-	if task.Result != "PENDING" {
-		task.Status = QualityInspectionTaskStatusCompleted
-		now := time.Now()
-		task.CompletedAt = &now
-	} else {
-		task.CompletedAt = nil
-	}
-
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		if task.ID != "" {
-			var existing models.InspectionTask
-			if err := tx.First(&existing, "id = ?", task.ID).Error; err != nil {
-				return err
-			}
-			if existing.SourceType == QualityInspectionTaskSourceProductionOutsource {
-				return domainValidationError("委外品质任务必须通过委外收发检验入口判定")
-			}
-			if task.Status == QualityInspectionTaskStatusOpen {
-				task.Status = existing.Status
-			}
-			if err := tx.Model(&models.InspectionTask{}).Where("id = ?", task.ID).Updates(task).Error; err != nil {
+		if restored, err := restorePreviouslySubmittedQualityInspectionWithinTransaction(ctx, tx, task); err != nil || restored {
+			return err
+		}
+		if err := prepareAndEvaluateInspectionTaskWithinTransaction(ctx, tx, task); err != nil {
+			return err
+		}
+		omittedColumns := append([]string{"Standard"}, collectEmptyOptionalUUIDColumns(
+			optionalUUIDColumnValue{Column: "production_plan_id", Value: task.ProductionPlanID},
+			optionalUUIDColumnValue{Column: "order_id", Value: task.OrderID},
+			optionalUUIDColumnValue{Column: "parent_task_id", Value: task.ParentTaskID},
+		)...)
+		if task.ID == "" {
+			task.ID = uuid.NewString()
+			if err := tx.Omit(omittedColumns...).Create(task).Error; err != nil {
 				return err
 			}
 		} else {
-			if err := tx.Save(task).Error; err != nil {
+			if err := tx.Model(task).Select("*").Omit(append(omittedColumns, "CreatedAt", "DeletedAt")...).Updates(task).Error; err != nil {
 				return err
 			}
 		}
@@ -210,7 +195,10 @@ func (s *QualityService) SaveInspectionTask(ctx context.Context, task *models.In
 						Status:           "OPEN",
 						Reporter:         task.Inspector, // 强制注入报告人
 					}
-					if err := tx.Create(&abnormality).Error; err != nil {
+					if err := omitEmptyUUIDColumnsForRecordCreation(tx,
+						optionalUUIDColumnValue{Column: "production_plan_id", Value: abnormality.ProductionPlanID},
+						optionalUUIDColumnValue{Column: "order_id", Value: abnormality.OrderID},
+					).Create(&abnormality).Error; err != nil {
 						return err
 					}
 				} else {
@@ -224,109 +212,4 @@ func (s *QualityService) SaveInspectionTask(ctx context.Context, task *models.In
 		}
 		return recordLegacyAuditEntryWithContext(ctx, tx, "InspectionTask", task.ID, "submit", nil)
 	})
-}
-
-// RecordQualityAbnormalityDisposal records the final quality disposition.
-// The command intentionally lives in the quality service so every future UI,
-// import path, or automation uses the same validation and audit boundary.
-func (s *QualityService) RecordQualityAbnormalityDisposal(
-	ctx context.Context,
-	id string,
-	disposal *models.QualityAbnormality,
-) (models.QualityAbnormality, error) {
-	if strings.TrimSpace(id) == "" {
-		return models.QualityAbnormality{}, domainValidationError("品质异常 ID 不能为空")
-	}
-	if disposal == nil {
-		return models.QualityAbnormality{}, domainValidationError("品质异常处置记录不能为空")
-	}
-
-	var updated models.QualityAbnormality
-	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		var existing models.QualityAbnormality
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Preload("InspectionTask").
-			First(&existing, "id = ?", id).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return domainNotFoundError("品质异常不存在")
-			}
-			return err
-		}
-
-		// Preserve the original linkage when the command only supplies the
-		// disposal fields. This keeps old abnormality records incrementally
-		// editable without silently losing task context.
-		next := existing
-		next.DisposalMethod = disposal.DisposalMethod
-		next.ScrapQuantity = disposal.ScrapQuantity
-		next.ScrapUnit = disposal.ScrapUnit
-		if disposal.ProductionPlanID != "" {
-			next.ProductionPlanID = disposal.ProductionPlanID
-		}
-		if disposal.OrderID != "" {
-			next.OrderID = disposal.OrderID
-		}
-		if disposal.ProductID != "" {
-			next.ProductID = disposal.ProductID
-		}
-		if disposal.BatchNo != "" {
-			next.BatchNo = disposal.BatchNo
-		}
-		if disposal.OccurredAt != nil {
-			next.OccurredAt = disposal.OccurredAt
-		}
-		if next.InspectionTask != nil {
-			if next.ProductionPlanID == "" {
-				next.ProductionPlanID = next.InspectionTask.ProductionPlanID
-			}
-			if next.OrderID == "" {
-				next.OrderID = next.InspectionTask.OrderID
-			}
-			if next.ProductID == "" {
-				next.ProductID = next.InspectionTask.ProductID
-			}
-			if next.BatchNo == "" {
-				next.BatchNo = next.InspectionTask.BatchNo
-			}
-		}
-
-		if err := ValidateQualityAbnormalityDisposal(&next); err != nil {
-			return err
-		}
-
-		actor, _ := audit.ActorFromContext(ctx)
-		next.Resolver = actor.Username
-		if next.Resolver == "" {
-			next.Resolver = actor.UserID
-		}
-		if next.Resolver == "" {
-			next.Resolver = "system"
-		}
-
-		if err := tx.Model(&models.QualityAbnormality{}).
-			Where("id = ?", id).
-			Updates(map[string]interface{}{
-				"disposal_method":    next.DisposalMethod,
-				"scrap_quantity":     next.ScrapQuantity,
-				"scrap_unit":         next.ScrapUnit,
-				"production_plan_id": next.ProductionPlanID,
-				"order_id":           next.OrderID,
-				"product_id":         next.ProductID,
-				"batch_no":           next.BatchNo,
-				"occurred_at":        next.OccurredAt,
-				"status":             "CLOSED",
-				"resolver":           next.Resolver,
-			}).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Preload("InspectionTask").First(&updated, "id = ?", id).Error; err != nil {
-			return err
-		}
-		return recordLegacyAuditEntryWithContext(ctx, tx, "QualityAbnormality", id, "record_disposal", nil)
-	})
-	if err != nil {
-		return models.QualityAbnormality{}, err
-	}
-	return updated, nil
 }

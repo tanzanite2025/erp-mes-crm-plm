@@ -8,7 +8,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { CuttingIssuanceOrder, CuttingIssuanceTemplate } from '../types'
+import {
+  getProductionBOMBranchDisplayName,
+  getProductionBOMBranchIdentityKey,
+} from '@/features/production-shared/data/production-bom-branch'
+import type {
+  CuttingIssuanceOrder,
+  CuttingIssuanceProductionBOMBranch,
+  CuttingIssuanceTemplate,
+} from '../types'
 import {
   APS_BADGE_CLASS,
   APS_INPUT_CLASS,
@@ -28,14 +36,17 @@ type PlanningSelectionSectionProps = {
   canCreateExecution: boolean
   orders: CuttingIssuanceOrder[]
   templates: CuttingIssuanceTemplate[]
+  bomBranches: CuttingIssuanceProductionBOMBranch[]
   selectedOrder: CuttingIssuanceOrder | undefined
   orderId: string
   lineNo: string
   templateId: string
+  bomBranchIdentityKey: string
   templateMatchHint?: string
   onOrderIdChange: (value: string) => void
   onLineNoChange: (value: string) => void
   onTemplateIdChange: (value: string) => void
+  onBOMBranchIdentityKeyChange: (value: string) => void
   onCreateExecution: () => void
 }
 
@@ -47,14 +58,17 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
     canCreateExecution,
     orders,
     templates,
+    bomBranches,
     selectedOrder,
     orderId,
     lineNo,
     templateId,
+    bomBranchIdentityKey,
     templateMatchHint,
     onOrderIdChange,
     onLineNoChange,
     onTemplateIdChange,
+    onBOMBranchIdentityKeyChange,
     onCreateExecution,
   } = props
 
@@ -99,7 +113,7 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
         </div>
       </div>
 
-      <div className='grid gap-1.5 md:grid-cols-2 xl:grid-cols-4'>
+      <div className='grid gap-1.5 md:grid-cols-2 xl:grid-cols-5'>
         <div className='space-y-0.5'>
           <p className={APS_KICKER_CLASS}>
             {t('apsScheduling.cuttingIssuance.planning.orderLabel')}
@@ -120,6 +134,35 @@ export function PlanningSelectionSection(props: PlanningSelectionSectionProps) {
               {orders.map((order) => (
                 <SelectItem key={order.id} value={order.id}>
                   {order.orderNo} | {order.customerName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className='space-y-0.5'>
+          <p className={APS_KICKER_CLASS}>
+            {t('apsScheduling.cuttingIssuance.planning.bomBranchLabel')}
+          </p>
+          <Select
+            value={bomBranchIdentityKey}
+            onValueChange={onBOMBranchIdentityKeyChange}
+            disabled={isLoading || bomBranches.length === 0}
+          >
+            <SelectTrigger className={`${APS_INPUT_CLASS} w-full`}>
+              <SelectValue
+                placeholder={t(
+                  'apsScheduling.cuttingIssuance.planning.bomBranchPlaceholder'
+                )}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {bomBranches.map((branch) => (
+                <SelectItem
+                  key={getProductionBOMBranchIdentityKey(branch)}
+                  value={getProductionBOMBranchIdentityKey(branch)}
+                >
+                  {getProductionBOMBranchDisplayName(branch)}
                 </SelectItem>
               ))}
             </SelectContent>

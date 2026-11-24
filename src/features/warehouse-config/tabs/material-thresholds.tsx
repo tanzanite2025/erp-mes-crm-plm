@@ -184,7 +184,7 @@ export default function MaterialThresholdsTab() {
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            className='mt-5 h-10 rounded-full border-dashed px-6'
             onClick={() => {
               void refetch()
             }}
@@ -295,7 +295,7 @@ export default function MaterialThresholdsTab() {
                 placeholder={t(
                   'warehouseConfig.materialThresholds.searchPlaceholder'
                 )}
-                className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium focus-visible:ring-primary/20'
+                className='h-12 rounded-2xl border-none bg-muted/50 pl-10 focus-visible:ring-primary/20'
               />
             </div>
             <div className='flex flex-wrap gap-2'>
@@ -305,7 +305,7 @@ export default function MaterialThresholdsTab() {
                   type='button'
                   variant='ghost'
                   className={cn(
-                    'h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase',
+                    'h-10 rounded-full px-4',
                     ruleFilter === item.value
                       ? 'bg-primary/10 text-primary hover:bg-primary/15'
                       : 'bg-muted/40 text-muted-foreground/70 hover:bg-muted/70'
@@ -325,7 +325,7 @@ export default function MaterialThresholdsTab() {
                 type='button'
                 variant='ghost'
                 className={cn(
-                  'h-10 rounded-full px-4 text-[10px] font-black tracking-widest uppercase',
+                  'h-10 rounded-full px-4',
                   statusFilter === item.value
                     ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15'
                     : 'bg-muted/40 text-muted-foreground/70 hover:bg-muted/70'
@@ -339,7 +339,7 @@ export default function MaterialThresholdsTab() {
               type='button'
               disabled={!canManage}
               onClick={openCreateDialog}
-              className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-5'
             >
               <Plus className='mr-2 size-4' />
               {t('warehouseConfig.materialThresholds.actions.add')}

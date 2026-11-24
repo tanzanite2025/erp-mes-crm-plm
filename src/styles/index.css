@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import './theme.css';
+@import './shared-button-and-form-control-typography.css';
 @import './chrome109-sidebar-menu-color-fallbacks.css';
 @import './chrome109-bottom-dock-color-fallbacks.css';
 @import './sidebar-navigation-workspace-layout.css';
@@ -44,17 +45,6 @@
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
-  }
-
-  /* Pre-standard placeholder sizing to align with UDS 1.0 Labels */
-  input::placeholder,
-  textarea::placeholder {
-    @apply text-[10px] font-black tracking-widest uppercase opacity-30;
-  }
-
-  .dark input::placeholder,
-  .dark textarea::placeholder {
-    opacity: 0.55;
   }
 }
 

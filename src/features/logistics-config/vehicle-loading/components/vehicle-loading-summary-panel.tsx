@@ -23,7 +23,7 @@ import {
 } from './packaging-profile-display'
 
 const fieldClass =
-  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-sm font-medium leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30'
+  'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30'
 const labelClass =
   'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
 
@@ -83,7 +83,7 @@ export function VehicleLoadingSummaryPanel({
               disabled={packagingProfilesLoading || !hasSelectableProfiles}
               onValueChange={onSelectedPackagingProfileIdChange}
             >
-              <SelectTrigger className='h-11 w-full rounded-2xl border-border/50 bg-muted/40 px-4 text-sm font-black shadow-sm shadow-black/5'>
+              <SelectTrigger className='h-11 w-full rounded-2xl border-border/50 bg-muted/40 px-4 shadow-sm shadow-black/5'>
                 <SelectValue
                   placeholder={
                     packagingProfilesLoading
@@ -101,11 +101,7 @@ export function VehicleLoadingSummaryPanel({
               </SelectContent>
             </Select>
           </div>
-          <Button
-            asChild
-            variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
-          >
+          <Button asChild variant='outline' className='h-11 rounded-full px-5'>
             <a
               href='/logistics-packaging-management/packaging-rules'
               target='_blank'

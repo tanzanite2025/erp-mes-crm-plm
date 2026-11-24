@@ -103,7 +103,7 @@ export function UnitMgmt() {
             variant='outline'
             size='sm'
             onClick={() => void refreshData(true)}
-            className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
+            className='h-9 rounded-full border-dashed transition-all hover:bg-primary/5 hover:text-primary'
           >
             <RefreshCcw className={cn('size-3', isLoading && 'animate-spin')} />
           </Button>
@@ -118,7 +118,7 @@ export function UnitMgmt() {
             <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
             <Input
               placeholder={t('basicSettings.units.page.searchPlaceholder')}
-              className='h-12 rounded-2xl border-none bg-background pl-10 text-sm font-medium shadow-sm transition-all outline-none focus-visible:ring-1 focus-visible:ring-primary/20'
+              className='h-12 rounded-2xl border-none bg-background pl-10 shadow-sm transition-all outline-none focus-visible:ring-1 focus-visible:ring-primary/20'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -129,7 +129,7 @@ export function UnitMgmt() {
             <button
               onClick={() => setCategoryFilter('ALL')}
               className={cn(
-                'rounded-full px-5 py-1.5 text-[10px] font-black tracking-widest whitespace-nowrap uppercase transition-all',
+                'rounded-full px-5 py-1.5 whitespace-nowrap transition-all',
                 categoryFilter === 'ALL'
                   ? 'bg-background text-primary shadow-sm'
                   : 'text-muted-foreground/40 hover:text-muted-foreground'
@@ -142,7 +142,7 @@ export function UnitMgmt() {
                 key={option.value}
                 onClick={() => setCategoryFilter(option.value)}
                 className={cn(
-                  'rounded-full px-5 py-1.5 text-[10px] font-black tracking-widest whitespace-nowrap uppercase transition-all',
+                  'rounded-full px-5 py-1.5 whitespace-nowrap transition-all',
                   categoryFilter === option.value
                     ? 'bg-background text-primary shadow-sm'
                     : 'text-muted-foreground/40 hover:text-muted-foreground'
@@ -167,7 +167,7 @@ export function UnitMgmt() {
           <Button
             variant='outline'
             onClick={() => UnitExcelTemplate.downloadTemplate(locale)}
-            className='h-11 flex-1 gap-2 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase hover:bg-background sm:flex-none'
+            className='h-11 flex-1 gap-2 rounded-full border-dashed px-5 hover:bg-background sm:flex-none'
           >
             <Download className='size-4' />
             {t('basicSettings.units.toolbar.downloadTemplate')}
@@ -176,7 +176,7 @@ export function UnitMgmt() {
             variant='outline'
             onClick={() => importInputRef.current?.click()}
             disabled={isImporting}
-            className='h-11 flex-1 gap-2 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase hover:bg-background sm:flex-none'
+            className='h-11 flex-1 gap-2 rounded-full border-dashed px-5 hover:bg-background sm:flex-none'
           >
             <FileUp className={cn('size-4', isImporting && 'animate-pulse')} />
             {isImporting
@@ -186,7 +186,7 @@ export function UnitMgmt() {
           <Button
             onClick={() => handleOpenDialog()}
             disabled={isImporting}
-            className='h-11 w-full gap-2 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/10 transition-all active:scale-95 sm:w-auto'
+            className='h-11 w-full gap-2 rounded-full px-8 shadow-lg shadow-primary/10 transition-all active:scale-95 sm:w-auto'
           >
             <Plus className='size-4' />
             {t('basicSettings.units.toolbar.addNew')}
@@ -324,7 +324,7 @@ export function UnitMgmt() {
                                 </DropdownMenuLabel>
                                 <DropdownMenuItem
                                   onClick={() => handleOpenDialog(unit)}
-                                  className='cursor-pointer rounded-xl py-2 text-xs font-bold'
+                                  className='cursor-pointer rounded-xl py-2'
                                 >
                                   <Edit2 className='mr-2 size-4' />
                                   {t('basicSettings.units.menu.edit')}
@@ -333,7 +333,7 @@ export function UnitMgmt() {
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(unit)}
                                   disabled={unit.isSystem}
-                                  className='cursor-pointer rounded-xl py-2 text-xs font-black text-rose-600 focus:text-rose-600 disabled:opacity-20'
+                                  className='cursor-pointer rounded-xl py-2 text-rose-600 focus:text-rose-600 disabled:opacity-20'
                                 >
                                   <Trash2 className='mr-2 size-4' />
                                   {t('basicSettings.units.menu.delete')}

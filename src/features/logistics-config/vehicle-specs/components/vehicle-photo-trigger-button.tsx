@@ -30,10 +30,7 @@ export function VehiclePhotoTriggerButton({
       size={size}
       variant={variant}
       onClick={onClick}
-      className={cn(
-        'gap-2 border-dashed px-3 text-[10px] font-black tracking-[0.18em] uppercase',
-        className
-      )}
+      className={cn('gap-2 border-dashed px-3', className)}
     >
       <Images className='size-4' />
       {t('logisticsConfig.vehiclePhotos.viewButton')}

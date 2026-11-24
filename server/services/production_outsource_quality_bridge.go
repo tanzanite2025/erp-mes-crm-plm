@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/audit"
@@ -26,23 +27,26 @@ type OutsourceInspectionTaskRequest struct {
 }
 
 type OutsourceInspectionTaskDTO struct {
-	ID               string  `json:"id"`
-	Status           string  `json:"status"`
-	SourceType       string  `json:"sourceType"`
-	SourceID         string  `json:"sourceId"`
-	SourceLineID     string  `json:"sourceLineId"`
-	ProductBarcode   string  `json:"productBarcode"`
-	ProductionPlanID string  `json:"productionPlanId"`
-	OrderID          string  `json:"orderId"`
-	BatchNo          string  `json:"batchNo"`
-	ProductID        string  `json:"productId"`
-	ProductName      string  `json:"productName"`
-	SampleQty        float64 `json:"sampleQty"`
-	Result           string  `json:"result"`
-	Inspector        string  `json:"inspector"`
-	ClaimedBy        string  `json:"claimedBy"`
-	ClaimedAt        string  `json:"claimedAt"`
-	CompletedAt      string  `json:"completedAt"`
+	ID                string  `json:"id"`
+	Status            string  `json:"status"`
+	SourceType        string  `json:"sourceType"`
+	SourceID          string  `json:"sourceId"`
+	SourceLineID      string  `json:"sourceLineId"`
+	SourceCycleNo     int     `json:"sourceCycleNo"`
+	InspectionRoundNo int     `json:"inspectionRoundNo"`
+	ParentTaskID      string  `json:"parentTaskId,omitempty"`
+	ProductBarcode    string  `json:"productBarcode"`
+	ProductionPlanID  string  `json:"productionPlanId"`
+	OrderID           string  `json:"orderId"`
+	BatchNo           string  `json:"batchNo"`
+	ProductID         string  `json:"productId"`
+	ProductName       string  `json:"productName"`
+	SampleQty         float64 `json:"sampleQty"`
+	Result            string  `json:"result"`
+	Inspector         string  `json:"inspector"`
+	ClaimedBy         string  `json:"claimedBy"`
+	ClaimedAt         string  `json:"claimedAt"`
+	CompletedAt       string  `json:"completedAt"`
 }
 
 func PrepareOutsourceInspectionTask(
@@ -94,12 +98,18 @@ func prepareOutsourceInspectionTaskTx(
 		return models.InspectionTask{}, fmt.Errorf("%w: inspection task uom must match outsource line uom", ErrInvalidOutsourceOrder)
 	}
 
+	identity, err := resolveNextOutsourceInspectionIdentityTx(tx, line.ID, req.ProductBarcode)
+	if err != nil {
+		return models.InspectionTask{}, err
+	}
+
 	var returned models.OutsourceTransfer
 	if err := tx.Where(
-		"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?",
+		"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?",
 		line.ID,
 		OutsourceTransferTypeReturn,
 		req.ProductBarcode,
+		identity.CycleNo,
 	).First(&returned).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.InspectionTask{}, fmt.Errorf("%w: productBarcode has not returned for this outsource line", ErrInvalidOutsourceOrder)
@@ -126,10 +136,12 @@ func prepareOutsourceInspectionTaskTx(
 	var task models.InspectionTask
 	result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where(
-			"source_type = ? AND source_line_id = ? AND product_barcode = ?",
+			"source_type = ? AND source_line_id = ? AND product_barcode = ? AND source_cycle_no = ? AND inspection_round_no = ?",
 			QualityInspectionTaskSourceProductionOutsource,
 			line.ID,
 			req.ProductBarcode,
+			identity.CycleNo,
+			identity.InspectionRoundNo,
 		).
 		First(&task)
 	switch {
@@ -162,29 +174,33 @@ func prepareOutsourceInspectionTaskTx(
 		task.SampleQty = req.SampleQty
 	case errors.Is(result.Error, gorm.ErrRecordNotFound):
 		task = models.InspectionTask{
-			BaseModel:        models.BaseModel{ID: uuid.NewString()},
-			Status:           QualityInspectionTaskStatusClaimed,
-			SourceType:       QualityInspectionTaskSourceProductionOutsource,
-			SourceID:         order.ID,
-			SourceLineID:     line.ID,
-			ProductBarcode:   req.ProductBarcode,
-			ProductionPlanID: outsourceQualityProductionPlanID(order),
-			OrderID:          outsourceQualityOrderID(order),
-			BatchNo:          batchNo,
-			ProductID:        line.ProductID,
-			ProductName:      line.ProductName,
-			SampleQty:        req.SampleQty,
-			Result:           "PENDING",
-			ClaimedBy:        claimedBy,
+			BaseModel:         models.BaseModel{ID: uuid.NewString()},
+			Status:            QualityInspectionTaskStatusClaimed,
+			SourceType:        QualityInspectionTaskSourceProductionOutsource,
+			SourceID:          order.ID,
+			SourceLineID:      line.ID,
+			SourceCycleNo:     identity.CycleNo,
+			InspectionRoundNo: identity.InspectionRoundNo,
+			ParentTaskID:      identity.ParentTaskID,
+			ProductBarcode:    req.ProductBarcode,
+			ProductionPlanID:  outsourceQualityProductionPlanID(order),
+			OrderID:           outsourceQualityOrderID(order),
+			BatchNo:           batchNo,
+			ProductID:         line.ProductID,
+			ProductName:       line.ProductName,
+			SampleQty:         req.SampleQty,
+			Result:            "PENDING",
+			ClaimedBy:         claimedBy,
 		}
 		now := time.Now()
 		task.ClaimedAt = &now
-		task.InputData = mustMarshalOutsourceQualityTaskInput(uom, line, order)
+		task.InputData = mustMarshalOutsourceQualityTaskInput(uom, line, order, identity.CycleNo, identity.InspectionRoundNo)
 		if err := createProductionRecordWithOptionalUUIDs(tx, &task,
 			productionOptionalUUIDWrite{Column: "standard_id", Value: task.StandardID},
 			productionOptionalUUIDWrite{Column: "production_plan_id", Value: task.ProductionPlanID},
 			productionOptionalUUIDWrite{Column: "order_id", Value: task.OrderID},
 			productionOptionalUUIDWrite{Column: "product_id", Value: task.ProductID},
+			productionOptionalUUIDWrite{Column: "parent_task_id", Value: task.ParentTaskID},
 		); err != nil {
 			return models.InspectionTask{}, err
 		}
@@ -200,6 +216,8 @@ func prepareOutsourceInspectionTaskTx(
 	).WithMetadata("sourceType", QualityInspectionTaskSourceProductionOutsource).
 		WithMetadata("sourceLineId", line.ID).
 		WithMetadata("productBarcode", req.ProductBarcode).
+		WithMetadata("sourceCycleNo", strconv.Itoa(identity.CycleNo)).
+		WithMetadata("inspectionRoundNo", strconv.Itoa(identity.InspectionRoundNo)).
 		WithMetadata("status", QualityInspectionTaskStatusClaimed).
 		Normalize()); err != nil {
 		return models.InspectionTask{}, err
@@ -234,6 +252,9 @@ func completeOutsourceInspectionTaskTx(
 		task.ProductBarcode != req.ProductBarcode {
 		return models.InspectionTask{}, fmt.Errorf("%w: inspection task does not match outsource line or product barcode", ErrInvalidOutsourceOrder)
 	}
+	if task.SourceCycleNo != inspection.CycleNo || task.InspectionRoundNo != inspection.InspectionRoundNo {
+		return models.InspectionTask{}, fmt.Errorf("%w: inspection task does not match current outsource cycle or inspection round", ErrInvalidOutsourceOrder)
+	}
 	if task.Status == QualityInspectionTaskStatusCompleted {
 		return models.InspectionTask{}, fmt.Errorf("%w: inspection task is already completed", ErrInvalidOutsourceOrder)
 	}
@@ -265,6 +286,16 @@ func completeOutsourceInspectionTaskTx(
 			"updated_at":   now,
 		}).Error; err != nil {
 		return models.InspectionTask{}, err
+	}
+	if strings.TrimSpace(task.ParentTaskID) != "" {
+		if err := closeCompletedOutsourceReworkAbnormalitiesWithinQualityTransaction(
+			tx,
+			task.ParentTaskID,
+			audit.AuditActor{UserID: req.ActorID, Username: claimedBy, IP: req.IP, Source: "production-outsource"},
+			now,
+		); err != nil {
+			return models.InspectionTask{}, err
+		}
 	}
 
 	if req.Disposition != OutsourceInspectionDispositionAccept {
@@ -346,11 +377,15 @@ func mustMarshalOutsourceQualityTaskInput(
 	uom string,
 	line models.OutsourceOrderLine,
 	order models.OutsourceOrder,
+	cycleNo int,
+	inspectionRoundNo int,
 ) []byte {
 	payload, _ := json.Marshal(map[string]any{
 		"sourceType":           QualityInspectionTaskSourceProductionOutsource,
 		"outsourceOrderId":     order.ID,
 		"outsourceOrderLineId": line.ID,
+		"sourceCycleNo":        cycleNo,
+		"inspectionRoundNo":    inspectionRoundNo,
 		"uom":                  uom,
 	})
 	return payload
@@ -367,6 +402,8 @@ func mustMarshalOutsourceQualityInspectionInput(
 		"outsourceOrderId":     order.ID,
 		"outsourceOrderLineId": line.ID,
 		"productBarcode":       req.ProductBarcode,
+		"sourceCycleNo":        inspection.CycleNo,
+		"inspectionRoundNo":    inspection.InspectionRoundNo,
 		"result":               req.Result,
 		"disposition":          req.Disposition,
 		"inspectedQuantity":    req.InspectedQuantity,
@@ -381,23 +418,26 @@ func mustMarshalOutsourceQualityInspectionInput(
 
 func mapOutsourceInspectionTaskToDTO(task models.InspectionTask) OutsourceInspectionTaskDTO {
 	return OutsourceInspectionTaskDTO{
-		ID:               strings.TrimSpace(task.ID),
-		Status:           strings.TrimSpace(task.Status),
-		SourceType:       strings.TrimSpace(task.SourceType),
-		SourceID:         strings.TrimSpace(task.SourceID),
-		SourceLineID:     strings.TrimSpace(task.SourceLineID),
-		ProductBarcode:   strings.TrimSpace(task.ProductBarcode),
-		ProductionPlanID: strings.TrimSpace(task.ProductionPlanID),
-		OrderID:          strings.TrimSpace(task.OrderID),
-		BatchNo:          strings.TrimSpace(task.BatchNo),
-		ProductID:        strings.TrimSpace(task.ProductID),
-		ProductName:      strings.TrimSpace(task.ProductName),
-		SampleQty:        task.SampleQty,
-		Result:           strings.TrimSpace(task.Result),
-		Inspector:        strings.TrimSpace(task.Inspector),
-		ClaimedBy:        strings.TrimSpace(task.ClaimedBy),
-		ClaimedAt:        formatOptionalOutsourceQualityTaskTime(task.ClaimedAt),
-		CompletedAt:      formatOptionalOutsourceQualityTaskTime(task.CompletedAt),
+		ID:                strings.TrimSpace(task.ID),
+		Status:            strings.TrimSpace(task.Status),
+		SourceType:        strings.TrimSpace(task.SourceType),
+		SourceID:          strings.TrimSpace(task.SourceID),
+		SourceLineID:      strings.TrimSpace(task.SourceLineID),
+		SourceCycleNo:     task.SourceCycleNo,
+		InspectionRoundNo: task.InspectionRoundNo,
+		ParentTaskID:      strings.TrimSpace(task.ParentTaskID),
+		ProductBarcode:    strings.TrimSpace(task.ProductBarcode),
+		ProductionPlanID:  strings.TrimSpace(task.ProductionPlanID),
+		OrderID:           strings.TrimSpace(task.OrderID),
+		BatchNo:           strings.TrimSpace(task.BatchNo),
+		ProductID:         strings.TrimSpace(task.ProductID),
+		ProductName:       strings.TrimSpace(task.ProductName),
+		SampleQty:         task.SampleQty,
+		Result:            strings.TrimSpace(task.Result),
+		Inspector:         strings.TrimSpace(task.Inspector),
+		ClaimedBy:         strings.TrimSpace(task.ClaimedBy),
+		ClaimedAt:         formatOptionalOutsourceQualityTaskTime(task.ClaimedAt),
+		CompletedAt:       formatOptionalOutsourceQualityTaskTime(task.CompletedAt),
 	}
 }
 

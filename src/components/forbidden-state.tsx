@@ -41,13 +41,24 @@ export function ForbiddenState({ fullHeight = false }: ForbiddenStateProps) {
           {t('errors.forbidden.cachedSessionHint')}
         </p>
         <div className='mt-6 flex flex-wrap justify-center gap-4'>
-          <Button variant='outline' onClick={() => history.go(-1)}>
+          <Button
+            variant='outline'
+            className='rounded-full'
+            onClick={() => history.go(-1)}
+          >
             {t('errors.forbidden.goBack')}
           </Button>
-          <Button variant='secondary' onClick={handleRelogin}>
+          <Button
+            variant='secondary'
+            className='rounded-full'
+            onClick={handleRelogin}
+          >
             {t('errors.forbidden.relogin')}
           </Button>
-          <Button onClick={() => navigate({ to: '/' })}>
+          <Button
+            className='rounded-full'
+            onClick={() => navigate({ to: '/' })}
+          >
             {t('errors.forbidden.backHome')}
           </Button>
         </div>

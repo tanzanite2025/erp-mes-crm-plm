@@ -96,11 +96,11 @@ export function BatchEngineSolutionOverviewSection(
                   }
                 >
                   <div className='flex items-center justify-between gap-3'>
-                    <p className='text-[10px] font-black tracking-[0.18em] text-muted-foreground/60 uppercase'>
+                    <p className='text-muted-foreground/60'>
                       #{plan.rank} / {plan.strategyKey}
                     </p>
                     <div className='flex flex-wrap items-center justify-end gap-1'>
-                      <span className='text-[10px] font-black tracking-[0.18em] text-muted-foreground/70 uppercase'>
+                      <span className='text-muted-foreground/70'>
                         {selected
                           ? t(
                               'rawMaterials.batchEngine.solutionOverview.currentPlan'
@@ -112,8 +112,8 @@ export function BatchEngineSolutionOverviewSection(
                       <span
                         className={
                           structuredRuleRiskCount > 0
-                            ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 font-maple-ui text-[8px] text-amber-500'
-                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-500'
+                            ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 font-maple-ui text-amber-500'
+                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-maple-ui text-emerald-500'
                         }
                       >
                         {t(
@@ -124,8 +124,8 @@ export function BatchEngineSolutionOverviewSection(
                       <span
                         className={
                           mustRiskCount > 0
-                            ? 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-1 font-maple-ui text-[8px] text-rose-500'
-                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-500'
+                            ? 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-1 font-maple-ui text-rose-500'
+                            : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-maple-ui text-emerald-500'
                         }
                       >
                         {t(
@@ -142,7 +142,7 @@ export function BatchEngineSolutionOverviewSection(
                       />
                     </div>
                   </div>
-                  <div className='mt-2 grid gap-1 text-xs font-semibold text-muted-foreground/80'>
+                  <div className='mt-2 grid gap-1 text-muted-foreground/80'>
                     <p>
                       {t(
                         'rawMaterials.batchEngine.solutionOverview.metrics.score'

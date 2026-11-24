@@ -8,13 +8,17 @@ import type {
 } from './sidebar-category-scrubber-utils'
 
 type DesktopSidebarSecondaryNavigationProps = {
+  id?: string
   category: SidebarCategoryPreview
   pathname: string
+  onDestinationSelected?: () => void
 }
 
 export function DesktopSidebarSecondaryNavigation({
+  id = 'desktop-sidebar-secondary-navigation',
   category,
   pathname,
+  onDestinationSelected,
 }: DesktopSidebarSecondaryNavigationProps) {
   const { t } = useLanguage()
   // AppSidebar keys this component by category: every category starts expanded.
@@ -50,11 +54,12 @@ export function DesktopSidebarSecondaryNavigation({
     activeEntryUrl,
     collapsedModuleIds,
     onToggleModule: toggleSidebarModuleExpansion,
+    onDestinationSelected,
   }
 
   return (
     <nav
-      id='desktop-sidebar-secondary-navigation'
+      id={id}
       aria-label={category.title}
       className='desktop-sidebar-secondary-navigation'
     >
@@ -69,7 +74,7 @@ export function DesktopSidebarSecondaryNavigation({
           />
           {category.sections.map((section) => (
             <section key={section.id} aria-label={section.title}>
-              <h2 className='mb-2 px-2 text-xs font-semibold text-muted-foreground'>
+              <h2 className='mb-2 px-2 text-[13px] font-semibold text-muted-foreground'>
                 {section.title}
               </h2>
               <DesktopSidebarDirectoryLinks
@@ -81,7 +86,7 @@ export function DesktopSidebarSecondaryNavigation({
           {!category.directLinks.length && !category.sections.length ? (
             <p
               role='status'
-              className='px-2 py-6 text-sm text-muted-foreground'
+              className='px-2 py-6 text-[15px] text-muted-foreground'
             >
               {t('sidebar.navigation.noAvailableEntries')}
             </p>
@@ -98,12 +103,14 @@ function DesktopSidebarDirectoryLinks({
   activeEntryUrl,
   collapsedModuleIds,
   onToggleModule,
+  onDestinationSelected,
 }: {
   links: SidebarCategoryDomainLink[]
   categoryId: string
   activeEntryUrl?: string
   collapsedModuleIds: ReadonlySet<string>
   onToggleModule: (moduleId: string) => void
+  onDestinationSelected?: () => void
 }) {
   if (!links.length) return null
   return (
@@ -121,7 +128,7 @@ function DesktopSidebarDirectoryLinks({
             ) : null}
             <span className='min-w-0 flex-1 break-words'>{link.title}</span>
             {link.badge ? (
-              <span className='shrink-0 text-xs'>{link.badge}</span>
+              <span className='shrink-0 text-[13px]'>{link.badge}</span>
             ) : null}
           </>
         )
@@ -131,7 +138,7 @@ function DesktopSidebarDirectoryLinks({
               <>
                 <button
                   type='button'
-                  className='desktop-sidebar-directory-link font-semibold'
+                  className='desktop-sidebar-directory-link'
                   aria-expanded={isExpanded}
                   aria-controls={panelId}
                   data-sidebar-active-path={containsCurrentPage}
@@ -162,6 +169,7 @@ function DesktopSidebarDirectoryLinks({
                         aria-current={
                           tab.url === activeEntryUrl ? 'page' : undefined
                         }
+                        onClick={onDestinationSelected}
                       >
                         {tab.title}
                       </Link>
@@ -174,6 +182,7 @@ function DesktopSidebarDirectoryLinks({
                 to={link.url}
                 className='desktop-sidebar-directory-link'
                 aria-current={link.url === activeEntryUrl ? 'page' : undefined}
+                onClick={onDestinationSelected}
               >
                 {moduleContents}
               </Link>

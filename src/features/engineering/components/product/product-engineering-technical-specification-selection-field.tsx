@@ -69,7 +69,6 @@ export function ProductEngineeringTechnicalSpecificationSelectionField({
                 <DropdownMenuItem
                   key={option.value}
                   onSelect={() => onValueChange(option.value)}
-                  className='text-[13px]'
                 >
                   <Check
                     className={cn(
@@ -92,7 +91,6 @@ export function ProductEngineeringTechnicalSpecificationSelectionField({
           <DropdownMenuItem
             disabled={!value}
             onSelect={() => setIsPreviewOpen(true)}
-            className='text-[13px]'
           >
             <Eye className='size-4' />
             {isChineseLocale
@@ -101,7 +99,7 @@ export function ProductEngineeringTechnicalSpecificationSelectionField({
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => setIsLibraryOpen(true)}
-            className='text-[13px] font-semibold text-blue-600 dark:text-blue-400'
+            className='text-blue-600 dark:text-blue-400'
           >
             <LibraryBig className='size-4' />
             {isChineseLocale

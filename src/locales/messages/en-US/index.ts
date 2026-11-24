@@ -26,6 +26,7 @@ import { mrp } from './mrp'
 import { orgPersonnel } from './orgPersonnel'
 import { piecework } from './piecework'
 import { printMgmt } from './printMgmt'
+import { productCodeLinearBarcodeAndQrCodeOperationGuide } from './product-code-linear-barcode-and-qr-code-operation-guide'
 import { productionArchitecture } from './productionArchitecture'
 import { productionExecution } from './productionExecution'
 import { productionOutsourcing } from './productionOutsourcing'
@@ -82,6 +83,7 @@ export const enUSMessages = {
   aiAssistant,
   dashboard,
   productionShared,
+  productCodeLinearBarcodeAndQrCodeOperationGuide,
   scanPlatform,
   quickActions,
   sidebarCommandConfig,

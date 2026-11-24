@@ -35,13 +35,9 @@ export function MindmapNodeCard({
             >
               L{node.level}
             </Badge>
-            <span className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-              {levelLabel}
-            </span>
+            <span className='text-muted-foreground/60'>{levelLabel}</span>
           </div>
-          <div className='truncate text-[13px] font-black tracking-tight text-foreground'>
-            {node.nameSnapshot}
-          </div>
+          <div className='truncate text-foreground'>{node.nameSnapshot}</div>
         </div>
 
         <div className='flex shrink-0 flex-col items-end gap-1.5'>

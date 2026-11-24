@@ -57,7 +57,7 @@ export function VehicleLoadingPreviewControls({
               type='button'
               variant={zoomPercent === item ? 'default' : 'outline'}
               size='sm'
-              className='h-7 rounded-full px-2.5 text-[10px] font-black'
+              className='control-typography-compact h-7 rounded-full px-2.5'
               onClick={() => onZoomPercentChange(item)}
             >
               {item}%
@@ -73,7 +73,7 @@ export function VehicleLoadingPreviewControls({
               type='button'
               variant='outline'
               size='sm'
-              className='h-7 rounded-full px-2.5 text-[10px] font-black'
+              className='control-typography-compact h-7 rounded-full px-2.5'
               disabled={activeLayerIndex <= 0}
               onClick={() =>
                 onActiveLayerIndexChange(
@@ -87,7 +87,7 @@ export function VehicleLoadingPreviewControls({
               type='button'
               variant='outline'
               size='sm'
-              className='h-7 rounded-full px-2.5 text-[10px] font-black'
+              className='control-typography-compact h-7 rounded-full px-2.5'
               disabled={activeLayerIndex >= layerCount - 1}
               onClick={() =>
                 onActiveLayerIndexChange(
@@ -109,7 +109,7 @@ export function VehicleLoadingPreviewControls({
                 type='button'
                 variant={isActive ? 'default' : 'outline'}
                 size='sm'
-                className='h-7 shrink-0 rounded-full px-2.5 text-[10px] font-black'
+                className='control-typography-compact h-7 shrink-0 rounded-full px-2.5'
                 onClick={() =>
                   onActiveLayerIndexChange(
                     clampLayerIndex(layer.layerIndex, layerCount)

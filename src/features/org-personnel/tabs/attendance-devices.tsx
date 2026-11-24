@@ -763,7 +763,7 @@ export default function AttendanceDevices() {
             <Button
               type='button'
               variant='outline'
-              className='h-11 rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full'
               onClick={() =>
                 void queryClient.invalidateQueries({
                   queryKey: personnelQueryKeys.attendanceDevices.all(),
@@ -1070,12 +1070,10 @@ export default function AttendanceDevices() {
                     disabled={!canManage}
                   >
                     <div className='flex items-center justify-between gap-3'>
-                      <span className='text-sm font-black'>
-                        {template.label}
-                      </span>
+                      <span>{template.label}</span>
                       <Badge variant='outline'>{template.protocol}</Badge>
                     </div>
-                    <p className='mt-1 text-xs text-muted-foreground'>
+                    <p className='mt-1 text-muted-foreground'>
                       {template.defaultModel}
                     </p>
                   </button>
@@ -1562,7 +1560,7 @@ export default function AttendanceDevices() {
                   onChange={(event) =>
                     updateForm({ configText: event.target.value })
                   }
-                  className='min-h-40 rounded-xl font-maple-ui text-xs'
+                  className='min-h-40 rounded-xl font-maple-ui'
                 />
                 {configError ? (
                   <p className='mt-2 text-xs font-bold text-rose-600'>

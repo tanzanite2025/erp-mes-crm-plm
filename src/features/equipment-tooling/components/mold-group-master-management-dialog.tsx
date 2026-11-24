@@ -108,7 +108,7 @@ export function MoldGroupMasterManagementDialog({
               }
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className='w-full min-w-0 placeholder:text-[13px] placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground placeholder:opacity-100 sm:w-auto sm:flex-1'
+              className='w-full min-w-0 placeholder:text-muted-foreground placeholder:opacity-100 sm:w-auto sm:flex-1'
             />
             <Button
               type='button'

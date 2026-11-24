@@ -28,7 +28,7 @@ export function VehicleSpecsLibraryToolbar({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('common.actions.search')}
-              className='h-10 rounded-xl border-border/70 bg-background pl-9 text-[13px]'
+              className='h-10 rounded-xl border-border/70 bg-background pl-9'
             />
           </div>
           <div className='uds-chip text-[10px] whitespace-nowrap'>{`${t('common.labels.nodes')} ${totalCount}`}</div>
@@ -40,7 +40,7 @@ export function VehicleSpecsLibraryToolbar({
             variant='outline'
             size='sm'
             onClick={onRefresh}
-            className='h-10 gap-2 rounded-xl px-4 text-[10px] font-black tracking-[0.2em] uppercase'
+            className='h-10 gap-2 rounded-xl px-4'
           >
             <RefreshCw className='size-4' />
             {t('common.actions.refresh')}

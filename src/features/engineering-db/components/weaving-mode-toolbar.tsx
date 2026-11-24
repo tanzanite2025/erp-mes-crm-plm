@@ -31,7 +31,7 @@ export function WeavingModeToolbar({
           placeholder={t(
             'engineering.masterData.weavingMode.placeholders.search'
           )}
-          className='h-10 rounded-xl border-none bg-muted/20 px-4 text-sm font-medium shadow-inner md:max-w-xs'
+          className='h-10 rounded-xl border-none bg-muted/20 px-4 shadow-inner md:max-w-xs'
         />
         <div className='inline-flex items-center gap-2.5 self-start rounded-full border border-dashed border-primary/20 bg-primary/5 px-3 py-1.5 text-[9px] font-black tracking-[0.16em] text-primary/70 uppercase md:self-auto'>
           <span>
@@ -53,10 +53,7 @@ export function WeavingModeToolbar({
           </span>
         </div>
       </div>
-      <Button
-        onClick={onCreate}
-        className='h-10 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
-      >
+      <Button onClick={onCreate} className='h-10 rounded-full px-6'>
         <Plus className='mr-2 size-3.5' />
         {t('engineering.masterData.weavingMode.actions.create')}
       </Button>

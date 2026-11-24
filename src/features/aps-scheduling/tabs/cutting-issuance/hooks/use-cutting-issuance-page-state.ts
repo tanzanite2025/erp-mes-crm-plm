@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import {
+  getProductionBOMBranchIdentityKey,
+  type ProductionBOMBranch,
+} from '@/features/production-shared/data/production-bom-branch'
+import { useProductionLineBOMBranchesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { CUTTING_ISSUANCE_QUERY_KEYS } from '../constants'
 import {
@@ -22,6 +27,7 @@ export function useCuttingIssuancePageState() {
   const [orderId, setOrderId] = useState('')
   const [lineNo, setLineNo] = useState('')
   const [templateId, setTemplateId] = useState('')
+  const [bomBranchIdentityKey, setBOMBranchIdentityKey] = useState('')
 
   const ordersQuery = useQuery({
     queryKey: CUTTING_ISSUANCE_QUERY_KEYS.orders,
@@ -32,6 +38,8 @@ export function useCuttingIssuancePageState() {
     queryKey: CUTTING_ISSUANCE_QUERY_KEYS.templates,
     queryFn: getCuttingIssuanceTemplates,
   })
+
+  const bomBranchesQuery = useProductionLineBOMBranchesQuery()
 
   const executionsQuery = useQuery({
     queryKey: CUTTING_ISSUANCE_QUERY_KEYS.executions,
@@ -45,6 +53,7 @@ export function useCuttingIssuancePageState() {
 
   const orders = ordersQuery.data ?? []
   const templates = templatesQuery.data ?? []
+  const bomBranches = bomBranchesQuery.data ?? []
   const executions = executionsQuery.data ?? []
   const traceReport = traceReportQuery.data
 
@@ -80,6 +89,23 @@ export function useCuttingIssuancePageState() {
     [lineNo, selectedOrder]
   )
 
+  const candidateBOMBranches = useMemo(
+    () =>
+      bomBranches.filter(
+        (branch) => branch.productId === selectedLine?.productId
+      ),
+    [bomBranches, selectedLine]
+  )
+
+  const selectedBOMBranch = useMemo(
+    () =>
+      candidateBOMBranches.find(
+        (branch) =>
+          getProductionBOMBranchIdentityKey(branch) === bomBranchIdentityKey
+      ),
+    [bomBranchIdentityKey, candidateBOMBranches]
+  )
+
   const compatibleTemplates = useMemo(
     () => getCompatibleTemplates(selectedLine, templates),
     [selectedLine, templates]
@@ -112,7 +138,12 @@ export function useCuttingIssuancePageState() {
 
   const createExecutionMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedOrder || !selectedLine || !selectedTemplate) {
+      if (
+        !selectedOrder ||
+        !selectedLine ||
+        !selectedTemplate ||
+        !selectedBOMBranch
+      ) {
         throw new Error(
           t('apsScheduling.cuttingIssuance.feedback.createMissingSelection')
         )
@@ -122,6 +153,7 @@ export function useCuttingIssuancePageState() {
         order: selectedOrder,
         line: selectedLine,
         template: selectedTemplate,
+        branch: selectedBOMBranch as ProductionBOMBranch,
       })
     },
     onSuccess: async (result) => {
@@ -156,10 +188,14 @@ export function useCuttingIssuancePageState() {
     },
   })
 
-  const isLoading = ordersQuery.isLoading || templatesQuery.isLoading
+  const isLoading =
+    ordersQuery.isLoading ||
+    templatesQuery.isLoading ||
+    bomBranchesQuery.isLoading
   const loadingError =
     ordersQuery.error ||
     templatesQuery.error ||
+    bomBranchesQuery.error ||
     executionsQuery.error ||
     traceReportQuery.error
   const isExecutionOrTraceRefreshing =
@@ -187,6 +223,24 @@ export function useCuttingIssuancePageState() {
       }
     }
 
+    if (candidateBOMBranches.length === 0) {
+      return {
+        label: t(
+          'apsScheduling.cuttingIssuance.header.status.missingBOMBranch'
+        ),
+        className: 'border-amber-300 bg-amber-50 text-amber-700',
+      }
+    }
+
+    if (!selectedBOMBranch) {
+      return {
+        label: t(
+          'apsScheduling.cuttingIssuance.header.status.awaitingBOMBranch'
+        ),
+        className: 'border-border/60 bg-background text-muted-foreground',
+      }
+    }
+
     if (compatibleTemplates.length === 0) {
       return {
         label: t('apsScheduling.cuttingIssuance.header.status.missingTemplate'),
@@ -207,9 +261,11 @@ export function useCuttingIssuancePageState() {
     }
   }, [
     compatibleTemplates.length,
+    candidateBOMBranches.length,
     isLoading,
     selectedLine,
     selectedOrder,
+    selectedBOMBranch,
     selectedTemplate,
     t,
   ])
@@ -235,7 +291,7 @@ export function useCuttingIssuancePageState() {
       : null
 
   const canCreateExecution = Boolean(
-    selectedOrder && selectedLine && selectedTemplate
+    selectedOrder && selectedLine && selectedTemplate && selectedBOMBranch
   )
 
   const refreshExecutionAndTrace = () => {
@@ -251,6 +307,7 @@ export function useCuttingIssuancePageState() {
     setOrderId(nextOrderId)
     setLineNo('')
     setTemplateId('')
+    setBOMBranchIdentityKey('')
   }
 
   const updateSelectedOrderLineAndResetCuttingTemplate = (
@@ -258,6 +315,7 @@ export function useCuttingIssuancePageState() {
   ) => {
     setLineNo(nextLineNo)
     setTemplateId('')
+    setBOMBranchIdentityKey('')
   }
 
   return {
@@ -269,6 +327,9 @@ export function useCuttingIssuancePageState() {
     isExecutionOrTraceRefreshing,
     selectedOrder,
     compatibleTemplates,
+    candidateBOMBranches,
+    bomBranchIdentityKey,
+    setBOMBranchIdentityKey,
     orderId,
     setOrderId: updateSelectedOrderAndResetCuttingTemplate,
     lineNo,

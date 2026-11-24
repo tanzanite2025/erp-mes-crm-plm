@@ -52,7 +52,7 @@ export function DataTableRowActions({
             setCurrentRow(row.original)
             setOpen('permissions')
           }}
-          className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+          className='h-9 rounded-full'
         >
           {t('users.actions.managePermissions')}
         </Button>

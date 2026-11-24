@@ -104,7 +104,7 @@ export function LabTestsPage() {
           <Search className='absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/30 transition-colors group-focus-within:text-primary' />
           <Input
             placeholder={t('labExperimental.tests.searchPlaceholder')}
-            className='h-11 w-full rounded-full border-none bg-muted/40 pl-11 text-[10px] font-black tracking-widest uppercase shadow-inner transition-all focus:bg-background'
+            className='h-11 w-full rounded-full border-none bg-muted/40 pl-11 shadow-inner transition-all focus:bg-background'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -201,7 +201,7 @@ export function LabTestsPage() {
                   {task.status === 'PENDING' ? (
                     <Button
                       size='sm'
-                      className='h-9 gap-2 rounded-full bg-blue-500 px-5 text-[9px] font-black tracking-widest uppercase shadow-lg shadow-blue-500/20 transition-all group-hover:scale-110 hover:bg-blue-600 active:scale-95'
+                      className='h-9 gap-2 rounded-full bg-blue-500 px-5 shadow-lg shadow-blue-500/20 transition-all group-hover:scale-110 hover:bg-blue-600 active:scale-95'
                       onClick={(e) => {
                         e.stopPropagation()
                         handleStartTest(task.id)

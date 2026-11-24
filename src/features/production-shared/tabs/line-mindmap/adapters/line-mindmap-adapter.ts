@@ -1,8 +1,8 @@
 import type {
+  ProductionBOMBranchOperation,
   ProductionLine,
-  ProductionSegment,
+  ProductionLineSegment,
 } from '../../../data/production-line'
-import type { ProductionProcessStep } from '../../../data/production-process'
 import type { LineMindmapNode } from '../data/line-mindmap-domain'
 
 export interface LineMindmapLineOption {
@@ -13,7 +13,7 @@ export interface LineMindmapLineOption {
 }
 
 function createProcessNode(
-  process: ProductionProcessStep,
+  process: ProductionBOMBranchOperation,
   parentId: string,
   line: ProductionLine
 ): LineMindmapNode {
@@ -28,19 +28,23 @@ function createProcessNode(
     dialogKey: '',
     note: '',
     readonlyMeta: {
-      code: process.code,
       description: process.description,
       isActive: process.isActive,
       lineId: line.id,
       lineName: line.name,
       sortOrder: process.sortOrder,
+      productId: process.productId,
+      bomOwnerType: process.bomOwnerType,
+      bomOwnerCustomerId: process.bomOwnerCustomerId,
+      bomVersionLevel: process.bomVersionLevel,
+      processLibraryId: process.processLibraryId,
     },
     children: [],
   }
 }
 
 function createSegmentNode(
-  segment: ProductionSegment,
+  segment: ProductionLineSegment,
   line: ProductionLine
 ): LineMindmapNode {
   return {
@@ -56,9 +60,17 @@ function createSegmentNode(
       description: segment.description,
       lineId: line.id,
       lineName: line.name,
+      productId: segment.productId,
+      productSKU: segment.productSKU,
+      productName: segment.productName,
+      bomOwnerType: segment.bomOwnerType,
+      bomOwnerCustomerId: segment.bomOwnerCustomerId,
+      bomOwnerCustomerName: segment.bomOwnerCustomerName,
+      bomVersionLevel: segment.bomVersionLevel,
       sortOrder: segment.sortOrder,
+      branchOperations: segment.branchOperations,
     },
-    children: (segment.processes ?? []).map((process) =>
+    children: (segment.branchOperations ?? []).map((process) =>
       createProcessNode(process, `segment-${segment.id}`, line)
     ),
   }

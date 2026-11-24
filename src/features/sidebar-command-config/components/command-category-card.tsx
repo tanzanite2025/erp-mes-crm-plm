@@ -66,7 +66,7 @@ export function CommandCategoryCard({
           type='button'
           variant='outline'
           size='sm'
-          className='h-7 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest'
+          className='control-typography-compact h-7 rounded-full border-dashed px-3'
           disabled={isSaving}
           onClick={() => onEdit(category)}
         >
@@ -77,7 +77,7 @@ export function CommandCategoryCard({
           type='button'
           variant={category.enabled ? 'outline' : 'default'}
           size='sm'
-          className='h-7 rounded-full px-3 text-[10px] font-black tracking-widest'
+          className='control-typography-compact h-7 rounded-full px-3'
           disabled={isSaving}
           onClick={() => onToggleEnabled(category)}
         >

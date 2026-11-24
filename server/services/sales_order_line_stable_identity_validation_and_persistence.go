@@ -83,6 +83,9 @@ func persistSalesOrderLinesByStableIdentityTx(tx *gorm.DB, orderID string, lines
 	if err := validateAndAssignSalesOrderLineOwnershipForSave(orderID, previousLines, lines); err != nil {
 		return err
 	}
+	if err := validateSalesOrderLineQuantityAgainstIssuedProductCodeInventoryTx(tx, orderID, previousLines, lines); err != nil {
+		return err
+	}
 	var nextOrder models.SalesOrder
 	if err := tx.First(&nextOrder, "id = ?", orderID).Error; err != nil {
 		return err

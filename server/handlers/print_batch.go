@@ -23,6 +23,13 @@ var canonicalLinearBarcodeFullCodePattern = regexp.MustCompile(
 	`^\d{2}[1-90ND](?:0[1-9]|[12]\d|3[01])\d{3}[RD]\d{6}$`,
 )
 
+var (
+	ErrPrintBatchActivationRequiresLinearBarcodeScan = errors.New("product-code print batches can only be activated by scanning")
+	ErrPrintBatchLifecycleFieldsAreManaged           = errors.New("print batch lifecycle fields are managed by lifecycle actions")
+	ErrPrintBatchWithProductCodeInventoryIsImmutable = errors.New("print batch with product-code inventory cannot be edited")
+	ErrPrintBatchNotActivatable                      = errors.New("print batch is not in an activatable state")
+)
+
 func isPrintBatchFullCodeConflict(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) &&
@@ -118,6 +125,20 @@ func SavePrintBatchHandler(c *gin.Context) {
 			if input.Version != existing.Version {
 				return ErrVersionConflict
 			}
+			var productCodeInventoryItemCount int64
+			if err := tx.Unscoped().Model(&models.LinearBarcodeInventoryItem{}).
+				Where("batch_id = ?", existing.ID).
+				Count(&productCodeInventoryItemCount).Error; err != nil {
+				return err
+			}
+			if productCodeInventoryItemCount > 0 {
+				return ErrPrintBatchWithProductCodeInventoryIsImmutable
+			}
+			if (input.Status != "" && input.Status != existing.Status) ||
+				(input.ActivatedCount > 0 && input.ActivatedCount != existing.ActivatedCount) ||
+				(existing.ActivatedCount > 0 && input.Quantity != existing.Quantity) {
+				return ErrPrintBatchLifecycleFieldsAreManaged
+			}
 
 			input.Version = existing.Version + 1
 			updateTx := tx.Model(&existing)
@@ -153,6 +174,8 @@ func SavePrintBatchHandler(c *gin.Context) {
 		}
 
 		input.Version = 1
+		input.ActivatedCount = 0
+		input.Status = "Printed"
 		createTx := tx
 		if input.ProductID == "" {
 			createTx = createTx.Omit("ProductID")
@@ -170,6 +193,24 @@ func SavePrintBatchHandler(c *gin.Context) {
 	if err != nil {
 		if err == ErrVersionConflict {
 			respondVersionConflict(c)
+			return
+		}
+		if errors.Is(err, ErrPrintBatchWithProductCodeInventoryIsImmutable) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "[BUSINESS_RULE_VIOLATION] 已签发逐枚产品编码的打印批次不能通过通用保存接口修改",
+				"code":  "PRODUCT_CODE_PRINT_BATCH_IS_IMMUTABLE",
+			})
+			return
+		}
+		if errors.Is(err, ErrPrintBatchLifecycleFieldsAreManaged) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "[BUSINESS_RULE_VIOLATION] 激活数和批次状态只能通过专用生命周期操作更新；开始激活后不能修改批次数量",
+				"code":  "PRINT_BATCH_LIFECYCLE_FIELDS_ARE_MANAGED",
+			})
+			return
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 打印批次不存在"})
 			return
 		}
 		if isPrintBatchFullCodeConflict(err) {
@@ -198,19 +239,41 @@ func ActivateBatchHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 激活参数格式错误"})
 		return
 	}
+	if req.Count <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] count 必须大于 0"})
+		return
+	}
 
 	var batch models.PrintBatch
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.First(&batch, "id = ?", id).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&batch, "id = ?", id).Error; err != nil {
 			return err
 		}
 		if req.Version != batch.Version {
 			return ErrVersionConflict
 		}
 
-		newCount := batch.ActivatedCount + req.Count
-		if newCount > batch.Quantity {
-			newCount = batch.Quantity
+		var productCodeInventoryItemCount int64
+		if err := tx.Unscoped().Model(&models.LinearBarcodeInventoryItem{}).
+			Where("batch_id = ?", id).
+			Count(&productCodeInventoryItemCount).Error; err != nil {
+			return err
+		}
+		if productCodeInventoryItemCount > 0 {
+			return ErrPrintBatchActivationRequiresLinearBarcodeScan
+		}
+		if batch.Status != "Printed" && batch.Status != "PartiallyActivated" {
+			return ErrPrintBatchNotActivatable
+		}
+
+		if batch.Quantity <= 0 || batch.ActivatedCount < 0 || batch.ActivatedCount > batch.Quantity {
+			return ErrPrintBatchNotActivatable
+		}
+
+		remainingCount := batch.Quantity - batch.ActivatedCount
+		newCount := batch.Quantity
+		if req.Count < remainingCount {
+			newCount = batch.ActivatedCount + req.Count
 		}
 
 		status := "PartiallyActivated"
@@ -218,12 +281,16 @@ func ActivateBatchHandler(c *gin.Context) {
 			status = "Activated"
 		}
 
-		if err := tx.Model(&batch).Where("id = ? AND version = ?", id, req.Version).Updates(map[string]interface{}{
+		result := tx.Model(&batch).Where("id = ? AND version = ?", id, req.Version).Updates(map[string]interface{}{
 			"activated_count": newCount,
 			"status":          status,
 			"version":         batch.Version + 1,
-		}).Error; err != nil {
-			return err
+		})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return ErrVersionConflict
 		}
 
 		return nil
@@ -232,6 +299,24 @@ func ActivateBatchHandler(c *gin.Context) {
 	if err != nil {
 		if err == ErrVersionConflict {
 			respondVersionConflict(c)
+			return
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 打印批次不存在"})
+			return
+		}
+		if errors.Is(err, ErrPrintBatchActivationRequiresLinearBarcodeScan) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "[BUSINESS_RULE_VIOLATION] 产品编码批次只能通过扫码绑定更新激活状态",
+				"code":  "LINEAR_BARCODE_SCAN_REQUIRED_FOR_ACTIVATION",
+			})
+			return
+		}
+		if errors.Is(err, ErrPrintBatchNotActivatable) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "[BUSINESS_RULE_VIOLATION] 已激活或已报废的打印批次不能再次激活",
+				"code":  "PRINT_BATCH_NOT_ACTIVATABLE",
+			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 激活失败: " + err.Error()})
@@ -246,19 +331,7 @@ func ActivateBatchHandler(c *gin.Context) {
 func ScrapBatchHandler(c *gin.Context) {
 	id := c.Param("id")
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var batch models.PrintBatch
-		if err := tx.First(&batch, "id = ?", id).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Model(&batch).Update("status", "Scrapped").Error; err != nil {
-			return err
-		}
-		if err := services.ScrapLinearBarcodeInventoryForBatchTx(tx, batch.ID); err != nil {
-			return err
-		}
-
-		return nil
+		return services.ScrapLinearBarcodePrintBatchTx(tx, id)
 	})
 
 	if err != nil {

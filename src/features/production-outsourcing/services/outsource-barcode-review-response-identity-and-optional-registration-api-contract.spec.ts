@@ -12,6 +12,8 @@ const selectedOutsourceLineBarcodeReview = {
   productBarcode: 'BC/001',
   productName: '产品甲',
   action: 'SEND',
+  cycleNo: 1,
+  inspectionRoundNo: 0,
   routeStepId: 'step-1',
   processName: '电镀',
   status: 'IN_PROGRESS',

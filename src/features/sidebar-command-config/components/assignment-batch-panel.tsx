@@ -28,9 +28,9 @@ export function AssignmentBatchPanel({
 
   return (
     <div className='rounded-[18px] border border-dashed border-muted/50 bg-background px-4 py-3 shadow-inner'>
-      <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex items-center gap-3'>
-          <div className='flex size-8 items-center justify-center rounded-xl bg-muted'>
+      <div className='flex min-w-0 flex-wrap items-center justify-between gap-3'>
+        <div className='flex min-w-0 items-center gap-3'>
+          <div className='flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted'>
             <UsersRound className='size-4' />
           </div>
           <div>
@@ -42,23 +42,23 @@ export function AssignmentBatchPanel({
             </p>
           </div>
         </div>
-        <div className='flex flex-wrap gap-2'>
+        <div className='flex min-w-0 flex-wrap gap-2'>
           <Button
             variant={batchMode === 'replace' ? 'default' : 'outline'}
-            className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
+            className='h-auto min-h-8 max-w-full rounded-full px-4 py-1.5 whitespace-normal'
             onClick={() => onBatchModeChange('replace')}
           >
             {t('sidebarCommandConfig.batch.replace')}
           </Button>
           <Button
             variant={batchMode === 'append' ? 'default' : 'outline'}
-            className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
+            className='h-auto min-h-8 max-w-full rounded-full px-4 py-1.5 whitespace-normal'
             onClick={() => onBatchModeChange('append')}
           >
             {t('sidebarCommandConfig.batch.append')}
           </Button>
           <Button
-            className='h-8 gap-2 rounded-full px-4 text-[10px] font-black tracking-widest'
+            className='h-auto min-h-8 max-w-full gap-2 rounded-full px-4 py-1.5 whitespace-normal'
             disabled={
               selectedTargetCount === 0 || !hasSelectedAccount || isBatchPending
             }
@@ -69,7 +69,7 @@ export function AssignmentBatchPanel({
           </Button>
           <Button
             variant='outline'
-            className='h-8 gap-2 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest'
+            className='h-auto min-h-8 max-w-full gap-2 rounded-full border-dashed px-4 py-1.5 whitespace-normal'
             disabled={
               selectedTargetCount === 0 || isCopyPending || !hasSelectedAccount
             }

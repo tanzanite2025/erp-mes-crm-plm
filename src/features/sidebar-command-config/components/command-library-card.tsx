@@ -91,7 +91,7 @@ export function CommandLibraryCard({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-7 rounded-full border-dashed px-2 text-[10px] font-black tracking-widest'
+                className='control-typography-compact h-7 rounded-full border-dashed px-2'
                 disabled={isSaving}
                 onClick={() => onMove(command.commandId, 'up')}
               >
@@ -101,7 +101,7 @@ export function CommandLibraryCard({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-7 rounded-full border-dashed px-2 text-[10px] font-black tracking-widest'
+                className='control-typography-compact h-7 rounded-full border-dashed px-2'
                 disabled={isSaving}
                 onClick={() => onMove(command.commandId, 'down')}
               >
@@ -113,7 +113,7 @@ export function CommandLibraryCard({
                 type='button'
                 variant='outline'
                 size='sm'
-                className='h-7 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest'
+                className='control-typography-compact h-7 rounded-full border-dashed px-3'
                 disabled={isSaving}
                 onClick={() => onEdit(command)}
               >
@@ -124,7 +124,7 @@ export function CommandLibraryCard({
                 type='button'
                 variant={command.enabled ? 'outline' : 'default'}
                 size='sm'
-                className='h-7 rounded-full px-3 text-[10px] font-black tracking-widest'
+                className='control-typography-compact h-7 rounded-full px-3'
                 disabled={isSaving}
                 onClick={() => onToggleEnabled(command)}
               >

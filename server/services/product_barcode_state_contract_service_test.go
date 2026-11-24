@@ -15,6 +15,35 @@ func TestProductBarcodeStateContractUsesSupportedProductionStatuses(t *testing.T
 	}
 }
 
+func TestProductBarcodeInventoryExpiryContractDescribesScanPersistence(t *testing.T) {
+	contract := GetProductBarcodeStateContract()
+	for _, status := range contract.InventoryStatuses {
+		if status.Code == LinearBarcodeInventoryStatusExpired {
+			if status.Trigger != "binding_scan_expiry_check" {
+				t.Fatalf("expected expiry to be persisted by binding scan, got trigger %q", status.Trigger)
+			}
+			if !status.IsTerminal {
+				t.Fatal("expected expired inventory status to be terminal")
+			}
+			return
+		}
+	}
+	t.Fatal("expected EXPIRED inventory status in product barcode state contract")
+}
+
+func TestBoundInventoryStatusIsTerminalWhileProductionStatusRemainsIndependent(t *testing.T) {
+	contract := GetProductBarcodeStateContract()
+	for _, status := range contract.InventoryStatuses {
+		if status.Code == LinearBarcodeInventoryStatusBound {
+			if !status.IsTerminal {
+				t.Fatal("expected BOUND inventory status to be terminal")
+			}
+			return
+		}
+	}
+	t.Fatal("expected BOUND inventory status in product barcode state contract")
+}
+
 func TestProductBarcodeStateContractExposesRouteStepAsRequiredLocationAnchor(t *testing.T) {
 	contract := GetProductBarcodeStateContract()
 

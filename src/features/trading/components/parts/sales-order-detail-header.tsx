@@ -66,7 +66,7 @@ export function SalesOrderDetailHeader({
           {canSubmitPending && (
             <Button
               size='sm'
-              className='min-h-9 gap-2 rounded-lg px-3 text-sm font-medium'
+              className='min-h-9 gap-2 rounded-lg px-3'
               onClick={() => onMutateStatus(submitPendingPayload)}
             >
               <FileCheck className='size-3.5' />
@@ -77,7 +77,7 @@ export function SalesOrderDetailHeader({
             <Button
               size='sm'
               variant='ghost'
-              className='min-h-9 gap-2 rounded-lg px-3 text-sm font-medium text-destructive hover:bg-destructive/10'
+              className='min-h-9 gap-2 rounded-lg px-3 text-destructive hover:bg-destructive/10'
               onClick={async () => {
                 if (!(await requestApplicationConfirmation(cancelConfirmText)))
                   return
@@ -91,7 +91,7 @@ export function SalesOrderDetailHeader({
           <Button
             size='sm'
             variant='outline'
-            className='min-h-9 gap-2 rounded-lg px-3 text-sm font-medium'
+            className='min-h-9 gap-2 rounded-lg px-3'
             onClick={handlePrint}
           >
             <Printer className='size-3.5' />

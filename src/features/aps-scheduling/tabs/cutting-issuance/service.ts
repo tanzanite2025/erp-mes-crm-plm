@@ -8,6 +8,7 @@ import type {
   CuttingIssuanceExecutionRecord,
   CuttingIssuanceOrder,
   CuttingIssuanceOrderLine,
+  CuttingIssuanceProductionBOMBranch,
   CuttingIssuanceTemplate,
   CuttingIssuanceTraceReport,
 } from './types'
@@ -67,6 +68,9 @@ type CreateCuttingIssuanceExecutionRequest = {
   productModel: string
   productCode: string
   productId: string
+  bomOwnerType: string
+  bomOwnerCustomerId: string
+  bomVersionLevel: string
   holeCount: number
   templateId: string
   templateName: string
@@ -85,6 +89,7 @@ type CreateCuttingIssuanceExecutionParams = {
   order: CuttingIssuanceOrder
   line: CuttingIssuanceOrderLine
   template: CuttingIssuanceTemplate
+  branch: CuttingIssuanceProductionBOMBranch
 }
 
 function parseHoleCount(raw: unknown): number {
@@ -191,7 +196,10 @@ function buildExecutionCreatePayload(
     salesOrderLineNo: params.line.lineNo,
     productModel: params.line.productModel,
     productCode: params.line.productCode || '',
-    productId: params.line.productId || '',
+    productId: params.branch.productId,
+    bomOwnerType: params.branch.bomOwnerType,
+    bomOwnerCustomerId: params.branch.bomOwnerCustomerId,
+    bomVersionLevel: params.branch.bomVersionLevel,
     holeCount: params.line.holeCount,
     templateId: params.template.id,
     templateName: params.template.planName,

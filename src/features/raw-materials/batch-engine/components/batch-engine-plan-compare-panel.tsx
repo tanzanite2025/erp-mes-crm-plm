@@ -59,11 +59,11 @@ export function BatchEnginePlanComparePanel(
               }
             >
               <div className='flex items-center justify-between gap-2'>
-                <p className='text-[10px] font-black tracking-[0.18em] text-slate-500 uppercase'>
+                <p className='text-slate-500'>
                   #{plan.rank} / {plan.strategyKey}
                 </p>
                 <div className='flex flex-wrap items-center justify-end gap-1'>
-                  <span className='rounded-full border border-slate-200 bg-white px-2 py-1 font-maple-ui text-[8px] text-slate-600'>
+                  <span className='rounded-full border border-slate-200 bg-white px-2 py-1 font-maple-ui text-slate-600'>
                     {t('rawMaterials.batchEngine.comparePanel.scoreChip', {
                       score: plan.score.toFixed(2),
                     })}
@@ -71,8 +71,8 @@ export function BatchEnginePlanComparePanel(
                   <span
                     className={
                       plan.comparisonSummary.mustFulfillSatisfied
-                        ? 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-700'
-                        : 'rounded-full border border-rose-200 bg-rose-500/10 px-2 py-1 font-maple-ui text-[8px] text-rose-700'
+                        ? 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-maple-ui text-emerald-700'
+                        : 'rounded-full border border-rose-200 bg-rose-500/10 px-2 py-1 font-maple-ui text-rose-700'
                     }
                   >
                     {plan.comparisonSummary.mustFulfillSatisfied
@@ -82,8 +82,8 @@ export function BatchEnginePlanComparePanel(
                   <span
                     className={
                       structuredRuleRiskCount > 0
-                        ? 'rounded-full border border-amber-200 bg-amber-500/10 px-2 py-1 font-maple-ui text-[8px] text-amber-700'
-                        : 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-maple-ui text-[8px] text-emerald-700'
+                        ? 'rounded-full border border-amber-200 bg-amber-500/10 px-2 py-1 font-maple-ui text-amber-700'
+                        : 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 font-maple-ui text-emerald-700'
                     }
                   >
                     {structuredRuleRiskCount > 0
@@ -102,7 +102,7 @@ export function BatchEnginePlanComparePanel(
                 </div>
               </div>
 
-              <div className='mt-3 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-700'>
+              <div className='mt-3 grid grid-cols-2 gap-2 text-slate-700'>
                 <CompareMetric
                   label={t(
                     'rawMaterials.batchEngine.comparePanel.metrics.utilization'
@@ -326,13 +326,9 @@ export function BatchEnginePlanComparePanel(
                       key={`${plan.rank}-${item.strategyKey}`}
                       className='rounded-2xl border border-dashed border-slate-200 bg-white/90 px-3 py-3'
                     >
-                      <p className='text-[8px] font-black tracking-[0.18em] text-slate-500 uppercase'>
-                        Dynamic Budget
-                      </p>
-                      <p className='mt-1 text-[10px] font-black tracking-[0.18em] text-slate-800 uppercase'>
-                        {item.strategyKey}
-                      </p>
-                      <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                      <p className='text-slate-500'>Dynamic Budget</p>
+                      <p className='mt-1 text-slate-800'>{item.strategyKey}</p>
+                      <div className='mt-2 grid gap-1 text-slate-700'>
                         <p>Target: {item.targetQuota}</p>
                         <p>Kept: {item.keptCount}</p>
                         <p>Priority: {item.priorityScore.toFixed(2)}</p>
@@ -342,7 +338,7 @@ export function BatchEnginePlanComparePanel(
                 </div>
               ) : null}
 
-              <div className='mt-3 grid gap-1 text-[10px] font-black tracking-[0.16em] text-slate-500 uppercase'>
+              <div className='mt-3 grid gap-1 text-slate-500'>
                 <p>
                   {plan.explainabilitySummary.heatZoneAttributions
                     .slice(0, 2)

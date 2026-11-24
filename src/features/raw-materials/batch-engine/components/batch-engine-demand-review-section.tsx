@@ -54,7 +54,7 @@ export function BatchEngineDemandReviewSection(
         value={demandSearchQuery}
         onChange={(event) => onDemandSearchQueryChange(event.target.value)}
         placeholder='搜索需求行 ID'
-        className='mt-3 h-12 w-full rounded-2xl border-none bg-slate-100 px-4 text-xs font-semibold text-slate-800 outline-none'
+        className='mt-3 h-12 w-full rounded-2xl border-none bg-slate-100 px-4 text-slate-800 outline-none'
       />
 
       <div className='mt-3 flex flex-wrap gap-2'>
@@ -73,8 +73,8 @@ export function BatchEngineDemandReviewSection(
             onClick={() => onDemandFilterModeChange(mode)}
             className={
               demandFilterMode === mode
-                ? 'h-9 rounded-full border border-cyan-300 bg-cyan-50 px-3 text-[10px] font-black tracking-[0.18em] text-cyan-700 uppercase'
-                : 'h-9 rounded-full border border-slate-200 bg-white px-3 text-[10px] font-black tracking-[0.18em] text-slate-600 uppercase'
+                ? 'h-9 rounded-full border border-cyan-300 bg-cyan-50 px-3 text-cyan-700'
+                : 'h-9 rounded-full border border-slate-200 bg-white px-3 text-slate-600'
             }
           >
             {label}
@@ -96,8 +96,8 @@ export function BatchEngineDemandReviewSection(
             onClick={() => onRollFilterModeChange(mode)}
             className={
               rollFilterMode === mode
-                ? 'h-9 rounded-full border border-amber-300 bg-amber-50 px-3 text-[10px] font-black tracking-[0.18em] text-amber-700 uppercase'
-                : 'h-9 rounded-full border border-slate-200 bg-white px-3 text-[10px] font-black tracking-[0.18em] text-slate-600 uppercase'
+                ? 'h-9 rounded-full border border-amber-300 bg-amber-50 px-3 text-amber-700'
+                : 'h-9 rounded-full border border-slate-200 bg-white px-3 text-slate-600'
             }
           >
             {label}
@@ -119,8 +119,8 @@ export function BatchEngineDemandReviewSection(
             onClick={() => onDemandGroupModeChange(mode)}
             className={
               demandGroupMode === mode
-                ? 'h-9 rounded-full border border-slate-900 bg-slate-900 px-3 text-[10px] font-black tracking-[0.18em] text-white uppercase'
-                : 'h-9 rounded-full border border-slate-200 bg-white px-3 text-[10px] font-black tracking-[0.18em] text-slate-600 uppercase'
+                ? 'h-9 rounded-full border border-slate-900 bg-slate-900 px-3 text-white'
+                : 'h-9 rounded-full border border-slate-200 bg-white px-3 text-slate-600'
             }
           >
             {label}
@@ -153,14 +153,12 @@ export function BatchEngineDemandReviewSection(
                       }
                     >
                       <div className='flex items-center justify-between gap-2'>
-                        <p className='text-[10px] font-black tracking-[0.18em] text-slate-500 uppercase'>
-                          {line.demandLineId}
-                        </p>
-                        <span className='text-[10px] font-black tracking-[0.18em] text-slate-600 uppercase'>
+                        <p className='text-slate-500'>{line.demandLineId}</p>
+                        <span className='text-slate-600'>
                           {line.fulfilled ? '已满足' : '未满足'}
                         </span>
                       </div>
-                      <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                      <div className='mt-2 grid gap-1 text-slate-700'>
                         <p>覆盖率: {line.coveragePercent.toFixed(2)}%</p>
                         <p>卷材数: {line.rollCount}</p>
                         <p>跨卷: {line.isSplitAcrossRolls ? '是' : '否'}</p>

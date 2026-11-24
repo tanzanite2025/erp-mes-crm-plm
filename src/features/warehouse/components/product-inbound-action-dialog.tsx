@@ -121,7 +121,7 @@ export function ProductInboundActionDialog({
                 <Button
                   type='button'
                   variant='outline'
-                  className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+                  className='mt-5 h-10 rounded-full border-dashed px-6'
                   onClick={() => {
                     void inbound.retryRead()
                   }}
@@ -143,7 +143,7 @@ export function ProductInboundActionDialog({
                     <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
                     <Input
                       placeholder={t('warehouse.inbound.searchPlaceholder')}
-                      className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium transition-all focus-visible:ring-1 focus-visible:ring-emerald-500/20'
+                      className='h-12 rounded-2xl border-none bg-muted/50 pl-10 transition-all focus-visible:ring-1 focus-visible:ring-emerald-500/20'
                       value={inbound.searchQuery}
                       onChange={(e) => inbound.setSearchQuery(e.target.value)}
                     />
@@ -184,7 +184,7 @@ export function ProductInboundActionDialog({
                         <Button
                           type='button'
                           variant='outline'
-                          className='mt-5 h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                          className='mt-5 h-9 rounded-full border-dashed px-4'
                           onClick={() => {
                             void inbound.retrySearch()
                           }}
@@ -247,7 +247,7 @@ export function ProductInboundActionDialog({
                           <Button
                             size='sm'
                             variant='ghost'
-                            className='h-9 shrink-0 gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 text-[9px] font-black tracking-widest text-emerald-700 uppercase shadow-lg shadow-emerald-500/10 transition-all hover:bg-emerald-500/15 md:h-10 md:px-5 md:text-[10px]'
+                            className='h-9 shrink-0 gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 text-emerald-700 shadow-lg shadow-emerald-500/10 transition-all hover:bg-emerald-500/15 md:h-10 md:px-5'
                             onClick={(event) => {
                               event.stopPropagation()
                               inbound.openInboundForm(item)

@@ -27,7 +27,7 @@ export function LogisticsSupplierTemplateSection({
         {t('logisticsConfig.suppliers.fields.template')}
       </Label>
       <Select onValueChange={onApplyTemplate}>
-        <SelectTrigger className='h-12 rounded-2xl border-primary/10 bg-primary/5 font-bold text-primary'>
+        <SelectTrigger className='h-12 rounded-2xl border-primary/10 bg-primary/5 text-primary'>
           <SelectValue
             placeholder={t(
               'logisticsConfig.suppliers.fields.templatePlaceholder'
@@ -41,7 +41,7 @@ export function LogisticsSupplierTemplateSection({
               value={template.code}
               className='rounded-xl py-3'
             >
-              <span className='font-black'>{template.code}</span>
+              <span>{template.code}</span>
               {' - '}
               {template.name}
             </SelectItem>

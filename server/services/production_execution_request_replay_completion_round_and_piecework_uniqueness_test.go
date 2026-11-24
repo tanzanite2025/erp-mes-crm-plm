@@ -1,6 +1,7 @@
 package services
 
 import (
+	"strings"
 	"testing"
 	"time"
 	"xdfc-server/models"
@@ -9,12 +10,33 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestProductionExecutionCommandRequestReplayRequiresIdempotencyKey(t *testing.T) {
+	executed := false
+	_, err := executeProductionCommandWithRequestReplayTx(nil, "SCAN_COMMAND", " ", struct{}{}, func() (int, error) {
+		executed = true
+		return 1, nil
+	})
+	require.ErrorIs(t, err, ErrInvalidProductionOperationExecution)
+	require.False(t, executed)
+}
+
 func seedProductionExecutionReplayPricedWork(t *testing.T, database *gorm.DB, barcode string, processes ...string) {
 	t.Helper()
-	require.NoError(t, database.Omit("plan_id", "task_id").Create(&models.ProductionExecutionLot{
+	lot := models.ProductionExecutionLot{
 		BaseModel: models.BaseModel{ID: "lot-" + barcode}, ProductBarcode: barcode,
 		ProductID: "product-replay", ProductName: "Replay product", Quantity: 3,
-	}).Error)
+		Status: ProductionExecutionLotStatusActive,
+	}
+	if database.Migrator().HasTable(&models.ProductionPlan{}) {
+		var plans []models.ProductionPlan
+		require.NoError(t, database.Find(&plans).Error)
+		if len(plans) == 1 {
+			lot.PlanID = plans[0].ID
+			lot.ProductID = plans[0].ProductID
+			lot.ProductName = plans[0].ProductName
+		}
+	}
+	require.NoError(t, database.Create(&lot).Error)
 	start := time.Now().UTC().Add(-time.Hour)
 	for _, processID := range processes {
 		require.NoError(t, database.Create(&models.PieceworkRate{
@@ -27,11 +49,11 @@ func seedProductionExecutionReplayPricedWork(t *testing.T, database *gorm.DB, ba
 
 func TestProductionExecutionRequestReplayPreservesCompletionAndRequiresReworkForAnotherRound(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationProcess(t, database, "process-replay")
+	seedProductionOperationBranch(t, database, "process-replay")
 	seedProductionExecutionReplayPricedWork(t, database, "REPLAY-001", "process-replay")
 	request := RecordProductionOperationExecutionRequest{
 		IdempotencyKey: "original-completion", ProductBarcode: "REPLAY-001",
-		ProcessStepID: "process-replay", Action: ProductionOperationActionComplete,
+		BranchOperationID: "process-replay", Action: ProductionOperationActionComplete,
 	}
 	original, err := service.RecordProductionOperationExecution(request)
 	require.NoError(t, err)
@@ -48,7 +70,7 @@ func TestProductionExecutionRequestReplayPreservesCompletionAndRequiresReworkFor
 	require.NoError(t, err)
 	require.Equal(t, original.ID, secondResult.ID)
 	conflicting := request
-	conflicting.ProcessStepID = "another-process"
+	conflicting.BranchOperationID = "another-process"
 	_, err = service.RecordProductionOperationExecution(conflicting)
 	require.ErrorIs(t, err, ErrProductionExecutionRequestKeyConflict)
 	futureRound := request
@@ -87,94 +109,106 @@ func TestProductionExecutionRequestReplayPreservesCompletionAndRequiresReworkFor
 
 }
 
-func TestProductionExecutionLegacyCompletionRetryReusesSourceAndFailedRequestDoesNotReserveKey(t *testing.T) {
+func TestCompletedProductBarcodeRequiresReworkBeforeRestartOrHold(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
-	seedProductionOperationProcess(t, database, "process-legacy-replay")
-	seedProductionExecutionReplayPricedWork(t, database, "REPLAY-002", "process-legacy-replay")
+	seedProductionOperationBranch(t, database, "process-completed-lifecycle")
+
+	startRequest := RecordProductionOperationExecutionRequest{
+		IdempotencyKey:    "completed-lifecycle-start",
+		ProductBarcode:    "COMPLETED-LIFECYCLE-001",
+		BranchOperationID: "process-completed-lifecycle",
+		Action:            ProductionOperationActionStart,
+		ExecutionRound:    1,
+	}
+	_, err := service.RecordProductionOperationExecution(startRequest)
+	require.NoError(t, err)
+
+	completeRequest := startRequest
+	completeRequest.IdempotencyKey = "completed-lifecycle-complete"
+	completeRequest.Action = ProductionOperationActionComplete
+	completedOperation, err := service.RecordProductionOperationExecution(completeRequest)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), completedOperation.ExecutionRound)
+
+	for _, action := range []string{ProductionOperationActionStart, ProductionOperationActionHold} {
+		request := completeRequest
+		request.IdempotencyKey = "completed-lifecycle-after-complete-" + strings.ToLower(action)
+		request.Action = action
+		_, err := service.RecordProductionOperationExecution(request)
+		require.ErrorIs(t, err, ErrProductBarcodeExecutionLifecycleConflict)
+	}
+
+	state, events, err := loadProductBarcodeStateWithEvents(database, "COMPLETED-LIFECYCLE-001")
+	require.NoError(t, err)
+	require.Equal(t, ProductBarcodeStateStatusCompleted, state.Status)
+	require.Len(t, events, 2)
+	assertProductionExecutionReplayFactCounts(t, database, 2, 2, 0)
+
+	reworkRequest := completeRequest
+	reworkRequest.IdempotencyKey = "completed-lifecycle-rework"
+	reworkRequest.Action = ProductionOperationActionRework
+	rework, err := service.RecordProductionOperationExecution(reworkRequest)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), rework.ExecutionRound)
+
+	startRequest.IdempotencyKey = "completed-lifecycle-restart-after-rework"
+	startRequest.ExecutionRound = 2
+	started, err := service.RecordProductionOperationExecution(startRequest)
+	require.NoError(t, err)
+	require.Equal(t, ProductBarcodeStateStatusInProgress, started.Status)
+	require.Equal(t, int64(2), started.ExecutionRound)
+
+	completeRequest.IdempotencyKey = "completed-lifecycle-complete-after-rework"
+	completeRequest.ExecutionRound = 2
+	completedAgain, err := service.RecordProductionOperationExecution(completeRequest)
+	require.NoError(t, err)
+	require.Equal(t, ProductBarcodeStateStatusCompleted, completedAgain.Status)
+	require.Equal(t, int64(2), completedAgain.ExecutionRound)
+	assertProductionExecutionReplayFactCounts(t, database, 5, 5, 0)
+}
+
+func TestProductionExecutionFailedRequestDoesNotReserveRequestKey(t *testing.T) {
+	service, database := newProductionOperationExecutionTestService(t)
+	seedProductionOperationBranch(t, database, "process-failed-request")
+	seedProductionExecutionReplayPricedWork(t, database, "FAILED-REQUEST-002", "process-failed-request")
 	request := RecordProductionOperationExecutionRequest{
-		ProductBarcode: "REPLAY-002", ProcessStepID: "process-legacy-replay", Action: ProductionOperationActionComplete,
+		IdempotencyKey: "initial-valid-completion",
+		ProductBarcode: "FAILED-REQUEST-002", BranchOperationID: "process-failed-request", Action: ProductionOperationActionComplete,
 	}
 	original, err := service.RecordProductionOperationExecution(request)
 	require.NoError(t, err)
 	replayed, err := service.RecordProductionOperationExecution(request)
 	require.NoError(t, err)
-	require.Equal(t, original.ID, replayed.ID)
+	require.Equal(t, original, replayed)
 	assertProductionExecutionReplayFactCounts(t, database, 1, 1, 0)
-	request.IdempotencyKey = "failed-then-corrected-command"
-	request.ProcessStepID = "missing-process"
-	_, err = service.RecordProductionOperationExecution(request)
+	failedRequest := request
+	failedRequest.IdempotencyKey = "failed-then-corrected-command"
+	failedRequest.BranchOperationID = "missing-process"
+	_, err = service.RecordProductionOperationExecution(failedRequest)
 	require.ErrorIs(t, err, ErrInvalidProductionOperationExecution)
 	var receiptCount int64
 	require.NoError(t, database.Model(&models.ProductionExecutionCommandRequestReceipt{}).Count(&receiptCount).Error)
-	require.Zero(t, receiptCount)
-	request.ProcessStepID = "process-legacy-replay"
-	replayed, err = service.RecordProductionOperationExecution(request)
+	require.EqualValues(t, 1, receiptCount)
+	failedRequest.BranchOperationID = "process-failed-request"
+	replayed, err = service.RecordProductionOperationExecution(failedRequest)
 	require.NoError(t, err)
 	require.Equal(t, original.ID, replayed.ID)
-}
-
-func TestProductionExecutionHistoricalUnknownRoundsReuseLatestCompletionWithoutCreatingWages(t *testing.T) {
-	service, database := newProductionOperationExecutionTestService(t)
-	testClock := time.Date(2026, 10, 15, 0, 0, 0, 0, time.UTC)
-	database.Config.NowFunc = func() time.Time {
-		testClock = testClock.Add(time.Millisecond)
-		return testClock
-	}
-	seedProductionOperationProcess(t, database, "process-historical-round")
-	seedProductionExecutionReplayPricedWork(t, database, "HISTORICAL-ROUND-001", "process-historical-round")
-	request := RecordProductionOperationExecutionRequest{
-		ProductBarcode: "HISTORICAL-ROUND-001", ProcessStepID: "process-historical-round", Action: ProductionOperationActionComplete,
-	}
-	original, err := service.RecordProductionOperationExecution(request)
-	require.NoError(t, err)
-	require.NoError(t, database.Model(&models.ProductionOperationExecution{}).Where("id = ?", original.ID).Updates(map[string]any{
-		"work_identity_key": "", "execution_round": 0,
-	}).Error)
-	for _, action := range []string{ProductionOperationActionStart, ProductionOperationActionHold} {
-		nonReworkRequest := request
-		nonReworkRequest.Action = action
-		_, err := service.RecordProductionOperationExecution(nonReworkRequest)
-		require.NoError(t, err)
-	}
-	replayed, err := service.RecordProductionOperationExecution(request)
-	require.NoError(t, err)
-	require.Equal(t, original.ID, replayed.ID)
-	require.Zero(t, replayed.ExecutionRound)
-	for index := 0; index < 2; index++ {
-		reworkRequest := request
-		reworkRequest.Action = ProductionOperationActionRework
-		_, err := service.RecordProductionOperationExecution(reworkRequest)
-		require.NoError(t, err)
-	}
-	require.NoError(t, database.Model(&models.PieceworkRate{}).Where("id = ?", "rate-process-historical-round").Updates(map[string]any{
-		"unit_price": 3, "version": 2,
-	}).Error)
-	latest, err := service.RecordProductionOperationExecution(request)
-	require.NoError(t, err)
-	require.NotEqual(t, original.ID, latest.ID)
-	require.Equal(t, int64(3), latest.ExecutionRound)
-	require.NoError(t, database.Model(&models.ProductionOperationExecution{}).Where("id = ?", latest.ID).Updates(map[string]any{
-		"work_identity_key": "", "execution_round": 0,
-	}).Error)
-	replayed, err = service.RecordProductionOperationExecution(request)
-	require.NoError(t, err)
-	require.Equal(t, latest.ID, replayed.ID)
-	require.Zero(t, replayed.ExecutionRound)
-	assertProductionExecutionReplayFactCounts(t, database, 6, 6, 0)
 }
 
 func TestProductionExecutionDistinctRouteStepsSharingProcessHaveIndependentCompletions(t *testing.T) {
 	_, database := newProductionScanCommandTestService(t)
 	steps := seedProductionScanRoute(t, database, "route-shared-process", "process-shared", "process-placeholder")
-	require.NoError(t, database.Model(&models.ProductionRouteStep{}).Where("id = ?", steps[1]).Update("process_step_id", "process-shared").Error)
+	require.NoError(t, database.Model(&models.ProductionRouteStep{}).Where("id = ?", steps[1]).Update("branch_operation_id", "process-shared").Error)
 	seedProductionExecutionReplayPricedWork(t, database, "SHARED-PROCESS-001", "process-shared")
 	service := NewProductionOperationExecutionService(productionOperationExecutionTestTxManager{db: database})
 	request := RecordProductionOperationExecutionRequest{
-		ProductBarcode: "SHARED-PROCESS-001", RouteID: "route-shared-process", ProcessStepID: "process-shared", Action: ProductionOperationActionComplete,
+		ProductBarcode: "SHARED-PROCESS-001", RouteID: "route-shared-process", BranchOperationID: "process-shared",
+		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID, Action: ProductionOperationActionComplete,
 	}
 	completedIDs := make([]string, 0, len(steps))
 	for _, stepID := range steps {
 		request.RouteStepID = stepID
+		request.IdempotencyKey = "shared-process-step-" + stepID
 		completion, err := service.RecordProductionOperationExecution(request)
 		require.NoError(t, err)
 		require.Equal(t, int64(1), completion.ExecutionRound)
@@ -183,6 +217,7 @@ func TestProductionExecutionDistinctRouteStepsSharingProcessHaveIndependentCompl
 	require.NotEqual(t, completedIDs[0], completedIDs[1])
 	for index, stepID := range steps {
 		request.RouteStepID = stepID
+		request.IdempotencyKey = "shared-process-step-" + stepID
 		replay, err := service.RecordProductionOperationExecution(request)
 		require.NoError(t, err)
 		require.Equal(t, completedIDs[index], replay.ID)
@@ -229,7 +264,7 @@ func TestProductionScanRequestReplayDoesNotAdvanceAnotherStepOrCreateWages(t *te
 
 	reworkRequest := ExecuteProductionScanCommandRequest{
 		IdempotencyKey: "scan-rework", ProductBarcode: request.ProductBarcode, Action: ProductionOperationActionRework,
-		TargetRouteStepID: steps[0], TargetProcessStepID: "process-a",
+		TargetRouteStepID: steps[0],
 	}
 	rework, err := service.ExecuteProductionScanCommand(reworkRequest)
 	require.NoError(t, err)
@@ -262,34 +297,31 @@ func assertProductionExecutionReplayFactCounts(t *testing.T, database *gorm.DB, 
 	require.Equal(t, pieceworkRecords, historicalPayrollRows)
 }
 
-func TestProductionScanAfterManualCompletionAppliesRouteEffectsOnceWithoutCreatingWages(t *testing.T) {
+func TestProductionScanCompletionAppliesRouteEffectsOnceWithoutCreatingWages(t *testing.T) {
 	scanService, database := newProductionScanCommandTestService(t)
 	steps := seedProductionScanRoute(t, database, "route-cross-entry", "process-cross-a", "process-cross-b")
 	seedProductionExecutionReplayPricedWork(t, database, "CROSS-ENTRY-001", "process-cross-a", "process-cross-b")
-	manualService := NewProductionOperationExecutionService(productionOperationExecutionTestTxManager{db: database})
-	manual, err := manualService.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-		IdempotencyKey: "manual-completion", ProductBarcode: "CROSS-ENTRY-001", RouteID: "route-cross-entry",
-		RouteStepID: steps[0], ProcessStepID: "process-cross-a", Action: ProductionOperationActionComplete,
+	_, err := scanService.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
+		IdempotencyKey: "scan-cross-entry-start", ProductBarcode: "CROSS-ENTRY-001", Action: ProductionOperationActionStart,
 	})
 	require.NoError(t, err)
-	scanRequest := ExecuteProductionScanCommandRequest{
-		IdempotencyKey: "scan-after-manual", ProductBarcode: "CROSS-ENTRY-001", RouteID: "route-cross-entry",
-		RouteStepID: steps[0], ProcessStepID: "process-cross-a", Action: ProductionOperationActionComplete,
+	completionRequest := ExecuteProductionScanCommandRequest{
+		IdempotencyKey: "scan-cross-entry-complete", ProductBarcode: "CROSS-ENTRY-001", Action: ProductionOperationActionComplete,
 	}
-	firstScan, err := scanService.ExecuteProductionScanCommand(scanRequest)
+	firstScan, err := scanService.ExecuteProductionScanCommand(completionRequest)
 	require.NoError(t, err)
-	require.Equal(t, manual.ID, firstScan.Operation.ID)
-	require.Equal(t, manual.UpdatedAt, firstScan.Operation.UpdatedAt)
+	require.Equal(t, steps[0], firstScan.Operation.RouteStepID)
 	require.Equal(t, steps[1], firstScan.State.RouteStepID)
 	require.True(t, firstScan.Progress.Advanced)
-	scanRequest.IdempotencyKey = "another-scan-after-manual"
-	repeatScan, err := scanService.ExecuteProductionScanCommand(scanRequest)
+	repeatScan, err := scanService.ExecuteProductionScanCommand(completionRequest)
 	require.NoError(t, err)
-	require.Equal(t, manual.ID, repeatScan.Operation.ID)
+	require.Equal(t, firstScan.Operation.ID, repeatScan.Operation.ID)
 	require.Equal(t, steps[1], repeatScan.State.RouteStepID)
-	require.False(t, repeatScan.Progress.Advanced)
-	assertProductionExecutionReplayFactCounts(t, database, 1, 2, 0)
-	assertProductionScanReplaySideEffectCounts(t, database, 1, 1)
+	require.True(t, repeatScan.Progress.Advanced)
+	require.Len(t, repeatScan.TransferEvents, 1)
+	require.Equal(t, firstScan.TransferEvents[0].ID, repeatScan.TransferEvents[0].ID)
+	assertProductionExecutionReplayFactCounts(t, database, 2, 3, 0)
+	assertProductionScanReplaySideEffectCounts(t, database, 1, 2)
 }
 
 func assertProductionScanReplaySideEffectCounts(t *testing.T, database *gorm.DB, transfers, audits int64) {

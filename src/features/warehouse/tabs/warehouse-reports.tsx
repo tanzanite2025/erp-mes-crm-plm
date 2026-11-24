@@ -58,7 +58,7 @@ export function WarehouseReports() {
           <Button
             type='button'
             variant='outline'
-            className='mt-5 h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+            className='mt-5 h-11 rounded-full border-dashed px-5'
             onClick={() => void retryRead()}
           >
             <RefreshCw className='size-3.5' />
@@ -113,7 +113,7 @@ export function WarehouseReports() {
                 </Label>
                 <Input
                   type='date'
-                  className='h-10 w-full rounded-xl border-none bg-background text-sm font-bold shadow-inner focus-visible:ring-primary/20 md:h-12 md:rounded-2xl lg:w-44'
+                  className='h-10 w-full rounded-xl border-none bg-background shadow-inner focus-visible:ring-primary/20 md:h-12 md:rounded-2xl lg:w-44'
                   value={filters.startDate}
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, startDate: e.target.value }))
@@ -127,7 +127,7 @@ export function WarehouseReports() {
                 </Label>
                 <Input
                   type='date'
-                  className='h-10 w-full rounded-xl border-none bg-background text-sm font-bold shadow-inner focus-visible:ring-primary/20 md:h-12 md:rounded-2xl lg:w-44'
+                  className='h-10 w-full rounded-xl border-none bg-background shadow-inner focus-visible:ring-primary/20 md:h-12 md:rounded-2xl lg:w-44'
                   value={filters.endDate}
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, endDate: e.target.value }))
@@ -143,7 +143,7 @@ export function WarehouseReports() {
                   <Search className='absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground/20 transition-colors group-focus-within:text-primary' />
                   <Input
                     placeholder={t('warehouse.reports.queryPlaceholder')}
-                    className='h-10 rounded-xl border-none bg-background pl-12 text-sm font-bold shadow-inner placeholder:text-muted-foreground/20 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl'
+                    className='h-10 rounded-xl border-none bg-background pl-12 shadow-inner placeholder:text-muted-foreground/20 focus-visible:ring-primary/20 md:h-12 md:rounded-2xl'
                     value={filters.query}
                     onChange={(e) =>
                       setFilters((f) => ({ ...f, query: e.target.value }))
@@ -154,7 +154,7 @@ export function WarehouseReports() {
               <div className='sm:col-span-2 lg:col-span-1'>
                 <Button
                   variant='ghost'
-                  className='h-10 w-full rounded-xl px-6 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase transition-all hover:bg-rose-500/5 hover:text-rose-500 md:h-12 md:rounded-2xl md:text-[9px] lg:w-auto'
+                  className='h-10 w-full rounded-xl px-6 text-muted-foreground/40 transition-all hover:bg-rose-500/5 hover:text-rose-500 md:h-12 md:rounded-2xl lg:w-auto'
                   onClick={resetFilters}
                 >
                   {t('warehouse.reports.reset')}
@@ -173,7 +173,7 @@ export function WarehouseReports() {
                 <TabsList className='inline-flex h-10 rounded-xl border-none bg-muted/50 p-1'>
                   <TabsTrigger
                     value='inbound'
-                    className='gap-2 rounded-lg px-4 text-[9px] font-black tracking-widest whitespace-nowrap uppercase data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm md:px-8 md:text-[10px]'
+                    className='gap-2 rounded-lg px-4 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm md:px-8'
                   >
                     <ArrowDownLeft className='size-3.5 shrink-0' />
                     {t('warehouse.reports.inbound')}
@@ -183,7 +183,7 @@ export function WarehouseReports() {
                   </TabsTrigger>
                   <TabsTrigger
                     value='shipment'
-                    className='gap-2 rounded-lg px-4 text-[9px] font-black tracking-widest whitespace-nowrap uppercase data-[state=active]:bg-background data-[state=active]:text-orange-600 data-[state=active]:shadow-sm md:px-8 md:text-[10px]'
+                    className='gap-2 rounded-lg px-4 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-orange-600 data-[state=active]:shadow-sm md:px-8'
                   >
                     <ArrowUpRight className='size-3.5 shrink-0' />
                     {t('warehouse.reports.shipment')}

@@ -101,14 +101,14 @@ export function MaterialUpsertDialog({
                   variant='outline'
                   type='button'
                   onClick={() => onOpenChange(false)}
-                  className='h-12 rounded-full px-8 text-[10px] font-black tracking-widest'
+                  className='h-12 rounded-full px-8'
                 >
                   {t('materialArchive.upsertDialog.cancel')}
                 </Button>
                 <Button
                   type='submit'
                   disabled={isSubmitting}
-                  className='h-12 rounded-full px-10 text-[10px] font-black tracking-widest shadow-lg shadow-primary/20'
+                  className='h-12 rounded-full px-10 shadow-lg shadow-primary/20'
                 >
                   {isSubmitting
                     ? t('materialArchive.upsertDialog.submitting')

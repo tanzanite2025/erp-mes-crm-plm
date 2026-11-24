@@ -1,13 +1,13 @@
 export const basicSettingsZhCNOverrides = {
   basicSettings: {
     tabs: {
-      linearBarcode: '一维码',
+      linearBarcode: '产品编码',
     },
     linearBarcode: {
       page: {
-        title: '一维码规则中心',
+        title: '产品编码规则中心',
         subtitle:
-          'LINEAR_BARCODE_PROTOCOL / 维护年月日、型号、外观、孔型前缀、孔数与四位流水号的持久化 Code128 协议。',
+          '维护年月日、型号、外观、孔型前缀、孔数与四位流水号；同一编码同时生成一维码与二维码。',
         badges: {
           active: '协议已启用',
           loading: '配置加载中',
@@ -59,7 +59,7 @@ export const basicSettingsZhCNOverrides = {
         },
       },
       simulation: {
-        title: '一维码动态仿真输出',
+        title: '产品编码一维码与二维码动态仿真',
         subtitle: '年份 + 月份 + 日期 + 型号 + 外观 + 孔型前缀 + 孔数 + 流水号',
         codeLabel: '编码',
         form: {
@@ -108,16 +108,16 @@ export const basicSettingsZhCNOverrides = {
         },
       },
       footer: {
-        title: '一维码实施说明',
+        title: '产品编码实施说明',
         description:
-          '当前页面定义了 15 位轮圈一维码结构：年份 + 月份 + 日期 + 型号 + 外观 + 孔型前缀 + 孔数 + 流水号。其中孔型前缀占 1 位、孔数占 2 位；流水号复用业务编号规则 {{key}}，便于 PDA 与扫码入站端共享同一套后端默认值。',
+          '当前页面定义了 15 位轮圈产品编码结构：年份 + 月份 + 日期 + 型号 + 外观 + 孔型前缀 + 孔数 + 流水号。其中孔型前缀占 1 位、孔数占 2 位；流水号复用业务编号规则 {{key}}，便于 PDA 与扫码入站端共享同一套后端默认值。',
       },
       resetDialog: {
-        title: '重置一维码协议',
+        title: '重置产品编码协议',
         description:
           '该操作会将本页字段说明和仿真输入恢复为默认值，并同步写回后端持久化配置。',
         verifyPrompt: '请输入校验文本后再继续。',
-        verifyTarget: '重置一维码',
+        verifyTarget: '重置产品编码',
         placeholder: '在此输入校验文本...',
         discard: '放弃操作',
         commit: '确认重置协议',
@@ -125,13 +125,13 @@ export const basicSettingsZhCNOverrides = {
       toasts: {
         invalidSerialFormat:
           '规则 {{key}} 必须返回 4 位数字流水号，请将业务编号规则配置为 pattern={SEQ} 且 padding=4。',
-        requestSerialSuccess: '已获取一维码流水号：{{serial}}',
+        requestSerialSuccess: '已获取产品编码流水号：{{serial}}',
         requestSerialFailed: '获取流水号失败。',
         sequenceRuleMissing:
           '请先创建业务编号规则 {{key}}，并配置为 pattern={SEQ} 且 padding=4。',
-        saveSuccess: '一维码协议已同步到后端配置中心。',
-        saveFailed: '保存一维码协议失败。',
-        resetSuccess: '已恢复一维码默认配置。',
+        saveSuccess: '产品编码协议已同步到后端配置中心。',
+        saveFailed: '保存产品编码协议失败。',
+        resetSuccess: '已恢复产品编码默认配置。',
       },
       dialog: {
         editTitle: '编辑{{name}}逻辑',

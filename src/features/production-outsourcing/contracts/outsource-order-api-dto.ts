@@ -12,11 +12,6 @@ export interface OutsourceOrderLineApiDTO {
   specification?: string
   quantity?: number
   uom?: string
-  segmentId?: string
-  segmentName?: string
-  processStepId?: string
-  processCode?: string
-  processName?: string
   status?: string
   sentQuantity?: number
   returnedQuantity?: number
@@ -37,12 +32,13 @@ export interface OutsourceTransferApiDTO {
   outsourceOrderLineId?: string
   transferType?: string
   productBarcode?: string
+  cycleNo?: number
   quantity?: number
   uom?: string
   partnerId?: string
   routeId?: string
   routeStepId?: string
-  processStepId?: string
+  branchOperationId?: string
   fromHolderType?: string
   fromHolderId?: string
   toHolderType?: string
@@ -64,6 +60,8 @@ export interface OutsourceInspectionApiDTO {
   outsourceOrderId?: string
   outsourceOrderLineId?: string
   productBarcode?: string
+  cycleNo?: number
+  inspectionRoundNo?: number
   inspectionTaskId?: string
   result?: string
   disposition?: string
@@ -75,7 +73,7 @@ export interface OutsourceInspectionApiDTO {
   uom?: string
   routeId?: string
   routeStepId?: string
-  processStepId?: string
+  branchOperationId?: string
   operationId?: string
   inspectedAt?: string
   inspector?: string
@@ -113,6 +111,14 @@ export interface OutsourceTransferActionApiResponseDTO {
 export interface OutsourceInspectionActionApiResponseDTO {
   order?: OutsourceOrderApiDTO
   inspection?: OutsourceInspectionApiDTO
+  inspectionTask?: {
+    id?: string
+    sourceCycleNo?: number
+    inspectionRoundNo?: number
+    parentTaskId?: string
+    status?: string
+    result?: string
+  }
 }
 
 export interface OutsourceDiagnosticsIssueApiDTO {

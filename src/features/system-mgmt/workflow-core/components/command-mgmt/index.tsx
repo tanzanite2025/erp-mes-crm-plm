@@ -115,7 +115,7 @@ export function CommandMgmt({
           <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/50' />
           <Input
             placeholder={t('workflowCore.commands.page.searchPlaceholder')}
-            className='h-10 rounded-2xl pl-9 text-sm font-bold'
+            className='h-10 rounded-2xl pl-9'
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -127,10 +127,7 @@ export function CommandMgmt({
           >
             共 {templateCount} 个内容模板
           </Badge>
-          <Button
-            onClick={handleAddNew}
-            className='h-10 gap-2 rounded-2xl text-xs font-black'
-          >
+          <Button onClick={handleAddNew} className='h-10 gap-2 rounded-2xl'>
             <Plus className='size-4' />
             {t('workflowCore.commands.page.add')}
           </Button>

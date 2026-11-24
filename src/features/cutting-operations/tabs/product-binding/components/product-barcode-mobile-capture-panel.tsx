@@ -103,9 +103,7 @@ export function ProductBarcodeMobileCapturePanel({
             onClick={handleCreateSession}
             disabled={isCreatingSession}
             className={
-              compact
-                ? 'h-9 rounded-full px-3 text-xs font-semibold tracking-normal'
-                : 'h-9 rounded-full px-4 text-xs font-semibold tracking-normal'
+              compact ? 'h-9 rounded-full px-3' : 'h-9 rounded-full px-4'
             }
           >
             {isCreatingSession ? (
@@ -174,7 +172,7 @@ export function ProductBarcodeMobileCapturePanel({
               type='button'
               variant='outline'
               onClick={onCopyLink}
-              className='h-9 w-fit rounded-full px-3 text-xs font-semibold tracking-normal'
+              className='h-9 w-fit rounded-full px-3'
             >
               <Clipboard className='size-4' />
               {t(

@@ -79,7 +79,7 @@ export function PurchaseOrderCoreFieldsGrid({
           type='date'
           value={formData.expectedDate}
           onChange={(e) => handleHeaderChange('expectedDate', e.target.value)}
-          className='h-10 rounded-2xl bg-background text-[11px] font-bold md:text-[11px] [&::-webkit-datetime-edit]:text-[11px] [&::-webkit-datetime-edit]:font-bold'
+          className='h-10 rounded-2xl bg-background'
         />
       </div>
 
@@ -91,7 +91,7 @@ export function PurchaseOrderCoreFieldsGrid({
           <Input
             readOnly
             value={effectiveExchangeRate.toFixed(4)}
-            className='h-10 rounded-2xl border-none bg-background font-black text-emerald-600 shadow-sm'
+            className='h-10 rounded-2xl border-none bg-background text-emerald-600 shadow-sm'
           />
           <div className='flex flex-wrap items-center gap-2 pl-1 text-[9px] font-bold tracking-wide'>
             <p className='text-muted-foreground/70'>

@@ -56,7 +56,7 @@ export function PrepregBindTokenEntryDialog({
               }
             }}
             placeholder={t('rawMaterials.catalog.scanBinding.placeholder')}
-            className='h-12 rounded-2xl border-none bg-muted/50 text-[10px] font-black tracking-[0.14em] placeholder:text-muted-foreground/45'
+            className='h-12 rounded-2xl border-none bg-muted/50 placeholder:text-muted-foreground/45'
             autoFocus
           />
           <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
@@ -69,14 +69,14 @@ export function PrepregBindTokenEntryDialog({
             type='button'
             variant='outline'
             onClick={() => onOpenChange(false)}
-            className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-6'
           >
             {t('rawMaterials.catalog.actions.cancel')}
           </Button>
           <Button
             type='button'
             onClick={() => onSubmit(value)}
-            className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-6'
           >
             <ScanLine className='size-4' />
             {t('rawMaterials.catalog.actions.scanBind')}

@@ -33,7 +33,7 @@ export function MaterialToolbar({
           placeholder={t('materialArchive.toolbar.searchPlaceholder', {
             category: currentCategoryLabel,
           })}
-          className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
+          className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-10 shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
         />
@@ -45,7 +45,7 @@ export function MaterialToolbar({
             variant='ghost'
             size='sm'
             onClick={onExport}
-            className='h-9 rounded-full px-4 text-[9px] font-black tracking-widest whitespace-nowrap uppercase opacity-60 transition-opacity hover:opacity-100 md:h-11 md:px-6 md:text-[10px]'
+            className='h-9 rounded-full px-4 whitespace-nowrap opacity-60 transition-opacity hover:opacity-100 md:h-11 md:px-6'
           >
             <Download className='mr-1.5 h-3.5 w-3.5 md:h-4 md:w-4' />
             {t('materialArchive.toolbar.export')}
@@ -55,7 +55,7 @@ export function MaterialToolbar({
             variant='ghost'
             size='sm'
             onClick={() => importInputRef.current?.click()}
-            className='h-9 rounded-full px-4 text-[9px] font-black tracking-widest whitespace-nowrap text-orange-600/60 uppercase transition-all hover:bg-orange-500/5 hover:text-orange-600 md:h-11 md:px-6 md:text-[10px]'
+            className='h-9 rounded-full px-4 whitespace-nowrap text-orange-600/60 transition-all hover:bg-orange-500/5 hover:text-orange-600 md:h-11 md:px-6'
           >
             <Upload className='mr-1.5 h-3.5 w-3.5 md:h-4 md:w-4' />
             {t('materialArchive.toolbar.import')}
@@ -72,7 +72,7 @@ export function MaterialToolbar({
           id='material-toolbar-add-button'
           size='sm'
           onClick={onAdd}
-          className='h-10 w-full rounded-full bg-primary px-6 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto md:h-11 md:px-8'
+          className='h-10 w-full rounded-full bg-primary px-6 text-primary-foreground shadow-xl shadow-primary/20 transition-all active:scale-95 sm:w-auto md:h-11 md:px-8'
         >
           <Plus className='mr-2 h-4 w-4' />
           {t('materialArchive.toolbar.register')}

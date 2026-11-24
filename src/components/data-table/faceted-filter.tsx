@@ -57,9 +57,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           >
             <div className='flex items-center gap-1.5'>
               <PlusCircledIcon className='size-3 text-blue-600' />
-              <span className='text-[10px] leading-none font-black tracking-tighter'>
-                {title}
-              </span>
+              <span>{title}</span>
               {selectedValues?.size > 0 && (
                 <Badge
                   variant='secondary'
@@ -70,9 +68,7 @@ export function DataTableFacetedFilter<TData, TValue>({
               )}
             </div>
             {subtitle && (
-              <span className='font-maple-ui text-[7px] leading-none tracking-widest uppercase opacity-40'>
-                {subtitle}
-              </span>
+              <span className='font-maple-ui opacity-40'>{subtitle}</span>
             )}
           </Button>
         ) : (
@@ -133,7 +129,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 return (
                   <CommandItem
                     key={option.value}
-                    className='mx-1 my-0.5 rounded-xl px-3 py-2 text-[10px] font-black tracking-wide'
+                    className='mx-1 my-0.5 rounded-xl px-3 py-2'
                     onSelect={() => {
                       if (isSelected) {
                         selectedValues.delete(option.value)
@@ -161,7 +157,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     )}
                     <span>{option.label}</span>
                     {facets?.get(option.value) && (
-                      <span className='ms-auto flex h-4 w-4 items-center justify-center font-maple-ui text-xs'>
+                      <span className='ms-auto flex h-4 w-4 items-center justify-center font-maple-ui'>
                         {facets.get(option.value)}
                       </span>
                     )}
@@ -175,7 +171,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 <CommandGroup>
                   <CommandItem
                     onSelect={() => column?.setFilterValue(undefined)}
-                    className='mx-1 my-1 justify-center rounded-xl px-3 py-2 text-center text-[10px] font-black tracking-widest uppercase'
+                    className='mx-1 my-1 justify-center rounded-xl px-3 py-2 text-center'
                   >
                     Clear filters
                   </CommandItem>

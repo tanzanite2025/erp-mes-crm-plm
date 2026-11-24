@@ -75,7 +75,7 @@ export function ProductActiveBOMCard({
           </div>
           <Button
             onClick={goToBomMgmt}
-            className='h-8 gap-1.5 rounded-full bg-blue-600 px-4 text-[10px] font-black tracking-widest text-white uppercase transition-all hover:bg-blue-700 active:scale-95'
+            className='h-8 gap-1.5 rounded-full bg-blue-600 px-4 text-white transition-all hover:bg-blue-700 active:scale-95'
           >
             <Plus className='size-3' />
             {t('engineering.productMgmt.activeBom.createFirstBom')}
@@ -108,7 +108,7 @@ export function ProductActiveBOMCard({
           <Button
             variant='outline'
             onClick={goToBomMgmt}
-            className='h-8 gap-1.5 rounded-full border-amber-300 bg-background px-4 text-[10px] font-black tracking-widest text-amber-700 uppercase transition-all hover:bg-amber-100 active:scale-95'
+            className='h-8 gap-1.5 rounded-full border-amber-300 bg-background px-4 text-amber-700 transition-all hover:bg-amber-100 active:scale-95'
           >
             <ArrowUpRight className='size-3' />
             {t('engineering.productMgmt.activeBom.openBom')}
@@ -185,7 +185,7 @@ export function ProductActiveBOMCard({
         <Button
           variant='outline'
           onClick={goToBomMgmt}
-          className='h-8 shrink-0 gap-1.5 rounded-full border-emerald-400 bg-background px-4 text-[10px] font-black tracking-widest text-emerald-700 uppercase transition-all hover:bg-emerald-100 active:scale-95'
+          className='h-8 shrink-0 gap-1.5 rounded-full border-emerald-400 bg-background px-4 text-emerald-700 transition-all hover:bg-emerald-100 active:scale-95'
         >
           <ArrowUpRight className='size-3' />
           {t('engineering.productMgmt.activeBom.openBom')}

@@ -30,15 +30,15 @@ export function StandardPreviewFooter({
         </div>
         <div className='flex w-full gap-2 sm:w-auto lg:gap-3'>
           <Button
-            variant='ghost'
-            className='h-10 flex-1 rounded-xl px-6 text-[10px] font-black uppercase opacity-50 transition-opacity hover:bg-white/5 lg:h-11 lg:flex-none'
+            variant='outline'
+            className='flex-1 rounded-full sm:flex-none'
             onClick={onClose}
           >
             {closeLabel}
           </Button>
           {showPrimaryAction ? (
             <Button
-              className='h-10 flex-1 rounded-xl bg-primary px-8 text-[10px] font-black text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95 lg:h-11 lg:flex-none lg:px-12'
+              className='flex-1 rounded-full sm:flex-none'
               onClick={onPrimaryAction}
             >
               <Check className='size-3.5' />

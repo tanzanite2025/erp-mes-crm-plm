@@ -254,15 +254,13 @@ export function PieceworkTemplates() {
                   >
                     <div className='flex items-start justify-between gap-3'>
                       <div className='min-w-0'>
-                        <div className='truncate text-sm font-black'>
-                          {template.title}
-                        </div>
-                        <div className='mt-1 font-maple-ui text-[10px] font-black tracking-[0.16em] text-muted-foreground/70 uppercase'>
+                        <div className='truncate'>{template.title}</div>
+                        <div className='mt-1 font-maple-ui text-muted-foreground/70'>
                           {template.code}
                         </div>
                       </div>
                     </div>
-                    <div className='mt-3 grid gap-2 text-[11px] font-semibold text-muted-foreground'>
+                    <div className='mt-3 grid gap-2 text-muted-foreground'>
                       <div className='flex items-center gap-2'>
                         <ClipboardList className='size-3.5' />
                         <span className='truncate'>{template.scenario}</span>
@@ -316,7 +314,7 @@ export function PieceworkTemplates() {
             </div>
             <Button
               onClick={() => void reactToPrint()}
-              className='h-11 gap-2 rounded-full bg-cyan-700 px-6 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-700/20 hover:bg-cyan-800'
+              className='h-11 gap-2 rounded-full bg-cyan-700 px-6 text-white shadow-lg shadow-cyan-700/20 hover:bg-cyan-800'
             >
               <Printer className='size-4' />
               {copy.print}

@@ -20,7 +20,7 @@ export function BatchEngineExportActions(props: BatchEngineExportActionsProps) {
   const { plan, diffSummary, className, buttonClassName } = props
   const mergedButtonClassName =
     buttonClassName ??
-    'inline-flex h-11 items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700'
+    'inline-flex h-11 items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-slate-700'
 
   return (
     <div className={className ?? 'mt-3 flex flex-wrap gap-2'}>

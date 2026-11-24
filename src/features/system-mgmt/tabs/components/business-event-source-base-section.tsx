@@ -118,7 +118,7 @@ export function BusinessEventSourceBaseSection({
                 readOnly={isIdentityLocked}
                 onChange={(event) => onCodeChange(event.target.value.trim())}
                 className={cn(
-                  'h-10 rounded-2xl font-maple-ui text-xs',
+                  'h-10 rounded-2xl font-maple-ui',
                   readonlyFieldClass(isIdentityLocked)
                 )}
               />
@@ -130,7 +130,7 @@ export function BusinessEventSourceBaseSection({
                 readOnly={isIdentityLocked}
                 onChange={(event) => onModuleChange(event.target.value)}
                 className={cn(
-                  'h-10 rounded-2xl text-xs font-bold',
+                  'h-10 rounded-2xl',
                   readonlyFieldClass(isIdentityLocked)
                 )}
               />
@@ -146,7 +146,7 @@ export function BusinessEventSourceBaseSection({
                   )
                 }
                 className={cn(
-                  'h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold',
+                  'h-10 rounded-2xl border border-input bg-background px-3',
                   readonlyFieldClass(isIdentityLocked)
                 )}
               >
@@ -164,7 +164,7 @@ export function BusinessEventSourceBaseSection({
                 onChange={(event) =>
                   onDefaultActionUrlTemplateChange(event.target.value)
                 }
-                className='h-10 rounded-2xl text-xs font-bold'
+                className='h-10 rounded-2xl'
                 placeholder='/trading/orders/[OrderId]'
               />
             </label>

@@ -94,7 +94,7 @@ export function TemplateEditorDialog({
                   autoFocus
                   required
                   maxLength={255}
-                  className='h-9 rounded-xl border-transparent bg-muted/40 text-sm font-semibold shadow-none focus-visible:border-blue-400 focus-visible:ring-blue-500/20'
+                  className='h-9 rounded-xl border-transparent bg-muted/40 shadow-none focus-visible:border-blue-400 focus-visible:ring-blue-500/20'
                   value={editingTemplate?.name ?? ''}
                   onChange={(event) =>
                     onTemplateChange((previous) =>
@@ -112,7 +112,7 @@ export function TemplateEditorDialog({
                 <Textarea
                   id={formId + '-description'}
                   rows={1}
-                  className='h-9 min-h-9 resize-y rounded-xl border-transparent bg-muted/40 py-2 text-xs shadow-none focus-visible:border-blue-400 focus-visible:ring-blue-500/20'
+                  className='h-9 min-h-9 resize-y rounded-xl border-transparent bg-muted/40 py-2 shadow-none focus-visible:border-blue-400 focus-visible:ring-blue-500/20'
                   value={editingTemplate?.description ?? ''}
                   onChange={(event) =>
                     onTemplateChange((previous) =>
@@ -143,7 +143,7 @@ export function TemplateEditorDialog({
             type='button'
             variant='outline'
             disabled={isSaving}
-            className='h-11 rounded-full border-dashed bg-transparent px-6 text-[11px] font-black shadow-none'
+            className='h-11 rounded-full border-dashed bg-transparent px-6 shadow-none'
             onClick={() => onOpenChange(false)}
           >
             {t('engineering.templateMgmt.buttons.cancel')}
@@ -152,7 +152,7 @@ export function TemplateEditorDialog({
             type='submit'
             form={formId}
             disabled={isSaving}
-            className='h-11 rounded-full bg-blue-600 px-8 text-[11px] font-black text-white shadow-xl shadow-blue-500/20 hover:bg-blue-700'
+            className='h-11 rounded-full bg-blue-600 px-8 text-white shadow-xl shadow-blue-500/20 hover:bg-blue-700'
           >
             <Save className='size-4' />
             {isSaving

@@ -222,7 +222,7 @@ export function PrepregLabelCapturePanel({
             variant='outline'
             onClick={handlePickImage}
             disabled={isRecognizing}
-            className='h-8 rounded-full px-3 text-xs font-black'
+            className='h-8 rounded-full px-3'
           >
             <ImageIcon className='size-4' />
             {isRecognizing
@@ -234,7 +234,7 @@ export function PrepregLabelCapturePanel({
             variant='outline'
             onClick={handleCreateMobileSession}
             disabled={isCreatingSession}
-            className='h-8 rounded-full px-3 text-xs font-black'
+            className='h-8 rounded-full px-3'
           >
             {isCreatingSession ? (
               <Loader2 className='size-4 animate-spin' />
@@ -246,7 +246,7 @@ export function PrepregLabelCapturePanel({
           <Button
             type='button'
             onClick={handleApply}
-            className='h-8 rounded-full px-3 text-xs font-black'
+            className='h-8 rounded-full px-3'
           >
             <Wand2 className='size-4' />
             {t('rawMaterials.catalog.ocr.actions.parseAndApply')}
@@ -275,7 +275,7 @@ export function PrepregLabelCapturePanel({
               type='button'
               variant='outline'
               onClick={handleCopyLink}
-              className='h-8 w-fit rounded-full text-xs font-black'
+              className='h-8 w-fit rounded-full'
             >
               <Clipboard className='size-3.5' />
               {t('rawMaterials.catalog.ocr.actions.copyLink')}
@@ -309,7 +309,7 @@ export function PrepregLabelCapturePanel({
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
             placeholder={t('rawMaterials.catalog.ocr.textPlaceholder')}
-            className='min-h-[76px] resize-none rounded-xl bg-background/80 text-sm leading-5 font-semibold'
+            className='min-h-[76px] resize-none rounded-xl bg-background/80'
           />
           <div className='flex max-h-14 flex-wrap gap-1.5 overflow-y-auto pr-1'>
             {parsedEntries.length === 0 ? (

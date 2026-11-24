@@ -206,22 +206,14 @@ export function ScanPlatformModulePanel() {
 
                 <div className='flex flex-wrap gap-2'>
                   {catalog.openPath && canOpenPath ? (
-                    <Button
-                      asChild
-                      size='sm'
-                      className='gap-2 rounded-full text-[10px] font-black'
-                    >
+                    <Button asChild size='sm' className='gap-2 rounded-full'>
                       <Link to={catalog.openPath}>
                         <Workflow className='size-3.5' />
                         {moduleCopy?.openLabel ?? catalog.openLabel}
                       </Link>
                     </Button>
                   ) : (
-                    <Button
-                      size='sm'
-                      disabled
-                      className='gap-2 rounded-full text-[10px] font-black'
-                    >
+                    <Button size='sm' disabled className='gap-2 rounded-full'>
                       <Workflow className='size-3.5' />
                       {moduleCopy?.openLabel ?? catalog.openLabel}
                     </Button>
@@ -233,7 +225,7 @@ export function ScanPlatformModulePanel() {
                         asChild
                         size='sm'
                         variant='outline'
-                        className='gap-2 rounded-full text-[10px] font-black'
+                        className='gap-2 rounded-full'
                       >
                         <Link to={catalog.installPath}>
                           <Smartphone className='size-3.5' />
@@ -247,7 +239,7 @@ export function ScanPlatformModulePanel() {
                         size='sm'
                         variant='outline'
                         disabled
-                        className='gap-2 rounded-full text-[10px] font-black'
+                        className='gap-2 rounded-full'
                       >
                         <Smartphone className='size-3.5' />
                         {moduleCopy?.addToHomeScreenLabel ??

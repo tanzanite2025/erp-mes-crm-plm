@@ -100,7 +100,7 @@ export function RequirementDrawer({
                 <Button
                   variant='outline'
                   size='sm'
-                  className='h-11 gap-2 rounded-full border-2 border-dashed border-muted/50 px-6 text-[11px] font-black uppercase hover:bg-muted/5'
+                  className='h-11 gap-2 rounded-full border-2 border-dashed border-muted/50 px-6 hover:bg-muted/5'
                   onClick={() => window.print()}
                   disabled={!isComplete || isLoading}
                 >
@@ -109,7 +109,7 @@ export function RequirementDrawer({
                 </Button>
                 <Button
                   size='sm'
-                  className='h-11 gap-2 rounded-full bg-primary px-8 text-[11px] font-black uppercase shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95'
+                  className='h-11 gap-2 rounded-full bg-primary px-8 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95'
                   disabled={!isComplete || isLoading}
                   onClick={async () => {
                     try {

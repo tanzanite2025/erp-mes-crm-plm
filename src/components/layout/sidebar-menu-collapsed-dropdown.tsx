@@ -31,9 +31,9 @@ const dropdownContentClassName =
 const dropdownLabelClassName =
   'px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-muted-foreground/70'
 const dropdownItemClassName =
-  'rounded-xl border border-dashed border-transparent px-2.5 py-2 text-[13px] font-black tracking-tight focus:border-border/50 focus:bg-accent/60'
+  'rounded-xl border border-dashed border-transparent px-2.5 py-2 focus:border-border/50 focus:bg-accent/60'
 const dropdownSubTriggerClassName =
-  'rounded-xl border border-dashed border-transparent px-2.5 py-2 text-[13px] font-black tracking-tight focus:border-border/50 focus:bg-accent/60 data-[state=open]:border-border/50 data-[state=open]:bg-accent/70'
+  'rounded-xl border border-dashed border-transparent px-2.5 py-2 focus:border-border/50 focus:bg-accent/60 data-[state=open]:border-border/50 data-[state=open]:bg-accent/70'
 const dropdownSubContentClassName =
   'rounded-[20px] border-dashed border-border/55 bg-popover/96 p-1.5 shadow-xl backdrop-blur-sm'
 
@@ -106,11 +106,11 @@ export function SidebarMenuCollapsedDropdown({
                       )}
                     >
                       {subItem.icon ? <subItem.icon /> : null}
-                      <span className='max-w-52 px-0.5 py-0.5 text-[13px] leading-normal font-black text-wrap'>
+                      <span className='max-w-52 px-0.5 py-0.5 text-wrap'>
                         {subItem.title}
                       </span>
                       {subItem.badge ? (
-                        <span className='ms-auto text-[10px] font-black opacity-60'>
+                        <span className='ms-auto opacity-60'>
                           {subItem.badge}
                         </span>
                       ) : null}

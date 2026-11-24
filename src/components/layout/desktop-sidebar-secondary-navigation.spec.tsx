@@ -11,10 +11,20 @@ vi.mock('@/context/language-provider', () => ({
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
+    onClick,
     to,
     ...props
-  }: React.ComponentProps<'a'> & { to: string }) => (
-    <a href={to} {...props} onClick={(event) => event.preventDefault()}>
+  }: React.ComponentProps<'a'> & {
+    to: string
+  }) => (
+    <a
+      href={to}
+      {...props}
+      onClick={(event) => {
+        event.preventDefault()
+        onClick?.(event)
+      }}
+    >
       {children}
     </a>
   ),
@@ -90,6 +100,21 @@ describe('desktop expanded module directory', () => {
     fireEvent.click(moduleButton)
     expect(moduleButton).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('link', { name: 'Queue' })).toBeVisible()
+  })
+
+  it('notifies the mobile sidebar when a directory destination is selected', () => {
+    const onDestinationSelected = vi.fn()
+    render(
+      <DesktopSidebarSecondaryNavigation
+        category={productionDirectory}
+        pathname='/aps'
+        onDestinationSelected={onDestinationSelected}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('link', { name: 'Execution' }))
+
+    expect(onDestinationSelected).toHaveBeenCalledOnce()
   })
 
   it('expands every module across sections by default and toggles them independently', () => {

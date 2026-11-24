@@ -204,7 +204,7 @@ export function BOMVersionTraceContent({
                     variant='outline'
                     onClick={() => trace.setSelectedBomId(group.bomId)}
                     className={cn(
-                      'h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase',
+                      'h-8 rounded-full border-dashed px-3',
                       trace.activeBomId === group.bomId
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'bg-background'
@@ -278,7 +278,7 @@ export function BOMVersionTraceContent({
                             type='button'
                             variant={isLeft ? 'default' : 'outline'}
                             onClick={() => trace.setLeftVersionId(record.id)}
-                            className='h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase'
+                            className='h-8 rounded-full border-dashed px-3'
                           >
                             左侧
                           </Button>
@@ -286,7 +286,7 @@ export function BOMVersionTraceContent({
                             type='button'
                             variant={isRight ? 'default' : 'outline'}
                             onClick={() => trace.setRightVersionId(record.id)}
-                            className='h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-widest uppercase'
+                            className='h-8 rounded-full border-dashed px-3'
                           >
                             右侧
                           </Button>

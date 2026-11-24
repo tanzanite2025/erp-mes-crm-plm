@@ -1,11 +1,12 @@
 import { useCallback } from 'react'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 import type { ProductionLineMutationPayload } from '../../../contracts/production-line-mutation'
+import type { ProductionBOMBranch } from '../../../data/production-bom-branch'
 import type { ProductionLine } from '../../../data/production-line'
 import {
-  addSegmentToLine,
+  addProductionBOMBranchSegmentToLine,
+  bindProductionBOMBranchToLineSegment,
   removeSegmentFromLine,
-  renameSegmentInLine,
 } from '../../../topology/line-topology-helpers'
 import type { LineMindmapNode } from '../data/line-mindmap-domain'
 import type { PendingTopologyMutation } from './use-line-mindmap-topology-auth'
@@ -67,12 +68,15 @@ export function useLineMindmapActions({
   )
 
   const handleAddSegment = useCallback(
-    async (name: string) => {
+    async (branch: ProductionBOMBranch) => {
       if (!activeLine) {
         return
       }
 
-      const updatedLine = addSegmentToLine(activeLine, name)
+      const updatedLine = addProductionBOMBranchSegmentToLine(
+        activeLine,
+        branch
+      )
       const nextSegment = updatedLine.segments[updatedLine.segments.length - 1]
       const nextSelectedId = nextSegment?.id
         ? `segment-${nextSegment.id}`
@@ -82,25 +86,17 @@ export function useLineMindmapActions({
     [activeLine, submitTopologyMutation]
   )
 
-  const handleRenameSelected = useCallback(
-    async (name: string) => {
-      if (
-        !activeLine ||
-        !selectedNode ||
-        selectedNode.sourceType !== 'segment' ||
-        !selectedNode.sourceId
-      ) {
-        return
-      }
-
-      const updatedLine = renameSegmentInLine(
+  const handleBindBOMBranch = useCallback(
+    async (segmentId: string, branch: ProductionBOMBranch) => {
+      if (!activeLine) return
+      const updatedLine = bindProductionBOMBranchToLineSegment(
         activeLine,
-        selectedNode.sourceId,
-        name
+        segmentId,
+        branch
       )
-      await submitTopologyMutation(updatedLine, selectedNode.id)
+      await submitTopologyMutation(updatedLine, `segment-${segmentId}`)
     },
-    [activeLine, selectedNode, submitTopologyMutation]
+    [activeLine, submitTopologyMutation]
   )
 
   const handleDeleteSelected = useCallback(async () => {
@@ -131,8 +127,8 @@ export function useLineMindmapActions({
 
   return {
     handleAddSegment,
+    handleBindBOMBranch,
     handleDeleteSelected,
-    handleRenameSelected,
     submitTopologyMutation,
   }
 }

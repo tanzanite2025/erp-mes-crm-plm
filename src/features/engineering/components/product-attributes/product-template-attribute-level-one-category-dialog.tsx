@@ -201,7 +201,7 @@ export function ProductTemplateAttributeLevelOneCategoryDialog({
             variant='outline'
             type='button'
             disabled={isSaving}
-            className='h-10 rounded-full px-5 text-xs font-bold'
+            className='h-10 rounded-full px-5'
             onClick={() => onOpenChange(false)}
           >
             {isZh ? '取消' : 'Cancel'}
@@ -210,7 +210,7 @@ export function ProductTemplateAttributeLevelOneCategoryDialog({
             type='submit'
             form={categoryFormId}
             disabled={isSaving}
-            className='h-10 rounded-full px-5 text-xs font-bold'
+            className='h-10 rounded-full px-5'
           >
             {isSaving ? (isZh ? '保存中…' : 'Saving…') : isZh ? '保存' : 'Save'}
           </Button>

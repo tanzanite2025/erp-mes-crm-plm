@@ -166,7 +166,7 @@ export function UsersTable({
             setCurrentRow(selectedPermissionUser)
             setOpen('permissions')
           }}
-          className='h-11 w-full justify-center rounded-full px-3 text-[10px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95 md:h-9 md:w-auto md:px-4'
+          className='h-11 w-full justify-center rounded-full px-3 shadow-sm transition-all active:scale-95 md:h-9 md:w-auto md:px-4'
         >
           <ShieldPlus className='mr-2 size-3.5' />
           {t('users.actions.managePermissions')}
@@ -199,7 +199,7 @@ export function UsersTable({
               onChange={(event) => {
                 usernameColumn?.setFilterValue(event.target.value)
               }}
-              className='h-12 w-full rounded-2xl border-none bg-muted/50 px-4 text-sm font-medium shadow-sm placeholder:text-muted-foreground/35'
+              className='h-12 w-full rounded-2xl border-none bg-muted/50 px-4 shadow-sm placeholder:text-muted-foreground/35'
             />
             <div className='grid grid-cols-3 gap-2'>
               {statusColumn ? (
@@ -220,7 +220,7 @@ export function UsersTable({
                   table.resetColumnFilters()
                   table.setGlobalFilter('')
                 }}
-                className='h-9 self-start rounded-full px-3 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase'
+                className='h-9 self-start rounded-full px-3 text-muted-foreground/70'
               >
                 {t('common.actions.reset')}
               </Button>

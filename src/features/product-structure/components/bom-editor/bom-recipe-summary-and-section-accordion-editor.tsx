@@ -46,7 +46,7 @@ export function BOMRecipeSummaryAndSectionAccordionEditor({
         <Button
           type='button'
           variant='outline'
-          className='h-9 shrink-0 rounded-full border-blue-600/20 bg-blue-600/5 px-3 text-xs text-blue-700 hover:bg-blue-600/10 dark:text-blue-300'
+          className='h-9 shrink-0 rounded-full border-blue-600/20 bg-blue-600/5 px-3 text-blue-700 hover:bg-blue-600/10 dark:text-blue-300'
           onClick={() => setIsSharedSectionManagementOpen(true)}
         >
           <Settings2 className='mr-1.5 size-3.5' />

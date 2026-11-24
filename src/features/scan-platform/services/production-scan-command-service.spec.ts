@@ -23,14 +23,12 @@ describe('productionScanCommandService', () => {
         productBarcode: ' ab 12 ',
         source: 'camera',
         action: 'complete',
-        routeId: ' route-1 ',
       })
     ).toEqual({
       idempotencyKey: 'camera-command-1',
       productBarcode: 'AB12',
       action: 'COMPLETE',
       commandSource: 'WEB',
-      routeId: 'route-1',
     })
   })
 
@@ -70,7 +68,6 @@ describe('productionScanCommandService', () => {
       source: 'manual',
       commandSource: 'PDA',
       action: 'START',
-      processStepId: 'process-1',
     })
 
     expect(apiFetch).toHaveBeenCalledWith('/production/scan-commands/execute', {
@@ -80,7 +77,6 @@ describe('productionScanCommandService', () => {
         productBarcode: 'PDA-001',
         action: 'START',
         commandSource: 'PDA',
-        processStepId: 'process-1',
       }),
     })
   })

@@ -67,7 +67,20 @@ describe('PrintRecordService linear barcode inventory', () => {
   })
 
   it('loads inventory scoped to a sales order', async () => {
-    apiFetch.mockResolvedValue({ items: [inventoryDto], total: 1 })
+    apiFetch.mockResolvedValue({
+      items: [inventoryDto],
+      total: 1,
+      unattributedIssuedQuantity: 2,
+      orderLineIssuanceSummaries: [
+        {
+          salesOrderLineId: 17,
+          salesOrderLineNo: 1,
+          orderQuantity: 200,
+          issuedQuantity: 20,
+          remainingQuantity: 180,
+        },
+      ],
+    })
 
     const result = await PrintRecordService.getLinearBarcodeInventory({
       salesOrderId: batchDto.salesOrderId,
@@ -78,6 +91,14 @@ describe('PrintRecordService linear barcode inventory', () => {
       `/print-batches/linear-barcode-inventory?salesOrderId=${batchDto.salesOrderId}&limit=500`
     )
     expect(result.total).toBe(1)
+    expect(result.unattributedIssuedQuantity).toBe(2)
     expect(result.items[0]?.status).toBe('AVAILABLE')
+    expect(result.orderLineIssuanceSummaries?.[0]).toEqual({
+      salesOrderLineId: 17,
+      salesOrderLineNo: 1,
+      orderQuantity: 200,
+      issuedQuantity: 20,
+      remainingQuantity: 180,
+    })
   })
 })

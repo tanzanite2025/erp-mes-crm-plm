@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -129,12 +130,39 @@ func (s *ProductionExecutionLotService) SaveProductionExecutionLot(req SaveProdu
 		if err != nil {
 			return err
 		}
+		if exists {
+			if strings.TrimSpace(lot.PlanID) == "" {
+				return fmt.Errorf("%w: an execution lot without a production plan cannot be reused", ErrInvalidProductionExecutionLot)
+			}
+			if strings.TrimSpace(lot.PlanID) != normalized.PlanID {
+				return fmt.Errorf("%w: an execution lot cannot change its production plan", ErrInvalidProductionExecutionLot)
+			}
+		}
+		var plan models.ProductionPlan
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&plan, "id = ?", normalized.PlanID).Error; err != nil {
+			return fmt.Errorf("%w: planId does not exist", ErrInvalidProductionExecutionLot)
+		}
+		if err := ValidateProductionPlanBOMBranchTx(tx, &plan, nil); err != nil {
+			return fmt.Errorf("%w: %v", ErrInvalidProductionExecutionLot, err)
+		}
+		if normalized.ProductID != "" && normalized.ProductID != strings.TrimSpace(plan.ProductID) {
+			return fmt.Errorf("%w: productId does not match planId", ErrInvalidProductionExecutionLot)
+		}
+		if strings.EqualFold(strings.TrimSpace(plan.Status), "CANCELED") || strings.EqualFold(strings.TrimSpace(plan.Status), "COMPLETED") {
+			return fmt.Errorf("%w: canceled or completed plans cannot receive an execution lot", ErrInvalidProductionExecutionLot)
+		}
+		normalized.ProductID = strings.TrimSpace(plan.ProductID)
+		if strings.TrimSpace(plan.ProductName) != "" {
+			normalized.ProductName = strings.TrimSpace(plan.ProductName)
+		}
 
 		if !exists {
 			lot.BaseModel = models.BaseModel{ID: uuid.NewString()}
 		}
 		applyProductionExecutionLotRequest(&lot, normalized)
-		if err := tx.Save(&lot).Error; err != nil {
+		if err := saveProductionRecordWithOptionalUUIDs(tx, &lot,
+			productionOptionalUUIDWrite{Column: "task_id", Value: lot.TaskID},
+		); err != nil {
 			return fmt.Errorf("failed to save production execution lot: %w", err)
 		}
 		saved = lot
@@ -199,17 +227,32 @@ func validateSaveProductionExecutionLotRequest(tx *gorm.DB, req SaveProductionEx
 	if req.Quantity <= 0 {
 		return fmt.Errorf("%w: quantity must be greater than zero", ErrInvalidProductionExecutionLot)
 	}
+	if req.Quantity != 1 {
+		return fmt.Errorf("%w: quantity must equal 1 for a product barcode", ErrInvalidProductionExecutionLot)
+	}
 	if !isSupportedProductionExecutionLotStatus(req.Status) {
 		return fmt.Errorf("%w: unsupported status %s", ErrInvalidProductionExecutionLot, req.Status)
 	}
-	if req.PlanID != "" {
-		if err := ensureProductionExecutionLotRecordExists(tx, &models.ProductionPlan{}, req.PlanID, "planId"); err != nil {
-			return err
-		}
+	if req.PlanID == "" {
+		return fmt.Errorf("%w: planId is required", ErrInvalidProductionExecutionLot)
+	}
+	var plan models.ProductionPlan
+	if err := tx.First(&plan, "id = ?", req.PlanID).Error; err != nil {
+		return fmt.Errorf("%w: planId does not exist", ErrInvalidProductionExecutionLot)
+	}
+	if err := ValidateProductionPlanBOMBranchTx(tx, &plan, nil); err != nil {
+		return fmt.Errorf("%w: %v", ErrInvalidProductionExecutionLot, err)
+	}
+	if strings.EqualFold(strings.TrimSpace(plan.Status), "CANCELED") || strings.EqualFold(strings.TrimSpace(plan.Status), "COMPLETED") {
+		return fmt.Errorf("%w: canceled or completed plans cannot receive an execution lot", ErrInvalidProductionExecutionLot)
+	}
+	if req.ProductID != "" && strings.TrimSpace(req.ProductID) != strings.TrimSpace(plan.ProductID) {
+		return fmt.Errorf("%w: productId does not match planId", ErrInvalidProductionExecutionLot)
 	}
 	if req.TaskID != "" {
-		if err := ensureProductionExecutionLotRecordExists(tx, &models.ProductionTask{}, req.TaskID, "taskId"); err != nil {
-			return err
+		var task models.ProductionTask
+		if err := tx.First(&task, "id = ?", req.TaskID).Error; err != nil || strings.TrimSpace(task.PlanID) != req.PlanID {
+			return fmt.Errorf("%w: taskId does not belong to planId", ErrInvalidProductionExecutionLot)
 		}
 	}
 	return nil
@@ -224,17 +267,6 @@ func isSupportedProductionExecutionLotStatus(status string) bool {
 	default:
 		return false
 	}
-}
-
-func ensureProductionExecutionLotRecordExists(tx *gorm.DB, model any, id string, field string) error {
-	var count int64
-	if err := tx.Model(model).Where("id = ?", strings.TrimSpace(id)).Count(&count).Error; err != nil {
-		return fmt.Errorf("%w: failed to validate %s: %v", ErrInvalidProductionExecutionLot, field, err)
-	}
-	if count == 0 {
-		return fmt.Errorf("%w: %s does not exist", ErrInvalidProductionExecutionLot, field)
-	}
-	return nil
 }
 
 func findProductionExecutionLotForSaveTx(tx *gorm.DB, req SaveProductionExecutionLotRequest) (models.ProductionExecutionLot, bool, error) {

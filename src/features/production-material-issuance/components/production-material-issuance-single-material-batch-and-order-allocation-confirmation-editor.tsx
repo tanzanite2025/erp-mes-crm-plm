@@ -18,10 +18,10 @@ import { suggestProductionMaterialIssuanceOrdinaryAllocations } from '../service
 import { productionMaterialIssuanceFrozenOrderLineDisplayLabel } from '../utils/production-material-issuance-frozen-order-line-display-label'
 
 const warehouseHandoverFormControlClassName =
-  'h-10 w-full min-w-0 rounded-xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 md:h-11'
+  'h-10 w-full min-w-0 rounded-xl border-none bg-muted/50 px-4 shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 md:h-11'
 
 const warehouseHandoverSecondaryButtonClassName =
-  'h-auto min-h-10 max-w-full min-w-0 rounded-full border-dashed px-4 py-2 text-[10px] leading-5 font-black tracking-widest whitespace-normal uppercase active:scale-95 md:min-h-11 md:px-5'
+  'h-auto min-h-10 max-w-full min-w-0 rounded-full border-dashed px-4 py-2 whitespace-normal active:scale-95 md:min-h-11 md:px-5'
 
 export function ProductionMaterialIssuanceSingleMaterialBatchAndOrderAllocationConfirmationEditor({
   review,
@@ -543,7 +543,7 @@ function ProductionMaterialIssuanceSelectedMaterialBatchConfirmationFields({
           )}
         </span>
         <Textarea
-          className='min-h-20 w-full rounded-xl border-none bg-muted/50 px-4 py-3 text-xs font-bold shadow-inner focus-visible:ring-2 focus-visible:ring-primary/20'
+          className='min-h-20 w-full rounded-xl border-none bg-muted/50 px-4 py-3 shadow-inner focus-visible:ring-2 focus-visible:ring-primary/20'
           value={reason}
           onChange={(event) => {
             setReason(event.target.value)
@@ -566,7 +566,7 @@ function ProductionMaterialIssuanceSelectedMaterialBatchConfirmationFields({
       </label>
       <Button
         type='button'
-        className='h-auto min-h-10 max-w-full rounded-full px-5 py-3 text-[10px] leading-5 font-black tracking-widest whitespace-normal uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 md:min-h-11 md:px-6'
+        className='h-auto min-h-10 max-w-full rounded-full px-5 py-3 whitespace-normal shadow-xl shadow-primary/20 transition-all active:scale-95 md:min-h-11 md:px-6'
         disabled={!confirmed || !valid || !selectionReady || locked}
         onClick={() => onConfirm(payload)}
       >

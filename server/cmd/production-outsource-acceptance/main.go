@@ -29,31 +29,29 @@ const (
 	acceptanceGuard      = "PRODUCTION_OUTSOURCE_ACCEPTANCE"
 	acceptanceGuardValue = "1"
 
-	fixtureRouteID      = "00000000-0000-0000-0000-000000000101"
-	fixtureRouteCode    = "ACCEPTANCE-PRODUCTION-ROUTE"
-	fixtureLineID       = "00000000-0000-0000-0000-000000000110"
-	fixtureSegmentAID   = "00000000-0000-0000-0000-000000000211"
-	fixtureSegmentBID   = "00000000-0000-0000-0000-000000000212"
-	fixtureProcessAID   = "00000000-0000-0000-0000-000000000102"
-	fixtureProcessBID   = "00000000-0000-0000-0000-000000000103"
-	fixturePartnerID    = "00000000-0000-0000-0000-000000000104"
-	fixtureOrderID      = "00000000-0000-0000-0000-000000000105"
-	fixtureOrderLineID  = "00000000-0000-0000-0000-000000000106"
-	fixtureBarcode      = "ACCEPTANCE-BC-001"
-	fixtureCommandID    = "00000000-0000-0000-0000-000000000107"
-	fixtureRuleID       = "00000000-0000-0000-0000-000000000108"
-	fixtureStateEventID = "00000000-0000-0000-0000-000000000214"
-	fixtureSourceCode   = "PRODUCTION_OUTSOURCE"
-	fixtureActionCode   = "STATUS_CHANGED"
-	fixtureEntity       = "SYSTEM"
-	fixtureOperator     = "acceptance-fixture"
-	fixtureCustomerID   = "acceptance-customer"
-	fixtureProductID    = "00000000-0000-0000-0000-000000000109"
-	fixtureMaterialID   = "00000000-0000-0000-0000-000000000114"
-	fixtureProductName  = "委外验收产品"
-	fixturePartnerName  = "委外验收单位"
-	fixtureSourceNumber = "ACCEPTANCE-SOURCE-001"
-	fixtureOutsourceNo  = "OSO-ACCEPTANCE-001"
+	fixtureRouteID            = "00000000-0000-0000-0000-000000000101"
+	fixtureRouteCode          = "ACCEPTANCE-PRODUCTION-ROUTE"
+	fixtureBranchOperationAID = "00000000-0000-0000-0000-000000000102"
+	fixtureBranchOperationBID = "00000000-0000-0000-0000-000000000103"
+	fixturePartnerID          = "00000000-0000-0000-0000-000000000104"
+	fixtureOrderID            = "00000000-0000-0000-0000-000000000105"
+	fixtureOrderLineID        = "00000000-0000-0000-0000-000000000106"
+	fixtureBarcode            = "ACCEPTANCE-BC-001"
+	fixtureCommandID          = "00000000-0000-0000-0000-000000000107"
+	fixtureRuleID             = "00000000-0000-0000-0000-000000000108"
+	fixtureStateEventID       = "00000000-0000-0000-0000-000000000214"
+	fixtureSourceCode         = "PRODUCTION_OUTSOURCE"
+	fixtureActionCode         = "STATUS_CHANGED"
+	fixtureEntity             = "SYSTEM"
+	fixtureOperator           = "acceptance-fixture"
+	fixtureCustomerID         = "acceptance-customer"
+	fixtureProductID          = "00000000-0000-0000-0000-000000000109"
+	fixtureMaterialID         = "00000000-0000-0000-0000-000000000114"
+	fixtureWorkLocationID     = "00000000-0000-0000-0000-000000000139"
+	fixtureProductName        = "委外验收产品"
+	fixturePartnerName        = "委外验收单位"
+	fixtureSourceNumber       = "ACCEPTANCE-SOURCE-001"
+	fixtureOutsourceNo        = "OSO-ACCEPTANCE-001"
 
 	fixtureConcurrencyReleaseOrderID   = "00000000-0000-0000-0000-000000000115"
 	fixtureConcurrencyReleaseLineID    = "00000000-0000-0000-0000-000000000116"
@@ -145,85 +143,71 @@ func requireDebugGuard() {
 
 func seedFixture() error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		processes := []models.ProcessStep{
+		branchOperations := []models.ProductionBOMBranchOperation{
 			{
-				BaseModel: models.BaseModel{ID: fixtureProcessAID},
-				Code:      "ACCEPTANCE-PROCESS-A",
-				Name:      "验收工序一",
-				IsActive:  true,
+				BaseModel:       models.BaseModel{ID: fixtureBranchOperationAID},
+				ProductID:       fixtureProductID,
+				BOMOwnerType:    "INTERNAL",
+				BOMVersionLevel: "R1",
+				Name:            "验收工序一",
+				SortOrder:       1,
+				IsActive:        true,
 			},
 			{
-				BaseModel: models.BaseModel{ID: fixtureProcessBID},
-				Code:      "ACCEPTANCE-PROCESS-B",
-				Name:      "委外验收工序",
-				IsActive:  true,
+				BaseModel:       models.BaseModel{ID: fixtureBranchOperationBID},
+				ProductID:       fixtureProductID,
+				BOMOwnerType:    "INTERNAL",
+				BOMVersionLevel: "R1",
+				Name:            "委外验收工序",
+				SortOrder:       2,
+				IsActive:        true,
 			},
 		}
-		for _, process := range processes {
-			if err := tx.Create(&process).Error; err != nil {
+		for _, operation := range branchOperations {
+			if err := tx.Create(&operation).Error; err != nil {
 				return err
 			}
 		}
+		if err := tx.Create(&models.ProductionWorkLocation{
+			BaseModel: models.BaseModel{ID: fixtureWorkLocationID},
+			Code:      "ACCEPTANCE-WORK-LOCATION",
+			Name:      "委外验收工位",
+			IsActive:  true,
+			Version:   1,
+		}).Error; err != nil {
+			return err
+		}
 
 		route := models.ProductionRoute{
-			BaseModel:   models.BaseModel{ID: fixtureRouteID},
-			Code:        fixtureRouteCode,
-			Name:        "委外真实链路验收路线",
-			ProductID:   fixtureProductID,
-			ProductName: fixtureProductName,
-			Version:     1,
-			Status:      "PUBLISHED",
+			BaseModel:       models.BaseModel{ID: fixtureRouteID},
+			Code:            fixtureRouteCode,
+			Name:            "委外真实链路验收路线",
+			ProductID:       fixtureProductID,
+			ProductName:     fixtureProductName,
+			BOMOwnerType:    "INTERNAL",
+			BOMVersionLevel: "R1",
+			Version:         1,
+			Status:          "PUBLISHED",
 		}
 		if err := tx.Create(&route).Error; err != nil {
 			return err
 		}
-		productionLine := models.ProductionLine{
-			BaseModel: models.BaseModel{ID: fixtureLineID},
-			Code:      "ACCEPTANCE-PRODUCTION-LINE",
-			Name:      "委外验收产线",
-			Version:   1,
-			IsActive:  true,
-		}
-		if err := tx.Create(&productionLine).Error; err != nil {
-			return err
-		}
-		segments := []models.LineSegment{
-			{
-				BaseModel: models.BaseModel{ID: fixtureSegmentAID},
-				LineID:    fixtureLineID,
-				Name:      "验收工段一",
-				SortOrder: 1,
-			},
-			{
-				BaseModel: models.BaseModel{ID: fixtureSegmentBID},
-				LineID:    fixtureLineID,
-				Name:      "委外验收工段",
-				SortOrder: 2,
-			},
-		}
-		for _, segment := range segments {
-			if err := tx.Create(&segment).Error; err != nil {
-				return err
-			}
-		}
 		steps := []models.ProductionRouteStep{
 			{
-				BaseModel:     models.BaseModel{ID: "00000000-0000-0000-0000-000000000201"},
-				RouteID:       fixtureRouteID,
-				Sequence:      1,
-				SegmentID:     fixtureSegmentAID,
-				ProcessStepID: fixtureProcessAID,
-				ExecutionMode: "IN_HOUSE",
-				QualityGate:   "NONE",
+				BaseModel:         models.BaseModel{ID: "00000000-0000-0000-0000-000000000201"},
+				RouteID:           fixtureRouteID,
+				Sequence:          1,
+				BranchOperationID: fixtureBranchOperationAID,
+				ExecutionMode:     "IN_HOUSE",
+				QualityGate:       "NONE",
 			},
 			{
-				BaseModel:     models.BaseModel{ID: "00000000-0000-0000-0000-000000000202"},
-				RouteID:       fixtureRouteID,
-				Sequence:      2,
-				SegmentID:     fixtureSegmentBID,
-				ProcessStepID: fixtureProcessBID,
-				ExecutionMode: "OUTSOURCE_REQUIRED",
-				QualityGate:   "NONE",
+				BaseModel:         models.BaseModel{ID: "00000000-0000-0000-0000-000000000202"},
+				RouteID:           fixtureRouteID,
+				Sequence:          2,
+				BranchOperationID: fixtureBranchOperationBID,
+				ExecutionMode:     "OUTSOURCE_REQUIRED",
+				QualityGate:       "NONE",
 			},
 		}
 		for _, step := range steps {
@@ -321,9 +305,6 @@ func seedFixture() error {
 			ProductName:      fixtureProductName,
 			Quantity:         2,
 			UOM:              "PCS",
-			ProcessStepID:    fixtureProcessBID,
-			ProcessCode:      "ACCEPTANCE-PROCESS-B",
-			ProcessName:      "委外验收工序",
 			Status:           services.OutsourceOrderStatusDraft,
 			Version:          1,
 		}
@@ -332,31 +313,31 @@ func seedFixture() error {
 		}
 
 		state := models.ProductBarcodeState{
-			BaseModel:            models.BaseModel{ID: "00000000-0000-0000-0000-000000000213"},
-			ProductBarcode:       fixtureBarcode,
-			ProductID:            fixtureProductID,
-			ProductName:          fixtureProductName,
-			RouteID:              fixtureRouteID,
-			RouteStepID:          "00000000-0000-0000-0000-000000000201",
-			CurrentProcessStepID: fixtureProcessAID,
-			Status:               "NOT_STARTED",
-			LastEventID:          fixtureStateEventID,
+			BaseModel:                models.BaseModel{ID: "00000000-0000-0000-0000-000000000213"},
+			ProductBarcode:           fixtureBarcode,
+			ProductID:                fixtureProductID,
+			ProductName:              fixtureProductName,
+			RouteID:                  fixtureRouteID,
+			RouteStepID:              "00000000-0000-0000-0000-000000000201",
+			CurrentBranchOperationID: fixtureBranchOperationAID,
+			Status:                   "NOT_STARTED",
+			LastEventID:              fixtureStateEventID,
 		}
 		if err := tx.Create(&state).Error; err != nil {
 			return err
 		}
 		initialEvent := models.ProductBarcodeStateEvent{
-			BaseModel:       models.BaseModel{ID: fixtureStateEventID},
-			StateID:         state.ID,
-			ProductBarcode:  fixtureBarcode,
-			EventType:       "INITIALIZED",
-			ToProcessStepID: fixtureProcessAID,
-			RouteID:         fixtureRouteID,
-			RouteStepID:     "00000000-0000-0000-0000-000000000201",
-			Operator:        fixtureOperator,
-			PayloadSnapshot: "{}",
+			BaseModel:           models.BaseModel{ID: fixtureStateEventID},
+			StateID:             state.ID,
+			ProductBarcode:      fixtureBarcode,
+			EventType:           "INITIALIZED",
+			ToBranchOperationID: fixtureBranchOperationAID,
+			RouteID:             fixtureRouteID,
+			RouteStepID:         "00000000-0000-0000-0000-000000000201",
+			Operator:            fixtureOperator,
+			PayloadSnapshot:     "{}",
 		}
-		if err := tx.Omit("from_process_step_id").Create(&initialEvent).Error; err != nil {
+		if err := tx.Create(&initialEvent).Error; err != nil {
 			return err
 		}
 
@@ -547,9 +528,6 @@ func seedConcurrencyFixture() error {
 				ProductName:      fixtureProductName,
 				Quantity:         2,
 				UOM:              "PCS",
-				ProcessStepID:    fixtureProcessBID,
-				ProcessCode:      "ACCEPTANCE-PROCESS-B",
-				ProcessName:      "委外验收工序",
 				Status:           item.status,
 				Version:          1,
 			}
@@ -571,30 +549,30 @@ func seedConcurrencyFixture() error {
 		}
 		for _, item := range states {
 			state := models.ProductBarcodeState{
-				BaseModel:            models.BaseModel{ID: item.id},
-				ProductBarcode:       item.barcode,
-				ProductID:            fixtureProductID,
-				ProductName:          fixtureProductName,
-				RouteID:              fixtureRouteID,
-				RouteStepID:          "00000000-0000-0000-0000-000000000202",
-				CurrentProcessStepID: fixtureProcessBID,
-				Status:               "IN_PROGRESS",
-				LastEventID:          item.eventID,
+				BaseModel:                models.BaseModel{ID: item.id},
+				ProductBarcode:           item.barcode,
+				ProductID:                fixtureProductID,
+				ProductName:              fixtureProductName,
+				RouteID:                  fixtureRouteID,
+				RouteStepID:              "00000000-0000-0000-0000-000000000202",
+				CurrentBranchOperationID: fixtureBranchOperationBID,
+				Status:                   "IN_PROGRESS",
+				LastEventID:              item.eventID,
 			}
 			if err := tx.Create(&state).Error; err != nil {
 				return err
 			}
 			event := models.ProductBarcodeStateEvent{
-				BaseModel:         models.BaseModel{ID: item.eventID},
-				StateID:           item.id,
-				ProductBarcode:    item.barcode,
-				EventType:         "INITIALIZED",
-				FromProcessStepID: fixtureProcessBID,
-				ToProcessStepID:   fixtureProcessBID,
-				RouteID:           fixtureRouteID,
-				RouteStepID:       "00000000-0000-0000-0000-000000000202",
-				Operator:          fixtureOperator,
-				PayloadSnapshot:   "{}",
+				BaseModel:             models.BaseModel{ID: item.eventID},
+				StateID:               item.id,
+				ProductBarcode:        item.barcode,
+				EventType:             "INITIALIZED",
+				FromBranchOperationID: fixtureBranchOperationBID,
+				ToBranchOperationID:   fixtureBranchOperationBID,
+				RouteID:               fixtureRouteID,
+				RouteStepID:           "00000000-0000-0000-0000-000000000202",
+				Operator:              fixtureOperator,
+				PayloadSnapshot:       "{}",
 			}
 			if err := tx.Create(&event).Error; err != nil {
 				return err
@@ -887,25 +865,26 @@ func seedAuthorizationFixture() error {
 	}
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		foreignRoute := models.ProductionRoute{
-			BaseModel:   models.BaseModel{ID: fixtureForeignRouteID},
-			Code:        "ACCEPTANCE-FOREIGN-ROUTE",
-			Name:        "委外跨路线拒绝验收路线",
-			ProductID:   fixtureProductID,
-			ProductName: fixtureProductName,
-			Version:     1,
-			Status:      "PUBLISHED",
+			BaseModel:       models.BaseModel{ID: fixtureForeignRouteID},
+			Code:            "ACCEPTANCE-FOREIGN-ROUTE",
+			Name:            "委外跨路线拒绝验收路线",
+			ProductID:       fixtureProductID,
+			ProductName:     fixtureProductName,
+			BOMOwnerType:    "INTERNAL",
+			BOMVersionLevel: "R1",
+			Version:         1,
+			Status:          "PUBLISHED",
 		}
 		if err := tx.Create(&foreignRoute).Error; err != nil {
 			return err
 		}
 		foreignStep := models.ProductionRouteStep{
-			BaseModel:     models.BaseModel{ID: fixtureForeignRouteStepID},
-			RouteID:       fixtureForeignRouteID,
-			Sequence:      1,
-			SegmentID:     fixtureSegmentBID,
-			ProcessStepID: fixtureProcessBID,
-			ExecutionMode: "IN_HOUSE",
-			QualityGate:   "NONE",
+			BaseModel:         models.BaseModel{ID: fixtureForeignRouteStepID},
+			RouteID:           fixtureForeignRouteID,
+			Sequence:          1,
+			BranchOperationID: fixtureBranchOperationBID,
+			ExecutionMode:     "IN_HOUSE",
+			QualityGate:       "NONE",
 		}
 		if err := tx.Create(&foreignStep).Error; err != nil {
 			return err
@@ -940,14 +919,15 @@ func acceptCrossRouteScanDenied(scan *services.ProductionScanCommandService) err
 	}
 
 	_, err := scan.ExecuteProductionScanCommand(services.ExecuteProductionScanCommandRequest{
-		ProductBarcode:      fixtureBarcode,
-		Action:              services.ProductionOperationActionComplete,
-		TargetRouteStepID:   fixtureForeignRouteStepID,
-		TargetProcessStepID: fixtureProcessBID,
-		CommandSource:       services.ProductionScanCommandSourceWeb,
-		Operator:            fixtureOperator,
-		ActorID:             fixtureAuthorizationUserID,
-		IP:                  "127.0.0.1",
+		IdempotencyKey:           "acceptance-cross-route-scan-denial",
+		ProductBarcode:           fixtureBarcode,
+		ProductionWorkLocationID: fixtureWorkLocationID,
+		Action:                   services.ProductionOperationActionComplete,
+		TargetRouteStepID:        fixtureForeignRouteStepID,
+		CommandSource:            services.ProductionScanCommandSourceWeb,
+		Operator:                 fixtureOperator,
+		ActorID:                  fixtureAuthorizationUserID,
+		IP:                       "127.0.0.1",
 	})
 	if !errors.Is(err, services.ErrInvalidProductionScanCommand) {
 		return fmt.Errorf("cross-route scan expected ErrInvalidProductionScanCommand, got %v", err)
@@ -1132,9 +1112,8 @@ func cleanupFixture() error {
 			{&models.ProductionRoute{}, "id = ?", []any{fixtureForeignRouteID}},
 			{&models.ProductionRouteStep{}, "route_id = ?", []any{fixtureRouteID}},
 			{&models.ProductionRoute{}, "id = ?", []any{fixtureRouteID}},
-			{&models.LineSegment{}, "line_id = ?", []any{fixtureLineID}},
-			{&models.ProductionLine{}, "id = ?", []any{fixtureLineID}},
-			{&models.ProcessStep{}, "id IN ?", []any{[]string{fixtureProcessAID, fixtureProcessBID}}},
+			{&models.ProductionBOMBranchOperation{}, "id IN ?", []any{[]string{fixtureBranchOperationAID, fixtureBranchOperationBID}}},
+			{&models.ProductionWorkLocation{}, "id = ?", []any{fixtureWorkLocationID}},
 			{&models.OutsourcePartner{}, "id = ?", []any{fixturePartnerID}},
 			{&models.StandardCommand{}, "id = ?", []any{fixtureCommandID}},
 			{&models.NotificationRule{}, "id = ?", []any{fixtureRuleID}},

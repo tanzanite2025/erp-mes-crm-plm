@@ -437,7 +437,7 @@ export function SalesReturnSourceOrderMaster({
                                   type='button'
                                   variant='ghost'
                                   size='sm'
-                                  className='h-7 rounded-full px-2.5 text-[10px] font-black text-primary'
+                                  className='control-typography-compact h-7 rounded-full px-2.5 text-primary'
                                   onClick={() =>
                                     onSelectReturn(latestReturnReference.id)
                                   }
@@ -458,7 +458,7 @@ export function SalesReturnSourceOrderMaster({
                               type='button'
                               variant='outline'
                               size='sm'
-                              className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                              className='h-8 rounded-full px-3'
                               onClick={() =>
                                 setInboundTarget({
                                   returnId: inboundableReturnReference.id,
@@ -474,7 +474,7 @@ export function SalesReturnSourceOrderMaster({
                             type='button'
                             size='sm'
                             disabled={!canStartLineReturn}
-                            className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                            className='h-8 rounded-full px-3'
                             onClick={() => {
                               if (!canStartLineReturn) return
                               onStartReturnLine(order, lineId)

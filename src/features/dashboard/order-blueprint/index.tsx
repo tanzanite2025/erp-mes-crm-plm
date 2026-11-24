@@ -117,11 +117,11 @@ export function OrderBlueprint({ order, orderNo }: OrderBlueprintProps) {
           />
 
           <Panel position='top-right' className='flex gap-2'>
-            <button className='h-10 rounded-full bg-primary px-4 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-lg transition-all hover:scale-105 active:scale-95'>
+            <button className='h-10 rounded-full bg-primary px-4 text-primary-foreground shadow-lg transition-all hover:scale-105 active:scale-95'>
               Save Layout
             </button>
             <button
-              className='h-10 rounded-full border bg-background px-4 text-[10px] font-black tracking-widest uppercase shadow-lg transition-all hover:bg-muted'
+              className='h-10 rounded-full border bg-background px-4 shadow-lg transition-all hover:bg-muted'
               onClick={() =>
                 (window as WindowWithReactFlow).reactFlowInstance?.fitView()
               }

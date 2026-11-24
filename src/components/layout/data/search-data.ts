@@ -203,6 +203,15 @@ const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
     pinyin: 'sclx',
   },
   {
+    href: '/production-architecture/process-library',
+    labelKeys: [
+      'productionArchitecture.layout.tabs.processLibrary',
+      'commandMenu.parents.productionCoordination',
+    ],
+    keywords: ['process library', '工序库', '工序配置', '标准工序'],
+    pinyin: 'gxk',
+  },
+  {
     href: '/production-execution',
     labelKeys: [
       'commandMenu.items.productionExecution',
@@ -471,11 +480,13 @@ const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
       'product barcode state',
       '一维码',
       '一维码状态',
+      '编码状态',
+      '产品编码',
       '产品状态',
       '扫码状态',
       '生产状态',
     ],
-    pinyin: 'ywmzt',
+    pinyin: 'bmzt',
   },
   {
     href: '/code-center/shared-code-source/numbering-engine',

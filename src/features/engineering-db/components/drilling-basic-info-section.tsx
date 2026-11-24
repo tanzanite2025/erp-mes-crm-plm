@@ -28,7 +28,7 @@ export function DrillingBasicInfoSection({
         </Label>
         <Input
           placeholder='例如: 2X-Cross-Standard-32H'
-          className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-indigo-500/20'
+          className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner focus-visible:ring-indigo-500/20'
           value={formData.name}
           onChange={(event) => updateField('name', event.target.value)}
         />

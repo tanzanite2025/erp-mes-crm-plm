@@ -56,10 +56,7 @@ export function ProductBindingHistoryDialog(
         <Button
           type='button'
           variant={triggerVariant ?? 'outline'}
-          className={cn(
-            'h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase',
-            triggerClassName
-          )}
+          className={cn('h-11 rounded-full px-6', triggerClassName)}
           {...restTriggerButtonProps}
         >
           <History className='size-4' />

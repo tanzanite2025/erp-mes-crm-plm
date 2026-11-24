@@ -7,11 +7,11 @@ import {
   PRINT_BATCHES_QUERY_KEY,
 } from '@/features/print-mgmt/query-keys'
 import {
-  LinearBarcodePrintPreviewBlockedError,
-  LinearBarcodePrintPreviewClosedError,
-  LinearBarcodePrintRenderError,
-} from '../services/linear-barcode-print-preview'
-import { LinearBarcodePrintQuantityError } from '../services/linear-barcode-print-safety'
+  ProductCodeLabelPrintPreviewBlockedError,
+  ProductCodeLabelPrintPreviewClosedError,
+  ProductCodeLabelPrintRenderError,
+} from '../services/product-code-label-print-preview'
+import { ProductCodeLabelPrintQuantityError } from '../services/product-code-label-print-quantity-constraints'
 
 type TranslateFn = (
   key: TranslationKey,
@@ -87,23 +87,23 @@ export function resolveLinearBarcodePrintErrorMessage(
   error: unknown,
   t: TranslateFn
 ) {
-  if (error instanceof LinearBarcodePrintQuantityError) {
+  if (error instanceof ProductCodeLabelPrintQuantityError) {
     return t(
       'codeCenter.linearBarcode.print.sections.preview.errors.quantityInvalid',
       { quantity: error.quantity }
     )
   }
-  if (error instanceof LinearBarcodePrintPreviewBlockedError) {
+  if (error instanceof ProductCodeLabelPrintPreviewBlockedError) {
     return t(
       'codeCenter.linearBarcode.print.sections.preview.errors.previewBlocked'
     )
   }
-  if (error instanceof LinearBarcodePrintPreviewClosedError) {
+  if (error instanceof ProductCodeLabelPrintPreviewClosedError) {
     return t(
       'codeCenter.linearBarcode.print.sections.preview.errors.previewClosed'
     )
   }
-  if (error instanceof LinearBarcodePrintRenderError) {
+  if (error instanceof ProductCodeLabelPrintRenderError) {
     return t(
       'codeCenter.linearBarcode.print.sections.preview.errors.renderFailed'
     )

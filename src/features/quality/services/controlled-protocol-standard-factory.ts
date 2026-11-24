@@ -3,7 +3,6 @@ import type {
   ControlledProtocolCriterion,
   ControlledProtocolDraft,
 } from '../types/controlled-protocol'
-import { buildCenterBasedControlledProtocolLevels } from './controlled-protocol-center-based-grading'
 
 const CONTROLLED_PROTOCOL_STANDARD_TYPE: Standard['type'] = 'FQC'
 const CONTROLLED_PROTOCOL_STANDARD_STATUS: Standard['status'] = 'DRAFT'
@@ -28,13 +27,6 @@ function createRandomCodeSuffix() {
   return Math.random().toString(36).slice(2, 10).toUpperCase()
 }
 
-function buildControlledProtocolDeviationGradingRemarks(
-  criterion: ControlledProtocolCriterion
-) {
-  const { aLevelTolerance, bLevelTolerance, unit } = criterion
-  return `S：等于中心值；A：0 < 绝对偏差 ≤ ${aLevelTolerance}${unit}；B：${aLevelTolerance}${unit} < 绝对偏差 ≤ ${bLevelTolerance}${unit}；绝对偏差 > ${bLevelTolerance}${unit} 判定报废`
-}
-
 export function buildControlledProtocolInspectionStandardItem(
   criterion: ControlledProtocolCriterion,
   index: number
@@ -42,16 +34,15 @@ export function buildControlledProtocolInspectionStandardItem(
   return {
     id: criterion.id,
     name: criterion.itemName,
+    inspectionStageId: criterion.inspectionStageId,
+    inspectionStageName: criterion.inspectionStageName,
     order: index + 1,
     centerValue: criterion.targetWeight,
-    levels: buildCenterBasedControlledProtocolLevels(
-      criterion.targetWeight,
-      criterion.aLevelTolerance,
-      criterion.bLevelTolerance
-    ),
+    gradingMode: 'DEVIATION_BANDS',
+    levels: criterion.levels,
     unit: criterion.unit,
     isRequired: true,
-    remarks: buildControlledProtocolDeviationGradingRemarks(criterion),
+    remarks: '超出全部等级范围为不合格，处置另行记录。',
   }
 }
 

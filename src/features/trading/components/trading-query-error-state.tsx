@@ -83,7 +83,7 @@ export function TradingQueryErrorState({
       <Button
         variant='outline'
         onClick={onRetry}
-        className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase'
+        className='h-12 rounded-full border-2 border-dashed px-10'
       >
         {retryLabel ?? t('tradingSalesOrder.master.errors.retry')}
       </Button>

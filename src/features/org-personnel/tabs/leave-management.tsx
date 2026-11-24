@@ -87,7 +87,7 @@ export default function LeaveManagement() {
           </p>
         </div>
         <Button
-          className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+          className='h-11 rounded-full px-6'
           onClick={() => setIsActionDialogOpen(true)}
         >
           <Plus className='mr-2 h-3 w-3' />
@@ -251,7 +251,7 @@ export default function LeaveManagement() {
                       type='button'
                       variant='ghost'
                       size='sm'
-                      className='rounded-full text-[10px] font-black tracking-widest'
+                      className='rounded-full'
                       onClick={() => setSelectedLeave(leave)}
                     >
                       {t('orgPersonnel.leaveMgmt.list.viewDetail')}
@@ -261,7 +261,7 @@ export default function LeaveManagement() {
                         type='button'
                         variant='outline'
                         size='sm'
-                        className='rounded-full border-dashed text-[10px] font-black tracking-widest'
+                        className='rounded-full border-dashed'
                         disabled={isCanceling}
                         onClick={() => void handleCancelLeave(leave.id)}
                       >

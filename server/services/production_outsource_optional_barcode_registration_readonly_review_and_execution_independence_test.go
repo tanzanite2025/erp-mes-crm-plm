@@ -67,7 +67,7 @@ func TestOutsourceBarcodeReviewIsReadonlyAndUnregisteredBarcodeCanExecute(t *tes
 	seedOutsourceBarcodeState(t, database, "BC-001")
 	review, err := service.ReviewProductionOutsourceExecutionBarcode(line.ID, "bc-001", "send")
 	require.NoError(t, err)
-	require.Equal(t, float64(2), review.AvailableQuantity)
+	require.Equal(t, float64(1), review.AvailableQuantity)
 	for _, model := range []any{&models.OutsourceTransfer{}, &models.OutsourceInspection{}, &models.ProductBarcodeTransferEvent{}, &models.InventoryLedgerEntry{}, &models.AuditLog{}} {
 		var count int64
 		require.NoError(t, database.Model(model).Count(&count).Error)
@@ -84,6 +84,7 @@ func TestOutsourceBarcodeReviewIsReadonlyAndUnregisteredBarcodeCanExecute(t *tes
 	require.NoError(t, err)
 	inspectionReview, err := service.ReviewProductionOutsourceExecutionBarcode(line.ID, "BC-001", "INSPECT")
 	require.NoError(t, err)
+	require.Equal(t, float64(1), inspectionReview.AvailableQuantity)
 	require.Equal(t, "NOT_STARTED", inspectionReview.Destinations["ACCEPT"].Status)
 	require.NotEqual(t, inspectionReview.RouteStepID, inspectionReview.Destinations["ACCEPT"].RouteStepID)
 	require.Equal(t, inspectionReview.RouteStepID, inspectionReview.Destinations["REWORK"].RouteStepID)
@@ -131,9 +132,9 @@ func TestOutsourceInspectionDestinationPreviewMatchesConfirmedSharedEngineForEve
 			if scenario.routeEnds {
 				require.NoError(t, database.Delete(&models.ProductionRouteStep{}, "id = ?", "route-1-step-process-b").Error)
 			}
-			_, err := service.SendOutsourceOrderLine(OutsourceTransferRequest{OutsourceOrderLineID: line.ID, ProductBarcode: "BC-REVIEW", Quantity: 2, UOM: "PCS", SourceCategory: "FINISHED", TargetCategory: ProductionOutsourceInventoryCategory, Operator: "tester"})
+			_, err := service.SendOutsourceOrderLine(OutsourceTransferRequest{OutsourceOrderLineID: line.ID, ProductBarcode: "BC-REVIEW", Quantity: 1, UOM: "PCS", SourceCategory: "FINISHED", TargetCategory: ProductionOutsourceInventoryCategory, Operator: "tester"})
 			require.NoError(t, err)
-			_, err = service.ReturnOutsourceOrderLine(OutsourceTransferRequest{OutsourceOrderLineID: line.ID, ProductBarcode: "BC-REVIEW", Quantity: 2, UOM: "PCS", SourceCategory: ProductionOutsourceInventoryCategory, TargetCategory: "FINISHED", Operator: "tester"})
+			_, err = service.ReturnOutsourceOrderLine(OutsourceTransferRequest{OutsourceOrderLineID: line.ID, ProductBarcode: "BC-REVIEW", Quantity: 1, UOM: "PCS", SourceCategory: ProductionOutsourceInventoryCategory, TargetCategory: "FINISHED", Operator: "tester"})
 			require.NoError(t, err)
 			review, err := service.ReviewProductionOutsourceExecutionBarcode(line.ID, "BC-REVIEW", "INSPECT")
 			require.NoError(t, err)
@@ -146,7 +147,11 @@ func TestOutsourceInspectionDestinationPreviewMatchesConfirmedSharedEngineForEve
 			} else if scenario.disposition == "REWORK" || scenario.disposition == "SCRAP" {
 				result = OutsourceInspectionResultFail
 			}
-			confirmed, err := service.InspectOutsourceOrderLine(OutsourceInspectionRequest{OutsourceOrderLineID: line.ID, ProductBarcode: "BC-REVIEW", InspectedQuantity: 2, UOM: "PCS", Result: result, Disposition: scenario.disposition, Operator: "tester"})
+			confirmed, err := service.InspectOutsourceOrderLine(OutsourceInspectionRequest{
+				OutsourceOrderLineID: line.ID, ProductBarcode: "BC-REVIEW",
+				ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID,
+				InspectedQuantity:        1, UOM: "PCS", Result: result, Disposition: scenario.disposition, Operator: "tester",
+			})
 			require.NoError(t, err)
 			preview := review.Destinations[scenario.disposition]
 			require.Equal(t, preview.RouteStepID, confirmed.Scan.State.RouteStepID)

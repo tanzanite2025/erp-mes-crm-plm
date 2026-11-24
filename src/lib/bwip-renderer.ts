@@ -12,6 +12,7 @@ export async function renderBwipBarcode(options: {
   canvas: HTMLCanvasElement
   code: string
   type: SupportedBarcodeType
+  qrCodeQuietZoneModules?: number
 }) {
   const bwipjs = await loadBwipJs()
   const isLinearBarcode = options.type === 'code128'
@@ -26,8 +27,16 @@ export async function renderBwipBarcode(options: {
 
   if (isLinearBarcode) {
     renderOptions.height = 18
-    renderOptions.paddingwidth = 6
+    // Code128 requires at least ten narrow modules on both sides.
+    renderOptions.paddingwidth = 10
     renderOptions.paddingheight = 4
+  }
+
+  if (options.type === 'qrcode' && options.qrCodeQuietZoneModules) {
+    // BWIPP's default QR module is two points; bwip-js padding uses points.
+    const qrCodeQuietZonePoints = options.qrCodeQuietZoneModules * 2
+    renderOptions.paddingwidth = qrCodeQuietZonePoints
+    renderOptions.paddingheight = qrCodeQuietZonePoints
   }
 
   bwipjs.toCanvas(options.canvas, renderOptions)

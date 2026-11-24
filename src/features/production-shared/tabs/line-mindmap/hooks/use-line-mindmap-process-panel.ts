@@ -1,101 +1,45 @@
-import { useMemo } from 'react'
-import type { ProductionLine } from '../../../data/production-line'
-import type { ProductionProcessStep } from '../../../data/production-process'
+import type {
+  ProductionBOMBranchOperation,
+  ProductionLine,
+} from '../../../data/production-line'
 import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
-import {
-  addProcessToLineSegment,
-  removeProcessFromLineSegment,
-} from '../../../topology/line-topology-helpers'
-import type { LineMindmapNode } from '../data/line-mindmap-domain'
+import { productionBOMBranchOperationSelectionService } from '../../../services/production-bom-branch-operation-selection-service'
+import { productionBOMBranchOperationsService } from '../../../services/production-bom-branch-operations-service'
+import { productionResourceSync } from '../../../services/production-resource-sync'
 import type { LineMindmapProcessDraft } from '../types'
-import { useLineMindmapProcessLibrary } from './use-line-mindmap-process-library'
 
 interface UseLineMindmapProcessPanelOptions {
   activeLine: ProductionLine | null
-  selectedNode: LineMindmapNode | null
-  submitTopologyMutation: (
-    updatedLine: ProductionLine,
-    nextSelectedNodeId: string | null
-  ) => Promise<void>
+}
+
+function getBranchOperationForSegment(
+  activeLine: ProductionLine,
+  segmentId: string,
+  draft: LineMindmapProcessDraft
+): ProductionBOMBranchOperation | null {
+  const segment = activeLine.segments.find((item) => item.id === segmentId)
+  if (!segment) {
+    return null
+  }
+
+  return {
+    id: '',
+    productId: segment.productId,
+    bomOwnerType: segment.bomOwnerType === 'CUSTOMER' ? 'CUSTOMER' : 'INTERNAL',
+    bomOwnerCustomerId: segment.bomOwnerCustomerId ?? '',
+    bomVersionLevel: segment.bomVersionLevel ?? '',
+    name: draft.name.trim(),
+    description: draft.description.trim(),
+    sortOrder: segment.branchOperations?.length ?? 0,
+    isActive: draft.isActive,
+    processLibraryId: draft.processLibraryId,
+  }
 }
 
 export function useLineMindmapProcessPanel({
   activeLine,
-  selectedNode,
-  submitTopologyMutation,
 }: UseLineMindmapProcessPanelOptions) {
-  const { data: processLibrary = [] } = useProductionProcessesQuery()
-  const { deleteProcess, saveProcess } = useLineMindmapProcessLibrary()
-
-  const saveProcessFromDraft = async (draft: LineMindmapProcessDraft) => {
-    return saveProcess({
-      id: '',
-      description: draft.description || undefined,
-      isActive: draft.isActive,
-      name: draft.name.trim(),
-    })
-  }
-
-  const processOptions = useMemo(() => {
-    if (selectedNode?.sourceType !== 'segment') {
-      return []
-    }
-
-    const mappedIds = new Set(
-      (selectedNode.children || [])
-        .map((child) => child.sourceId)
-        .filter(Boolean)
-    )
-    return processLibrary
-      .filter((process) => !mappedIds.has(process.id))
-      .map((process) => ({
-        id: process.id,
-        label: process.name,
-        code: process.code,
-      }))
-  }, [processLibrary, selectedNode])
-
-  const handleAssignProcess = async (processId: string) => {
-    if (
-      !activeLine ||
-      selectedNode?.sourceType !== 'segment' ||
-      !selectedNode.sourceId
-    ) {
-      return
-    }
-
-    const process = processLibrary.find((item) => item.id === processId)
-    if (!process) {
-      return
-    }
-
-    const updatedLine = addProcessToLineSegment(
-      activeLine,
-      selectedNode.sourceId,
-      process
-    )
-    await submitTopologyMutation(updatedLine, selectedNode.id)
-  }
-
-  const handleRemoveProcess = async () => {
-    if (
-      !activeLine ||
-      selectedNode?.sourceType !== 'process' ||
-      !selectedNode.sourceId ||
-      !selectedNode.parentId
-    ) {
-      return
-    }
-
-    const segmentId = selectedNode.parentId.replace('segment-', '')
-    const updatedLine = removeProcessFromLineSegment(
-      activeLine,
-      segmentId,
-      selectedNode.sourceId
-    )
-    await submitTopologyMutation(updatedLine, `segment-${segmentId}`)
-  }
-
+  const { data: standardProcesses = [] } = useProductionProcessesQuery()
   const handleCreateProcessForSegment = async (
     draft: LineMindmapProcessDraft,
     segmentId: string
@@ -104,31 +48,55 @@ export function useLineMindmapProcessPanel({
       return null
     }
 
-    const saved = await saveProcessFromDraft(draft)
-    const updatedLine = addProcessToLineSegment(activeLine, segmentId, saved)
-    await submitTopologyMutation(updatedLine, `process-${saved.id}`)
+    const operation = getBranchOperationForSegment(activeLine, segmentId, draft)
+    if (!operation) {
+      return null
+    }
+
+    const saved = await productionBOMBranchOperationsService.save(operation)
+    productionResourceSync.emitLinesUpdated()
     return saved
   }
 
-  const handleSaveProcessEntity = async (process: ProductionProcessStep) => {
-    await saveProcess({
-      ...process,
-      code: process.code?.trim() || undefined,
-      description: process.description?.trim() || undefined,
-      name: process.name.trim(),
+  const handleSaveProcessEntity = async (
+    operation: ProductionBOMBranchOperation
+  ) => {
+    const saved = await productionBOMBranchOperationsService.save({
+      ...operation,
+      name: operation.name.trim(),
+      description: operation.description.trim(),
     })
+    productionResourceSync.emitLinesUpdated()
+    return saved
   }
 
-  const handleDeleteProcessEntity = async (process: ProductionProcessStep) => {
-    await deleteProcess(process)
+  const handleSaveProcessSelection = async (
+    segmentId: string,
+    processLibraryIds: string[]
+  ) => {
+    if (!activeLine) {
+      return []
+    }
+    const segment = activeLine.segments.find((item) => item.id === segmentId)
+    if (!segment) {
+      return []
+    }
+    const saved = await productionBOMBranchOperationSelectionService.replace({
+      productId: segment.productId,
+      bomOwnerType:
+        segment.bomOwnerType === 'CUSTOMER' ? 'CUSTOMER' : 'INTERNAL',
+      bomOwnerCustomerId: segment.bomOwnerCustomerId ?? '',
+      bomVersionLevel: segment.bomVersionLevel ?? '',
+      processLibraryIds,
+    })
+    productionResourceSync.emitLinesUpdated()
+    return saved
   }
 
   return {
-    handleAssignProcess,
     handleCreateProcessForSegment,
-    handleDeleteProcessEntity,
-    handleRemoveProcess,
     handleSaveProcessEntity,
-    processOptions,
+    handleSaveProcessSelection,
+    standardProcesses,
   }
 }

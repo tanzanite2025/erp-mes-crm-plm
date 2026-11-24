@@ -254,13 +254,10 @@ export function CutSizeLibraryPage() {
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder='搜索编号、名称、用途、角度'
-                className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-semibold shadow-inner'
+                className='h-11 rounded-2xl border-none bg-muted/50 pl-10 shadow-inner'
               />
             </div>
-            <Button
-              onClick={openCreate}
-              className='h-11 rounded-full px-6 text-xs font-black'
-            >
+            <Button onClick={openCreate} className='h-11 rounded-full px-6'>
               <Plus className='size-4' />
               {t('rawMaterials.cutSizeLibrary.actions.add')}
             </Button>
@@ -562,14 +559,14 @@ export function CutSizeLibraryPage() {
             <Button
               variant='outline'
               onClick={() => setDialogOpen(false)}
-              className='rounded-full px-6 font-black'
+              className='rounded-full px-6'
             >
               取消
             </Button>
             <Button
               onClick={handleSave}
               disabled={saveMutation.isPending}
-              className='rounded-full px-8 font-black'
+              className='rounded-full px-8'
             >
               {saveMutation.isPending ? '保存中...' : '保存尺寸单元'}
             </Button>

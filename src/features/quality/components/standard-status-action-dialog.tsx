@@ -37,6 +37,8 @@ export function StandardStatusActionDialog({
 
   return (
     <ConfirmDialog
+      className='z-102'
+      overlayClassName='z-102'
       open={open}
       onOpenChange={onOpenChange}
       title={title}
@@ -54,7 +56,7 @@ export function StandardStatusActionDialog({
         <Textarea
           rows={5}
           placeholder={placeholder}
-          className='rounded-2xl border-none bg-muted/50 p-4 text-sm shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
+          className='rounded-2xl border-none bg-muted/50 p-4 shadow-inner transition-all focus:ring-2 focus:ring-primary/20'
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
         />

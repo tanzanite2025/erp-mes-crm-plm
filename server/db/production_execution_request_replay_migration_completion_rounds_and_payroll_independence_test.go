@@ -2,7 +2,6 @@ package db
 
 import (
 	"testing"
-	"xdfc-server/audit"
 
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
@@ -25,36 +24,16 @@ func newProductionExecutionReplayIntegrityMigrationTestDatabase(t *testing.T) *g
 func TestProductionExecutionReplayMigrationEnforcesUniqueCompletionRoundsWithoutPayrollSourceContract(t *testing.T) {
 	database := newProductionExecutionReplayIntegrityMigrationTestDatabase(t)
 	require.NoError(t, EnsureProductionExecutionRequestReplayIntegrity(database))
+	require.NoError(t, database.Exec(`DROP INDEX uidx_production_work_completion_round_all`).Error)
+	require.NoError(t, database.Exec(`CREATE UNIQUE INDEX uidx_production_work_completion_round
+		ON production_operation_executions (work_identity_key, execution_round)
+		WHERE action = 'COMPLETE' AND work_identity_key <> ''`).Error)
 	require.NoError(t, EnsureProductionExecutionRequestReplayIntegrity(database))
 	require.NoError(t, database.Exec(`INSERT INTO production_operation_executions (id, action, work_identity_key, execution_round) VALUES ('complete-1', 'COMPLETE', 'work-1', 1)`).Error)
 	require.Error(t, database.Exec(`INSERT INTO production_operation_executions (id, action, work_identity_key, execution_round) VALUES ('duplicate-complete', 'COMPLETE', 'work-1', 1)`).Error)
 	require.NoError(t, database.Exec(`INSERT INTO production_operation_executions (id, action, work_identity_key, execution_round) VALUES ('complete-round-2', 'COMPLETE', 'work-1', 2), ('complete-other-step', 'COMPLETE', 'work-2', 1)`).Error)
-}
-
-func TestProductionExecutionReplayMigrationLeavesHistoricalRoundsExplicitlyUnknown(t *testing.T) {
-	database := newProductionExecutionReplayIntegrityMigrationTestDatabase(t)
-	require.NoError(t, database.Exec(`INSERT INTO production_operation_executions (id, action) VALUES ('old-completion', 'COMPLETE'), ('old-rework', 'REWORK')`).Error)
-	require.NoError(t, EnsureProductionExecutionRequestReplayIntegrity(database))
-	require.NoError(t, EnsureProductionExecutionRequestReplayIntegrity(database))
-	var historicalRounds []int64
-	require.NoError(t, database.Table("production_operation_executions").Order("id").Pluck("execution_round", &historicalRounds).Error)
-	require.Equal(t, []int64{0, 0}, historicalRounds)
-	var historicalIdentityCount int64
-	require.NoError(t, database.Table("production_operation_executions").Where("work_identity_key <> ''").Count(&historicalIdentityCount).Error)
-	require.Zero(t, historicalIdentityCount)
-}
-
-func TestProductionExecutionReplayMigrationPreservesPreviouslyAppliedScanEffectsIncludingFinalSteps(t *testing.T) {
-	database := newProductionExecutionReplayIntegrityMigrationTestDatabase(t)
-	require.NoError(t, database.Exec(`CREATE TABLE product_barcode_transfer_events (operation_id TEXT)`).Error)
-	require.NoError(t, database.Exec(`CREATE TABLE audit_logs (target_id TEXT, module TEXT, action TEXT)`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO production_operation_executions (id, action) VALUES ('manual-final', 'COMPLETE'), ('scan-final', 'COMPLETE'), ('scan-advance', 'COMPLETE')`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO product_barcode_transfer_events (operation_id) VALUES ('scan-advance')`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO audit_logs (target_id, module, action) VALUES ('scan-final', ?, ?)`, string(audit.AuditEntityProductionOperation), string(audit.AuditActionCreate)).Error)
-	require.NoError(t, EnsureProductionExecutionRequestReplayIntegrity(database))
-	var appliedOperations []string
-	require.NoError(t, database.Table("production_operation_executions").Where("scan_command_effects_applied = ?", true).Order("id").Pluck("id", &appliedOperations).Error)
-	require.Equal(t, []string{"scan-advance", "scan-final"}, appliedOperations)
+	require.NoError(t, database.Exec(`INSERT INTO production_operation_executions (id, action) VALUES ('complete-without-current-identity', 'COMPLETE')`).Error)
+	require.Error(t, database.Exec(`INSERT INTO production_operation_executions (id, action) VALUES ('duplicate-without-current-identity', 'COMPLETE')`).Error)
 }
 
 func TestProductionRequestReplayMigrationDoesNotRequirePayrollTablesOrAddPayrollOwnership(t *testing.T) {

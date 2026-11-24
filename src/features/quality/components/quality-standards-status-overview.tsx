@@ -16,7 +16,7 @@ import type {
 } from '../types/quality-standards-list'
 
 interface QualityStandardsStatusOverviewProps {
-  stats: QualityStandardsListStats
+  stats?: QualityStandardsListStats
   value: QualityStandardsStatusFilter
   onChange: (value: QualityStandardsStatusFilter) => void
   isLoading?: boolean
@@ -34,28 +34,28 @@ export function QualityStandardsStatusOverview({
     value: QualityStandardsStatusFilter
     icon: typeof LayoutGrid
     label: string
-    count: number
+    count: number | string
     description: string
   }> = [
     {
       value: 'ALL',
       icon: LayoutGrid,
       label: t('quality.standards.page.statusViewAll'),
-      count: stats.total,
+      count: stats?.total ?? '—',
       description: t('quality.standards.page.statusViewAllDescription'),
     },
     {
       value: 'DRAFT',
       icon: FileClock,
       label: t('quality.standards.values.statusDraft'),
-      count: stats.draft,
+      count: stats?.draft ?? '—',
       description: t('quality.standards.page.statusViewDraftDescription'),
     },
     {
       value: 'PENDING_APPROVAL',
       icon: Send,
       label: t('quality.standards.values.statusPendingApproval'),
-      count: stats.pendingApproval,
+      count: stats?.pendingApproval ?? '—',
       description: t(
         'quality.standards.page.statusViewPendingApprovalDescription'
       ),
@@ -64,28 +64,28 @@ export function QualityStandardsStatusOverview({
       value: 'APPROVED',
       icon: CircleEllipsis,
       label: t('quality.standards.values.statusApproved'),
-      count: stats.approved,
+      count: stats?.approved ?? '—',
       description: t('quality.standards.page.statusViewApprovedDescription'),
     },
     {
       value: 'REJECTED',
       icon: Ban,
       label: t('quality.standards.values.statusRejected'),
-      count: stats.rejected,
+      count: stats?.rejected ?? '—',
       description: t('quality.standards.page.statusViewRejectedDescription'),
     },
     {
       value: 'PUBLISHED',
       icon: CheckCircle2,
       label: t('quality.standards.values.statusPublished'),
-      count: stats.published,
+      count: stats?.published ?? '—',
       description: t('quality.standards.page.statusViewPublishedDescription'),
     },
     {
       value: 'ARCHIVED',
       icon: Archive,
       label: t('quality.standards.values.statusArchived'),
-      count: stats.archived,
+      count: stats?.archived ?? '—',
       description: t('quality.standards.page.statusViewArchivedDescription'),
     },
   ]
@@ -139,28 +139,32 @@ export function QualityStandardsStatusOverview({
               <div className='min-w-0'>
                 <div className='flex items-start justify-between gap-3'>
                   <p
-                    className={cn(
-                      'text-[10px] font-black tracking-widest uppercase',
-                      isActive ? 'text-primary' : 'text-foreground/85'
-                    )}
+                    className={isActive ? 'text-primary' : 'text-foreground/85'}
                   >
                     {item.label}
                   </p>
                   <div className='shrink-0 text-right'>
                     <div
+                      data-slot='quality-standard-status-count'
                       className={cn(
-                        'text-xl font-black tracking-tight tabular-nums',
+                        'text-xl leading-6 font-semibold tabular-nums',
                         isActive ? 'text-primary' : 'text-foreground/90'
                       )}
                     >
                       {item.count}
                     </div>
-                    <div className='text-[9px] font-bold tracking-widest text-muted-foreground/45 uppercase'>
+                    <div
+                      data-slot='quality-standard-status-count-unit'
+                      className='text-xs leading-4 text-muted-foreground/70'
+                    >
                       {t('quality.standards.page.files')}
                     </div>
                   </div>
                 </div>
-                <p className='mt-1 text-[11px] leading-5 text-muted-foreground/70'>
+                <p
+                  data-slot='quality-standard-status-description'
+                  className='mt-1 text-xs leading-5 text-muted-foreground/70'
+                >
                   {item.description}
                 </p>
               </div>

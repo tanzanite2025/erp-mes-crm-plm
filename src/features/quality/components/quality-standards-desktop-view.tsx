@@ -1,4 +1,4 @@
-import { Layers, Eye, MoreHorizontal } from 'lucide-react'
+import { Layers, Eye, SquarePen } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,13 +10,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
-import type { Standard } from '../data/schema'
+import type { QualityStandardListSummary } from '../adapters/quality-standard-api-adapter'
 import type { QualityStandardListItemPresenter } from '../presenters/quality-standard-list-presenter'
 
 interface QualityStandardsDesktopViewProps {
   standards: QualityStandardListItemPresenter[]
-  onViewDetail: (standard: Standard) => void
-  onEdit: (standard: Standard) => void
+  onViewDetail: (standard: QualityStandardListSummary) => void
+  onEdit: (standard: QualityStandardListSummary) => void
 }
 
 export function QualityStandardsDesktopView({
@@ -30,7 +30,7 @@ export function QualityStandardsDesktopView({
     <div className='relative flex flex-col overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
       <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
       <div className='overflow-x-auto'>
-        <Table className='min-w-[1180px] border-separate border-spacing-y-0'>
+        <Table className='min-w-[1060px] border-separate border-spacing-y-0'>
           <TableHeader className='sticky top-0 z-10 bg-muted/40 box-decoration-clone'>
             <TableRow className='border-none hover:bg-transparent'>
               <TableHead className='w-[180px] py-5 pl-8 text-[9px] font-black tracking-[0.2em] uppercase'>
@@ -41,9 +41,6 @@ export function QualityStandardsDesktopView({
               </TableHead>
               <TableHead className='text-[9px] font-black tracking-[0.2em] uppercase'>
                 {t('quality.standards.table.schemaName')}
-              </TableHead>
-              <TableHead className='w-[120px] text-center text-[9px] font-black tracking-[0.2em] uppercase'>
-                {t('quality.standards.table.category')}
               </TableHead>
               <TableHead className='w-[190px] text-center text-[9px] font-black tracking-[0.2em] uppercase'>
                 {t('quality.standards.table.status')}
@@ -80,16 +77,8 @@ export function QualityStandardsDesktopView({
                       <span className='truncate text-sm font-bold tracking-tight text-slate-700'>
                         {standard.name}
                       </span>
-                      <span className='text-[8px] font-black tracking-widest text-muted-foreground/30 uppercase'>
-                        {standard.typeLabel}
-                      </span>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell className='text-center'>
-                  <span className='rounded-md bg-muted/20 px-2 py-1 text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-                    {standard.typeLabel}
-                  </span>
                 </TableCell>
                 <TableCell className='text-center'>
                   <div className='flex flex-col items-center justify-center gap-1.5'>
@@ -162,24 +151,28 @@ export function QualityStandardsDesktopView({
                   </div>
                 </TableCell>
                 <TableCell className='pr-8 text-right'>
-                  <div className='flex translate-x-2 items-center justify-end gap-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100'>
+                  <div className='flex items-center justify-end gap-1'>
                     {standard.canEdit ? (
                       <Button
                         variant='ghost'
                         size='icon'
-                        className='size-9 rounded-xl transition-all hover:bg-primary/10 hover:text-primary active:scale-95'
+                        aria-label={`${t('quality.standards.workspace.openEditor')} ${standard.name}`}
+                        title={t('quality.standards.workspace.openEditor')}
+                        className='rounded-full'
                         onClick={(event) => {
                           event.stopPropagation()
                           onEdit(standard.source)
                         }}
                       >
-                        <MoreHorizontal className='size-4' />
+                        <SquarePen className='size-4' />
                       </Button>
                     ) : null}
                     <Button
                       variant='ghost'
                       size='icon'
-                      className='size-9 rounded-xl transition-all hover:bg-blue-500/10 hover:text-blue-500 active:scale-95'
+                      aria-label={`${t('quality.standards.workspace.openPreview')} ${standard.name}`}
+                      title={t('quality.standards.workspace.openPreview')}
+                      className='rounded-full'
                       onClick={(event) => {
                         event.stopPropagation()
                         onViewDetail(standard.source)

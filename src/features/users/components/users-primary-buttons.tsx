@@ -11,7 +11,7 @@ export function UsersPrimaryButtons() {
     <div className='flex w-full flex-col gap-3 sm:w-auto sm:flex-row'>
       <PermissionBoundary permission='user_create'>
         <Button
-          className='h-11 flex-1 rounded-full px-6 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:flex-initial'
+          className='h-11 flex-1 rounded-full px-6 shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:flex-initial'
           onClick={() => setOpen('add')}
         >
           <UserPlus className='mr-2 size-4 shrink-0' />{' '}

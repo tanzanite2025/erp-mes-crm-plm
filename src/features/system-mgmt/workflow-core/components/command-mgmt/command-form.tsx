@@ -206,7 +206,7 @@ export function CommandForm({
                     shouldDirty: true,
                   })
                 }
-                className='h-12 w-full rounded-2xl border-none bg-background px-4 text-xs font-black'
+                className='h-12 w-full rounded-2xl border-none bg-background px-4'
               >
                 <option value=''>全部业务事件源</option>
                 {sources.map((source) => (
@@ -229,7 +229,7 @@ export function CommandForm({
                     shouldDirty: true,
                   })
                 }
-                className='h-12 w-full rounded-2xl border-none bg-background px-4 text-xs font-black disabled:cursor-not-allowed disabled:opacity-50'
+                className='h-12 w-full rounded-2xl border-none bg-background px-4 disabled:cursor-not-allowed disabled:opacity-50'
               >
                 <option value=''>全部动作</option>
                 {(selectedSource?.config.actions ?? []).map((action) => (
@@ -261,12 +261,10 @@ export function CommandForm({
                               : 'bg-muted/40 text-muted-foreground hover:bg-muted'
                           )}
                         >
-                          <span className='text-[10px] font-black tracking-widest'>
-                            {status.label}
-                          </span>
+                          <span>{status.label}</span>
                           <span
                             className={cn(
-                              'font-maple-ui text-[8px]',
+                              'font-maple-ui',
                               active
                                 ? 'text-primary-foreground/80'
                                 : 'text-muted-foreground/70'
@@ -323,7 +321,7 @@ export function CommandForm({
             </Label>
             <Textarea
               placeholder={t('workflowCore.commands.form.placeholders.content')}
-              className='min-h-[80px] rounded-[24px] border-2 text-xs leading-relaxed font-bold'
+              className='min-h-[80px] rounded-[24px] border-2'
               {...register('content', { required: true })}
             />
           </div>
@@ -333,14 +331,14 @@ export function CommandForm({
               type='button'
               variant='ghost'
               onClick={() => onOpenChange(false)}
-              className='rounded-xl text-[10px] font-black uppercase'
+              className='rounded-xl'
             >
               {t('common.actions.cancel')}
             </Button>
             <Button
               type='submit'
               disabled={!isTargetLinkValid}
-              className='rounded-xl px-8 text-[10px] font-black tracking-widest uppercase'
+              className='rounded-xl px-8'
             >
               {t('common.actions.save')}
             </Button>

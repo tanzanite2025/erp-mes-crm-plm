@@ -120,7 +120,7 @@ export function SalesOrderSalesReturnActualAmountEntryDialog({
             </Button>
             <Button
               type='button'
-              className='h-11 rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full'
               onClick={handleSubmit}
               disabled={
                 patchActualAmountEntryMutation.isPending ||

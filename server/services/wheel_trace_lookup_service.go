@@ -20,20 +20,19 @@ type WheelTraceLookupRequest struct {
 }
 
 type WheelTraceStage struct {
-	Status       string `json:"status"`
-	LineID       string `json:"lineId,omitempty"`
-	LineCode     string `json:"lineCode,omitempty"`
-	LineName     string `json:"lineName,omitempty"`
-	SegmentID    string `json:"segmentId,omitempty"`
-	SegmentName  string `json:"segmentName,omitempty"`
-	ProcessID    string `json:"processId,omitempty"`
-	ProcessCode  string `json:"processCode,omitempty"`
-	ProcessName  string `json:"processName,omitempty"`
-	TeamID       string `json:"teamId,omitempty"`
-	TeamName     string `json:"teamName,omitempty"`
-	OperatorID   string `json:"operatorId,omitempty"`
-	OperatorName string `json:"operatorName,omitempty"`
-	ScannedAt    string `json:"scannedAt,omitempty"`
+	Status            string `json:"status"`
+	LineID            string `json:"lineId,omitempty"`
+	LineCode          string `json:"lineCode,omitempty"`
+	LineName          string `json:"lineName,omitempty"`
+	SegmentID         string `json:"segmentId,omitempty"`
+	SegmentName       string `json:"segmentName,omitempty"`
+	BranchOperationID string `json:"branchOperationId,omitempty"`
+	ProcessName       string `json:"processName,omitempty"`
+	TeamID            string `json:"teamId,omitempty"`
+	TeamName          string `json:"teamName,omitempty"`
+	OperatorID        string `json:"operatorId,omitempty"`
+	OperatorName      string `json:"operatorName,omitempty"`
+	ScannedAt         string `json:"scannedAt,omitempty"`
 }
 
 type WheelTraceTimelineNode struct {
@@ -63,17 +62,16 @@ type WheelTraceLookupResult struct {
 }
 
 type wheelTraceRouteAnchor struct {
-	LineID       string
-	LineCode     string
-	LineName     string
-	SegmentID    string
-	SegmentName  string
-	ProcessID    string
-	ProcessCode  string
-	ProcessName  string
-	TeamID       string
-	TeamName     string
-	OperatorName string
+	LineID            string
+	LineCode          string
+	LineName          string
+	SegmentID         string
+	SegmentName       string
+	BranchOperationID string
+	ProcessName       string
+	TeamID            string
+	TeamName          string
+	OperatorName      string
 }
 
 func LookupWheelTrace(request WheelTraceLookupRequest) (*WheelTraceLookupResult, error) {
@@ -134,19 +132,18 @@ func LookupWheelTrace(request WheelTraceLookupRequest) (*WheelTraceLookupResult,
 		result.Warnings = append(result.Warnings, "生产拓扑读取失败，暂时无法给出工段锚点。")
 	} else if anchor != nil {
 		result.CurrentStage = WheelTraceStage{
-			Status:       "partial",
-			LineID:       anchor.LineID,
-			LineCode:     anchor.LineCode,
-			LineName:     anchor.LineName,
-			SegmentID:    anchor.SegmentID,
-			SegmentName:  anchor.SegmentName,
-			ProcessID:    anchor.ProcessID,
-			ProcessCode:  anchor.ProcessCode,
-			ProcessName:  anchor.ProcessName,
-			TeamID:       anchor.TeamID,
-			TeamName:     anchor.TeamName,
-			OperatorName: anchor.OperatorName,
-			ScannedAt:    now.Format(time.RFC3339),
+			Status:            "partial",
+			LineID:            anchor.LineID,
+			LineCode:          anchor.LineCode,
+			LineName:          anchor.LineName,
+			SegmentID:         anchor.SegmentID,
+			SegmentName:       anchor.SegmentName,
+			BranchOperationID: anchor.BranchOperationID,
+			ProcessName:       anchor.ProcessName,
+			TeamID:            anchor.TeamID,
+			TeamName:          anchor.TeamName,
+			OperatorName:      anchor.OperatorName,
+			ScannedAt:         now.Format(time.RFC3339),
 		}
 
 		result.Warnings = append(result.Warnings, "当前工段基于生产拓扑配置推断，尚未接入真实过站记录。")
@@ -184,41 +181,41 @@ func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
 		Preload("Segments", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
-		Preload("Segments.Processes", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc")
-		}).
 		Find(&lines).Error
 	if err != nil {
+		return nil, err
+	}
+	if err := attachProductionBOMBranchOperations(db.DB, lines); err != nil {
 		return nil, err
 	}
 
 	var anchor *wheelTraceRouteAnchor
 	for _, line := range lines {
 		for _, segment := range line.Segments {
-			if len(segment.Processes) == 0 {
-				continue
-			}
+			for _, operation := range segment.BranchOperations {
+				if !operation.IsActive {
+					continue
+				}
+				anchor = &wheelTraceRouteAnchor{
+					LineID:            line.ID,
+					LineCode:          line.Code,
+					LineName:          line.Name,
+					SegmentID:         segment.ID,
+					SegmentName:       segment.Name,
+					BranchOperationID: operation.ID,
+					ProcessName:       operation.Name,
+				}
 
-			process := segment.Processes[0]
-			anchor = &wheelTraceRouteAnchor{
-				LineID:      line.ID,
-				LineCode:    line.Code,
-				LineName:    line.Name,
-				SegmentID:   segment.ID,
-				SegmentName: segment.Name,
-				ProcessID:   process.ID,
-				ProcessCode: process.Code,
-				ProcessName: process.Name,
-			}
-
-			team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
-			if teamErr != nil {
-				return nil, teamErr
-			}
-			if team != nil {
-				anchor.TeamID = team.ID
-				anchor.TeamName = team.Name
-				anchor.OperatorName = team.Operator
+				team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
+				if teamErr != nil {
+					return nil, teamErr
+				}
+				if team != nil {
+					anchor.TeamID = team.ID
+					anchor.TeamName = team.Name
+					anchor.OperatorName = team.Operator
+				}
+				break
 			}
 			if anchor != nil {
 				break

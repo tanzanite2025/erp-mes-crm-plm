@@ -30,16 +30,10 @@ export function PersonalWorkbenchBottomDrawerRecordsAndWorkspaceContent() {
       >
         <div className='flex shrink-0 flex-col gap-2 rounded-[18px] border border-border/70 bg-muted/10 px-3 py-2 md:flex-row md:items-center md:justify-between'>
           <TabsList className='h-8 w-full rounded-full p-1 md:w-auto'>
-            <TabsTrigger
-              value='records'
-              className='rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
-            >
+            <TabsTrigger value='records' className='rounded-full px-3'>
               个人记录
             </TabsTrigger>
-            <TabsTrigger
-              value='workspace'
-              className='rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
-            >
+            <TabsTrigger value='workspace' className='rounded-full px-3'>
               工作收纳
             </TabsTrigger>
           </TabsList>
@@ -52,7 +46,7 @@ export function PersonalWorkbenchBottomDrawerRecordsAndWorkspaceContent() {
                 setPersonalWorkbenchBottomDrawerSearchQuery(event.target.value)
               }
               placeholder='搜索记录、便签、链接…'
-              className='h-8 rounded-full pl-8 text-xs'
+              className='h-8 rounded-full pl-8'
             />
           </div>
         </div>

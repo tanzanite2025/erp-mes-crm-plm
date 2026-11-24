@@ -48,14 +48,14 @@ export function QuoteWorkspaceFooter({
         <div className='flex flex-wrap items-center justify-end gap-2'>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
             onClick={() => onOpenChange(false)}
           >
             关闭
           </Button>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
             onClick={onExportPdf}
             disabled={isCreateMode || !detail}
           >
@@ -64,7 +64,7 @@ export function QuoteWorkspaceFooter({
           </Button>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
             onClick={onTransfer}
             disabled={isCreateMode || !detail}
           >
@@ -73,7 +73,7 @@ export function QuoteWorkspaceFooter({
           </Button>
           <Button
             variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
             onClick={onConvert}
             disabled={
               isConverting || isCreateMode || !detail || !quoteIsEditable
@@ -83,7 +83,7 @@ export function QuoteWorkspaceFooter({
             {isConverting ? '正在转正式销售订单…' : '转正式销售订单'}
           </Button>
           <Button
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
+            className='h-11 rounded-full px-5'
             onClick={onSave}
             disabled={
               isSaving ||

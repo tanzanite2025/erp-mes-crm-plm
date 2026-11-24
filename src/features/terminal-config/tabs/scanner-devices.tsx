@@ -408,30 +408,19 @@ export function ScannerDevicesTab() {
             这些入口只负责把页面切到扫码输入状态，具体扫到码后如何处理，后续按业务页面逐个接入。
           </p>
           <div className='mt-4 flex flex-wrap gap-2'>
-            <Button
-              asChild
-              className='rounded-full text-[10px] font-black tracking-widest uppercase'
-            >
+            <Button asChild className='rounded-full'>
               <Link to='/warehouse/inbound' search={{ mode: 'scan' }}>
                 去入库扫码
                 <ArrowRight className='ml-2 size-3.5' />
               </Link>
             </Button>
-            <Button
-              asChild
-              variant='outline'
-              className='rounded-full text-[10px] font-black tracking-widest uppercase'
-            >
+            <Button asChild variant='outline' className='rounded-full'>
               <Link to='/warehouse/shipment' search={{ mode: 'scan' }}>
                 去出库扫码
                 <ArrowRight className='ml-2 size-3.5' />
               </Link>
             </Button>
-            <Button
-              asChild
-              variant='outline'
-              className='rounded-full text-[10px] font-black tracking-widest uppercase'
-            >
+            <Button asChild variant='outline' className='rounded-full'>
               <Link to='/wheel-trace' search={{ scan: '1' }}>
                 去追溯扫码
                 <ArrowRight className='ml-2 size-3.5' />

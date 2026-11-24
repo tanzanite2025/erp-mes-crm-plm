@@ -146,14 +146,10 @@ export function RecentVisitsBar() {
       className='flex min-w-0 cursor-pointer items-center justify-between gap-4 rounded-xl px-3 py-2'
     >
       <div className='min-w-0'>
-        <div className='truncate text-xs font-black tracking-tight'>
-          {visit.label}
-        </div>
-        <div className='truncate text-[10px] font-semibold text-muted-foreground/70'>
-          {visit.path}
-        </div>
+        <div className='truncate'>{visit.label}</div>
+        <div className='truncate text-muted-foreground/70'>{visit.path}</div>
       </div>
-      <span className='shrink-0 text-[9px] font-black text-muted-foreground/50'>
+      <span className='shrink-0 text-muted-foreground/50'>
         {formatVisitTime(visit.visitedAt, locale)}
       </span>
     </DropdownMenuItem>
@@ -192,7 +188,7 @@ export function RecentVisitsBar() {
         <DropdownMenuTrigger asChild>
           <Button
             variant='outline'
-            className='flex h-9 max-w-[150px] items-center gap-2 rounded-full border-dashed bg-background/80 px-3 text-[10px] font-black tracking-widest text-muted-foreground uppercase shadow-none md:hidden'
+            className='flex h-9 max-w-[150px] items-center gap-2 rounded-full border-dashed bg-background/80 px-3 text-muted-foreground shadow-none md:hidden'
           >
             <Clock3 className='size-3.5' />
             <span className='truncate'>{t('recentVisits.shortLabel')}</span>
@@ -213,7 +209,7 @@ export function RecentVisitsBar() {
             <Button
               type='button'
               variant='outline'
-              className='flex h-9 shrink-0 items-center gap-1.5 rounded-full border-dashed bg-background/60 px-3 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase shadow-none hover:text-foreground'
+              className='flex h-9 shrink-0 items-center gap-1.5 rounded-full border-dashed bg-background/60 px-3 text-muted-foreground/70 shadow-none hover:text-foreground'
             >
               <Clock3 className='size-3.5' />
               {t('recentVisits.shortLabel')}
@@ -232,7 +228,7 @@ export function RecentVisitsBar() {
               variant='outline'
               onClick={() => goToVisit(visit.path)}
               className={cn(
-                'h-9 max-w-[112px] rounded-full border-dashed bg-background/70 px-3 text-[10px] font-black tracking-widest shadow-none transition-colors xl:max-w-[126px]',
+                'h-9 max-w-[112px] rounded-full border-dashed bg-background/70 px-3 shadow-none transition-colors xl:max-w-[126px]',
                 visit.isActive
                   ? 'border-primary/30 bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:text-foreground'

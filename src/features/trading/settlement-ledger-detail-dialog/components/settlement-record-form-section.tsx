@@ -211,7 +211,7 @@ export function SettlementRecordFormSection({
               type='button'
               variant='outline'
               size='sm'
-              className='h-8 rounded-full border-dashed px-3 text-[10px] font-black tracking-[0.12em]'
+              className='h-8 rounded-full border-dashed px-3'
               onClick={onAddAllocationRow}
             >
               {addAllocationLabel}
@@ -452,7 +452,7 @@ export function SettlementRecordFormSection({
                     type='button'
                     variant='outline'
                     size='sm'
-                    className='h-9 shrink-0 rounded-full border-dashed px-3 text-[10px] font-black tracking-[0.12em]'
+                    className='h-9 shrink-0 rounded-full border-dashed px-3'
                     onClick={() => onOpenLedgerSearchDialog(item.sequenceNo)}
                   >
                     {selectLedgerLabel}
@@ -499,7 +499,7 @@ export function SettlementRecordFormSection({
                   type='button'
                   variant='ghost'
                   size='sm'
-                  className='h-9 rounded-full px-3 text-[10px] font-black tracking-[0.12em] text-destructive hover:bg-destructive/10 hover:text-destructive'
+                  className='h-9 rounded-full px-3 text-destructive hover:bg-destructive/10 hover:text-destructive'
                   onClick={() => onRemoveAllocationRow(item.sequenceNo)}
                   disabled={allocations.length === 1}
                 >

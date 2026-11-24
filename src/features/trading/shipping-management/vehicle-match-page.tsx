@@ -65,7 +65,7 @@ export function ShippingVehicleMatchPage() {
             <Button
               type='button'
               variant='outline'
-              className='h-10 gap-2 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+              className='h-10 gap-2 rounded-full border-dashed px-5'
               onClick={() => setVehicleCatalogDialogOpen(true)}
             >
               <LibraryBig className='size-4' />
@@ -106,7 +106,7 @@ export function ShippingVehicleMatchPage() {
               <Button
                 type='button'
                 variant='outline'
-                className='h-10 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+                className='h-10 rounded-full border-dashed px-5'
                 onClick={() => void retryRead()}
               >
                 重新加载

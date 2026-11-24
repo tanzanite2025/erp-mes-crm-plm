@@ -285,7 +285,7 @@ export function SharedHoleCodeSourceMgmt() {
                 </div>
               </div>
               <Button
-                className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-8'
                 onClick={openCreatePrefixDialog}
               >
                 <Plus className='mr-2 size-4' />
@@ -337,7 +337,7 @@ export function SharedHoleCodeSourceMgmt() {
                         <Button
                           variant='outline'
                           size='sm'
-                          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                          className='h-8 rounded-full px-3'
                           onClick={() => openEditPrefixDialog(item)}
                         >
                           <Pencil className='mr-1.5 size-3.5' />
@@ -348,7 +348,7 @@ export function SharedHoleCodeSourceMgmt() {
                         <Button
                           variant='ghost'
                           size='sm'
-                          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest text-destructive uppercase'
+                          className='h-8 rounded-full px-3 text-destructive'
                           onClick={() =>
                             void deletePrefixMutation.mutateAsync(item.id)
                           }
@@ -409,7 +409,7 @@ export function SharedHoleCodeSourceMgmt() {
                 </div>
               </div>
               <Button
-                className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full px-8'
                 onClick={openCreateCountDialog}
               >
                 <Plus className='mr-2 size-4' />
@@ -459,7 +459,7 @@ export function SharedHoleCodeSourceMgmt() {
                         <Button
                           variant='outline'
                           size='sm'
-                          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                          className='h-8 rounded-full px-3'
                           onClick={() => openEditCountDialog(item)}
                         >
                           <Pencil className='mr-1.5 size-3.5' />
@@ -470,7 +470,7 @@ export function SharedHoleCodeSourceMgmt() {
                         <Button
                           variant='ghost'
                           size='sm'
-                          className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest text-destructive uppercase'
+                          className='h-8 rounded-full px-3 text-destructive'
                           onClick={() =>
                             void deleteCountMutation.mutateAsync(item.id)
                           }
@@ -561,7 +561,7 @@ export function SharedHoleCodeSourceMgmt() {
               {t('codeCenter.sharedCodeSource.holeCodes.fields.prefix')}
             </Label>
             <Input
-              className='h-11 rounded-2xl border-none bg-background/90 uppercase shadow-sm'
+              className='h-11 rounded-2xl border-none bg-background/90 shadow-sm'
               value={prefixDraft.code}
               maxLength={1}
               onChange={(event) =>

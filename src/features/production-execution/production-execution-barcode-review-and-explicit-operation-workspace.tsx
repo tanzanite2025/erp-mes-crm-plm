@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   Activity,
   Camera,
@@ -26,6 +30,10 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { HIDScanInput } from '@/components/hid-scan-input'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { useProductionRoutesQuery } from '@/features/production-shared/hooks/use-production-resources'
+import {
+  productionWorkLocationCatalogQueryKey,
+  queryProductionWorkLocationCatalog,
+} from '@/features/production-shared/services/production-work-location-catalog-query-service'
 import type {
   ProductionScanCommandAction,
   ProductionScanCommandApiResponseDTO,
@@ -36,12 +44,24 @@ import {
 } from '@/features/scan-platform/services/production-scan-command-service'
 import { ProductionExecutionConfirmedOperationResultAndRouteProgress } from './components/production-execution-confirmed-operation-result-and-route-progress'
 import { ProductionExecutionCurrentProcessAndSelectedActionPreview } from './components/production-execution-current-process-and-selected-action-preview'
+import { ProductionExecutionProductBarcodeLifecycleHistory } from './components/production-execution-product-barcode-lifecycle-history'
 import {
   buildProductionExecutionCommandInput,
   formatProductionExecutionRouteStepName,
   type ProductionExecutionCaptureMode,
 } from './form-utils'
-import { queryProductionExecutionProductBarcodeCurrentProcess } from './services/production-execution-product-barcode-current-process-query-service'
+import { queryProductionExecutionProductBarcodeLifecycleHistory } from './services/production-execution-product-barcode-lifecycle-history-query-service'
+
+const productionExecutionProductBarcodeLifecycleHistoryQueryKey = (
+  actorId: string,
+  productBarcode: string
+) =>
+  [
+    'production-execution',
+    'product-barcode-lifecycle-history',
+    actorId,
+    productBarcode,
+  ] as const
 
 const productionExecutionActionIcons = {
   START: PlayCircle,
@@ -55,23 +75,26 @@ const productionExecutionCaptureModes = [
   { value: 'usb', icon: Usb },
 ] as const
 const productionExecutionSelectClassName =
-  'h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60'
+  'h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60'
 
 export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() {
   const { t } = useLanguage()
   const { allowsAction, isChecking } = usePermissionActions()
   const actorId = useAuthStore((state) => state.user?.id ?? '')
+  const queryClient = useQueryClient()
   const routesQuery = useProductionRoutesQuery()
+  const workLocationsQuery = useQuery({
+    queryKey: productionWorkLocationCatalogQueryKey,
+    queryFn: ({ signal }) => queryProductionWorkLocationCatalog(signal),
+  })
   const canExecute = allowsAction('action_production_issuance_execute')
   const [captureMode, setCaptureMode] =
     useState<ProductionExecutionCaptureMode>('manual')
   const [barcode, setBarcode] = useState('')
   const [reviewedBarcode, setReviewedBarcode] = useState('')
   const [action, setAction] = useState<ProductionScanCommandAction>('START')
-  const [routeId, setRouteId] = useState('')
-  const [routeStepId, setRouteStepId] = useState('')
   const [targetRouteStepId, setTargetRouteStepId] = useState('')
-  const [executionLotId, setExecutionLotId] = useState('')
+  const [productionWorkLocationId, setProductionWorkLocationId] = useState('')
   const [result, setResult] = useState('')
   const [notes, setNotes] = useState('')
   const [fromHolderType, setFromHolderType] = useState('')
@@ -90,28 +113,50 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
   const previewMatchesBarcode = Boolean(
     reviewedBarcode && reviewedBarcode === normalizedBarcode
   )
-  const barcodeStateQuery = useQuery({
-    queryKey: [
-      'production-execution',
-      'product-barcode-current-process',
+  const lifecycleHistoryBarcode = previewMatchesBarcode
+    ? reviewedBarcode
+    : normalizedBarcode
+      ? ''
+      : response?.state.productBarcode || ''
+  const lifecycleHistoryQuery = useInfiniteQuery({
+    queryKey: productionExecutionProductBarcodeLifecycleHistoryQueryKey(
       actorId,
-      reviewedBarcode,
-    ],
-    queryFn: ({ signal }) =>
-      queryProductionExecutionProductBarcodeCurrentProcess(
-        reviewedBarcode,
+      lifecycleHistoryBarcode
+    ),
+    queryFn: ({ pageParam, signal }) =>
+      queryProductionExecutionProductBarcodeLifecycleHistory(
+        lifecycleHistoryBarcode,
+        pageParam,
         signal
       ),
-    enabled: Boolean(actorId) && !isChecking && previewMatchesBarcode,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage) return undefined
+      const nextOffset = lastPage.offset + lastPage.limit
+      const largestFactCount = Math.max(
+        lastPage.stateEventTotal,
+        lastPage.operationExecutionTotal,
+        lastPage.transferEventTotal
+      )
+      return nextOffset < largestFactCount ? nextOffset : undefined
+    },
+    enabled:
+      Boolean(actorId) && !isChecking && Boolean(lifecycleHistoryBarcode),
     retry: false,
     staleTime: 0,
   })
+  const lifecycleHistoryPages = lifecycleHistoryQuery.data?.pages ?? []
+  const lifecycleHistoryInitialReadFailed =
+    lifecycleHistoryQuery.isError && !lifecycleHistoryQuery.isFetchNextPageError
   const hasReviewedBarcode =
     previewMatchesBarcode &&
-    barcodeStateQuery.isSuccess &&
-    !barcodeStateQuery.isFetching
-  const currentState = hasReviewedBarcode ? barcodeStateQuery.data : undefined
-  const effectiveRouteId = currentState?.routeId || routeId
+    lifecycleHistoryPages.length > 0 &&
+    !lifecycleHistoryQuery.isRefetching &&
+    !lifecycleHistoryInitialReadFailed
+  const currentState = hasReviewedBarcode
+    ? (lifecycleHistoryPages[0]?.currentState ?? null)
+    : undefined
+  const effectiveRouteId = currentState?.routeId || ''
   const routes = routesQuery.data ?? []
   const selectedRoute = routes.find((route) => route.id === effectiveRouteId)
   const routeSteps = useMemo(
@@ -119,16 +164,14 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
       [...(selectedRoute?.steps ?? [])].sort((a, b) => a.sequence - b.sequence),
     [selectedRoute]
   )
-  const currentProcessMatches = routeSteps.filter(
-    (step) => step.processStepId === currentState?.currentProcessStepId
+  const currentBranchOperationMatches = routeSteps.filter(
+    (step) => step.branchOperationId === currentState?.currentBranchOperationId
   )
   const selectedStep =
-    routeSteps.find(
-      (step) => step.id === (currentState?.routeStepId || routeStepId)
-    ) ||
-    (currentState?.currentProcessStepId
-      ? currentProcessMatches.length === 1
-        ? currentProcessMatches[0]
+    routeSteps.find((step) => step.id === currentState?.routeStepId) ||
+    (currentState?.currentBranchOperationId
+      ? currentBranchOperationMatches.length === 1
+        ? currentBranchOperationMatches[0]
         : undefined
       : action === 'START'
         ? routeSteps[0]
@@ -146,15 +189,23 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
     !isSubmitting &&
     hasReviewedBarcode &&
     !routesQuery.isError &&
-    Boolean(selectedRoute && selectedStep) &&
-    (action === 'START' ? Boolean(effectiveRouteId) : currentState !== null) &&
+    !workLocationsQuery.isError &&
+    (action === 'START' && !currentState?.routeId
+      ? true
+      : Boolean(selectedRoute && selectedStep)) &&
+    Boolean(productionWorkLocationId) &&
+    (action === 'START'
+      ? (!currentState?.routeId || Boolean(effectiveRouteId)) &&
+        currentState?.status !== 'IN_PROGRESS' &&
+        currentState?.status !== 'COMPLETED'
+      : currentState !== null) &&
     (action !== 'REWORK' || Boolean(targetStep))
 
   useEffect(() => {
     if (
       previewMatchesBarcode &&
       ((hasReviewedBarcode && currentState !== null) ||
-        barcodeStateQuery.isError) &&
+        lifecycleHistoryInitialReadFailed) &&
       window.matchMedia?.('(max-width: 1279px)').matches
     ) {
       productionExecutionReviewSectionRef.current?.scrollIntoView({
@@ -166,14 +217,11 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
     previewMatchesBarcode,
     hasReviewedBarcode,
     currentState,
-    barcodeStateQuery.isError,
+    lifecycleHistoryInitialReadFailed,
   ])
 
   function resetProductionExecutionProductContextSelectionsAndOptionalDetails() {
-    setRouteId('')
-    setRouteStepId('')
     setTargetRouteStepId('')
-    setExecutionLotId('')
     setResult('')
     setNotes('')
     setFromHolderType('')
@@ -191,7 +239,15 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
       resetProductionExecutionProductContextSelectionsAndOptionalDetails()
     }
     setReviewedBarcode(normalized)
-    if (normalized === reviewedBarcode) void barcodeStateQuery.refetch()
+    if (normalized === reviewedBarcode) {
+      void queryClient.resetQueries({
+        queryKey: productionExecutionProductBarcodeLifecycleHistoryQueryKey(
+          actorId,
+          normalized
+        ),
+        exact: true,
+      })
+    }
   }
 
   async function submitReviewedProductionExecutionOperation() {
@@ -204,15 +260,8 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
           productBarcode: normalizedBarcode,
           captureMode,
           action,
-          executionLotId,
-          routeId: effectiveRouteId,
-          routeStepId: currentState?.routeStepId || selectedStep?.id || '',
-          processStepId:
-            currentState?.currentProcessStepId ||
-            selectedStep?.processStepId ||
-            '',
+          productionWorkLocationId,
           targetRouteStepId,
-          targetProcessStepId: targetStep?.processStepId || '',
           result,
           notes,
           fromHolderType,
@@ -222,6 +271,13 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
         })
       )
       setResponse(nextResponse)
+      void queryClient.resetQueries({
+        queryKey: productionExecutionProductBarcodeLifecycleHistoryQueryKey(
+          actorId,
+          nextResponse.state.productBarcode
+        ),
+        exact: true,
+      })
       setBarcode('')
       setReviewedBarcode('')
       resetProductionExecutionProductContextSelectionsAndOptionalDetails()
@@ -279,11 +335,11 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
                       : 'hover:bg-muted/30'
                   )}
                 >
-                  <span className='flex items-center gap-2 text-sm font-semibold'>
+                  <span className='flex items-center gap-2'>
                     <Icon aria-hidden='true' className='size-4 shrink-0' />
                     {t(`productionExecution.actions.${operationAction}`)}
                   </span>
-                  <span className='block text-xs leading-4 text-muted-foreground sm:leading-5'>
+                  <span className='block text-muted-foreground'>
                     {t(
                       `productionExecution.actionSummaries.${operationAction}`
                     )}
@@ -327,7 +383,7 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
                 aria-pressed={captureMode === value}
                 disabled={isSubmitting}
                 onClick={() => setCaptureMode(value)}
-                className='h-auto min-h-9 min-w-0 px-2 py-2 text-xs whitespace-normal'
+                className='h-auto min-h-9 min-w-0 px-2 py-2 whitespace-normal'
               >
                 <Icon aria-hidden='true' className='size-3.5 shrink-0' />
                 {t(`productionExecution.capture.${value}`)}
@@ -386,11 +442,11 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
               disabled={
                 !normalizedBarcode ||
                 isSubmitting ||
-                barcodeStateQuery.isFetching
+                lifecycleHistoryQuery.isFetching
               }
               onClick={() => readProductionExecutionProductBarcodeContext()}
             >
-              {barcodeStateQuery.isFetching ? (
+              {lifecycleHistoryQuery.isFetching ? (
                 <Loader2 aria-hidden='true' className='size-4 animate-spin' />
               ) : (
                 <ScanLine aria-hidden='true' className='size-4' />
@@ -420,61 +476,43 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
                   <ProductionExecutionFormField
                     label={t('productionExecution.fields.route')}
                   >
-                    <select
-                      value={effectiveRouteId}
-                      onChange={(event) => {
-                        setRouteId(event.target.value)
-                        setRouteStepId('')
-                        setTargetRouteStepId('')
-                      }}
-                      disabled={
-                        Boolean(currentState?.routeId) ||
-                        routesQuery.isLoading ||
-                        isSubmitting
-                      }
-                      className={productionExecutionSelectClassName}
-                    >
-                      <option value=''>
-                        {t('productionExecution.placeholders.route')}
-                      </option>
-                      {routes
-                        .filter(
-                          (route) =>
-                            route.status !== 'ARCHIVED' ||
-                            route.id === effectiveRouteId
-                        )
-                        .map((route) => (
-                          <option key={route.id} value={route.id}>
-                            {route.code} · {route.name}
-                          </option>
-                        ))}
-                      {effectiveRouteId && !selectedRoute && (
-                        <option value={effectiveRouteId}>
-                          {t('productionExecution.workflow.unknownRoute')}
-                        </option>
-                      )}
-                    </select>
+                    <p className='min-h-9 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground'>
+                      {selectedRoute?.name ||
+                        (effectiveRouteId
+                          ? t('productionExecution.workflow.unknownRoute')
+                          : t('productionExecution.workflow.routeFromPlan'))}
+                    </p>
                   </ProductionExecutionFormField>
                   <ProductionExecutionFormField
                     label={t('productionExecution.fields.currentStep')}
                   >
+                    <p className='min-h-9 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground'>
+                      {selectedStep
+                        ? formatProductionExecutionRouteStepName(selectedStep)
+                        : t('productionExecution.workflow.firstStepFromPlan')}
+                    </p>
+                  </ProductionExecutionFormField>
+                  <ProductionExecutionFormField
+                    label={t('productionExecution.fields.workLocation')}
+                  >
                     <select
-                      value={selectedStep?.id || ''}
-                      onChange={(event) => setRouteStepId(event.target.value)}
+                      value={productionWorkLocationId}
+                      onChange={(event) =>
+                        setProductionWorkLocationId(event.target.value)
+                      }
                       disabled={
-                        Boolean(currentState?.currentProcessStepId) ||
-                        !selectedRoute ||
+                        workLocationsQuery.isLoading ||
+                        workLocationsQuery.isError ||
                         isSubmitting
                       }
                       className={productionExecutionSelectClassName}
                     >
                       <option value=''>
-                        {currentState?.currentProcessStep?.name ||
-                          t('productionExecution.placeholders.currentStep')}
+                        {t('productionExecution.placeholders.workLocation')}
                       </option>
-                      {routeSteps.map((step) => (
-                        <option key={step.id} value={step.id}>
-                          {formatProductionExecutionRouteStepName(step)}
+                      {(workLocationsQuery.data ?? []).map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.code} · {location.name}
                         </option>
                       ))}
                     </select>
@@ -514,20 +552,6 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
                   {t('productionExecution.workflow.optionalDetails')}
                 </summary>
                 <div className='mt-3 space-y-3'>
-                  <ProductionExecutionFormField
-                    label={t('productionExecution.fields.executionLot')}
-                  >
-                    <Input
-                      value={executionLotId}
-                      onChange={(event) =>
-                        setExecutionLotId(event.target.value)
-                      }
-                      disabled={isSubmitting}
-                      placeholder={t(
-                        'productionExecution.placeholders.executionLot'
-                      )}
-                    />
-                  </ProductionExecutionFormField>
                   <ProductionExecutionFormField
                     label={t('productionExecution.fields.result')}
                   >
@@ -622,8 +646,12 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
             currentStep={selectedStep}
             nextStep={nextStep}
             targetStep={targetStep}
-            loading={previewMatchesBarcode && barcodeStateQuery.isFetching}
-            failed={previewMatchesBarcode && barcodeStateQuery.isError}
+            loading={
+              previewMatchesBarcode &&
+              lifecycleHistoryQuery.isFetching &&
+              !lifecycleHistoryQuery.isFetchingNextPage
+            }
+            failed={previewMatchesBarcode && lifecycleHistoryInitialReadFailed}
             reviewed={hasReviewedBarcode}
           >
             <div className='space-y-2 border-t pt-3'>
@@ -635,6 +663,16 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
               {!canExecute && !isChecking && (
                 <p className='text-xs text-muted-foreground'>
                   {t('productionExecution.noExecutePermission')}
+                </p>
+              )}
+              {action === 'START' && currentState?.status === 'IN_PROGRESS' && (
+                <p className='text-xs leading-5 text-amber-800 dark:text-amber-200'>
+                  {t('productionExecution.workflow.startAlreadyInProgress')}
+                </p>
+              )}
+              {action === 'START' && currentState?.status === 'COMPLETED' && (
+                <p className='text-xs leading-5 text-amber-800 dark:text-amber-200'>
+                  {t('productionExecution.workflow.startRequiresRework')}
                 </p>
               )}
               <Button
@@ -657,6 +695,26 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
               )}
             </div>
           </ProductionExecutionCurrentProcessAndSelectedActionPreview>
+          {lifecycleHistoryBarcode && (
+            <ProductionExecutionProductBarcodeLifecycleHistory
+              pages={lifecycleHistoryPages}
+              routes={routes}
+              currentState={lifecycleHistoryPages[0]?.currentState ?? null}
+              isLoading={lifecycleHistoryQuery.isLoading}
+              isReadFailed={lifecycleHistoryInitialReadFailed}
+              isFetchingNextPage={lifecycleHistoryQuery.isFetchingNextPage}
+              isNextPageError={lifecycleHistoryQuery.isFetchNextPageError}
+              hasNextPage={Boolean(lifecycleHistoryQuery.hasNextPage)}
+              onRetry={() => {
+                if (lifecycleHistoryQuery.isFetchNextPageError) {
+                  void lifecycleHistoryQuery.fetchNextPage()
+                  return
+                }
+                void lifecycleHistoryQuery.refetch()
+              }}
+              onLoadMore={() => void lifecycleHistoryQuery.fetchNextPage()}
+            />
+          )}
           <ProductionExecutionConfirmedOperationResultAndRouteProgress
             response={response}
             commandError={commandError}

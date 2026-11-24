@@ -73,13 +73,13 @@ export function ShipmentHistory({
           <TabsList className='scrollbar-hide flex h-10 w-full justify-start overflow-x-auto rounded-xl border border-dashed border-muted/50 bg-muted/30 p-1 sm:justify-center md:h-11 md:rounded-2xl'>
             <TabsTrigger
               value='all'
-              className='rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:shadow-md md:rounded-xl md:px-6'
             >
               {t('warehouse.shipment.history.all')}
             </TabsTrigger>
             <TabsTrigger
               value='DRAFT'
-              className='gap-2 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:text-amber-600 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='gap-2 rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:text-amber-600 data-[state=active]:shadow-md md:rounded-xl md:px-6'
             >
               {t('warehouse.shipment.history.draft')}
               <Badge className='h-3.5 border-none bg-amber-500/10 px-1 text-[7px] font-black text-amber-600 md:h-4 md:text-[8px]'>
@@ -88,13 +88,13 @@ export function ShipmentHistory({
             </TabsTrigger>
             <TabsTrigger
               value='COMMITTED'
-              className='shrink-0 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:text-emerald-600 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='shrink-0 rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:text-emerald-600 data-[state=active]:shadow-md md:rounded-xl md:px-6'
             >
               {t('warehouse.shipment.history.committed')}
             </TabsTrigger>
             <TabsTrigger
               value='VOID'
-              className='shrink-0 rounded-lg px-4 text-[9px] font-black tracking-widest uppercase data-[state=active]:bg-background data-[state=active]:text-rose-500 data-[state=active]:shadow-md md:rounded-xl md:px-6 md:text-[10px]'
+              className='shrink-0 rounded-lg px-4 data-[state=active]:bg-background data-[state=active]:text-rose-500 data-[state=active]:shadow-md md:rounded-xl md:px-6'
             >
               {t('warehouse.shipment.history.void')}
             </TabsTrigger>
@@ -249,7 +249,7 @@ export function ShipmentHistory({
                             <Button
                               variant='ghost'
                               size='sm'
-                              className='h-7 rounded-full bg-primary/10 px-3 text-[8px] font-black tracking-widest text-primary uppercase shadow-lg shadow-primary/10 transition-all hover:bg-primary hover:text-white md:h-8 md:px-4 md:text-[9px]'
+                              className='control-typography-compact h-7 rounded-full bg-primary/10 px-3 text-primary shadow-lg shadow-primary/10 transition-all hover:bg-primary hover:text-white md:h-8 md:px-4'
                               onClick={() =>
                                 onCommit(
                                   record.id,
@@ -285,7 +285,7 @@ export function ShipmentHistory({
                               <Button
                                 variant='ghost'
                                 size='sm'
-                                className='h-7 rounded-full bg-blue-500/10 px-3 text-[8px] font-black tracking-widest text-blue-600 uppercase shadow-lg shadow-blue-500/10 transition-all hover:bg-blue-600 hover:text-white md:h-8 md:px-4 md:text-[9px]'
+                                className='control-typography-compact h-7 rounded-full bg-blue-500/10 px-3 text-blue-600 shadow-lg shadow-blue-500/10 transition-all hover:bg-blue-600 hover:text-white md:h-8 md:px-4'
                                 onClick={() =>
                                   router.navigate({
                                     to: '/shipping-management/logistics',
@@ -320,7 +320,7 @@ export function ShipmentHistory({
                               <Button
                                 variant='ghost'
                                 size='sm'
-                                className='h-7 rounded-full bg-rose-500/10 px-3 text-[8px] font-black tracking-widest text-rose-500 uppercase shadow-lg shadow-red-500/10 transition-all hover:bg-rose-600 hover:text-white md:h-8 md:px-4 md:text-[9px]'
+                                className='control-typography-compact h-7 rounded-full bg-rose-500/10 px-3 text-rose-500 shadow-lg shadow-red-500/10 transition-all hover:bg-rose-600 hover:text-white md:h-8 md:px-4'
                               >
                                 <RotateCcw className='mr-1 size-2 md:mr-2 md:size-2.5' />{' '}
                                 {t('warehouse.shipment.history.markVoid')}

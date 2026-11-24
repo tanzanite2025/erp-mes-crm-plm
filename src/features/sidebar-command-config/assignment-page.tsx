@@ -115,7 +115,7 @@ export function SidebarCommandAssignmentPage() {
         }
       />
 
-      <section className='grid min-h-[660px] gap-5 xl:grid-cols-[380px_minmax(0,1fr)]'>
+      <section className='grid min-h-[660px] min-w-0 gap-5 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,1fr)]'>
         <AssignmentAccountList
           accounts={accounts}
           filteredAccounts={filteredAccounts}

@@ -50,7 +50,7 @@ export function LeaveListToolbar({
             onStatusFilterChange(value as LeaveStatusFilter)
           }
         >
-          <SelectTrigger className='h-10 min-w-[136px] rounded-xl border-dashed bg-background text-[10px] font-black tracking-widest uppercase'>
+          <SelectTrigger className='h-10 min-w-[136px] rounded-xl border-dashed bg-background'>
             <SelectValue
               placeholder={t(
                 'orgPersonnel.leaveMgmt.toolbar.statusPlaceholder'
@@ -82,7 +82,7 @@ export function LeaveListToolbar({
             onTypeFilterChange(value as LeaveTypeFilter)
           }
         >
-          <SelectTrigger className='h-10 min-w-[136px] rounded-xl border-dashed bg-background text-[10px] font-black tracking-widest uppercase'>
+          <SelectTrigger className='h-10 min-w-[136px] rounded-xl border-dashed bg-background'>
             <SelectValue
               placeholder={t('orgPersonnel.leaveMgmt.toolbar.typePlaceholder')}
             />
@@ -119,7 +119,7 @@ export function LeaveListToolbar({
           value={sortOrder}
           onValueChange={(value) => onSortOrderChange(value as LeaveSortOrder)}
         >
-          <SelectTrigger className='h-10 min-w-[152px] rounded-xl border-dashed bg-background text-[10px] font-black tracking-widest uppercase'>
+          <SelectTrigger className='h-10 min-w-[152px] rounded-xl border-dashed bg-background'>
             <SelectValue
               placeholder={t('orgPersonnel.leaveMgmt.toolbar.sortPlaceholder')}
             />

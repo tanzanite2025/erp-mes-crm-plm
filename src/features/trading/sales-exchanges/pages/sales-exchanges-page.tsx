@@ -72,7 +72,7 @@ export function SalesExchangesPage() {
                   )
                 }
                 placeholder='搜索客户、销售订单号或订单名称...'
-                className='h-12 rounded-full border-primary/15 bg-background pl-11 font-semibold'
+                className='h-12 rounded-full border-primary/15 bg-background pl-11'
               />
             </div>
 
@@ -82,7 +82,7 @@ export function SalesExchangesPage() {
                 salesExchangeWorkspaceState.handleChangeSourceStatusFilter
               }
             >
-              <SelectTrigger className='h-11 w-[180px] rounded-full border-primary/15 bg-background font-semibold'>
+              <SelectTrigger className='h-11 w-[180px] rounded-full border-primary/15 bg-background'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -352,7 +352,7 @@ export function LabelingTab() {
             placeholder={t('engineering.labeling.placeholders.search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className='h-10 w-full rounded-xl border-none bg-background pl-9 text-sm font-medium shadow-inner focus-visible:ring-1 focus-visible:ring-teal-500/20'
+            className='h-10 w-full rounded-xl border-none bg-background pl-9 shadow-inner focus-visible:ring-1 focus-visible:ring-teal-500/20'
           />
         </div>
         <Button
@@ -360,7 +360,7 @@ export function LabelingTab() {
             setCurrentRow(undefined)
             setOpen(true)
           }}
-          className='h-10 w-full gap-1.5 rounded-full bg-teal-600 px-6 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95 sm:w-auto'
+          className='h-10 w-full gap-1.5 rounded-full bg-teal-600 px-6 text-white shadow-xl shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95 sm:w-auto'
         >
           <Plus className='size-3.5' /> {t('engineering.labeling.table.upload')}
         </Button>

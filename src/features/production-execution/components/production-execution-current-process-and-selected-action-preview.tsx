@@ -2,9 +2,14 @@ import type { ReactNode, Ref } from 'react'
 import { ArrowRight, ScanLine } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { ProductionRouteStep } from '@/features/production-shared/data/production-route'
-import type { ProductionScanCommandAction } from '@/features/scan-platform/contracts/production-scan-command-api-dto'
-import { formatProductionExecutionRouteStepName } from '../form-utils'
-import type { ProductionExecutionProductBarcodeCurrentProcess } from '../services/production-execution-product-barcode-current-process-query-service'
+import type {
+  ProductBarcodeLifecycleCurrentStateApiDTO,
+  ProductionScanCommandAction,
+} from '@/features/scan-platform/contracts/production-scan-command-api-dto'
+import {
+  formatProductionExecutionRouteStepName,
+  resolveProductionExecutionStatusTranslationKey,
+} from '../form-utils'
 
 export function ProductionExecutionCurrentProcessAndSelectedActionPreview({
   action,
@@ -21,7 +26,7 @@ export function ProductionExecutionCurrentProcessAndSelectedActionPreview({
 }: {
   action: ProductionScanCommandAction
   barcode: string
-  state?: ProductionExecutionProductBarcodeCurrentProcess | null
+  state?: ProductBarcodeLifecycleCurrentStateApiDTO | null
   currentStep?: ProductionRouteStep
   nextStep?: ProductionRouteStep
   targetStep?: ProductionRouteStep
@@ -34,7 +39,7 @@ export function ProductionExecutionCurrentProcessAndSelectedActionPreview({
   const { t } = useLanguage()
   const currentName =
     formatProductionExecutionRouteStepName(currentStep) ||
-    state?.currentProcessStep?.name
+    state?.currentBranchOperation?.name
   const afterAction =
     action === 'COMPLETE'
       ? nextStep
@@ -85,7 +90,9 @@ export function ProductionExecutionCurrentProcessAndSelectedActionPreview({
             )}
             <p className='text-xs text-muted-foreground'>
               {state
-                ? t(`productionExecution.statuses.${state.status}`)
+                ? t(
+                    resolveProductionExecutionStatusTranslationKey(state.status)
+                  )
                 : t('productionExecution.workflow.noRecordedState')}
             </p>
           </div>

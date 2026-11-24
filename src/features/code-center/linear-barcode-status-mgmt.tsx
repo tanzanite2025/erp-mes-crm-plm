@@ -101,7 +101,7 @@ export function LinearBarcodeStatusMgmt() {
         />
       ) : (
         <>
-          {/* 职责边界：本页只展示后端一维码状态契约，不查询或编辑某个一维码的当前状态；打印库存状态、生产执行状态、生产位置定位分别走各自真实链路。 */}
+          {/* 职责边界：本页只展示后端产品编码状态契约，不查询或编辑某个编码的当前状态；Code128 与 QR 使用同一原始编码，因此共享打印库存状态和生产执行状态。 */}
           <LinearBarcodeStatusSummaryMetrics contract={contract} />
 
           <div className='grid gap-5 xl:grid-cols-2'>

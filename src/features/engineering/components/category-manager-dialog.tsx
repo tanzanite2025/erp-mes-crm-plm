@@ -244,7 +244,7 @@ export function CategoryManagerDialog({
                 setCurrentRow(undefined)
                 setActionOpen(true)
               }}
-              className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:h-11 sm:w-auto sm:px-6 sm:text-[10px]'
+              className='h-9 w-full rounded-full px-4 shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:h-11 sm:w-auto sm:px-6'
             >
               <Plus className='mr-1 size-3 sm:size-4' />{' '}
               {t('engineering.categoryArchive.buttons.add')}

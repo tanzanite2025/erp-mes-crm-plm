@@ -31,10 +31,7 @@ export function CommandMenuKnowledgeTab({
       <div className='p-2.5'>
         {canCreateEntry ? (
           <div className='mb-2 flex justify-end'>
-            <Button
-              className='h-8 rounded-full px-3 text-[9px] font-black tracking-[0.18em] uppercase'
-              onClick={onCreateEntry}
-            >
+            <Button className='h-8 rounded-full px-3' onClick={onCreateEntry}>
               <Plus className='mr-1.5 size-3' />
               {t('basicSettings.knowledgeBase.actions.create')}
             </Button>
@@ -89,7 +86,7 @@ function KnowledgeSearchListItem({
       <div className='mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border border-dashed border-sky-500/20 bg-sky-500/5 transition-colors group-data-[selected=true]:border-sky-500/40'>
         <BookOpenText className='size-3 text-sky-600' />
       </div>
-      <div className='min-w-0 flex-1 leading-tight'>
+      <div className='min-w-0 flex-1'>
         <div className='mb-0.5 flex flex-wrap items-center gap-0.5'>
           <KnowledgeBaseCategoryBadge
             category={entry.category}
@@ -103,15 +100,13 @@ function KnowledgeSearchListItem({
             compact
           />
           {entry.routePath ? (
-            <span className='truncate font-maple-ui text-[7px] font-semibold text-muted-foreground/55'>
+            <span className='truncate font-maple-ui text-muted-foreground/55'>
               {entry.routePath}
             </span>
           ) : null}
         </div>
-        <div className='truncate text-[12px] font-bold tracking-tight'>
-          {entry.title}
-        </div>
-        <div className='line-clamp-1 text-[9px] leading-3 font-semibold text-muted-foreground'>
+        <div className='truncate'>{entry.title}</div>
+        <div className='line-clamp-1 text-muted-foreground'>
           {entry.summary}
         </div>
       </div>

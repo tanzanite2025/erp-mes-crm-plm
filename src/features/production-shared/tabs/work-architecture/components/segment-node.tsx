@@ -72,7 +72,7 @@ export function SegmentNode({
                     <Button
                       key={command.id}
                       variant='ghost'
-                      className='h-auto w-full justify-start px-2 py-2 text-[11px] font-bold hover:bg-blue-50'
+                      className='h-auto w-full justify-start px-2 py-2 hover:bg-blue-50'
                       onClick={() => {
                         setAssignedCmds((prev) =>
                           Array.from(new Set([...prev, command.title]))

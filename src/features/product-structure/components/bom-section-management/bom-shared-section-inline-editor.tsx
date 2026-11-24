@@ -23,7 +23,7 @@ export function BOMSharedSectionInlineEditor({
   } = editor
   const disabled = !canManage || isActionLoading
   const inputClassName =
-    'h-10 w-full rounded-xl border-transparent bg-muted/40 text-sm shadow-none'
+    'h-10 w-full rounded-xl border-transparent bg-muted/40 shadow-none'
   return (
     <div className='space-y-4'>
       <h3 className='text-sm font-bold'>
@@ -73,7 +73,7 @@ export function BOMSharedSectionInlineEditor({
           placeholder={t(
             'engineering.bomSectionConfig.placeholders.description'
           )}
-          className='min-h-16 resize-y rounded-xl border-transparent bg-muted/40 text-sm shadow-none'
+          className='min-h-16 resize-y rounded-xl border-transparent bg-muted/40 shadow-none'
         />
       </div>
       <div className='space-y-1.5'>

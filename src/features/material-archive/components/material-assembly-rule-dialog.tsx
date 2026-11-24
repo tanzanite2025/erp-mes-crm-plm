@@ -96,7 +96,7 @@ export function MaterialAssemblyRuleDialog({
                   <Button
                     variant='outline'
                     role='combobox'
-                    className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-5 font-bold shadow-sm transition-all hover:bg-muted/70'
+                    className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-5 shadow-sm transition-all hover:bg-muted/70'
                   >
                     <span className='truncate'>
                       {selectedMaterial
@@ -135,9 +135,7 @@ export function MaterialAssemblyRuleDialog({
                           >
                             <div className='flex flex-col gap-1'>
                               <div className='flex items-center gap-2'>
-                                <span className='text-sm font-bold tracking-tight'>
-                                  {material.name}
-                                </span>
+                                <span>{material.name}</span>
                                 {material.spec ? (
                                   <Badge
                                     variant='outline'
@@ -147,7 +145,7 @@ export function MaterialAssemblyRuleDialog({
                                   </Badge>
                                 ) : null}
                               </div>
-                              <span className='text-[10px] font-black tracking-widest text-muted-foreground/40'>
+                              <span className='text-muted-foreground/40'>
                                 {t(
                                   'materialArchive.assemblyManager.dialog.materialMeta',
                                   {
@@ -191,7 +189,7 @@ export function MaterialAssemblyRuleDialog({
                     placeholder={t(
                       'materialArchive.assemblyManager.dialog.packUnitPlaceholder'
                     )}
-                    className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-sm'
+                    className='h-12 rounded-2xl border-none bg-muted/50 shadow-sm'
                     value={editingRule?.packUnit || ''}
                     onChange={(event) => onPackUnitChange(event.target.value)}
                   />
@@ -207,7 +205,7 @@ export function MaterialAssemblyRuleDialog({
                     id='baseUnit'
                     readOnly
                     disabled
-                    className='h-12 rounded-2xl border-none bg-muted/20 font-maple-ui font-black text-primary/30'
+                    className='h-12 rounded-2xl border-none bg-muted/20 font-maple-ui text-primary/30'
                     value={editingRule?.baseUnit || ''}
                   />
                 </div>
@@ -226,7 +224,7 @@ export function MaterialAssemblyRuleDialog({
                   type='button'
                   variant='ghost'
                   size='sm'
-                  className='h-7 rounded-full border border-dashed border-primary/20 px-4 text-[10px] font-black tracking-widest transition-all hover:bg-primary/10 hover:text-primary'
+                  className='control-typography-compact h-7 rounded-full border border-dashed border-primary/20 px-4 transition-all hover:bg-primary/10 hover:text-primary'
                   onClick={onToggleDirection}
                 >
                   <ArrowRightLeft className='size-3' />
@@ -240,7 +238,7 @@ export function MaterialAssemblyRuleDialog({
                       id='factor'
                       type='number'
                       step='any'
-                      className='h-16 rounded-[24px] border-none bg-muted/50 text-center font-maple-ui text-2xl font-black shadow-inner focus-visible:ring-primary'
+                      className='h-16 rounded-[24px] border-none bg-muted/50 text-center font-maple-ui shadow-inner focus-visible:ring-primary'
                       value={editingRule?.conversionFactor ?? 1}
                       onChange={(event) => onFactorChange(event.target.value)}
                     />
@@ -309,7 +307,7 @@ export function MaterialAssemblyRuleDialog({
           <Button
             type='button'
             variant='ghost'
-            className='h-12 flex-1 rounded-full text-[10px] font-black tracking-widest hover:bg-muted'
+            className='h-12 flex-1 rounded-full hover:bg-muted'
             onClick={onCancel}
           >
             {t('materialArchive.assemblyManager.dialog.cancel')}
@@ -317,7 +315,7 @@ export function MaterialAssemblyRuleDialog({
           <Button
             type='button'
             disabled={isSubmitting}
-            className='h-12 flex-1 rounded-full bg-primary text-[10px] font-black tracking-widest text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95'
+            className='h-12 flex-1 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95'
             onClick={onConfirm}
           >
             {t('materialArchive.assemblyManager.dialog.confirm')}

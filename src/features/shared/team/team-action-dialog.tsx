@@ -175,7 +175,7 @@ export function TeamActionDialog({
             </Label>
             <Input
               placeholder={texts.placeholders.code}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-maple-ui text-sm font-black focus-visible:ring-primary/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-maple-ui focus-visible:ring-primary/20'
               value={formData.code}
               onChange={(e) => {
                 setFormData({ code: e.target.value })
@@ -188,7 +188,7 @@ export function TeamActionDialog({
             </Label>
             <Input
               placeholder={texts.placeholders.name}
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black focus-visible:ring-primary/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 focus-visible:ring-primary/20'
               value={formData.name}
               onChange={(e) => {
                 setFormData({ name: e.target.value })
@@ -205,7 +205,7 @@ export function TeamActionDialog({
             </Label>
             <Input
               placeholder={texts.placeholders.shortName}
-              className='h-11 rounded-2xl border-none bg-muted/20 px-5 text-xs font-medium'
+              className='h-11 rounded-2xl border-none bg-muted/20 px-5'
               value={formData.shortName}
               onChange={(e) => {
                 setFormData({ shortName: e.target.value })
@@ -218,7 +218,7 @@ export function TeamActionDialog({
             </Label>
             <Input
               type='number'
-              className='h-11 rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-black'
+              className='h-11 rounded-2xl border-none bg-muted/20 px-5 font-maple-ui'
               value={formData.step}
               onChange={(e) => {
                 setFormData({ step: Number.parseInt(e.target.value, 10) || 0 })
@@ -239,44 +239,26 @@ export function TeamActionDialog({
                 setFormData({ section: val })
               }}
             >
-              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-xs font-black'>
+              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5'>
                 <SelectValue placeholder={texts.placeholders.section} />
               </SelectTrigger>
               <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                <SelectItem
-                  value='生管段'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='生管段' className='py-3'>
                   {texts.sectionOptions.productionControl}
                 </SelectItem>
-                <SelectItem
-                  value='备料段'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='备料段' className='py-3'>
                   {texts.sectionOptions.materialPrep}
                 </SelectItem>
-                <SelectItem
-                  value='配料段'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='配料段' className='py-3'>
                   {texts.sectionOptions.batching}
                 </SelectItem>
-                <SelectItem
-                  value='成型段'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='成型段' className='py-3'>
                   {texts.sectionOptions.molding}
                 </SelectItem>
-                <SelectItem
-                  value='机加段'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='机加段' className='py-3'>
                   {texts.sectionOptions.machining}
                 </SelectItem>
-                <SelectItem
-                  value='精细段'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='精细段' className='py-3'>
                   {texts.sectionOptions.finishing}
                 </SelectItem>
               </SelectContent>
@@ -292,32 +274,20 @@ export function TeamActionDialog({
                 setFormData({ type: val as TeamRecord['type'] })
               }}
             >
-              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-xs font-black'>
+              <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/40 px-5'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                <SelectItem
-                  value='dispatch'
-                  className='py-3 text-[10px] font-black uppercase'
-                >
+                <SelectItem value='dispatch' className='py-3'>
                   {texts.typeOptions.dispatch}
                 </SelectItem>
-                <SelectItem
-                  value='quality'
-                  className='py-3 text-[10px] font-black text-emerald-600 uppercase'
-                >
+                <SelectItem value='quality' className='py-3 text-emerald-600'>
                   {texts.typeOptions.quality}
                 </SelectItem>
-                <SelectItem
-                  value='transfer'
-                  className='py-3 text-[10px] font-black text-orange-600 uppercase'
-                >
+                <SelectItem value='transfer' className='py-3 text-orange-600'>
                   {texts.typeOptions.transfer}
                 </SelectItem>
-                <SelectItem
-                  value='receive'
-                  className='py-3 text-[10px] font-black text-purple-600 uppercase'
-                >
+                <SelectItem value='receive' className='py-3 text-purple-600'>
                   {texts.typeOptions.receive}
                 </SelectItem>
               </SelectContent>
@@ -358,20 +328,14 @@ export function TeamActionDialog({
                 setFormData({ status: val as TeamRecord['status'] })
               }}
             >
-              <SelectTrigger className='h-9 w-[100px] rounded-full border-none bg-background text-[10px] font-black'>
+              <SelectTrigger className='h-9 w-[100px] rounded-full border-none bg-background'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className='rounded-xl border-none'>
-                <SelectItem
-                  value='active'
-                  className='py-2 text-[10px] font-black'
-                >
+                <SelectItem value='active' className='py-2'>
                   {texts.statusOptions.active}
                 </SelectItem>
-                <SelectItem
-                  value='inactive'
-                  className='py-2 text-[10px] font-black text-destructive'
-                >
+                <SelectItem value='inactive' className='py-2 text-destructive'>
                   {texts.statusOptions.inactive}
                 </SelectItem>
               </SelectContent>
@@ -386,7 +350,7 @@ export function TeamActionDialog({
           </Label>
           <Textarea
             placeholder={texts.placeholders.remarks}
-            className='h-24 resize-none rounded-3xl border-none bg-muted/40 p-5 text-sm font-medium transition-all focus-visible:ring-primary/20'
+            className='h-24 resize-none rounded-3xl border-none bg-muted/40 p-5 transition-all focus-visible:ring-primary/20'
             value={formData.remarks}
             onChange={(e) => {
               setFormData({ remarks: e.target.value })

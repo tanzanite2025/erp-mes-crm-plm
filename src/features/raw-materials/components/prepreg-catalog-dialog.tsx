@@ -108,14 +108,14 @@ export function PrepregCatalogDialog({
           <Button
             variant='outline'
             onClick={() => onOpenChange(false)}
-            className='h-9 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full px-6'
           >
             {t('rawMaterials.catalog.actions.cancel')}
           </Button>
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className='h-9 rounded-full px-8 text-[10px] font-black tracking-widest uppercase'
+            className='h-9 rounded-full px-8'
           >
             {isSaving
               ? isBindingMode

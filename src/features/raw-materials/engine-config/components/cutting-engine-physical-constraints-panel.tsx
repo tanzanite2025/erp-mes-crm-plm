@@ -61,8 +61,8 @@ export function CuttingEnginePhysicalConstraintsPanel(
       : 'flex flex-col gap-4')
   const inputClassName =
     variant === 'grid'
-      ? 'h-8 rounded-lg bg-background text-xs font-semibold'
-      : 'h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui text-xs'
+      ? 'h-8 rounded-lg bg-background '
+      : 'h-10 w-24 rounded-lg border-none bg-background pr-3 text-right font-maple-ui '
 
   return (
     <div className={containerClassName}>

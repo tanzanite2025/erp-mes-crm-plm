@@ -104,7 +104,7 @@ export function VehicleLoadingPackageInputPanel({
               disabled={packagingProfilesLoading || !hasSelectableProfiles}
               onValueChange={onSelectedPackagingProfileIdChange}
             >
-              <SelectTrigger className='h-11 w-full rounded-2xl border-border/50 bg-muted/40 px-4 text-sm font-black shadow-sm shadow-black/5'>
+              <SelectTrigger className='h-11 w-full rounded-2xl border-border/50 bg-muted/40 px-4 shadow-sm shadow-black/5'>
                 <SelectValue
                   placeholder={
                     packagingProfilesLoading
@@ -122,11 +122,7 @@ export function VehicleLoadingPackageInputPanel({
               </SelectContent>
             </Select>
           </div>
-          <Button
-            asChild
-            variant='outline'
-            className='h-11 rounded-full px-5 text-[10px] font-black tracking-widest uppercase'
-          >
+          <Button asChild variant='outline' className='h-11 rounded-full px-5'>
             <a
               href='/logistics-packaging-management/packaging-rules'
               target='_blank'

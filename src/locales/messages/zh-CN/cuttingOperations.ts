@@ -36,12 +36,6 @@ export const cuttingOperations = {
         step1: '步骤 01',
         step2: '步骤 02',
       },
-      execution: {
-        label: '裁纱执行单',
-        placeholder: '请选择裁纱执行单',
-        hint: '正式方案下，每条绑定记录都必须挂接到一个裁纱执行单。',
-        loadingHint: '正在加载裁纱执行单选项...',
-      },
       barcode: {
         label: '编码中心一维码',
         placeholder: '请扫描或输入编码中心一维码',
@@ -109,10 +103,6 @@ export const cuttingOperations = {
         title: '等待绑定输入',
         description:
           '请录入产品一维码，并扫描已在预浸料页面完成激活的卷实例二维码后再提交绑定。',
-      },
-      missingExecution: {
-        title: '缺少执行单',
-        description: '正式方案要求每条绑定必须挂接裁纱执行单，请先选择执行单。',
       },
       missingBarcode: {
         title: '缺少一维码',

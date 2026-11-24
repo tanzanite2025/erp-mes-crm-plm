@@ -63,10 +63,10 @@ export function VehiclePhotoDialogSidebar({
                       )}
                     >
                       <div className='flex items-center gap-2'>
-                        <div className='flex size-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-black text-primary'>
+                        <div className='flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary'>
                           {index + 1}
                         </div>
-                        <div className='text-[12px] leading-5 font-semibold text-foreground'>
+                        <div className='text-foreground'>
                           {annotation.title}
                         </div>
                       </div>
@@ -80,7 +80,7 @@ export function VehiclePhotoDialogSidebar({
                           </Badge>
                         </div>
                       ) : null}
-                      <div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>
+                      <div className='mt-1.5 text-muted-foreground'>
                         {annotation.description}
                       </div>
                     </button>

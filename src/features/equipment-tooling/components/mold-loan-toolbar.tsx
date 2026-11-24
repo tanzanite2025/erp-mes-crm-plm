@@ -26,12 +26,12 @@ export function MoldLoanToolbar({
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={t('equipmentTooling.loans.page.searchPlaceholder')}
-          className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 text-xs font-bold shadow-inner'
+          className='h-12 w-full rounded-2xl border-none bg-muted/50 pl-11 shadow-inner'
         />
       </div>
 
       <Button
-        className='h-12 w-full gap-2 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:w-auto'
+        className='h-12 w-full gap-2 rounded-full bg-blue-600 px-8 shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:w-auto'
         onClick={onAddClick}
       >
         <Plus className='size-4' />

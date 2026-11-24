@@ -184,7 +184,7 @@ export function NippleActionDialog({
             </Label>
             <Input
               placeholder='例如: Brass-12mm-Black'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-orange-500/20'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner focus-visible:ring-orange-500/20'
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
@@ -195,7 +195,7 @@ export function NippleActionDialog({
             </Label>
             <Input
               readOnly
-              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui text-xs font-bold opacity-60'
+              className='h-12 cursor-not-allowed rounded-2xl border-none bg-muted/20 px-5 font-maple-ui opacity-60'
               value={formData.id}
             />
           </div>
@@ -209,7 +209,7 @@ export function NippleActionDialog({
             </Label>
             <Input
               placeholder='输入品牌名称'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner'
               value={formData.brand}
               onChange={(e) => updateField('brand', e.target.value)}
             />
@@ -220,7 +220,7 @@ export function NippleActionDialog({
             </Label>
             <Input
               placeholder='例如: Brass / Aluminum'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-bold shadow-inner'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 shadow-inner'
               value={formData.material}
               onChange={(e) => updateField('material', e.target.value)}
             />
@@ -243,7 +243,7 @@ export function NippleActionDialog({
               </Label>
               <Input
                 placeholder='例如: 12 / 14 / 16'
-                className='h-12 rounded-2xl border-none bg-background px-5 font-maple-ui text-sm font-black shadow-sm'
+                className='h-12 rounded-2xl border-none bg-background px-5 font-maple-ui shadow-sm'
                 value={formData.length}
                 onChange={(e) => updateField('length', e.target.value)}
               />
@@ -254,7 +254,7 @@ export function NippleActionDialog({
               </Label>
               <Input
                 placeholder='例如: Black / Silver'
-                className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-black shadow-sm'
+                className='h-12 rounded-2xl border-none bg-background px-5 shadow-sm'
                 value={formData.color}
                 onChange={(e) => updateField('color', e.target.value)}
               />

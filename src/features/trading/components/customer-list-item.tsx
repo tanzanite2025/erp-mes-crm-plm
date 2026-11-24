@@ -172,25 +172,25 @@ export function CustomerListItem({
           >
             <DropdownMenuItem
               onClick={() => onEdit(customer)}
-              className='rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
+              className='rounded-lg px-4 py-2'
             >
               {t('trading.customers.editCustomer')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleOpenCustomerOrders}
-              className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
+              className='mt-1 rounded-lg px-4 py-2'
             >
               {t('trading.customers.viewOrders')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onOpenAudit(customer)}
-              className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
+              className='mt-1 rounded-lg px-4 py-2'
             >
               {t('trading.customers.viewAudit')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(customer.id)}
-              className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:bg-rose-500/10 focus:text-rose-500'
+              className='mt-1 rounded-lg px-4 py-2 text-rose-500 focus:bg-rose-500/10 focus:text-rose-500'
             >
               {t('trading.customers.deleteCustomer')}
             </DropdownMenuItem>
@@ -256,7 +256,7 @@ export function CustomerListItem({
                 size='sm'
                 disabled={!canOpenWeChat(customer.wechat)}
                 onClick={handleOpenWeChat}
-                className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase sm:justify-self-end'
+                className='h-9 w-full rounded-full px-4 sm:justify-self-end'
               >
                 {t('trading.customers.openWechat')}
                 <ExternalLink className='ms-2 size-3' />
@@ -278,7 +278,7 @@ export function CustomerListItem({
                 variant='secondary'
                 size='sm'
                 onClick={handleOpenCustomerOrders}
-                className='h-9 w-full rounded-full border border-emerald-500/10 bg-emerald-500/5 px-4 text-[9px] font-black tracking-widest text-emerald-500 uppercase transition-colors hover:bg-emerald-500/10 sm:justify-self-end'
+                className='h-9 w-full rounded-full border border-emerald-500/10 bg-emerald-500/5 px-4 text-emerald-500 transition-colors hover:bg-emerald-500/10 sm:justify-self-end'
               >
                 {t('trading.customers.viewOrders')}
                 <ExternalLink className='ms-2 size-3 animate-pulse' />

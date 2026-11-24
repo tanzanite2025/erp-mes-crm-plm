@@ -31,11 +31,11 @@ func (GormProductionRepository) GetProductionRouteByID(database *gorm.DB, id str
 
 func preloadProductionRouteSteps(database *gorm.DB) *gorm.DB {
 	return database.
+		Preload("RouteFamily").
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sequence asc")
 		}).
-		Preload("Steps.ProcessStep").
-		Preload("Steps.Segment")
+		Preload("Steps.BranchOperation")
 }
 
 func (GormProductionRepository) BumpProductionRouteVersion(database *gorm.DB, id string, version int64) (bool, error) {
@@ -47,14 +47,21 @@ func (GormProductionRepository) BumpProductionRouteVersion(database *gorm.DB, id
 
 func (GormProductionRepository) SaveProductionRoute(database *gorm.DB, route *models.ProductionRoute) error {
 	updateFields := map[string]interface{}{
-		"code":                route.Code,
-		"name":                route.Name,
-		"product_id":          route.ProductID,
-		"product_name":        route.ProductName,
-		"product_template_id": route.ProductTemplateID,
-		"description":         route.Description,
-		"version":             route.Version,
-		"status":              route.Status,
+		"route_family_id":         route.RouteFamilyID,
+		"revision_no":             route.RevisionNo,
+		"based_on_route_id":       route.BasedOnRouteID,
+		"code":                    route.Code,
+		"name":                    route.Name,
+		"product_id":              route.ProductID,
+		"product_sku":             route.ProductSKU,
+		"product_name":            route.ProductName,
+		"bom_owner_type":          route.BOMOwnerType,
+		"bom_owner_customer_id":   route.BOMOwnerCustomerID,
+		"bom_owner_customer_name": route.BOMOwnerCustomerName,
+		"bom_version_level":       route.BOMVersionLevel,
+		"description":             route.Description,
+		"version":                 route.Version,
+		"status":                  route.Status,
 	}
 
 	for index := range route.Steps {
@@ -78,7 +85,7 @@ func (GormProductionRepository) SaveProductionRoute(database *gorm.DB, route *mo
 		return database.Transaction(func(tx *gorm.DB) error {
 			routeToCreate := *route
 			routeToCreate.Steps = nil
-			if err := tx.Create(&routeToCreate).Error; err != nil {
+			if err := tx.Omit("RouteFamily").Create(&routeToCreate).Error; err != nil {
 				return err
 			}
 
@@ -98,7 +105,7 @@ func (GormProductionRepository) SaveProductionRoute(database *gorm.DB, route *mo
 	}
 
 	return database.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(route).Updates(updateFields).Error; err != nil {
+		if err := tx.Omit("Steps", "RouteFamily").Model(route).Updates(updateFields).Error; err != nil {
 			return err
 		}
 

@@ -73,9 +73,13 @@ function MobileStateProbe() {
 function renderNavGroup({
   includeMobileProbe = false,
   onDesktopCategoryActivate,
+  onMobileCategoryActivate,
+  selectedCategoryId,
 }: {
   includeMobileProbe?: boolean
   onDesktopCategoryActivate?: (categoryId: string) => void
+  onMobileCategoryActivate?: (categoryId: string) => void
+  selectedCategoryId?: string | null
 } = {}) {
   return render(
     <SidebarProvider>
@@ -83,6 +87,8 @@ function renderNavGroup({
       <NavGroup
         {...productionGroup}
         onDesktopCategoryActivate={onDesktopCategoryActivate}
+        onMobileCategoryActivate={onMobileCategoryActivate}
+        selectedCategoryId={selectedCategoryId}
       />
     </SidebarProvider>
   )
@@ -135,6 +141,28 @@ describe('NavGroup', () => {
 
     expect(groupButton.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByRole('link', { name: 'APS' })).not.toBeNull()
+  })
+
+  it('opens the selected category directory without expanding destinations inline on mobile', () => {
+    routerState.isMobile = true
+    const onMobileCategoryActivate = vi.fn()
+    renderNavGroup({
+      onMobileCategoryActivate,
+      selectedCategoryId: 'production',
+    })
+    const groupButton = screen.getByRole('button', { name: 'Production' })
+
+    expect(groupButton).toHaveAttribute('aria-expanded', 'true')
+    expect(groupButton).toHaveAttribute(
+      'aria-controls',
+      'mobile-sidebar-secondary-navigation'
+    )
+    expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
+
+    fireEvent.click(groupButton)
+
+    expect(onMobileCategoryActivate).toHaveBeenCalledWith('production')
+    expect(screen.queryByRole('link', { name: 'APS' })).toBeNull()
   })
 
   it('closes the mobile sidebar after a destination is selected', () => {

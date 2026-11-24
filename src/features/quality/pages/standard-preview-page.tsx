@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useParams } from '@tanstack/react-router'
 import {
   Archive,
@@ -24,6 +25,9 @@ import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-t
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { QualityStandardInspectionRulesValidationError } from '../adapters/quality-standard-api-adapter'
+import { QualityStandardBasicInformationInlineEditor } from '../components/quality-standard-basic-information-inline-editor'
+import { QualityStandardDetailsWithInvalidInspectionRules } from '../components/quality-standard-details-with-invalid-inspection-rules'
 import { StandardPreviewContent } from '../components/standard-preview-content'
 import { StandardStatusActionDialog } from '../components/standard-status-action-dialog'
 import { useGetQualityStandard } from '../hooks/use-quality'
@@ -31,11 +35,39 @@ import { useQualityStandardPreviewActions } from '../hooks/use-quality-standard-
 
 interface StandardPreviewPageProps {
   standardId: string
+  embedded?: boolean
+  onClose?: () => void
+  onOpenEditor?: (standardId: string) => void
+  onPreviewStandardChange?: (standardId: string) => void
+  onWorkflowPendingChange?: (pending: boolean) => void
+  allowInlineBasicInformationEditing?: boolean
+  initiallyEditingBasicInformation?: boolean
+  onEditBasicInformation?: (standardId: string) => void
+  onUnsavedBasicInformationChange?: (hasUnsavedChanges: boolean) => void
 }
 
-export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
+export function StandardPreviewPage({
+  standardId,
+  embedded = false,
+  onClose,
+  onOpenEditor,
+  onPreviewStandardChange,
+  onWorkflowPendingChange,
+  allowInlineBasicInformationEditing = false,
+  initiallyEditingBasicInformation = false,
+  onEditBasicInformation,
+  onUnsavedBasicInformationChange,
+}: StandardPreviewPageProps) {
   const { t } = useLanguage()
-  const { data: standard, isLoading, error } = useGetQualityStandard(standardId)
+  const [isEditingBasicInformation, setIsEditingBasicInformation] = useState(
+    initiallyEditingBasicInformation
+  )
+  const {
+    data: standard,
+    isLoading,
+    error,
+    refetch,
+  } = useGetQualityStandard(standardId)
   const {
     isWorkflowActionPending,
     availableActions,
@@ -64,24 +96,52 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
     primaryActionLabel,
     handlePrimaryAction,
     showPrimaryAction,
-  } = useQualityStandardPreviewActions({ standard, standardId })
+  } = useQualityStandardPreviewActions({
+    standard,
+    standardId,
+    onClose,
+    onOpenEditor,
+    onPreviewStandardChange,
+  })
+
+  useEffect(() => {
+    onWorkflowPendingChange?.(isWorkflowActionPending)
+  }, [isWorkflowActionPending, onWorkflowPendingChange])
 
   const title = t('quality.standards.workspace.previewTitle')
   const description = t('quality.standards.workspace.previewDescription')
+  const closeLabel = t(
+    embedded ? 'common.actions.close' : 'quality.standards.workspace.backToList'
+  )
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
   }
 
+  if (error instanceof QualityStandardInspectionRulesValidationError) {
+    return (
+      <QualityStandardDetailsWithInvalidInspectionRules
+        standard={error.standardSummary}
+        onReconfigureRules={handleOpenEditor}
+        onClose={handleBack}
+        closeLabel={closeLabel}
+      />
+    )
+  }
+
   if (isLoading) {
     return (
       <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-        <IndustrialHeader
-          icon={Telescope}
-          title={title}
-          description={description}
-        />
-        <div className='flex min-h-[60vh] items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5'>
+        {!embedded ? (
+          <IndustrialHeader
+            icon={Telescope}
+            title={title}
+            description={description}
+          />
+        ) : null}
+        <div
+          className={`flex items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5 ${embedded ? 'min-h-64' : 'min-h-[60vh]'}`}
+        >
           <div className='flex flex-col items-center gap-3 text-muted-foreground'>
             <Loader2 className='size-8 animate-spin text-primary' />
             <span className='text-[10px] font-black tracking-widest uppercase'>
@@ -93,26 +153,30 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
     )
   }
 
-  if (error || !standard) {
-    const isMissing = isNotFoundError(error) || !standard
+  if (!standard) {
+    const isMissing = isNotFoundError(error) || (!error && !standard)
     return (
       <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-        <div className='flex flex-wrap items-center justify-between gap-3'>
-          <Button
-            variant='outline'
-            className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
-            onClick={handleBack}
-          >
-            <ArrowLeft className='size-3.5' />
-            {t('quality.standards.workspace.backToList')}
-          </Button>
-        </div>
+        {!embedded ? (
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <Button
+              variant='outline'
+              className='h-9 rounded-full'
+              onClick={handleBack}
+            >
+              <ArrowLeft className='size-3.5' />
+              {t('quality.standards.workspace.backToList')}
+            </Button>
+          </div>
+        ) : null}
 
-        <IndustrialHeader
-          icon={Telescope}
-          title={title}
-          description={description}
-        />
+        {!embedded ? (
+          <IndustrialHeader
+            icon={Telescope}
+            title={title}
+            description={description}
+          />
+        ) : null}
 
         <Card className='rounded-[32px] border-dashed border-muted/50 bg-muted/5'>
           <CardHeader>
@@ -128,13 +192,22 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {embedded ? (
+              <Button
+                variant='outline'
+                className='rounded-full'
+                onClick={() => void refetch()}
+              >
+                {t('quality.standards.inspectionStages.retry')}
+              </Button>
+            ) : null}
             <Button
               variant='outline'
-              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full'
               onClick={handleBack}
             >
               <ArrowLeft className='size-3.5' />
-              {t('quality.standards.workspace.backToList')}
+              {closeLabel}
             </Button>
           </CardContent>
         </Card>
@@ -142,8 +215,23 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
     )
   }
 
+  if (isEditingBasicInformation && allowInlineBasicInformationEditing) {
+    return (
+      <QualityStandardBasicInformationInlineEditor
+        standard={standard}
+        onClose={() => {
+          if (initiallyEditingBasicInformation && onClose) onClose()
+          else setIsEditingBasicInformation(false)
+        }}
+        onUnsavedChangesChange={onUnsavedBasicInformationChange}
+      />
+    )
+  }
+
   return (
-    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+    <div
+      className={`flex flex-col ${embedded ? 'gap-4' : 'animate-in gap-8 duration-700 fade-in'}`}
+    >
       <StandardStatusActionDialog
         open={isApproveDialogOpen}
         onOpenChange={setIsApproveDialogOpen}
@@ -192,14 +280,16 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
       />
 
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <Button
-          variant='outline'
-          className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
-          onClick={handleBack}
-        >
-          <ArrowLeft className='size-3.5' />
-          {t('quality.standards.workspace.backToList')}
-        </Button>
+        {!embedded ? (
+          <Button
+            variant='outline'
+            className='h-9 rounded-full'
+            onClick={handleBack}
+          >
+            <ArrowLeft className='size-3.5' />
+            {t('quality.standards.workspace.backToList')}
+          </Button>
+        ) : null}
         <div className='flex flex-wrap items-center gap-3'>
           <AuditTimelineTriggerButton
             module={AUDIT_MODULES.qualityStandard}
@@ -211,7 +301,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canSubmitForApproval ? (
             <Button
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed'
               disabled={isWorkflowActionPending}
               onClick={handleSubmitForApproval}
             >
@@ -226,7 +316,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canApprove ? (
             <Button
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed'
               disabled={isWorkflowActionPending}
               onClick={handleOpenApproveDialog}
             >
@@ -241,7 +331,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canReject ? (
             <Button
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest text-rose-600 uppercase'
+              className='h-9 rounded-full border-dashed text-rose-600'
               disabled={isWorkflowActionPending}
               onClick={handleOpenRejectDialog}
             >
@@ -256,7 +346,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canPublish ? (
             <Button
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed'
               disabled={isWorkflowActionPending}
               onClick={handlePublish}
             >
@@ -271,7 +361,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           {availableActions.canArchive ? (
             <Button
               variant='outline'
-              className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full border-dashed'
               disabled={isWorkflowActionPending}
               onClick={handleOpenArchiveDialog}
             >
@@ -283,10 +373,25 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
               {t('quality.standards.workspace.archive')}
             </Button>
           ) : null}
+          {availableActions.canEdit &&
+          (allowInlineBasicInformationEditing || onEditBasicInformation) ? (
+            <Button
+              variant='outline'
+              className='rounded-full'
+              disabled={isWorkflowActionPending}
+              onClick={() => {
+                if (onEditBasicInformation) onEditBasicInformation(standardId)
+                else setIsEditingBasicInformation(true)
+              }}
+            >
+              {t('quality.standards.workspace.editBasicInformation')}
+            </Button>
+          ) : null}
           {availableActions.canEdit ? (
             <Button
-              className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+              className='h-9 rounded-full'
               onClick={handleOpenEditor}
+              disabled={isWorkflowActionPending}
             >
               <SquarePen className='size-3.5' />
               {t('quality.standards.workspace.openEditor')}
@@ -295,20 +400,24 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
         </div>
       </div>
 
-      <IndustrialHeader
-        icon={Telescope}
-        title={title}
-        description={description}
-      />
+      {!embedded ? (
+        <IndustrialHeader
+          icon={Telescope}
+          title={title}
+          description={description}
+        />
+      ) : null}
 
-      <div className='group relative flex min-h-[70vh] flex-col overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-background shadow-sm'>
+      <div
+        className={`group relative flex flex-col overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-background shadow-sm ${embedded ? '' : 'min-h-[70vh]'}`}
+      >
         <StandardPreviewContent
           standard={standard}
           onClose={handleBack}
-          closeLabel={t('quality.standards.workspace.backToList')}
+          closeLabel={closeLabel}
           primaryActionLabel={primaryActionLabel}
           onPrimaryAction={handlePrimaryAction}
-          showPrimaryAction={showPrimaryAction}
+          showPrimaryAction={showPrimaryAction && !isWorkflowActionPending}
         />
       </div>
     </div>

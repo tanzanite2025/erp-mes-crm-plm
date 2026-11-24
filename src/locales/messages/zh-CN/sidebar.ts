@@ -8,6 +8,8 @@ export const sidebar = {
   },
   navigation: {
     categories: '业务分类',
+    mobileDescription: '选择业务分类后进入功能目录；点击侧边箭头收起导航。',
+    collapseSidebar: '收起导航',
     noAvailableEntries: '当前分类暂无可用功能',
     collapseDirectory: '收起功能目录',
     expandDirectory: '展开功能目录',
@@ -36,6 +38,7 @@ export const sidebar = {
     engineeringManagement: '工程管理',
     engineeringDatabase: '通用数据库',
     qualityManagement: '品质管理',
+    qualityHandbook: '品质操作手册',
     qualityStandards: '品质标准',
     qualityOperations: '品质作业',
     warehouseManagement: '仓储',
@@ -122,7 +125,7 @@ export const sidebar = {
     basicSettings: '基础配置',
     financeCenter: '财务配置',
     financeSettlements: '应收应付',
-    linearBarcode: '一维码',
+    linearBarcode: '产品编码',
     sharedCodeSource: '共享编码源',
   },
 }

@@ -53,7 +53,7 @@ export function QuoteWorkspaceFilters({
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <Button
-            className='h-10 rounded-2xl px-4 text-xs font-black'
+            className='h-10 rounded-2xl px-4'
             size='sm'
             onClick={onCreateQuote}
           >
@@ -61,7 +61,7 @@ export function QuoteWorkspaceFilters({
             新建报价
           </Button>
           <Button
-            className='h-10 rounded-2xl px-4 text-xs font-black'
+            className='h-10 rounded-2xl px-4'
             size='sm'
             variant='outline'
             onClick={handleReset}
@@ -77,7 +77,7 @@ export function QuoteWorkspaceFilters({
             客户
           </span>
           <Select value={customer} onValueChange={onCustomerChange}>
-            <SelectTrigger className='h-9 w-full rounded-xl border-dashed bg-background/80 px-3 text-[13px] font-semibold'>
+            <SelectTrigger className='h-9 w-full rounded-xl border-dashed bg-background/80 px-3'>
               <SelectValue placeholder='全部客户' />
             </SelectTrigger>
             <SelectContent>
@@ -93,7 +93,7 @@ export function QuoteWorkspaceFilters({
             状态
           </span>
           <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger className='h-9 w-full rounded-xl border-dashed bg-background/80 px-3 text-[13px] font-semibold'>
+            <SelectTrigger className='h-9 w-full rounded-xl border-dashed bg-background/80 px-3'>
               <SelectValue placeholder='全部状态' />
             </SelectTrigger>
             <SelectContent>
@@ -110,7 +110,7 @@ export function QuoteWorkspaceFilters({
             类型
           </span>
           <Select value={quoteType} onValueChange={onQuoteTypeChange}>
-            <SelectTrigger className='h-9 w-full rounded-xl border-dashed bg-background/80 px-3 text-[13px] font-semibold'>
+            <SelectTrigger className='h-9 w-full rounded-xl border-dashed bg-background/80 px-3'>
               <SelectValue placeholder='全部类型' />
             </SelectTrigger>
             <SelectContent>
@@ -128,7 +128,7 @@ export function QuoteWorkspaceFilters({
           <div className='relative'>
             <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/60' />
             <Input
-              className='h-9 rounded-xl border-dashed bg-background/80 pl-9 text-[13px] font-semibold'
+              className='h-9 rounded-xl border-dashed bg-background/80 pl-9'
               value={keyword}
               onChange={(event) => onKeywordChange(event.target.value)}
               placeholder='搜索报价编号、客户、产品型号'

@@ -20,8 +20,8 @@ export const productionExecution = {
     action: 'Operation to perform',
     route: 'Production route',
     currentStep: 'Process being handled',
+    workLocation: 'Work location',
     reworkTarget: 'Rework target',
-    executionLot: 'Execution lot',
     result: 'Execution result',
     notes: 'Notes',
     fromHolderType: 'From holder type',
@@ -45,8 +45,8 @@ export const productionExecution = {
     productBarcode: 'Scan the barcode on the product label',
     route: 'Select a route for the first start',
     currentStep: 'The first start defaults to the first route process',
+    workLocation: 'Select the actual work location',
     reworkTarget: 'Select a rework target process',
-    executionLot: 'Optional',
     result: 'Optional, e.g. PASS',
     notes: 'Optional',
     holderType: 'e.g. INTERNAL, PARTNER',
@@ -72,6 +72,31 @@ export const productionExecution = {
     noTransfers: 'No transfer events were created.',
     yes: 'Yes',
     no: 'No',
+  },
+  lifecycle: {
+    title: 'Production lifecycle',
+    accessibleTitle: 'Product barcode production lifecycle records',
+    stateChanges: 'State events',
+    operations: 'Process operations',
+    transfers: 'Transfers',
+    loading: 'Reading lifecycle…',
+    readFailed:
+      'Could not read the lifecycle or current process. Retry the read.',
+    retry: 'Retry read',
+    noRecord: 'This barcode has no production state record.',
+    noEvents: 'No production lifecycle events yet.',
+    currentStateEvent: 'Event for current production state',
+    stateChange: 'State change',
+    routeStateChange: 'Process state change',
+    otherStateEvent: 'Other state event',
+    otherTransfer: 'Other transfer',
+    process: 'Process',
+    operator: 'Operator',
+    result: 'Result',
+    notes: 'Notes',
+    loadMore: 'Load older production records',
+    loadingMore: 'Loading…',
+    loadMoreFailed: 'Could not read older production records.',
   },
   errorKinds: {
     validation: 'Validation',
@@ -130,6 +155,8 @@ export const productionExecution = {
     scanHint:
       'Scanning or pressing Enter reads the state. Review it before confirming the operation.',
     reviewContext: 'Route and process details',
+    routeFromPlan: 'Resolved from the production plan when started',
+    firstStepFromPlan: 'First step is resolved from the plan route',
     previewTitle: '3. Review the action and process destination',
     previewEmpty:
       'Scan the product barcode, or enter it and choose Read, to see its current process and review the selected action.',
@@ -144,6 +171,10 @@ export const productionExecution = {
       'This barcode has no recorded process execution. Choose Start process, select its production route, and review the first process.',
     recordedContextHint:
       'The product barcode supplies its recorded route and current process. Select a separate destination for rework.',
+    startAlreadyInProgress:
+      'This barcode is already in progress at the current process. Complete and advance, hold, or rework it before taking another action.',
+    startRequiresRework:
+      'This process is already complete. Record a rework operation before starting it again.',
     reviewBeforeSubmit:
       'Read the current product process, review the details, then confirm the operation.',
     optionalDetails: 'Add a lot, result or notes (optional)',

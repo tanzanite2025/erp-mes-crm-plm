@@ -1,3 +1,5 @@
+import type { ProductionBOMBranch } from '../../../data/production-bom-branch'
+import type { ProductionBOMBranchOperation } from '../../../data/production-line'
 import type { ProductionProcessStep } from '../../../data/production-process'
 import { SecurityAuthDialog } from '../../../topology/security-auth-dialog'
 import type { LineMindmapNode, MindmapLevel } from '../data/line-mindmap-domain'
@@ -17,28 +19,35 @@ interface LineMindmapDialogsProps {
   handleAuthConfirm: (password: string) => void | Promise<boolean | void>
   handleAuthOpenChange: (open: boolean) => void
   segmentParentNodeOptions: MindmapParentNodeOption[]
+  standardProcesses: ProductionProcessStep[]
+  bomBranches: ProductionBOMBranch[]
+  isLoadingBOMBranches: boolean
+  bomBranchQueryError?: Error | null
   level3Name: string
   level2Name: string
   levelNames: Record<MindmapLevel, string>
   nodeEditDialogOpen: boolean
-  onAssignProcess: (processId: string) => void | Promise<void>
   onCreateSegmentDialogOpenChange: (open: boolean) => void
   onCreateProcessDialogOpenChange: (open: boolean) => void
-  onDeleteProcessEntity: (
-    process: ProductionProcessStep
-  ) => void | Promise<void>
   onDeleteSelected: () => void | Promise<void>
   onEditDialogOpenChange: (open: boolean) => void
-  onRemoveProcess: () => void | Promise<void>
-  onRenameSelected: (name: string) => void | Promise<void>
-  onSegmentSubmit: (name: string) => void | Promise<void>
+  onSegmentSubmit: (branch: ProductionBOMBranch) => void | Promise<void>
+  onBindBOMBranch: (
+    segmentId: string,
+    branch: ProductionBOMBranch
+  ) => void | Promise<void>
   onProcessSubmit: (
     draft: LineMindmapProcessDraft,
     parentSegmentId: string
   ) => Promise<unknown>
   onPatchNode: (nodeId: string, patch: Partial<LineMindmapNodeDraft>) => void
-  onSaveProcessEntity: (process: ProductionProcessStep) => void | Promise<void>
-  processOptions: Array<{ id: string; label: string; code?: string }>
+  onSaveProcessEntity?: (
+    process: ProductionBOMBranchOperation
+  ) => void | Promise<unknown>
+  onSaveProcessSelection?: (
+    segmentId: string,
+    processLibraryIds: string[]
+  ) => void | Promise<unknown>
   selectedNode: LineMindmapNode | null
 }
 
@@ -50,23 +59,24 @@ export function LineMindmapDialogs({
   handleAuthConfirm,
   handleAuthOpenChange,
   segmentParentNodeOptions,
+  standardProcesses,
+  bomBranches,
+  isLoadingBOMBranches,
+  bomBranchQueryError,
   level2Name,
   level3Name,
   levelNames,
   nodeEditDialogOpen,
-  onAssignProcess,
   onCreateSegmentDialogOpenChange,
   onCreateProcessDialogOpenChange,
-  onDeleteProcessEntity,
   onDeleteSelected,
   onEditDialogOpenChange,
   onPatchNode,
   onProcessSubmit,
-  onRemoveProcess,
-  onRenameSelected,
   onSegmentSubmit,
+  onBindBOMBranch,
   onSaveProcessEntity,
-  processOptions,
+  onSaveProcessSelection,
   selectedNode,
 }: LineMindmapDialogsProps) {
   return (
@@ -81,6 +91,9 @@ export function LineMindmapDialogs({
         open={createSegmentDialogOpen}
         onOpenChange={onCreateSegmentDialogOpenChange}
         levelName={level2Name}
+        branches={bomBranches}
+        isLoadingBranches={isLoadingBOMBranches}
+        branchQueryError={bomBranchQueryError}
         onSubmit={onSegmentSubmit}
       />
 
@@ -91,6 +104,7 @@ export function LineMindmapDialogs({
         levelName={level3Name}
         parentNodes={segmentParentNodeOptions}
         defaultParentId={defaultProcessParentId}
+        standardProcesses={standardProcesses}
         onSubmit={onProcessSubmit}
       />
 
@@ -101,13 +115,17 @@ export function LineMindmapDialogs({
         levelNames={levelNames}
         onPatchNode={onPatchNode}
         readonlyMode={false}
-        processOptions={processOptions}
-        onAssignProcess={onAssignProcess}
-        onDeleteProcessEntity={onDeleteProcessEntity}
-        onRenameSelected={onRenameSelected}
+        bomBranches={bomBranches}
+        isLoadingBOMBranches={isLoadingBOMBranches}
+        bomBranchQueryError={bomBranchQueryError}
+        onBindBOMBranch={(branch) => {
+          const segmentId = selectedNode?.sourceId
+          if (segmentId) return onBindBOMBranch(segmentId, branch)
+        }}
         onDeleteSelected={onDeleteSelected}
-        onRemoveProcess={onRemoveProcess}
         onSaveProcessEntity={onSaveProcessEntity}
+        standardProcesses={standardProcesses}
+        onSaveProcessSelection={onSaveProcessSelection}
       />
     </>
   )

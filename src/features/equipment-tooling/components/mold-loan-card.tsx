@@ -150,7 +150,7 @@ export function MoldLoanCard({ loan, onReturn }: MoldLoanCardProps) {
             {loan.status === 'ACTIVE' ? (
               <Button
                 variant='outline'
-                className='h-11 w-full gap-2 rounded-full border-dashed border-emerald-200 px-6 text-[10px] font-black tracking-widest text-emerald-600 uppercase shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 active:scale-95'
+                className='h-11 w-full gap-2 rounded-full border-dashed border-emerald-200 px-6 text-emerald-600 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 active:scale-95'
                 onClick={() => onReturn(loan.id)}
               >
                 <CheckCircle2 className='size-4' />

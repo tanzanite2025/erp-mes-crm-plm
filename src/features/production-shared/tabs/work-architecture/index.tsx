@@ -10,8 +10,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { ProductionProcessLibraryConfigurationContent } from '../../components/production-process-library-configuration-content'
 import { useProductionLinesQuery } from '../../hooks/use-production-resources'
-import { ProcessLibraryPanel } from './components/process-library-panel.tsx'
 import { WorkArchitectureTree } from './components/work-architecture-tree.tsx'
 
 const logger = createLogger('WorkArchitecture')
@@ -62,14 +62,14 @@ export function WorkArchitecture() {
             placeholder={t(
               'productionShared.workArchitecture.searchPlaceholder'
             )}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-medium transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
+            className='h-12 rounded-2xl border-none bg-muted/50 pl-10 transition-all focus-visible:ring-1 focus-visible:ring-primary/20'
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
       </div>
 
-      <ProcessLibraryPanel />
+      <ProductionProcessLibraryConfigurationContent />
 
       <div className='flex-1 space-y-6 overflow-y-auto'>
         {isLoading && availableLines.length === 0 ? (

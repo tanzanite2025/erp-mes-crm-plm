@@ -27,7 +27,7 @@ export function AssignmentEffectivePreview({
         <ListChecks className='size-4 text-muted-foreground' />
       </div>
 
-      <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-2'>
         {commands.map((command) => (
           <div
             key={command.code}
@@ -52,18 +52,21 @@ export function AssignmentEffectivePreview({
               variant={
                 command.assignmentSource === 'category' ? 'default' : 'outline'
               }
-              className='shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest'
+              className='max-w-[45%] shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest'
+              title={command.sourceCategoryName}
             >
-              {command.assignmentSource === 'category'
-                ? command.sourceCategoryName ||
-                  t('sidebarCommandConfig.preview.categorySource')
-                : t('sidebarCommandConfig.preview.directSource')}
+              <span className='truncate'>
+                {command.assignmentSource === 'category'
+                  ? command.sourceCategoryName ||
+                    t('sidebarCommandConfig.preview.categorySource')
+                  : t('sidebarCommandConfig.preview.directSource')}
+              </span>
             </Badge>
           </div>
         ))}
 
         {commands.length === 0 ? (
-          <div className='rounded-xl border border-dashed border-muted/50 bg-background/60 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
+          <div className='col-span-full rounded-xl border border-dashed border-muted/50 bg-background/60 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
             {t('sidebarCommandConfig.preview.empty')}
           </div>
         ) : null}

@@ -55,7 +55,8 @@
     /* Geometry is a shared contract. Components-layer !important declarations
        also beat legacy Tailwind utilities marked !important in business dialogs.
        Keep padding and display owned by each surface's existing content layout. */
-    [data-mobile-floating-surface] {
+    /* Navigation reserves its own outside rail for the collapse arrow. */
+    [data-mobile-floating-surface]:not([data-sidebar='sidebar']) {
       position: fixed !important;
       inset: var(--mobile-floating-surface-top) auto auto
         var(--mobile-floating-surface-left) !important;

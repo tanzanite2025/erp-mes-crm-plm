@@ -146,7 +146,7 @@ export function BOMProductPerformanceVersionWeightEditor({
               >
                 <SelectTrigger
                   id={`${fieldId}-unit`}
-                  className='h-10 w-full rounded-xl border-transparent bg-muted/40 text-xs shadow-none'
+                  className='h-10 w-full rounded-xl border-transparent bg-muted/40 shadow-none'
                 >
                   <SelectValue
                     placeholder={isZh ? '选择单位' : 'Select unit'}

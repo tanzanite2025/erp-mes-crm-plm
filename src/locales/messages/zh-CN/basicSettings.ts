@@ -2,7 +2,7 @@ export const basicSettings = {
   tabs: {
     units: '单位管理',
     knowledgeBase: '知识库',
-    sequences: '一维码发号规则',
+    sequences: '产品编码发号规则',
     enterprise: '企业信息',
     security: '安全设置',
   },
@@ -75,8 +75,8 @@ export const basicSettings = {
   },
   sequences: {
     page: {
-      title: '一维码发号规则配置中心',
-      subtitle: '维护一维码共享发号所需的规则键、周期策略与数字化发号逻辑',
+      title: '产品编码发号规则配置中心',
+      subtitle: '维护产品编码共享发号所需的规则键、周期策略与数字化发号逻辑',
     },
     syncGuard: {
       title: '原子性同步保障',

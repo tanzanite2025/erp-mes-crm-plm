@@ -70,7 +70,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
         <Button
           variant='ghost'
           onClick={onBack}
-          className='h-10 rounded-full px-4 font-black'
+          className='h-10 rounded-full px-4'
         >
           ← BACK
         </Button>
@@ -91,7 +91,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
           onChange={(e) => setScannedCode(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleScan(scannedCode)}
           placeholder='START_SCANNING / 扫描物料或批次'
-          className='h-14 rounded-2xl border-none bg-muted/40 pl-12 text-sm font-black tracking-widest uppercase shadow-inner'
+          className='h-14 rounded-2xl border-none bg-muted/40 pl-12 shadow-inner'
         />
       </div>
 
@@ -112,7 +112,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
               </div>
               <Button
                 variant='outline'
-                className='h-9 rounded-2xl text-[10px] font-black tracking-widest uppercase'
+                className='h-9 rounded-2xl'
                 onClick={() => flushPatchMutation.mutate()}
                 disabled={flushPatchMutation.isPending}
               >
@@ -124,7 +124,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
               <div className='flex flex-wrap gap-2'>
                 <Button
                   variant='secondary'
-                  className='h-8 rounded-xl text-[10px] font-black tracking-widest uppercase'
+                  className='h-8 rounded-xl'
                   onClick={() =>
                     batchRetryConflictMutation.mutate({
                       conflictIds: taskConflicts.map((item) => item.conflictId),
@@ -140,7 +140,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
                 </Button>
                 <Button
                   variant='secondary'
-                  className='h-8 rounded-xl text-[10px] font-black tracking-widest uppercase'
+                  className='h-8 rounded-xl'
                   onClick={() =>
                     batchResolveConflictMutation.mutate(
                       taskConflicts.map((item) => item.conflictId)
@@ -203,7 +203,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
                     <div className='flex flex-wrap gap-2'>
                       <Button
                         variant='outline'
-                        className='h-8 rounded-xl text-[10px] font-black tracking-widest uppercase'
+                        className='h-8 rounded-xl'
                         onClick={() =>
                           retryConflictMutation.mutate({
                             conflictId: conflict.conflictId,
@@ -216,7 +216,7 @@ export function StocktakeScanner({ taskId, onBack }: StocktakeScannerProps) {
                       </Button>
                       <Button
                         variant='ghost'
-                        className='h-8 rounded-xl text-[10px] font-black tracking-widest uppercase'
+                        className='h-8 rounded-xl'
                         onClick={() =>
                           resolveConflictMutation.mutate(conflict.conflictId)
                         }
@@ -394,7 +394,7 @@ function ScannerItemDetail({
           <div className='flex items-center gap-4'>
             <Button
               variant='outline'
-              className='size-14 rounded-2xl border-dashed text-xl font-black transition-all active:scale-90'
+              className='size-14 rounded-2xl border-dashed transition-all active:scale-90'
               onClick={() => {
                 setActualQty((current) => Math.max(0, current - 1))
               }}
@@ -403,7 +403,7 @@ function ScannerItemDetail({
             </Button>
             <Input
               type='number'
-              className='h-14 rounded-2xl border-none bg-background text-center font-maple-ui text-2xl font-black shadow-inner focus-visible:ring-blue-500/20'
+              className='h-14 rounded-2xl border-none bg-background text-center font-maple-ui shadow-inner focus-visible:ring-blue-500/20'
               value={actualQty}
               onChange={(e) => {
                 setActualQty(parseFloat(e.target.value) || 0)
@@ -411,7 +411,7 @@ function ScannerItemDetail({
             />
             <Button
               variant='outline'
-              className='size-14 rounded-2xl border-dashed text-xl font-black transition-all active:scale-90'
+              className='size-14 rounded-2xl border-dashed transition-all active:scale-90'
               onClick={() => {
                 setActualQty((current) => current + 1)
               }}
@@ -426,7 +426,7 @@ function ScannerItemDetail({
           <Button
             variant='ghost'
             onClick={onCancel}
-            className='h-12 rounded-2xl text-[10px] font-black tracking-widest uppercase'
+            className='h-12 rounded-2xl'
           >
             丢弃 / DISCARD
           </Button>
@@ -459,7 +459,7 @@ function ScannerItemDetail({
                 item.version
               )
             }}
-            className='h-12 rounded-2xl bg-blue-600 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-600/30 transition-all active:scale-95'
+            className='h-12 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-600/30 transition-all active:scale-95'
           >
             确认存入 / COMMIT_DELTA
           </Button>

@@ -90,7 +90,7 @@ export function ProductionMaterialRequirementBomBasisReview({
                     aria-label={label}
                     value={validValue}
                     disabled={isLoading}
-                    className='min-h-10 w-full min-w-0 rounded-md border bg-background px-2 text-sm'
+                    className='min-h-10 w-full min-w-0 rounded-md border bg-background px-2'
                     onChange={(event) => {
                       if (event.target.value)
                         onSelectionChange({

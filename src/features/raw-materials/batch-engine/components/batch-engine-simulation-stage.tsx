@@ -104,7 +104,7 @@ export function BatchEngineSimulationStage(
               </div>
               <Button
                 type='button'
-                className='h-8 rounded-full px-3 text-xs font-black tracking-wider uppercase'
+                className='h-8 rounded-full px-3'
                 disabled={!canSolve || isSolving}
                 onClick={onSolve}
               >
@@ -113,7 +113,7 @@ export function BatchEngineSimulationStage(
               <Button
                 type='button'
                 variant='outline'
-                className='h-8 rounded-full px-3 text-xs font-black'
+                className='h-8 rounded-full px-3'
                 onClick={onOpenPreview}
               >
                 <Maximize2 className='size-4' />

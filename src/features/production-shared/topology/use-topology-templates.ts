@@ -1,60 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createLogger } from '@/lib/logger'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import type { TopologyTemplate } from './types'
+import type { ProductionTopologyTemplate } from '../data/production-line'
+import { productionResourceSync } from '../services/production-resource-sync'
+import { productionTopologyTemplateSnapshotCopyService } from '../services/production-topology-template-snapshot-copy-service'
 
-const TEMPLATE_STORAGE_KEY = 'xdfc_topology_templates_v1'
 const TOPOLOGY_TEMPLATES_QUERY_KEY = [
   'production-shared',
-  'topology-templates',
+  'topology-template-snapshots',
 ] as const
-
-const logger = createLogger('useTopologyTemplates')
-
-async function loadTopologyTemplates() {
-  try {
-    const stored =
-      await StorageService.getItem<TopologyTemplate[]>(TEMPLATE_STORAGE_KEY)
-    return stored || []
-  } catch (error) {
-    logger.error('Failed to load templates from storage', error)
-    return []
-  }
-}
 
 export function useTopologyTemplates() {
   const queryClient = useQueryClient()
-  const { data: templates = [], isLoading } = useQuery<TopologyTemplate[]>({
+  const {
+    data: templates = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: TOPOLOGY_TEMPLATES_QUERY_KEY,
-    queryFn: loadTopologyTemplates,
-    initialData: [],
+    queryFn: productionTopologyTemplateSnapshotCopyService.list,
   })
-
-  const saveTemplatesMutation = useMutation({
-    mutationFn: async (nextTemplates: TopologyTemplate[]) => {
-      await StorageService.setItem(TEMPLATE_STORAGE_KEY, nextTemplates)
-      return nextTemplates
-    },
-    onSuccess: (nextTemplates) => {
-      queryClient.setQueryData(TOPOLOGY_TEMPLATES_QUERY_KEY, nextTemplates)
-    },
-  })
-
-  const addTemplate = async (template: TopologyTemplate) => {
-    await saveTemplatesMutation.mutateAsync([template, ...templates])
-  }
-
-  const removeTemplate = async (id: string) => {
-    await saveTemplatesMutation.mutateAsync(
-      templates.filter((template) => template.id !== id)
-    )
-  }
-
-  const updateTemplate = async (template: TopologyTemplate) => {
-    await saveTemplatesMutation.mutateAsync(
-      templates.map((item) => (item.id === template.id ? template : item))
-    )
-  }
 
   const refresh = async () => {
     await queryClient.invalidateQueries({
@@ -62,12 +25,46 @@ export function useTopologyTemplates() {
     })
   }
 
+  const captureMutation = useMutation({
+    mutationFn: productionTopologyTemplateSnapshotCopyService.captureFromLine,
+    onSuccess: refresh,
+  })
+  const updateMutation = useMutation({
+    mutationFn: productionTopologyTemplateSnapshotCopyService.update,
+    onSuccess: refresh,
+  })
+  const removeMutation = useMutation({
+    mutationFn: productionTopologyTemplateSnapshotCopyService.remove,
+    onSuccess: refresh,
+  })
+  const applyMutation = useMutation({
+    mutationFn: ({
+      template,
+      code,
+    }: {
+      template: ProductionTopologyTemplate
+      code: string
+    }) =>
+      productionTopologyTemplateSnapshotCopyService.applyToNewLine(
+        template,
+        code
+      ),
+    onSuccess: () => productionResourceSync.emitLinesUpdated(),
+  })
+
   return {
     templates,
     isLoaded: !isLoading,
-    addTemplate,
-    removeTemplate,
-    updateTemplate,
+    error,
+    isSaving:
+      captureMutation.isPending ||
+      updateMutation.isPending ||
+      removeMutation.isPending ||
+      applyMutation.isPending,
+    captureFromLine: captureMutation.mutateAsync,
+    removeTemplate: removeMutation.mutateAsync,
+    updateTemplate: updateMutation.mutateAsync,
+    applyToNewLine: applyMutation.mutateAsync,
     refresh,
   }
 }

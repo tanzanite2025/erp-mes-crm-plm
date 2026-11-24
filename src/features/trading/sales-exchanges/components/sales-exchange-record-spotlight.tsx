@@ -108,7 +108,7 @@ export function SalesExchangeRecordSpotlight({
           variant='outline'
           size='sm'
           onClick={onClearSelection}
-          className='rounded-full text-[10px] font-black tracking-widest uppercase'
+          className='rounded-full'
         >
           关闭
         </Button>
@@ -180,12 +180,12 @@ export function SalesExchangeRecordSpotlight({
               value={oldItemTrackingNo}
               onChange={(event) => setOldItemTrackingNo(event.target.value)}
               placeholder='客户寄回后可补录'
-              className='h-10 rounded-full bg-background font-bold'
+              className='h-10 rounded-full bg-background'
             />
             <Button
               type='button'
               size='sm'
-              className='h-10 shrink-0 rounded-full px-4 text-[10px] font-black tracking-widest uppercase'
+              className='h-10 shrink-0 rounded-full px-4'
               disabled={patchOldItemLogisticsMutation.isPending}
               onClick={() =>
                 patchOldItemLogisticsMutation.mutate({
@@ -330,7 +330,7 @@ export function SalesExchangeRecordSpotlight({
                     type='button'
                     variant='outline'
                     size='sm'
-                    className='h-8 rounded-full border-red-500/20 px-3 text-[10px] font-black text-red-600'
+                    className='h-8 rounded-full border-red-500/20 px-3 text-red-600'
                     disabled={voidReplacementShipmentMutation.isPending}
                     onClick={() => {
                       setVoidShipmentId(record.id)
@@ -389,7 +389,7 @@ export function SalesExchangeRecordSpotlight({
           value={voidReason}
           onChange={(event) => setVoidReason(event.target.value)}
           placeholder='请输入冲销原因'
-          className='h-11 rounded-full font-bold'
+          className='h-11 rounded-full'
         />
       </ConfirmDialog>
     </Card>

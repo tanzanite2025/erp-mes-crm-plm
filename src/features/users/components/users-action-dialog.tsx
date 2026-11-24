@@ -266,7 +266,7 @@ export function UsersActionDialog({
             disabled={isSaving}
             type='submit'
             form='user-form'
-            className='h-11 rounded-full px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all active:scale-95'
+            className='h-11 rounded-full px-8 shadow-xl shadow-blue-500/20 transition-all active:scale-95'
           >
             {t('users.dialogs.buttons.save')}
           </Button>

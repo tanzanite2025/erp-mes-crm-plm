@@ -134,7 +134,7 @@ export function SalesOrderActionDialog({
               </p>
               <Button
                 variant='outline'
-                className='mt-5 rounded-full border-dashed px-8 text-[10px] font-black tracking-widest uppercase'
+                className='mt-5 rounded-full border-dashed px-8'
                 onClick={handleRetryResources}
               >
                 {t('common.actions.retry')}
@@ -161,7 +161,7 @@ export function SalesOrderActionDialog({
               </p>
               <Button
                 variant='outline'
-                className='mt-5 rounded-full border-dashed px-8 text-[10px] font-black tracking-widest uppercase'
+                className='mt-5 rounded-full border-dashed px-8'
                 onClick={() => void retryInit()}
               >
                 {t('common.actions.retry')}

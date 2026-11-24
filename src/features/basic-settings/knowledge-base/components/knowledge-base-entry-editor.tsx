@@ -140,7 +140,7 @@ export function KnowledgeBaseEntryEditor({
             <Input
               value={draft.title}
               onChange={(event) => updateDraft({ title: event.target.value })}
-              className='h-11 rounded-2xl border-none bg-muted/50 text-[13px] font-bold shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+              className='h-11 rounded-2xl border-none bg-muted/50 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
             />
           </div>
 
@@ -157,7 +157,7 @@ export function KnowledgeBaseEntryEditor({
                       .value as KnowledgeBaseDraft['category'],
                   })
                 }
-                className='h-11 rounded-2xl border-none bg-muted/50 px-3 text-[13px] font-bold shadow-inner outline-none focus:ring-1 focus:ring-primary/20'
+                className='h-11 rounded-2xl border-none bg-muted/50 px-3 shadow-inner outline-none focus:ring-1 focus:ring-primary/20'
               >
                 {KNOWLEDGE_BASE_CATEGORIES.filter(
                   (item) => item.value !== 'all'
@@ -182,12 +182,12 @@ export function KnowledgeBaseEntryEditor({
                     variant='outline'
                     role='combobox'
                     aria-expanded={routePickerOpen}
-                    className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-4 text-left text-[13px] font-bold shadow-inner hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-primary/20'
+                    className='h-12 w-full justify-between rounded-2xl border-none bg-muted/50 px-4 text-left shadow-inner hover:bg-muted/60 focus-visible:ring-1 focus-visible:ring-primary/20'
                   >
                     <div className='min-w-0 flex-1 text-left'>
                       <div
                         className={cn(
-                          'truncate text-[13px] font-bold',
+                          'truncate',
                           !selectedRouteOption && 'text-muted-foreground'
                         )}
                       >
@@ -215,7 +215,7 @@ export function KnowledgeBaseEntryEditor({
                         placeholder={t(
                           'basicSettings.knowledgeBase.editor.routeOptions.searchPlaceholder'
                         )}
-                        className='h-9 rounded-2xl border-none bg-muted/50 pl-9 text-[11px] font-bold shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+                        className='h-9 rounded-2xl border-none bg-muted/50 pl-9 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
                       />
                     </div>
                   </div>
@@ -230,7 +230,7 @@ export function KnowledgeBaseEntryEditor({
                           : 'border-muted/50 bg-muted/10 hover:bg-muted/30'
                       )}
                     >
-                      <span className='text-[11px] font-black tracking-widest uppercase'>
+                      <span>
                         {t(
                           'basicSettings.knowledgeBase.editor.routeOptions.none'
                         )}
@@ -268,10 +268,8 @@ export function KnowledgeBaseEntryEditor({
                           >
                             <div className='flex items-start justify-between gap-2'>
                               <div className='min-w-0 space-y-0.5'>
-                                <div className='truncate text-[12px] leading-none font-black tracking-tight'>
-                                  {option.label}
-                                </div>
-                                <div className='truncate text-[8px] leading-none font-black tracking-[0.14em] text-muted-foreground/55 uppercase'>
+                                <div className='truncate'>{option.label}</div>
+                                <div className='truncate text-muted-foreground/55'>
                                   {option.parentLabel}
                                 </div>
                               </div>
@@ -284,7 +282,7 @@ export function KnowledgeBaseEntryEditor({
                                 )}
                               />
                             </div>
-                            <div className='mt-1 truncate font-maple-ui text-[8px] leading-none text-muted-foreground/70'>
+                            <div className='mt-1 truncate font-maple-ui text-muted-foreground/70'>
                               {option.value}
                             </div>
                           </button>
@@ -304,7 +302,7 @@ export function KnowledgeBaseEntryEditor({
             <Input
               value={draft.summary}
               onChange={(event) => updateDraft({ summary: event.target.value })}
-              className='h-11 rounded-2xl border-none bg-muted/50 text-[13px] font-bold shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+              className='h-11 rounded-2xl border-none bg-muted/50 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
             />
           </div>
 
@@ -330,7 +328,7 @@ export function KnowledgeBaseEntryEditor({
                   keywords: normalizeKnowledgeKeywords(event.target.value),
                 })
               }
-              className='h-11 rounded-2xl border-none bg-muted/50 text-[13px] font-bold shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
+              className='h-11 rounded-2xl border-none bg-muted/50 shadow-inner focus-visible:ring-1 focus-visible:ring-primary/20'
             />
           </div>
         </div>
@@ -338,13 +336,13 @@ export function KnowledgeBaseEntryEditor({
         <div className='flex justify-end gap-3 border-t border-dashed border-muted/50 bg-muted/20 px-6 py-4'>
           <Button
             variant='outline'
-            className='h-10 rounded-full px-5 font-bold shadow-sm'
+            className='h-10 rounded-full px-5 shadow-sm'
             onClick={onClose}
           >
             {t('common.actions.cancel')}
           </Button>
           <Button
-            className='h-10 rounded-full px-6 font-black shadow-sm'
+            className='h-10 rounded-full px-6 shadow-sm'
             onClick={onSave}
             disabled={isSaving}
           >

@@ -83,7 +83,7 @@ export function SalesReturnActualAmountRecordEditorContent({
             placeholder={t(
               'trading.salesReturns.actualAmountEntryDialog.amountPlaceholder'
             )}
-            className='h-12 rounded-2xl border-none bg-muted/50 text-right font-black tabular-nums'
+            className='h-12 rounded-2xl border-none bg-muted/50 text-right tabular-nums'
           />
         </div>
         <div className='space-y-1.5'>

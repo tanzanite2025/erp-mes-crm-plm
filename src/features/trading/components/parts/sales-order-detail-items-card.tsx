@@ -54,7 +54,7 @@ export function SalesOrderDetailItemsCard({
                 size='sm'
                 className={cn(
                   claimButtonClassName,
-                  'h-auto min-w-0 py-1.5 leading-6 [overflow-wrap:anywhere] whitespace-normal'
+                  'h-auto min-w-0 py-1.5 [overflow-wrap:anywhere] whitespace-normal'
                 )}
                 onClick={() => onClaimModel(model)}
               >

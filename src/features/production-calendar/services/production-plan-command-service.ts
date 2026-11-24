@@ -23,6 +23,9 @@ export interface ProductionPlanCommand {
   salesOrderLineId?: number
   productId?: string
   productName?: string
+  bomOwnerType?: 'INTERNAL' | 'CUSTOMER'
+  bomOwnerCustomerId?: string
+  bomVersionLevel?: string
   quantity?: number
   status?: ProductionPlanStatus | string
   startDate?: string | null

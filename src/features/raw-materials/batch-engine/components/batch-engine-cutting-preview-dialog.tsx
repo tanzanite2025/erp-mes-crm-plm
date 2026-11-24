@@ -195,7 +195,7 @@ export function BatchEngineCuttingPreviewDialog(
           <Button
             variant='outline'
             onClick={() => onOpenChange(false)}
-            className='shrink-0 rounded-full px-5 font-black'
+            className='shrink-0 rounded-full px-5'
           >
             <Scissors className='size-4' />
             {t('rawMaterials.batchEngine.canvasPreview.close')}

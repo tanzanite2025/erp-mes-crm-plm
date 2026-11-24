@@ -182,7 +182,7 @@ export function TemplateMgmt() {
           />
           <Button
             onClick={handleAdd}
-            className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
+            className='h-11 rounded-full bg-blue-600 px-8 text-white shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
           >
             <Plus className='mr-2 size-4' />
             {t('engineering.templateMgmt.actions.create')}
@@ -201,11 +201,7 @@ export function TemplateMgmt() {
           <p className='mb-8 max-w-sm text-xs font-black text-muted-foreground/40'>
             {t('engineering.templateMgmt.empty.description')}
           </p>
-          <Button
-            onClick={handleAdd}
-            variant='link'
-            className='font-bold text-blue-600'
-          >
+          <Button onClick={handleAdd} variant='link' className='text-blue-600'>
             {t('engineering.templateMgmt.empty.create')}
           </Button>
         </div>

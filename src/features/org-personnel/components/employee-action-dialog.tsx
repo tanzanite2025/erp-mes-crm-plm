@@ -371,7 +371,7 @@ export function EmployeeActionDialog({
             disabled={form.formState.isSubmitting}
             type='submit'
             form='employee-form'
-            className='h-11 w-full rounded-full px-8 text-sm font-semibold shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:w-auto'
+            className='h-11 w-full rounded-full px-8 shadow-xl shadow-blue-500/20 transition-all active:scale-95 sm:w-auto'
           >
             {t('orgPersonnel.org.employeeDialog.submit')}
           </Button>

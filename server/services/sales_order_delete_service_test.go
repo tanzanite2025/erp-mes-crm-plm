@@ -28,6 +28,7 @@ func TestDeleteSalesOrderRejectsOrderWithSalesExchange(t *testing.T) {
 		`CREATE TABLE sales_order_lines (id integer PRIMARY KEY, sales_order_id text, deleted_at datetime)`,
 		`CREATE TABLE sales_returns (id text PRIMARY KEY, sales_order_id text, deleted_at datetime)`,
 		`CREATE TABLE sales_exchanges (id text PRIMARY KEY, sales_order_id text NOT NULL, deleted_at datetime)`,
+		`CREATE TABLE linear_barcode_inventory_items (id text PRIMARY KEY, sales_order_id text, status text, expires_at datetime, deleted_at datetime)`,
 	}
 	for _, statement := range schemaStatements {
 		if err := testDB.Exec(statement).Error; err != nil {

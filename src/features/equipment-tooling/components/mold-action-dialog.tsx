@@ -471,7 +471,7 @@ export function MoldActionDialog({
                     <Button
                       variant='ghost'
                       size='sm'
-                      className='h-5 gap-1 px-2 text-[9px] font-black tracking-widest text-primary uppercase'
+                      className='control-typography-compact h-5 gap-1 px-2 text-primary'
                       asChild
                     >
                       <Link to='/equipment-tooling/drawings'>

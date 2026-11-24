@@ -254,7 +254,7 @@ export function LogisticsMgmt() {
             />
             <Button
               size='sm'
-              className='h-11 gap-2 rounded-full bg-primary px-6 text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20'
+              className='h-11 gap-2 rounded-full bg-primary px-6 shadow-lg shadow-primary/20'
               onClick={handleAdd}
             >
               <Plus className='h-4 w-4' />
@@ -271,7 +271,7 @@ export function LogisticsMgmt() {
             placeholder={t('trading.logistics.searchPlaceholder')}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-[11px] font-bold shadow-inner transition-all focus:bg-background'
+            className='h-12 rounded-2xl border-none bg-muted/50 pl-11 shadow-inner transition-all focus:bg-background'
           />
         </div>
         <div className='hidden items-center gap-2 sm:flex'>
@@ -400,7 +400,7 @@ export function LogisticsMgmt() {
             variant='ghost'
             disabled={page === 1}
             onClick={() => setPage((value) => value - 1)}
-            className='h-10 rounded-xl px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-white hover:shadow-md'
+            className='h-10 rounded-xl px-6 transition-all hover:bg-white hover:shadow-md'
           >
             {t('trading.logistics.pagination.prev')}
           </Button>
@@ -416,7 +416,7 @@ export function LogisticsMgmt() {
             variant='ghost'
             disabled={page >= Math.ceil(total / pageSize)}
             onClick={() => setPage((value) => value + 1)}
-            className='h-10 rounded-xl px-6 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-white hover:shadow-md'
+            className='h-10 rounded-xl px-6 transition-all hover:bg-white hover:shadow-md'
           >
             {t('trading.logistics.pagination.next')}
           </Button>
@@ -540,7 +540,7 @@ export function LogisticsMgmt() {
                             displayRecord.trackingNo || displayRecord.orderNo
                           }
                           label={t('common.audit.trigger')}
-                          className='h-9 rounded-full px-4 text-[10px]'
+                          className='h-9 rounded-full px-4'
                         />
                       ) : null}
                       <Button
@@ -551,7 +551,7 @@ export function LogisticsMgmt() {
                           !selectedTrackingNo ||
                           refreshTrackingMutation.isPending
                         }
-                        className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
+                        className='h-9 rounded-full border-dashed px-4'
                       >
                         {refreshTrackingMutation.isPending ? (
                           <Loader2 className='me-2 size-3.5 animate-spin' />

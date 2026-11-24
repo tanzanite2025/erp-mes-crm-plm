@@ -34,7 +34,7 @@ export function AssignmentCommandGrid({
         <ListPlus className='size-4 text-muted-foreground' />
       </div>
 
-      <div className='grid gap-2 lg:grid-cols-2'>
+      <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-2'>
         {commands.map((command) => {
           const checked = selectedCodeSet.has(command.code)
 

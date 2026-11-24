@@ -156,7 +156,7 @@ export function PartnerMgmt() {
 
       <div className='flex items-center justify-end rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 sm:p-5'>
         <Button
-          className='h-12 w-full gap-2 rounded-full bg-blue-600 px-8 text-[10px] font-black tracking-widest uppercase shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:w-auto'
+          className='h-12 w-full gap-2 rounded-full bg-blue-600 px-8 shadow-xl shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 md:w-auto'
           onClick={handleAdd}
         >
           <Plus className='size-4' />

@@ -1,19 +1,15 @@
 import {
+  formatProductCodeMonthSegment,
+  type ProductCodeSegments,
+} from '@/lib/product-code/product-code-protocol'
+import {
   DEFAULT_LINEAR_BARCODE_SAMPLE,
   LINEAR_BARCODE_RULES_CONFIG,
   LINEAR_BARCODE_SEQUENCE_RULE_KEY,
   type BarcodeRuleSegment,
 } from './linear-barcode-rules-config'
 
-export interface LinearBarcodeMockInputs {
-  year: string
-  month: string
-  day: string
-  model: string
-  appearance: string
-  holePrefix: string
-  holes: string
-  serial: string
+export interface LinearBarcodeMockInputs extends ProductCodeSegments {
   isDrainHole: boolean
   wheelType: string
   scopeCode: string
@@ -33,63 +29,6 @@ export interface LinearBarcodeProtocolConfig {
   rules: BarcodeRuleSegment[]
   mockInput: LinearBarcodeMockInputs
   ingestDefaults: LinearBarcodeIngestDefaults
-}
-
-export type LinearBarcodeCoreInput = Pick<
-  LinearBarcodeMockInputs,
-  | 'year'
-  | 'month'
-  | 'day'
-  | 'model'
-  | 'appearance'
-  | 'holePrefix'
-  | 'holes'
-  | 'serial'
->
-
-function normalizeLinearBarcodeSegments(input: LinearBarcodeCoreInput) {
-  return {
-    year: input.year.trim().toUpperCase(),
-    month: input.month.trim().toUpperCase(),
-    day: input.day.trim().toUpperCase(),
-    model: input.model.trim().toUpperCase(),
-    appearance: input.appearance.trim().toUpperCase(),
-    holePrefix: input.holePrefix.trim().toUpperCase(),
-    holes: input.holes.trim().toUpperCase(),
-    serial: input.serial.trim().toUpperCase(),
-  }
-}
-
-export function assembleLinearBarcodeCode(
-  input: LinearBarcodeCoreInput
-): string {
-  const segments = normalizeLinearBarcodeSegments(input)
-
-  return `${segments.year}${segments.month}${segments.day}${segments.model}${segments.appearance}${segments.holePrefix}${segments.holes}${segments.serial}`
-}
-
-export function assembleCanonicalLinearBarcodeCode(
-  input: LinearBarcodeCoreInput
-): string {
-  const segments = normalizeLinearBarcodeSegments(input)
-  const validators: Array<[keyof typeof segments, RegExp]> = [
-    ['year', /^\d{2}$/],
-    ['month', /^(?:[1-9]|0|N|D)$/],
-    ['day', /^(?:0[1-9]|[12]\d|3[01])$/],
-    ['model', /^\d{2}$/],
-    ['appearance', /^\d$/],
-    ['holePrefix', /^[RD]$/],
-    ['holes', /^\d{2}$/],
-    ['serial', /^\d{4}$/],
-  ]
-
-  for (const [field, pattern] of validators) {
-    if (!pattern.test(segments[field])) {
-      throw new Error(`Invalid linear barcode segment: ${field}`)
-    }
-  }
-
-  return assembleLinearBarcodeCode(segments)
 }
 
 function cloneRule(rule: BarcodeRuleSegment): BarcodeRuleSegment {
@@ -199,20 +138,12 @@ export const DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => {
   return { label: value, value }
 })
 
-export function formatLinearBarcodeMonthValue(date: Date) {
-  const month = date.getMonth() + 1
-  if (month <= 9) return String(month)
-  if (month === 10) return '0'
-  if (month === 11) return 'N'
-  return 'D'
-}
-
 export function createDefaultLinearBarcodeMockInputs(
   date: Date = new Date()
 ): LinearBarcodeMockInputs {
   return {
     year: date.getFullYear().toString().slice(-2),
-    month: formatLinearBarcodeMonthValue(date),
+    month: formatProductCodeMonthSegment(date),
     day: String(date.getDate()).padStart(2, '0'),
     model: '01',
     appearance: '1',

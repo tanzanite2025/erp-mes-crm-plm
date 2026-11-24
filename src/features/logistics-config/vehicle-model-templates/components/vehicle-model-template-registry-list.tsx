@@ -128,7 +128,7 @@ export function VehicleModelTemplateRegistryList({
                     type='button'
                     disabled={!canManageTemplates}
                     onClick={() => onEditTemplate(template)}
-                    className='inline-flex h-7 items-center gap-1 rounded-full border border-border/70 bg-background px-2 text-[10px] font-black text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
+                    className='control-typography-compact inline-flex h-7 items-center gap-1 rounded-full border border-border/70 bg-background px-2 text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
                   >
                     <PenLine className='size-3' />
                     {t('logisticsConfig.vehicleModelTemplates.edit')}
@@ -147,7 +147,7 @@ export function VehicleModelTemplateRegistryList({
                         current === template.id ? null : template.id
                       )
                     }
-                    className='inline-flex items-center justify-between rounded-[12px] bg-muted/30 px-2 py-1 text-left font-bold text-muted-foreground transition-colors hover:text-primary'
+                    className='inline-flex items-center justify-between rounded-[12px] bg-muted/30 px-2 py-1 text-left text-muted-foreground transition-colors hover:text-primary'
                   >
                     <span>
                       {t('logisticsConfig.vehicleModelTemplates.versionCount', {

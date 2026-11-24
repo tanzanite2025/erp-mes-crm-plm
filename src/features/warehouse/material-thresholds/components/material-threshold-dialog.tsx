@@ -392,7 +392,7 @@ export function MaterialThresholdDialog({
                     })
                   }
                   placeholder={thresholdPlaceholder}
-                  className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-maple-ui text-sm font-black shadow-inner focus-visible:ring-primary/20'
+                  className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-maple-ui shadow-inner focus-visible:ring-primary/20'
                 />
                 <p className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                   {thresholdHint}
@@ -439,7 +439,7 @@ export function MaterialThresholdDialog({
                 placeholder={t(
                   'warehouseConfig.materialThresholds.dialog.notesPlaceholder'
                 )}
-                className='min-h-[108px] resize-none rounded-2xl border-none bg-muted/50 px-4 py-3 text-sm shadow-inner focus-visible:ring-primary/20'
+                className='min-h-[108px] resize-none rounded-2xl border-none bg-muted/50 px-4 py-3 shadow-inner focus-visible:ring-primary/20'
               />
             </div>
           </div>
@@ -450,7 +450,7 @@ export function MaterialThresholdDialog({
             type='button'
             variant='ghost'
             disabled={isSubmitting}
-            className='h-11 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='h-11 flex-1 rounded-full'
             onClick={() => onOpenChange(false)}
           >
             {t('warehouseConfig.materialThresholds.dialog.cancel')}
@@ -458,7 +458,7 @@ export function MaterialThresholdDialog({
           <Button
             type='button'
             disabled={isSubmitting}
-            className='h-11 flex-1 rounded-full text-[10px] font-black tracking-widest uppercase'
+            className='h-11 flex-1 rounded-full'
             onClick={() => {
               void handleSave()
             }}

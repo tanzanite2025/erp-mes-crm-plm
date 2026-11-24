@@ -84,18 +84,14 @@ export function UnifiedProvidersTab() {
             className='rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm'
           >
             <BookOpen className='mr-2 size-4' />
-            <span className='text-xs font-black tracking-wider uppercase'>
-              {t('logisticsConfig.unified.views.directory')}
-            </span>
+            <span>{t('logisticsConfig.unified.views.directory')}</span>
           </TabsTrigger>
           <TabsTrigger
             value='integration'
             className='rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm'
           >
             <Plug className='mr-2 size-4' />
-            <span className='text-xs font-black tracking-wider uppercase'>
-              {t('logisticsConfig.unified.views.integration')}
-            </span>
+            <span>{t('logisticsConfig.unified.views.integration')}</span>
           </TabsTrigger>
         </TabsList>
 

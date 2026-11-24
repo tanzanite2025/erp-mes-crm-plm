@@ -146,7 +146,7 @@ export function BusinessEventSourceDeleteDialog({
               value={confirmInput}
               onChange={(event) => setConfirmInput(event.target.value)}
               placeholder='DELETE'
-              className='h-11 rounded-2xl font-maple-ui text-sm font-black tracking-widest'
+              className='h-11 rounded-2xl font-maple-ui'
               autoComplete='off'
               autoFocus
             />
@@ -157,9 +157,7 @@ export function BusinessEventSourceDeleteDialog({
         )}
 
         <AlertDialogFooter>
-          <AlertDialogCancel className='rounded-full text-xs font-black'>
-            取消
-          </AlertDialogCancel>
+          <AlertDialogCancel className='rounded-full'>取消</AlertDialogCancel>
           <AlertDialogAction
             disabled={!canDelete}
             onClick={(event) => {
@@ -170,7 +168,7 @@ export function BusinessEventSourceDeleteDialog({
               void onConfirm()
             }}
             className={cn(
-              'rounded-full text-xs font-black tracking-widest uppercase',
+              'rounded-full',
               isReferenced
                 ? 'bg-muted text-muted-foreground'
                 : 'bg-rose-600 text-white hover:bg-rose-700'

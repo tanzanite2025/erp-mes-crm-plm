@@ -71,7 +71,7 @@ export function ProductCreationGuideBaseModelSelectionStepContent({
               <SelectTrigger
                 id='product-creation-guide-base-model-selection'
                 aria-describedby='product-creation-guide-base-model-selection-help product-creation-guide-base-model-next-action'
-                className='h-auto min-h-14 w-full rounded-2xl border-2 border-blue-400 bg-background px-4 py-3 text-left text-sm font-semibold whitespace-normal shadow-sm hover:border-blue-600 focus-visible:border-blue-600 focus-visible:ring-blue-500/20 data-placeholder:text-blue-700 data-[size=default]:h-auto dark:border-blue-400 dark:bg-background dark:data-placeholder:text-blue-300 [&_[data-slot=select-value]]:line-clamp-none [&_[data-slot=select-value]]:whitespace-normal [&_svg]:size-5 [&_svg]:text-blue-600 [&_svg]:opacity-100 dark:[&_svg]:text-blue-400'
+                className='h-auto min-h-14 w-full rounded-2xl border-2 border-blue-400 bg-background px-4 py-3 text-left whitespace-normal shadow-sm hover:border-blue-600 focus-visible:border-blue-600 focus-visible:ring-blue-500/20 data-placeholder:text-blue-700 data-[size=default]:h-auto dark:border-blue-400 dark:bg-background dark:data-placeholder:text-blue-300 [&_[data-slot=select-value]]:line-clamp-none [&_[data-slot=select-value]]:whitespace-normal [&_svg]:size-5 [&_svg]:text-blue-600 [&_svg]:opacity-100 dark:[&_svg]:text-blue-400'
               >
                 <SelectValue
                   placeholder={t(
@@ -84,7 +84,7 @@ export function ProductCreationGuideBaseModelSelectionStepContent({
                   <SelectItem
                     key={model.id}
                     value={model.id}
-                    className='min-h-11 py-3 text-sm'
+                    className='min-h-11 py-3'
                   >
                     {model.pathLabel}
                   </SelectItem>
@@ -154,7 +154,7 @@ export function ProductCreationGuideBaseModelSelectionStepContent({
             </p>
           </div>
           <Button
-            className='h-auto min-h-11 w-full gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold whitespace-normal text-white shadow-sm hover:bg-blue-700'
+            className='h-auto min-h-11 w-full gap-2 rounded-full bg-blue-600 px-5 py-3 whitespace-normal text-white shadow-sm hover:bg-blue-700'
             onClick={onCreateBaseModel}
           >
             <Plus aria-hidden='true' className='size-4 shrink-0' />

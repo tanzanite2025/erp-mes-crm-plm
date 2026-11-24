@@ -60,7 +60,7 @@ export function ProviderIntegrationFieldsSection({
                 endpoint: event.target.value,
               }))
             }
-            className='h-11 rounded-2xl border-slate-200 font-maple-ui text-[11px]'
+            className='h-11 rounded-2xl border-slate-200 font-maple-ui'
             placeholder='https://...'
           />
         </div>
@@ -110,7 +110,7 @@ export function ProviderIntegrationFieldsSection({
                 key={capability.value}
                 type='button'
                 variant={selected ? 'default' : 'outline'}
-                className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                className='h-8 rounded-full px-3'
                 onClick={() =>
                   setFormData((prev) =>
                     toggleProviderCapability(prev, capability.value)

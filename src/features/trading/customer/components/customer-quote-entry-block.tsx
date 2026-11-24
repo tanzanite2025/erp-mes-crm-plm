@@ -80,7 +80,7 @@ export function CustomerQuoteEntryBlock({
             variant='outline'
             size='sm'
             onClick={onRetry}
-            className='h-8 rounded-full px-4 text-[8px] font-black tracking-widest uppercase'
+            className='h-8 rounded-full px-4'
           >
             重试
           </Button>
@@ -114,7 +114,7 @@ export function CustomerQuoteEntryBlock({
                 variant='default'
                 size='sm'
                 onClick={onCreateQuote}
-                className='h-9 w-full animate-in rounded-full border border-primary/30 bg-primary px-4 text-[9px] font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/25 duration-300 fade-in hover:bg-primary/90'
+                className='h-9 w-full animate-in rounded-full border border-primary/30 bg-primary px-4 text-primary-foreground shadow-lg shadow-primary/25 duration-300 fade-in hover:bg-primary/90'
               >
                 {t('trading.customers.summary.quoteCreate')}
               </Button>
@@ -149,7 +149,7 @@ export function CustomerQuoteEntryBlock({
                 variant='outline'
                 size='sm'
                 onClick={() => onOpenQuote(quote.id)}
-                className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase'
+                className='h-9 w-full rounded-full px-4'
               >
                 {t('trading.customers.summary.quoteOpen')}
               </Button>
@@ -185,7 +185,7 @@ export function CustomerQuoteEntryBlock({
                   type='button'
                   variant='outline'
                   size='sm'
-                  className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase'
+                  className='h-9 w-full rounded-full px-4'
                 >
                   {t('trading.customers.summary.quoteSelect')}
                 </Button>
@@ -195,7 +195,7 @@ export function CustomerQuoteEntryBlock({
                   <DropdownMenuItem
                     key={quote.id}
                     onClick={() => onOpenQuote(quote.id)}
-                    className='rounded-lg px-3 py-2 text-[10px] font-black'
+                    className='rounded-lg px-3 py-2'
                   >
                     {quote.quoteNo} / {quote.status}
                   </DropdownMenuItem>

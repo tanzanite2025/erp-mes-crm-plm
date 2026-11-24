@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 	"xdfc-server/audit"
@@ -75,18 +76,25 @@ type OutsourceTransferRequest struct {
 }
 
 type OutsourceInspectionRequest struct {
-	OutsourceOrderLineID string  `json:"-"`
-	ProductBarcode       string  `json:"productBarcode"`
-	Result               string  `json:"result"`
-	Disposition          string  `json:"disposition"`
-	InspectedQuantity    float64 `json:"inspectedQuantity"`
-	UOM                  string  `json:"uom"`
-	InspectionTaskID     string  `json:"inspectionTaskId"`
-	InspectedAt          string  `json:"inspectedAt"`
-	Notes                string  `json:"notes"`
-	ActorID              string  `json:"-"`
-	Operator             string  `json:"-"`
-	IP                   string  `json:"-"`
+	OutsourceOrderLineID     string  `json:"-"`
+	ProductBarcode           string  `json:"productBarcode"`
+	ProductionWorkLocationID string  `json:"productionWorkLocationId"`
+	Result                   string  `json:"result"`
+	Disposition              string  `json:"disposition"`
+	InspectedQuantity        float64 `json:"inspectedQuantity"`
+	UOM                      string  `json:"uom"`
+	InspectionTaskID         string  `json:"inspectionTaskId"`
+	InspectedAt              string  `json:"inspectedAt"`
+	Notes                    string  `json:"notes"`
+	ActorID                  string  `json:"-"`
+	Operator                 string  `json:"-"`
+	IP                       string  `json:"-"`
+}
+
+type outsourceInspectionIdentity struct {
+	CycleNo           int
+	InspectionRoundNo int
+	ParentTaskID      string
 }
 
 type OutsourceTransferDTO struct {
@@ -98,12 +106,13 @@ type OutsourceTransferDTO struct {
 	OutsourceOrderLineID string  `json:"outsourceOrderLineId"`
 	TransferType         string  `json:"transferType"`
 	ProductBarcode       string  `json:"productBarcode"`
+	CycleNo              int     `json:"cycleNo"`
 	Quantity             float64 `json:"quantity"`
 	UOM                  string  `json:"uom"`
 	PartnerID            string  `json:"partnerId"`
 	RouteID              string  `json:"routeId"`
 	RouteStepID          string  `json:"routeStepId"`
-	ProcessStepID        string  `json:"processStepId"`
+	BranchOperationID    string  `json:"branchOperationId"`
 	FromHolderType       string  `json:"fromHolderType"`
 	FromHolderID         string  `json:"fromHolderId"`
 	ToHolderType         string  `json:"toHolderType"`
@@ -125,6 +134,8 @@ type OutsourceInspectionDTO struct {
 	OutsourceOrderID     string  `json:"outsourceOrderId"`
 	OutsourceOrderLineID string  `json:"outsourceOrderLineId"`
 	ProductBarcode       string  `json:"productBarcode"`
+	CycleNo              int     `json:"cycleNo"`
+	InspectionRoundNo    int     `json:"inspectionRoundNo"`
 	InspectionTaskID     string  `json:"inspectionTaskId"`
 	Result               string  `json:"result"`
 	Disposition          string  `json:"disposition"`
@@ -136,7 +147,7 @@ type OutsourceInspectionDTO struct {
 	UOM                  string  `json:"uom"`
 	RouteID              string  `json:"routeId"`
 	RouteStepID          string  `json:"routeStepId"`
-	ProcessStepID        string  `json:"processStepId"`
+	BranchOperationID    string  `json:"branchOperationId"`
 	OperationID          string  `json:"operationId"`
 	InspectedAt          string  `json:"inspectedAt"`
 	Inspector            string  `json:"inspector"`
@@ -272,10 +283,14 @@ func (s *ProductionOutsourcingService) recordOutsourceTransfer(transferType stri
 		if err := validateOutsourceTransferAllowed(tx, order, line, transferType, normalized); err != nil {
 			return err
 		}
+		cycleNo, err := resolveOutsourceTransferCycleNoTx(tx, line.ID, normalized.ProductBarcode, transferType)
+		if err != nil {
+			return err
+		}
 		previousOrderStatus := order.Status
 		previousLineStatus := line.Status
 
-		state, _, err := loadOutsourceBarcodeStateForLineTx(tx, line, normalized.ProductBarcode)
+		state, _, err := loadOutsourceBarcodeStateForLineTx(tx, order, line, normalized.ProductBarcode)
 		if err != nil {
 			return err
 		}
@@ -284,7 +299,7 @@ func (s *ProductionOutsourcingService) recordOutsourceTransfer(transferType stri
 			occurredAt = &now
 		}
 
-		transfer, err := createOutsourceTransferTx(tx, order, line, state, transferType, normalized, occurredAt)
+		transfer, err := createOutsourceTransferTx(tx, order, line, state, transferType, cycleNo, normalized, occurredAt)
 		if err != nil {
 			return err
 		}
@@ -393,7 +408,7 @@ func (s *ProductionOutsourcingService) InspectOutsourceOrderLine(req OutsourceIn
 		previousOrderStatus := order.Status
 		previousLineStatus := line.Status
 
-		state, exists, err := loadOutsourceBarcodeStateForLineTx(tx, line, normalized.ProductBarcode)
+		state, exists, err := loadOutsourceBarcodeStateForLineTx(tx, order, line, normalized.ProductBarcode)
 		if err != nil {
 			return err
 		}
@@ -415,12 +430,12 @@ func (s *ProductionOutsourcingService) InspectOutsourceOrderLine(req OutsourceIn
 			return err
 		}
 
-		inspection := buildOutsourceInspection(order, line, state, scanResult.RecordResult.Operation.ID, normalized, inspectedAt)
+		inspection := buildOutsourceInspection(order, line, state, scanResult.RecordResult.Operation.ID, task.SourceCycleNo, task.InspectionRoundNo, normalized, inspectedAt)
 		if err := createProductionRecordWithOptionalUUIDs(tx, &inspection,
 			productionOptionalUUIDWrite{Column: "inspection_task_id", Value: inspection.InspectionTaskID},
 			productionOptionalUUIDWrite{Column: "route_id", Value: inspection.RouteID},
 			productionOptionalUUIDWrite{Column: "route_step_id", Value: inspection.RouteStepID},
-			productionOptionalUUIDWrite{Column: "process_step_id", Value: inspection.ProcessStepID},
+			productionOptionalUUIDWrite{Column: "branch_operation_id", Value: inspection.BranchOperationID},
 			productionOptionalUUIDWrite{Column: "operation_id", Value: inspection.OperationID},
 		); err != nil {
 			return err
@@ -438,10 +453,9 @@ func (s *ProductionOutsourcingService) InspectOutsourceOrderLine(req OutsourceIn
 		}
 		savedInspection = inspection
 
-		line.AcceptedQuantity += inspection.AcceptedQuantity
-		line.RejectedQuantity += inspection.RejectedQuantity
-		line.ReworkQuantity += inspection.ReworkQuantity
-		line.ScrapQuantity += inspection.ScrapQuantity
+		if err := recalculateOutsourceLineQualitySummaryTx(tx, &line); err != nil {
+			return err
+		}
 		line.Status = deriveOutsourceLineStatus(line)
 		line.Version++
 		if err := tx.Save(&line).Error; err != nil {
@@ -565,18 +579,19 @@ func normalizeOutsourceInspectionRequest(req OutsourceInspectionRequest) Outsour
 		disposition = defaultOutsourceInspectionDisposition(result)
 	}
 	return OutsourceInspectionRequest{
-		OutsourceOrderLineID: strings.TrimSpace(req.OutsourceOrderLineID),
-		ProductBarcode:       normalizeProductBarcodeValue(req.ProductBarcode),
-		Result:               result,
-		Disposition:          disposition,
-		InspectedQuantity:    req.InspectedQuantity,
-		UOM:                  normalizeOutsourceOrderUOM(req.UOM),
-		InspectionTaskID:     strings.TrimSpace(req.InspectionTaskID),
-		InspectedAt:          strings.TrimSpace(req.InspectedAt),
-		Notes:                strings.TrimSpace(req.Notes),
-		ActorID:              strings.TrimSpace(req.ActorID),
-		Operator:             strings.TrimSpace(req.Operator),
-		IP:                   strings.TrimSpace(req.IP),
+		OutsourceOrderLineID:     strings.TrimSpace(req.OutsourceOrderLineID),
+		ProductBarcode:           normalizeProductBarcodeValue(req.ProductBarcode),
+		ProductionWorkLocationID: normalizeProductionExecutionUUIDIdentity(req.ProductionWorkLocationID),
+		Result:                   result,
+		Disposition:              disposition,
+		InspectedQuantity:        req.InspectedQuantity,
+		UOM:                      normalizeOutsourceOrderUOM(req.UOM),
+		InspectionTaskID:         strings.TrimSpace(req.InspectionTaskID),
+		InspectedAt:              strings.TrimSpace(req.InspectedAt),
+		Notes:                    strings.TrimSpace(req.Notes),
+		ActorID:                  strings.TrimSpace(req.ActorID),
+		Operator:                 strings.TrimSpace(req.Operator),
+		IP:                       strings.TrimSpace(req.IP),
 	}
 }
 
@@ -683,6 +698,125 @@ func loadOutsourceOrderLineForExecutionTx(tx *gorm.DB, lineID string) (models.Ou
 	return order, line, nil
 }
 
+func resolveOutsourceTransferCycleNoTx(tx *gorm.DB, lineID, productBarcode, transferType string) (int, error) {
+	var latestSend models.OutsourceTransfer
+	err := tx.Where("outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?", lineID, OutsourceTransferTypeSend, productBarcode).
+		Order("cycle_no DESC").First(&latestSend).Error
+	if transferType == OutsourceTransferTypeSend {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 1, nil
+		}
+		if err != nil {
+			return 0, err
+		}
+		var returned models.OutsourceTransfer
+		if err := tx.Where("outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?", lineID, OutsourceTransferTypeReturn, productBarcode, latestSend.CycleNo).First(&returned).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, fmt.Errorf("%w: current outsource cycle has not returned", ErrInvalidOutsourceOrder)
+			}
+			return 0, err
+		}
+		var latestInspection models.OutsourceInspection
+		if err := tx.Where("outsource_order_line_id = ? AND product_barcode = ? AND cycle_no = ?", lineID, productBarcode, latestSend.CycleNo).
+			Order("inspection_round_no DESC").First(&latestInspection).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return 0, fmt.Errorf("%w: current outsource cycle must be inspected before resend", ErrInvalidOutsourceOrder)
+			}
+			return 0, err
+		}
+		if latestInspection.Disposition != OutsourceInspectionDispositionRework {
+			return 0, fmt.Errorf("%w: only a rework disposition can start another outsource cycle", ErrInvalidOutsourceOrder)
+		}
+		if err := ensureOutsourceReworkExecutionCompletedTx(tx, productBarcode, latestInspection); err != nil {
+			return 0, err
+		}
+		return latestSend.CycleNo + 1, nil
+	}
+	if transferType != OutsourceTransferTypeReturn {
+		return 0, fmt.Errorf("%w: unsupported transferType %s", ErrInvalidOutsourceOrder, transferType)
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return 0, fmt.Errorf("%w: productBarcode has not been sent for this outsource line", ErrInvalidOutsourceOrder)
+	}
+	if err != nil {
+		return 0, err
+	}
+	var returned models.OutsourceTransfer
+	err = tx.Where("outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?", lineID, OutsourceTransferTypeReturn, productBarcode, latestSend.CycleNo).First(&returned).Error
+	if err == nil {
+		return 0, fmt.Errorf("%w: productBarcode already returned for this outsource cycle", ErrInvalidOutsourceOrder)
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return 0, err
+	}
+	return latestSend.CycleNo, nil
+}
+
+func resolveNextOutsourceInspectionIdentityTx(tx *gorm.DB, lineID, productBarcode string) (outsourceInspectionIdentity, error) {
+	var send models.OutsourceTransfer
+	if err := tx.Where("outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?", lineID, OutsourceTransferTypeSend, productBarcode).
+		Order("cycle_no DESC").First(&send).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return outsourceInspectionIdentity{}, fmt.Errorf("%w: productBarcode has not been sent for this outsource line", ErrInvalidOutsourceOrder)
+		}
+		return outsourceInspectionIdentity{}, err
+	}
+	var returned models.OutsourceTransfer
+	if err := tx.Where("outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?", lineID, OutsourceTransferTypeReturn, productBarcode, send.CycleNo).First(&returned).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return outsourceInspectionIdentity{}, fmt.Errorf("%w: current outsource cycle has not returned", ErrInvalidOutsourceOrder)
+		}
+		return outsourceInspectionIdentity{}, err
+	}
+	identity := outsourceInspectionIdentity{CycleNo: send.CycleNo, InspectionRoundNo: 1}
+	var previous models.OutsourceInspection
+	err := tx.Where("outsource_order_line_id = ? AND product_barcode = ? AND cycle_no = ?", lineID, productBarcode, send.CycleNo).
+		Order("inspection_round_no DESC").First(&previous).Error
+	if err == nil {
+		if previous.Disposition != OutsourceInspectionDispositionRework {
+			return outsourceInspectionIdentity{}, fmt.Errorf("%w: only a rework disposition can start another inspection round", ErrInvalidOutsourceOrder)
+		}
+		if err := ensureOutsourceReworkExecutionCompletedTx(tx, productBarcode, previous); err != nil {
+			return outsourceInspectionIdentity{}, err
+		}
+		identity.InspectionRoundNo = previous.InspectionRoundNo + 1
+		identity.ParentTaskID = strings.TrimSpace(previous.InspectionTaskID)
+		return identity, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return outsourceInspectionIdentity{}, err
+	}
+	if send.CycleNo > 1 {
+		var previousCycle models.OutsourceInspection
+		if err := tx.Where("outsource_order_line_id = ? AND product_barcode = ? AND cycle_no < ?", lineID, productBarcode, send.CycleNo).
+			Order("cycle_no DESC, inspection_round_no DESC").First(&previousCycle).Error; err != nil {
+			return outsourceInspectionIdentity{}, fmt.Errorf("%w: previous outsource cycle has no inspection", ErrInvalidOutsourceOrder)
+		}
+		if previousCycle.Disposition != OutsourceInspectionDispositionRework {
+			return outsourceInspectionIdentity{}, fmt.Errorf("%w: previous outsource cycle is not eligible for another cycle", ErrInvalidOutsourceOrder)
+		}
+		identity.ParentTaskID = strings.TrimSpace(previousCycle.InspectionTaskID)
+	}
+	return identity, nil
+}
+
+func ensureOutsourceReworkExecutionCompletedTx(tx *gorm.DB, productBarcode string, previous models.OutsourceInspection) error {
+	performedAfter := previous.CreatedAt
+	if previous.InspectedAt != nil {
+		performedAfter = *previous.InspectedAt
+	}
+	var count int64
+	if err := tx.Model(&models.ProductionOperationExecution{}).
+		Where("product_barcode = ? AND action = ? AND completed_at > ?", productBarcode, ProductionOperationActionComplete, performedAfter).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf("%w: rework must be completed before reinspection", ErrInvalidOutsourceOrder)
+	}
+	return nil
+}
+
 func validateOutsourceTransferAllowed(tx *gorm.DB, order models.OutsourceOrder, line models.OutsourceOrderLine, transferType string, req OutsourceTransferRequest) error {
 	if !isOutsourceTransferType(transferType) {
 		return fmt.Errorf("%w: unsupported transferType %s", ErrInvalidOutsourceOrder, transferType)
@@ -690,8 +824,8 @@ func validateOutsourceTransferAllowed(tx *gorm.DB, order models.OutsourceOrder, 
 	if req.ProductBarcode == "" {
 		return fmt.Errorf("%w: productBarcode is required", ErrInvalidOutsourceOrder)
 	}
-	if req.Quantity <= 0 {
-		return fmt.Errorf("%w: quantity must be greater than 0", ErrInvalidOutsourceOrder)
+	if req.Quantity != 1 {
+		return fmt.Errorf("%w: quantity must equal 1 for a product barcode", ErrInvalidOutsourceOrder)
 	}
 	if !strings.EqualFold(req.UOM, line.UOM) {
 		return fmt.Errorf("%w: transfer uom must match outsource line uom", ErrInvalidOutsourceOrder)
@@ -702,11 +836,26 @@ func validateOutsourceTransferAllowed(tx *gorm.DB, order models.OutsourceOrder, 
 	if order.Status == OutsourceOrderStatusClosed || order.Status == OutsourceOrderStatusCanceled {
 		return fmt.Errorf("%w: closed or canceled outsource order cannot be transferred", ErrInvalidOutsourceOrder)
 	}
+	cycleNo, err := resolveOutsourceTransferCycleNoTx(tx, line.ID, req.ProductBarcode, transferType)
+	if err != nil {
+		return err
+	}
 
 	switch transferType {
 	case OutsourceTransferTypeSend:
-		if line.SentQuantity+req.Quantity-line.Quantity > outsourceQuantityEpsilon {
-			return fmt.Errorf("%w: send quantity exceeds outsource line quantity", ErrInvalidOutsourceOrder)
+		var existingBarcode models.OutsourceTransfer
+		barcodeErr := tx.Where("outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?", line.ID, OutsourceTransferTypeSend, req.ProductBarcode).First(&existingBarcode).Error
+		if errors.Is(barcodeErr, gorm.ErrRecordNotFound) {
+			var distinctBarcodes int64
+			if err := tx.Model(&models.OutsourceTransfer{}).Distinct("product_barcode").
+				Where("outsource_order_line_id = ? AND transfer_type = ?", line.ID, OutsourceTransferTypeSend).Count(&distinctBarcodes).Error; err != nil {
+				return err
+			}
+			if float64(distinctBarcodes)+req.Quantity-line.Quantity > outsourceQuantityEpsilon {
+				return fmt.Errorf("%w: unique product barcode count exceeds outsource line quantity", ErrInvalidOutsourceOrder)
+			}
+		} else if barcodeErr != nil {
+			return barcodeErr
 		}
 	case OutsourceTransferTypeReturn:
 		if line.SentQuantity <= 0 {
@@ -717,10 +866,11 @@ func validateOutsourceTransferAllowed(tx *gorm.DB, order models.OutsourceOrder, 
 		}
 		var sent models.OutsourceTransfer
 		if err := tx.Where(
-			"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?",
+			"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?",
 			line.ID,
 			OutsourceTransferTypeSend,
 			req.ProductBarcode,
+			cycleNo,
 		).First(&sent).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return fmt.Errorf("%w: productBarcode has not been sent for this outsource line", ErrInvalidOutsourceOrder)
@@ -733,11 +883,12 @@ func validateOutsourceTransferAllowed(tx *gorm.DB, order models.OutsourceOrder, 
 	}
 
 	var duplicate models.OutsourceTransfer
-	err := tx.Where(
-		"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?",
+	err = tx.Where(
+		"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?",
 		line.ID,
 		transferType,
 		req.ProductBarcode,
+		cycleNo,
 	).First(&duplicate).Error
 	if err == nil {
 		return fmt.Errorf("%w: productBarcode already has %s transfer for this outsource line", ErrInvalidOutsourceOrder, transferType)
@@ -752,8 +903,8 @@ func validateOutsourceInspectionAllowed(tx *gorm.DB, order models.OutsourceOrder
 	if req.ProductBarcode == "" {
 		return fmt.Errorf("%w: productBarcode is required", ErrInvalidOutsourceOrder)
 	}
-	if req.InspectedQuantity <= 0 {
-		return fmt.Errorf("%w: inspectedQuantity must be greater than 0", ErrInvalidOutsourceOrder)
+	if req.InspectedQuantity != 1 {
+		return fmt.Errorf("%w: inspectedQuantity must equal 1 for a product barcode", ErrInvalidOutsourceOrder)
 	}
 	if !isOutsourceInspectionResult(req.Result) {
 		return fmt.Errorf("%w: unsupported inspection result %s", ErrInvalidOutsourceOrder, req.Result)
@@ -774,16 +925,18 @@ func validateOutsourceInspectionAllowed(tx *gorm.DB, order models.OutsourceOrder
 		return fmt.Errorf("%w: closed or canceled outsource order cannot be inspected", ErrInvalidOutsourceOrder)
 	}
 
+	identity, err := resolveNextOutsourceInspectionIdentityTx(tx, line.ID, req.ProductBarcode)
+	if err != nil {
+		return err
+	}
 	var returned models.OutsourceTransfer
 	if err := tx.Where(
-		"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ?",
+		"outsource_order_line_id = ? AND transfer_type = ? AND product_barcode = ? AND cycle_no = ?",
 		line.ID,
 		OutsourceTransferTypeReturn,
 		req.ProductBarcode,
+		identity.CycleNo,
 	).First(&returned).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("%w: productBarcode has not returned for this outsource line", ErrInvalidOutsourceOrder)
-		}
 		return err
 	}
 	if req.InspectedQuantity-returned.Quantity > outsourceQuantityEpsilon {
@@ -791,10 +944,12 @@ func validateOutsourceInspectionAllowed(tx *gorm.DB, order models.OutsourceOrder
 	}
 
 	var duplicate models.OutsourceInspection
-	err := tx.Where(
-		"outsource_order_line_id = ? AND product_barcode = ?",
+	err = tx.Where(
+		"outsource_order_line_id = ? AND product_barcode = ? AND cycle_no = ? AND inspection_round_no = ?",
 		line.ID,
 		req.ProductBarcode,
+		identity.CycleNo,
+		identity.InspectionRoundNo,
 	).First(&duplicate).Error
 	if err == nil {
 		return fmt.Errorf("%w: productBarcode already inspected for this outsource line", ErrInvalidOutsourceOrder)
@@ -805,7 +960,7 @@ func validateOutsourceInspectionAllowed(tx *gorm.DB, order models.OutsourceOrder
 	return nil
 }
 
-func loadOutsourceBarcodeStateForLineTx(tx *gorm.DB, line models.OutsourceOrderLine, productBarcode string) (models.ProductBarcodeState, bool, error) {
+func loadOutsourceBarcodeStateForLineTx(tx *gorm.DB, order models.OutsourceOrder, line models.OutsourceOrderLine, productBarcode string) (models.ProductBarcodeState, bool, error) {
 	state, exists, err := findProductBarcodeStateTx(tx, productBarcode)
 	if err != nil {
 		return models.ProductBarcodeState{}, false, err
@@ -813,19 +968,60 @@ func loadOutsourceBarcodeStateForLineTx(tx *gorm.DB, line models.OutsourceOrderL
 	if !exists {
 		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode state does not exist", ErrInvalidOutsourceOrder)
 	}
-	if strings.TrimSpace(state.CurrentProcessStepID) == "" {
-		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode has no current process step", ErrInvalidOutsourceOrder)
-	}
 	if strings.TrimSpace(state.RouteStepID) == "" {
 		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode has no current route step", ErrInvalidOutsourceOrder)
 	}
 	if line.ProductID != "" && state.ProductID != "" && line.ProductID != state.ProductID {
 		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode product does not match outsource line", ErrInvalidOutsourceOrder)
 	}
-	if line.ProcessStepID != "" && state.CurrentProcessStepID != "" && line.ProcessStepID != state.CurrentProcessStepID {
-		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode current process does not match outsource line process", ErrInvalidOutsourceOrder)
+	lot, plan, err := resolveProductionPlanForExecutionLotTx(tx, productBarcode)
+	if err != nil {
+		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: failed to resolve productBarcode production plan: %v", ErrInvalidOutsourceOrder, err)
+	}
+	if lot.Quantity != 1 {
+		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode execution lot quantity must equal 1", ErrInvalidOutsourceOrder)
+	}
+	if err := validateOutsourceBarcodePlanSource(order, line, plan); err != nil {
+		return models.ProductBarcodeState{}, false, err
+	}
+	route, _, err := resolveUniquePublishedProductionRouteForPlanTx(tx, plan)
+	if err != nil {
+		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode production plan has no valid fixed route revision: %v", ErrInvalidOutsourceOrder, err)
+	}
+	if route.ID != state.RouteID {
+		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode route does not match its production plan fixed revision", ErrInvalidOutsourceOrder)
+	}
+	step, err := loadProductionRouteStepTx(tx, state.RouteStepID)
+	if err != nil {
+		return models.ProductBarcodeState{}, false, err
+	}
+	if step.RouteID != state.RouteID || step.BranchOperationID != state.CurrentBranchOperationID {
+		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode route step does not match its current branch operation", ErrInvalidOutsourceOrder)
 	}
 	return state, exists, nil
+}
+
+func validateOutsourceBarcodePlanSource(order models.OutsourceOrder, line models.OutsourceOrderLine, plan models.ProductionPlan) error {
+	switch order.SourceType {
+	case OutsourceOrderSourceProductionPlan:
+		if strings.TrimSpace(order.SourceID) != strings.TrimSpace(plan.ID) {
+			return fmt.Errorf("%w: productBarcode production plan does not match outsource order source", ErrInvalidOutsourceOrder)
+		}
+	case OutsourceOrderSourceSalesOrder:
+		if strings.TrimSpace(order.SourceID) != strings.TrimSpace(plan.OrderID) {
+			return fmt.Errorf("%w: productBarcode production plan does not belong to outsource sales order", ErrInvalidOutsourceOrder)
+		}
+		planSalesOrderLineID := strconv.FormatUint(uint64(plan.SalesOrderLineID), 10)
+		if strings.TrimSpace(line.SourceLineID) != planSalesOrderLineID {
+			return fmt.Errorf("%w: productBarcode production plan does not match outsource sales order line", ErrInvalidOutsourceOrder)
+		}
+	default:
+		return fmt.Errorf("%w: unsupported outsource source type %s", ErrInvalidOutsourceOrder, strings.TrimSpace(order.SourceType))
+	}
+	if strings.TrimSpace(plan.ProductionRouteRevisionID) == "" || plan.ProductionRouteRevisionNo <= 0 {
+		return fmt.Errorf("%w: productBarcode production plan has no fixed route revision", ErrInvalidOutsourceOrder)
+	}
+	return nil
 }
 
 func createOutsourceTransferTx(
@@ -834,26 +1030,27 @@ func createOutsourceTransferTx(
 	line models.OutsourceOrderLine,
 	state models.ProductBarcodeState,
 	transferType string,
+	cycleNo int,
 	req OutsourceTransferRequest,
 	occurredAt *time.Time,
 ) (models.OutsourceTransfer, error) {
 	fromHolderType, fromHolderID, toHolderType, toHolderID := resolveOutsourceTransferHolders(order, transferType, req)
 	transferEvent, err := recordProductBarcodeTransferEventTx(tx, ProductBarcodeTransferEventWriteRequest{
-		ProductBarcode:    req.ProductBarcode,
-		StateID:           state.ID,
-		TransferType:      ProductBarcodeTransferTypeCustodyTransfer,
-		RouteID:           state.RouteID,
-		FromRouteStepID:   state.RouteStepID,
-		ToRouteStepID:     state.RouteStepID,
-		FromProcessStepID: state.CurrentProcessStepID,
-		ToProcessStepID:   state.CurrentProcessStepID,
-		FromHolderType:    fromHolderType,
-		FromHolderID:      fromHolderID,
-		ToHolderType:      toHolderType,
-		ToHolderID:        toHolderID,
-		Operator:          req.Operator,
-		CommandSource:     ProductionScanCommandSourceWeb,
-		Action:            "OUTSOURCE_" + transferType,
+		ProductBarcode:        req.ProductBarcode,
+		StateID:               state.ID,
+		TransferType:          ProductBarcodeTransferTypeCustodyTransfer,
+		RouteID:               state.RouteID,
+		FromRouteStepID:       state.RouteStepID,
+		ToRouteStepID:         state.RouteStepID,
+		FromBranchOperationID: state.CurrentBranchOperationID,
+		ToBranchOperationID:   state.CurrentBranchOperationID,
+		FromHolderType:        fromHolderType,
+		FromHolderID:          fromHolderID,
+		ToHolderType:          toHolderType,
+		ToHolderID:            toHolderID,
+		Operator:              req.Operator,
+		CommandSource:         ProductionScanCommandSourceWeb,
+		Action:                "OUTSOURCE_" + transferType,
 	})
 	if err != nil {
 		return models.OutsourceTransfer{}, err
@@ -866,12 +1063,13 @@ func createOutsourceTransferTx(
 		OutsourceOrderLineID: line.ID,
 		TransferType:         transferType,
 		ProductBarcode:       req.ProductBarcode,
+		CycleNo:              cycleNo,
 		Quantity:             req.Quantity,
 		UOM:                  line.UOM,
 		PartnerID:            order.PartnerID,
 		RouteID:              state.RouteID,
 		RouteStepID:          state.RouteStepID,
-		ProcessStepID:        state.CurrentProcessStepID,
+		BranchOperationID:    state.CurrentBranchOperationID,
 		FromHolderType:       fromHolderType,
 		FromHolderID:         fromHolderID,
 		ToHolderType:         toHolderType,
@@ -887,7 +1085,7 @@ func createOutsourceTransferTx(
 	if err := createProductionRecordWithOptionalUUIDs(tx, &transfer,
 		productionOptionalUUIDWrite{Column: "route_id", Value: transfer.RouteID},
 		productionOptionalUUIDWrite{Column: "route_step_id", Value: transfer.RouteStepID},
-		productionOptionalUUIDWrite{Column: "process_step_id", Value: transfer.ProcessStepID},
+		productionOptionalUUIDWrite{Column: "branch_operation_id", Value: transfer.BranchOperationID},
 		productionOptionalUUIDWrite{Column: "from_holder_id", Value: transfer.FromHolderID},
 		productionOptionalUUIDWrite{Column: "to_holder_id", Value: transfer.ToHolderID},
 		productionOptionalUUIDWrite{Column: "transfer_event_id", Value: transfer.TransferEventID},
@@ -931,6 +1129,8 @@ func buildOutsourceInspection(
 	line models.OutsourceOrderLine,
 	state models.ProductBarcodeState,
 	operationID string,
+	cycleNo int,
+	inspectionRoundNo int,
 	req OutsourceInspectionRequest,
 	inspectedAt *time.Time,
 ) models.OutsourceInspection {
@@ -941,6 +1141,8 @@ func buildOutsourceInspection(
 		OutsourceOrderID:     order.ID,
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       req.ProductBarcode,
+		CycleNo:              cycleNo,
+		InspectionRoundNo:    inspectionRoundNo,
 		InspectionTaskID:     req.InspectionTaskID,
 		Result:               req.Result,
 		Disposition:          req.Disposition,
@@ -952,7 +1154,7 @@ func buildOutsourceInspection(
 		UOM:                  line.UOM,
 		RouteID:              state.RouteID,
 		RouteStepID:          state.RouteStepID,
-		ProcessStepID:        state.CurrentProcessStepID,
+		BranchOperationID:    state.CurrentBranchOperationID,
 		OperationID:          operationID,
 		InspectedAt:          inspectedAt,
 		Inspector:            resolveProductBarcodeStateOperator(req.Operator),
@@ -976,21 +1178,22 @@ func buildOutsourceInspectionScanCommand(
 		result = "OUTSOURCE_SCRAP"
 	}
 	return ExecuteProductionScanCommandRequest{
-		ProductBarcode:      req.ProductBarcode,
-		RouteID:             state.RouteID,
-		RouteStepID:         state.RouteStepID,
-		ProcessStepID:       state.CurrentProcessStepID,
-		TargetRouteStepID:   target.TargetRouteStepID,
-		TargetProcessStepID: target.TargetProcessStepID,
-		ExecutionMode:       ProductionOperationExecutionModeOutsource,
-		PartnerID:           order.PartnerID,
-		Action:              action,
-		Result:              result,
-		Notes:               req.Notes,
-		CommandSource:       ProductionScanCommandSourceWeb,
-		ActorID:             req.ActorID,
-		Operator:            req.Operator,
-		IP:                  req.IP,
+		IdempotencyKey:           "outsource-inspection-task:" + req.InspectionTaskID,
+		ProductBarcode:           req.ProductBarcode,
+		RouteID:                  state.RouteID,
+		RouteStepID:              state.RouteStepID,
+		BranchOperationID:        state.CurrentBranchOperationID,
+		ProductionWorkLocationID: req.ProductionWorkLocationID,
+		TargetRouteStepID:        target.TargetRouteStepID,
+		ExecutionMode:            ProductionOperationExecutionModeOutsource,
+		PartnerID:                order.PartnerID,
+		Action:                   action,
+		Result:                   result,
+		Notes:                    req.Notes,
+		CommandSource:            ProductionScanCommandSourceWeb,
+		ActorID:                  req.ActorID,
+		Operator:                 req.Operator,
+		IP:                       req.IP,
 	}
 }
 
@@ -1013,6 +1216,32 @@ func applyOutsourceTransferQuantity(line *models.OutsourceOrderLine, transferTyp
 		return
 	}
 	line.ReturnedQuantity += quantity
+}
+
+func recalculateOutsourceLineQualitySummaryTx(tx *gorm.DB, line *models.OutsourceOrderLine) error {
+	var inspections []models.OutsourceInspection
+	if err := tx.Where("outsource_order_line_id = ?", line.ID).
+		Order("product_barcode asc, cycle_no desc, inspection_round_no desc, created_at desc, id desc").
+		Find(&inspections).Error; err != nil {
+		return err
+	}
+	line.AcceptedQuantity = 0
+	line.RejectedQuantity = 0
+	line.ReworkQuantity = 0
+	line.ScrapQuantity = 0
+	seenBarcodes := make(map[string]struct{}, len(inspections))
+	for _, inspection := range inspections {
+		barcode := strings.TrimSpace(inspection.ProductBarcode)
+		if _, exists := seenBarcodes[barcode]; exists {
+			continue
+		}
+		seenBarcodes[barcode] = struct{}{}
+		line.AcceptedQuantity += inspection.AcceptedQuantity
+		line.RejectedQuantity += inspection.RejectedQuantity
+		line.ReworkQuantity += inspection.ReworkQuantity
+		line.ScrapQuantity += inspection.ScrapQuantity
+	}
+	return nil
 }
 
 func refreshOutsourceOrderStatusTx(tx *gorm.DB, orderID string, operator string) (models.OutsourceOrder, error) {
@@ -1047,8 +1276,7 @@ func deriveOutsourceLineStatus(line models.OutsourceOrderLine) string {
 	if line.Status == OutsourceOrderStatusCanceled {
 		return OutsourceOrderStatusCanceled
 	}
-	if line.ReturnedQuantity-line.Quantity >= -outsourceQuantityEpsilon &&
-		line.AcceptedQuantity+line.ReworkQuantity+line.ScrapQuantity-line.Quantity >= -outsourceQuantityEpsilon {
+	if line.AcceptedQuantity+line.ScrapQuantity-line.Quantity >= -outsourceQuantityEpsilon {
 		return OutsourceOrderStatusClosed
 	}
 	if line.ReturnedQuantity-line.Quantity >= -outsourceQuantityEpsilon {
@@ -1208,12 +1436,13 @@ func mapOutsourceTransferToDTO(item models.OutsourceTransfer) OutsourceTransferD
 		OutsourceOrderLineID: strings.TrimSpace(item.OutsourceOrderLineID),
 		TransferType:         strings.TrimSpace(item.TransferType),
 		ProductBarcode:       strings.TrimSpace(item.ProductBarcode),
+		CycleNo:              item.CycleNo,
 		Quantity:             item.Quantity,
 		UOM:                  strings.TrimSpace(item.UOM),
 		PartnerID:            strings.TrimSpace(item.PartnerID),
 		RouteID:              strings.TrimSpace(item.RouteID),
 		RouteStepID:          strings.TrimSpace(item.RouteStepID),
-		ProcessStepID:        strings.TrimSpace(item.ProcessStepID),
+		BranchOperationID:    strings.TrimSpace(item.BranchOperationID),
 		FromHolderType:       strings.TrimSpace(item.FromHolderType),
 		FromHolderID:         strings.TrimSpace(item.FromHolderID),
 		ToHolderType:         strings.TrimSpace(item.ToHolderType),
@@ -1245,6 +1474,8 @@ func mapOutsourceInspectionToDTO(item models.OutsourceInspection) OutsourceInspe
 		OutsourceOrderID:     strings.TrimSpace(item.OutsourceOrderID),
 		OutsourceOrderLineID: strings.TrimSpace(item.OutsourceOrderLineID),
 		ProductBarcode:       strings.TrimSpace(item.ProductBarcode),
+		CycleNo:              item.CycleNo,
+		InspectionRoundNo:    item.InspectionRoundNo,
 		InspectionTaskID:     strings.TrimSpace(item.InspectionTaskID),
 		Result:               strings.TrimSpace(item.Result),
 		Disposition:          strings.TrimSpace(item.Disposition),
@@ -1256,7 +1487,7 @@ func mapOutsourceInspectionToDTO(item models.OutsourceInspection) OutsourceInspe
 		UOM:                  strings.TrimSpace(item.UOM),
 		RouteID:              strings.TrimSpace(item.RouteID),
 		RouteStepID:          strings.TrimSpace(item.RouteStepID),
-		ProcessStepID:        strings.TrimSpace(item.ProcessStepID),
+		BranchOperationID:    strings.TrimSpace(item.BranchOperationID),
 		OperationID:          strings.TrimSpace(item.OperationID),
 		InspectedAt:          formatProductBarcodeStateTime(item.InspectedAt),
 		Inspector:            strings.TrimSpace(item.Inspector),

@@ -66,7 +66,7 @@ export function SettlementRecordsTableSection({
           type='button'
           variant={showOnlyMissingEvidenceRecords ? 'default' : 'outline'}
           size='sm'
-          className='h-8 rounded-full px-3 text-[10px] font-black tracking-[0.12em]'
+          className='h-8 rounded-full px-3'
           onClick={onToggleShowOnlyMissingEvidenceRecords}
         >
           {showOnlyMissingEvidenceRecords ? showAllLabel : showMissingOnlyLabel}

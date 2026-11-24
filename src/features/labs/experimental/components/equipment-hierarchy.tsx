@@ -91,7 +91,7 @@ export function EquipmentHierarchy({
               <Button
                 variant='secondary'
                 size='sm'
-                className='h-9 rounded-full text-[10px] font-black tracking-widest uppercase'
+                className='h-9 rounded-full'
                 onClick={() => onEditCategory(parentCategory!)}
               >
                 更换配图
@@ -138,7 +138,7 @@ export function EquipmentHierarchy({
               <Button
                 variant='outline'
                 size='sm'
-                className='h-11 rounded-full border-2 border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full border-2 border-dashed px-6'
                 onClick={() => onEditCategory(parentCategory!)}
               >
                 <Edit2 className='mr-2 h-3.5 w-3.5' />
@@ -147,7 +147,7 @@ export function EquipmentHierarchy({
               <Button
                 variant='default'
                 size='sm'
-                className='ms-auto h-11 rounded-full bg-primary px-8 text-[10px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95'
+                className='ms-auto h-11 rounded-full bg-primary px-8 text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95'
                 onClick={() => onAddSubCategory(parentCategoryId)}
               >
                 <Plus className='mr-2 h-4 w-4' />
@@ -159,7 +159,7 @@ export function EquipmentHierarchy({
               <Button
                 variant='ghost'
                 size='sm'
-                className='h-8 rounded-full px-4 text-[9px] font-black tracking-widest text-destructive uppercase hover:bg-destructive/5 hover:text-destructive'
+                className='h-8 rounded-full px-4 text-destructive hover:bg-destructive/5 hover:text-destructive'
                 onClick={() => handleDeleteClick(parentCategory!)}
               >
                 <Trash2 className='mr-2 h-3 w-3' />
@@ -243,7 +243,7 @@ export function EquipmentHierarchy({
                 </div>
                 <Button
                   variant='link'
-                  className='h-auto p-0 text-[10px] font-black tracking-widest uppercase'
+                  className='h-auto p-0'
                   onClick={() => {}}
                 >
                   VIEW_DETAILS
@@ -260,9 +260,7 @@ export function EquipmentHierarchy({
           <div className='flex size-12 items-center justify-center rounded-full border-2 border-dashed transition-transform group-hover:scale-110'>
             <Plus className='size-6' />
           </div>
-          <span className='text-[10px] font-black tracking-widest uppercase'>
-            新建设备子类 / ADD_SUB_CATEGORY
-          </span>
+          <span>新建设备子类 / ADD_SUB_CATEGORY</span>
         </button>
       </div>
 
@@ -281,7 +279,7 @@ export function EquipmentHierarchy({
           <Button
             size='sm'
             onClick={() => onAddEquipment(parentCategoryId)}
-            className='h-9 rounded-full bg-primary/10 px-6 text-[9px] font-black tracking-widest text-primary uppercase transition-all hover:bg-primary hover:text-primary-foreground'
+            className='h-9 rounded-full bg-primary/10 px-6 text-primary transition-all hover:bg-primary hover:text-primary-foreground'
           >
             <Plus className='mr-2 size-3.5' />
             注册新设备 / REGISTER_ASSET

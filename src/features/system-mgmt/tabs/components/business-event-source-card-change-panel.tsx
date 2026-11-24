@@ -112,7 +112,7 @@ export function BusinessEventSourceChangePanel({
             key={option.value}
             size='sm'
             variant={activeFilter === option.value ? 'default' : 'outline'}
-            className='h-8 rounded-2xl text-xs font-black'
+            className='h-8 rounded-2xl'
             onClick={() => setActiveFilter(option.value)}
           >
             {option.label}
@@ -158,7 +158,7 @@ export function BusinessEventSourceChangePanel({
                   <Button
                     size='sm'
                     variant='ghost'
-                    className='h-8 rounded-2xl px-2 text-xs font-black text-sky-700 hover:bg-sky-100 hover:text-sky-800'
+                    className='h-8 rounded-2xl px-2 text-sky-700 hover:bg-sky-100 hover:text-sky-800'
                     onClick={section.onOpen}
                   >
                     {section.actionLabel ?? '查看'}
@@ -184,17 +184,13 @@ export function BusinessEventSourceChangePanel({
                       className='flex flex-wrap items-center gap-2 rounded-2xl border border-muted/30 bg-muted/10 px-3 py-2 text-left transition hover:border-sky-200 hover:bg-sky-50 disabled:cursor-default disabled:hover:border-muted/30 disabled:hover:bg-muted/10'
                     >
                       <ItemChangeBadge changeType={item.changeType} />
-                      <span className='min-w-0 truncate text-xs font-black'>
-                        {item.label}
-                      </span>
-                      <span className='font-maple-ui text-xs text-muted-foreground'>
+                      <span className='min-w-0 truncate'>{item.label}</span>
+                      <span className='font-maple-ui text-muted-foreground'>
                         {item.code}
                       </span>
-                      <span className='text-xs text-muted-foreground'>
-                        {item.meta}
-                      </span>
+                      <span className='text-muted-foreground'>{item.meta}</span>
                       {canLocate && (
-                        <span className='ml-auto flex items-center gap-1 text-xs font-black text-sky-700'>
+                        <span className='ml-auto flex items-center gap-1 text-sky-700'>
                           <LocateFixed className='size-3.5' />
                           定位
                         </span>

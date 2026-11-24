@@ -128,7 +128,7 @@ export function BOMAlertDetailsDialog({
                 <Button
                   type='button'
                   variant='outline'
-                  className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+                  className='mt-5 h-10 rounded-full border-dashed px-6'
                   onClick={() => {
                     void bomAlertDetailsQuery.refetch()
                   }}
@@ -266,7 +266,7 @@ export function BOMAlertDetailsDialog({
             <Button
               type='button'
               variant='ghost'
-              className='h-11 rounded-full px-6 text-[10px] font-black tracking-widest uppercase'
+              className='h-11 rounded-full px-6'
               onClick={() => onOpenChange(false)}
             >
               {t('warehouse.stock.bomAlertDetails.close')}

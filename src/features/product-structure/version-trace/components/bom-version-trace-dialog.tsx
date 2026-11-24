@@ -62,7 +62,7 @@ export function BOMVersionTraceDialog({
                 type='button'
                 variant='outline'
                 onClick={() => onOpenChange(false)}
-                className='h-11 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest uppercase'
+                className='h-11 rounded-full border-dashed px-5'
               >
                 关闭
               </Button>

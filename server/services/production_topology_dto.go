@@ -12,27 +12,46 @@ type SaveProductionLineHandlerRequest struct {
 }
 
 type LineSegmentDTO struct {
-	ID          string           `json:"id"`
-	CreatedAt   time.Time        `json:"createdAt"`
-	UpdatedAt   time.Time        `json:"updatedAt"`
-	LineID      string           `json:"lineId"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	SortOrder   int              `json:"sortOrder"`
-	Attributes  json.RawMessage  `json:"attributes"`
-	Processes   []ProcessStepDTO `json:"processes"`
+	ID                   string                            `json:"id"`
+	CreatedAt            time.Time                         `json:"createdAt"`
+	UpdatedAt            time.Time                         `json:"updatedAt"`
+	LineID               string                            `json:"lineId"`
+	Name                 string                            `json:"name"`
+	ProductID            string                            `json:"productId"`
+	ProductSKU           string                            `json:"productSKU,omitempty"`
+	ProductName          string                            `json:"productName,omitempty"`
+	BOMOwnerType         string                            `json:"bomOwnerType,omitempty"`
+	BOMOwnerCustomerID   string                            `json:"bomOwnerCustomerId,omitempty"`
+	BOMOwnerCustomerName string                            `json:"bomOwnerCustomerName,omitempty"`
+	BOMVersionLevel      string                            `json:"bomVersionLevel,omitempty"`
+	Description          string                            `json:"description"`
+	SortOrder            int                               `json:"sortOrder"`
+	Attributes           json.RawMessage                   `json:"attributes"`
+	BranchOperations     []ProductionBOMBranchOperationDTO `json:"branchOperations"`
 }
 
 type ProductionLineDTO struct {
-	ID          string           `json:"id"`
-	CreatedAt   time.Time        `json:"createdAt"`
-	UpdatedAt   time.Time        `json:"updatedAt"`
-	Code        string           `json:"code"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Version     int64            `json:"version"`
-	IsActive    bool             `json:"isActive"`
-	Segments    []LineSegmentDTO `json:"segments"`
+	ID                string           `json:"id"`
+	CreatedAt         time.Time        `json:"createdAt"`
+	UpdatedAt         time.Time        `json:"updatedAt"`
+	Code              string           `json:"code"`
+	Name              string           `json:"name"`
+	ProductTemplateID string           `json:"productTemplateId"`
+	Description       string           `json:"description"`
+	Version           int64            `json:"version"`
+	IsActive          bool             `json:"isActive"`
+	Segments          []LineSegmentDTO `json:"segments"`
+}
+
+type ProductionLineProductTemplateDTO struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Code   string `json:"code"`
+	Active bool   `json:"active"`
+}
+
+type ProductionLineProductTemplatesResponse struct {
+	Items []ProductionLineProductTemplateDTO `json:"items"`
 }
 
 type ProductionLinesResponse struct {
@@ -41,15 +60,22 @@ type ProductionLinesResponse struct {
 
 func mapLineSegmentToDTO(segment models.LineSegment) LineSegmentDTO {
 	return LineSegmentDTO{
-		ID:          segment.ID,
-		CreatedAt:   segment.CreatedAt,
-		UpdatedAt:   segment.UpdatedAt,
-		LineID:      segment.LineID,
-		Name:        segment.Name,
-		Description: segment.Description,
-		SortOrder:   segment.SortOrder,
-		Attributes:  cloneRawMessage(segment.Attributes),
-		Processes:   mapProcessesToDTO(segment.Processes),
+		ID:                   segment.ID,
+		CreatedAt:            segment.CreatedAt,
+		UpdatedAt:            segment.UpdatedAt,
+		LineID:               segment.LineID,
+		Name:                 segment.Name,
+		ProductID:            segment.ProductID,
+		ProductSKU:           segment.ProductSKU,
+		ProductName:          segment.ProductName,
+		BOMOwnerType:         segment.BOMOwnerType,
+		BOMOwnerCustomerID:   segment.BOMOwnerCustomerID,
+		BOMOwnerCustomerName: segment.BOMOwnerCustomerName,
+		BOMVersionLevel:      segment.BOMVersionLevel,
+		Description:          segment.Description,
+		SortOrder:            segment.SortOrder,
+		Attributes:           cloneRawMessage(segment.Attributes),
+		BranchOperations:     mapProductionBOMBranchOperationsToDTO(segment.BranchOperations),
 	}
 }
 
@@ -60,12 +86,18 @@ func mapLineSegmentDTOToModel(segment LineSegmentDTO) models.LineSegment {
 			CreatedAt: segment.CreatedAt,
 			UpdatedAt: segment.UpdatedAt,
 		},
-		LineID:      segment.LineID,
-		Name:        segment.Name,
-		Description: segment.Description,
-		SortOrder:   segment.SortOrder,
-		Attributes:  cloneRawMessage(segment.Attributes),
-		Processes:   mapProcessesDTOToModel(segment.Processes),
+		LineID:               segment.LineID,
+		Name:                 segment.Name,
+		ProductID:            segment.ProductID,
+		ProductSKU:           segment.ProductSKU,
+		ProductName:          segment.ProductName,
+		BOMOwnerType:         segment.BOMOwnerType,
+		BOMOwnerCustomerID:   segment.BOMOwnerCustomerID,
+		BOMOwnerCustomerName: segment.BOMOwnerCustomerName,
+		BOMVersionLevel:      segment.BOMVersionLevel,
+		Description:          segment.Description,
+		SortOrder:            segment.SortOrder,
+		Attributes:           cloneRawMessage(segment.Attributes),
 	}
 }
 
@@ -74,17 +106,26 @@ func mapProductionLineToDTO(line models.ProductionLine) ProductionLineDTO {
 	for _, segment := range line.Segments {
 		segments = append(segments, mapLineSegmentToDTO(segment))
 	}
+	productTemplateID := ""
+	name := line.Name
+	if line.ProductTemplateID != nil {
+		productTemplateID = *line.ProductTemplateID
+	}
+	if line.ProductTemplate != nil {
+		name = line.ProductTemplate.Name
+	}
 
 	return ProductionLineDTO{
-		ID:          line.ID,
-		CreatedAt:   line.CreatedAt,
-		UpdatedAt:   line.UpdatedAt,
-		Code:        line.Code,
-		Name:        line.Name,
-		Description: line.Description,
-		Version:     line.Version,
-		IsActive:    line.IsActive,
-		Segments:    segments,
+		ID:                line.ID,
+		CreatedAt:         line.CreatedAt,
+		UpdatedAt:         line.UpdatedAt,
+		Code:              line.Code,
+		Name:              name,
+		ProductTemplateID: productTemplateID,
+		Description:       line.Description,
+		Version:           line.Version,
+		IsActive:          line.IsActive,
+		Segments:          segments,
 	}
 }
 
@@ -94,18 +135,25 @@ func mapProductionLineDTOToModel(line ProductionLineDTO) models.ProductionLine {
 		segments = append(segments, mapLineSegmentDTOToModel(segment))
 	}
 
+	var productTemplateID *string
+	if line.ProductTemplateID != "" {
+		value := line.ProductTemplateID
+		productTemplateID = &value
+	}
+
 	return models.ProductionLine{
 		BaseModel: models.BaseModel{
 			ID:        line.ID,
 			CreatedAt: line.CreatedAt,
 			UpdatedAt: line.UpdatedAt,
 		},
-		Code:        line.Code,
-		Name:        line.Name,
-		Description: line.Description,
-		Version:     line.Version,
-		IsActive:    line.IsActive,
-		Segments:    segments,
+		Code:              line.Code,
+		Name:              line.Name,
+		ProductTemplateID: productTemplateID,
+		Description:       line.Description,
+		Version:           line.Version,
+		IsActive:          line.IsActive,
+		Segments:          segments,
 	}
 }
 

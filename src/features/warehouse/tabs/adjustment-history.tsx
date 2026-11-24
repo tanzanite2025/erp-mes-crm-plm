@@ -239,7 +239,7 @@ export function AdjustmentHistory() {
                             <Button
                               size='sm'
                               variant='ghost'
-                              className='h-8 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 text-[9px] font-black tracking-widest text-emerald-600 uppercase hover:bg-emerald-500/10 md:h-9 md:px-4 md:text-[10px]'
+                              className='h-8 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 text-emerald-600 hover:bg-emerald-500/10 md:h-9 md:px-4'
                               onClick={() => handleExecuteClick(adj)}
                             >
                               <CheckCircle2 className='mr-1.5 size-3 md:mr-2' />{' '}
@@ -249,7 +249,7 @@ export function AdjustmentHistory() {
                           <Button
                             variant='ghost'
                             size='sm'
-                            className='h-8 gap-2 rounded-full bg-muted/50 px-3 text-[9px] font-black tracking-widest uppercase hover:bg-muted md:h-9 md:px-4 md:text-[10px]'
+                            className='h-8 gap-2 rounded-full bg-muted/50 px-3 hover:bg-muted md:h-9 md:px-4'
                             onClick={() => handleOpenPreview(adj)}
                           >
                             <Printer className='size-3' />{' '}
@@ -294,13 +294,13 @@ export function AdjustmentHistory() {
             <DialogFooter className='flex flex-row items-center justify-end gap-3 bg-transparent md:gap-4 print:hidden'>
               <Button
                 variant='ghost'
-                className='h-10 flex-1 rounded-full px-4 text-[9px] font-black tracking-widest uppercase transition-colors hover:bg-muted sm:flex-none md:h-12 md:px-8 md:text-[10px]'
+                className='h-10 flex-1 rounded-full px-4 transition-colors hover:bg-muted sm:flex-none md:h-12 md:px-8'
                 onClick={handleClosePreview}
               >
                 {t('warehouse.adjustment.close')}
               </Button>
               <Button
-                className='h-10 flex-1 gap-2 rounded-full bg-amber-600 px-4 text-[9px] font-black tracking-widest uppercase shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-700 active:scale-95 sm:flex-none md:h-12 md:px-8 md:text-[10px]'
+                className='h-10 flex-1 gap-2 rounded-full bg-amber-600 px-4 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-700 active:scale-95 sm:flex-none md:h-12 md:px-8'
                 onClick={handlePrint}
               >
                 <Printer className='size-3.5 md:size-4' />{' '}

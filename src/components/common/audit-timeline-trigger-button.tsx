@@ -36,7 +36,7 @@ export function AuditTimelineTriggerButton({
         onClick={() => setOpen(true)}
         aria-label={resolvedLabel}
         className={cn(
-          'h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase',
+          'h-9 rounded-full border-dashed px-4',
           iconOnly && 'size-8 rounded-full px-0',
           className
         )}

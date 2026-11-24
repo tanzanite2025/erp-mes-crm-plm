@@ -21,7 +21,7 @@ export function ProductAppearanceCatalogRequestState({
         <Button
           type='button'
           variant='outline'
-          className='h-8 rounded-full px-4 text-[10px] font-black'
+          className='h-8 rounded-full px-4'
           onClick={onRetry}
         >
           {t('engineering.productAppearance.actions.retry')}

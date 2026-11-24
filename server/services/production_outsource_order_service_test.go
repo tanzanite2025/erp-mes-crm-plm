@@ -86,6 +86,31 @@ func TestFillOutsourceOrderLinesFromSalesOrderRequiresUniqueSourceLine(t *testin
 	require.Error(t, fillOutsourceOrderLinesFromSalesOrder(&order, salesLines))
 }
 
+func TestProductionPlanOutsourceSourceRequiresItsFixedPublishedRouteRevision(t *testing.T) {
+	_, database := newOutsourceExecutionTestService(t)
+	seedOutsourceExecutionOrder(t, database, OutsourceOrderStatusReleased)
+
+	validOrder := models.OutsourceOrder{
+		SourceType: OutsourceOrderSourceProductionPlan,
+		SourceID:   "plan-route-1",
+		Lines:      []models.OutsourceOrderLine{{Quantity: 2}},
+	}
+	require.NoError(t, fillOutsourceOrderProductionPlanSnapshot(database, &validOrder))
+	require.Equal(t, "product-1", validOrder.Lines[0].ProductID)
+
+	require.NoError(t, database.Model(&models.ProductionPlan{}).
+		Where("id = ?", "plan-route-1").
+		Updates(map[string]any{"production_route_revision_id": "", "production_route_revision_no": 0}).Error)
+	unboundOrder := models.OutsourceOrder{
+		SourceType: OutsourceOrderSourceProductionPlan,
+		SourceID:   "plan-route-1",
+		Lines:      []models.OutsourceOrderLine{{Quantity: 2}},
+	}
+	err := fillOutsourceOrderProductionPlanSnapshot(database, &unboundOrder)
+	require.ErrorIs(t, err, ErrInvalidOutsourceOrder)
+	require.Contains(t, err.Error(), "no valid fixed route revision")
+}
+
 func newOutsourceExecutionTestService(t *testing.T) (*ProductionOutsourcingService, *gorm.DB) {
 	t.Helper()
 
@@ -110,6 +135,38 @@ func newOutsourceExecutionTestService(t *testing.T) (*ProductionOutsourcingServi
 func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 	t.Helper()
 
+	require.NoError(t, database.Exec(`
+		CREATE TABLE sales_orders (
+			id TEXT PRIMARY KEY,
+			status TEXT,
+			version INTEGER,
+			deleted_at DATETIME
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE sales_order_lines (
+			id INTEGER PRIMARY KEY,
+			sales_order_id TEXT,
+			qty REAL,
+			delivered_qty REAL,
+			status TEXT
+		)
+	`).Error)
+	require.NoError(t, database.Exec(`
+		CREATE TABLE production_tasks (
+			id TEXT PRIMARY KEY,
+			plan_id TEXT,
+			batch_no TEXT,
+			process_id TEXT,
+			process_name TEXT,
+			target_qty REAL,
+			actual_qty REAL,
+			status TEXT,
+			operator TEXT,
+			started_at DATETIME,
+			completed_at DATETIME
+		)
+	`).Error)
 	require.NoError(t, database.Exec(`
 		CREATE TABLE production_outsource_partners (
 			id TEXT PRIMARY KEY,
@@ -172,11 +229,6 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			specification TEXT,
 			quantity REAL,
 			uom TEXT,
-			segment_id TEXT,
-			segment_name TEXT,
-			process_step_id TEXT,
-			process_code TEXT,
-			process_name TEXT,
 			status TEXT,
 			sent_quantity REAL,
 			returned_quantity REAL,
@@ -200,12 +252,13 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			outsource_order_line_id TEXT NOT NULL,
 			transfer_type TEXT NOT NULL,
 			product_barcode TEXT NOT NULL,
+			cycle_no INTEGER NOT NULL DEFAULT 1,
 			quantity REAL,
 			uom TEXT,
 			partner_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			process_step_id TEXT,
+			branch_operation_id TEXT NOT NULL,
 			from_holder_type TEXT,
 			from_holder_id TEXT,
 			to_holder_type TEXT,
@@ -220,8 +273,8 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE UNIQUE INDEX idx_outsource_transfer_line_type_barcode
-		ON production_outsource_transfers (outsource_order_line_id, transfer_type, product_barcode)
+		CREATE UNIQUE INDEX idx_outsource_transfer_cycle_identity
+		ON production_outsource_transfers (outsource_order_line_id, transfer_type, product_barcode, cycle_no)
 	`).Error)
 	require.NoError(t, database.Exec(`
 		CREATE TABLE production_outsource_inspections (
@@ -233,6 +286,8 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			outsource_order_id TEXT NOT NULL,
 			outsource_order_line_id TEXT NOT NULL,
 			product_barcode TEXT NOT NULL,
+			cycle_no INTEGER NOT NULL DEFAULT 1,
+			inspection_round_no INTEGER NOT NULL DEFAULT 1,
 			inspection_task_id TEXT,
 			result TEXT NOT NULL,
 			disposition TEXT NOT NULL,
@@ -244,7 +299,7 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			uom TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			process_step_id TEXT,
+			branch_operation_id TEXT NOT NULL,
 			operation_id TEXT,
 			inspected_at DATETIME,
 			inspector TEXT,
@@ -252,11 +307,15 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE UNIQUE INDEX idx_outsource_inspection_line_barcode
-		ON production_outsource_inspections (outsource_order_line_id, product_barcode)
+		CREATE UNIQUE INDEX idx_outsource_inspection_round_identity
+		ON production_outsource_inspections (outsource_order_line_id, product_barcode, cycle_no, inspection_round_no)
 	`).Error)
 	require.NoError(t, database.Exec(`
 		CREATE TABLE inspection_tasks (
+		standard_version REAL,
+		submission_key TEXT,
+            standard_snapshot TEXT,
+            evaluation_data TEXT,
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
 			updated_at DATETIME,
@@ -266,6 +325,9 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			source_type TEXT,
 			source_id TEXT,
 			source_line_id TEXT,
+			source_cycle_no INTEGER NOT NULL DEFAULT 1,
+			inspection_round_no INTEGER NOT NULL DEFAULT 1,
+			parent_task_id TEXT,
 			product_barcode TEXT,
 			production_plan_id TEXT,
 			order_id TEXT,
@@ -283,8 +345,9 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE UNIQUE INDEX idx_inspection_task_source_barcode
-		ON inspection_tasks (source_type, source_line_id, product_barcode)
+		CREATE UNIQUE INDEX idx_inspection_task_outsource_round_identity
+		ON inspection_tasks (source_line_id, product_barcode, source_cycle_no, inspection_round_no)
+		WHERE source_type = 'PRODUCTION_OUTSOURCE'
 	`).Error)
 	require.NoError(t, database.Exec(`
 		CREATE TABLE quality_abnormalities (
@@ -506,6 +569,28 @@ func seedOutsourceExecutionOrder(t *testing.T, database *gorm.DB, status string)
 		UOM:          "PCS",
 	}).Error)
 	seedProductionScanRoute(t, database, "route-1", "process-a", "process-b")
+	require.NoError(t, database.Exec(
+		"INSERT INTO products (id, sku, name, status) VALUES (?, ?, ?, ?)",
+		"product-1", "P-1", "产品一", "ACTIVE",
+	).Error)
+	for _, table := range []string{"boms", "production_routes", "production_plans", "production_bom_branch_operations"} {
+		require.NoError(t, database.Exec("UPDATE "+table+" SET product_id = ? WHERE product_id = ?", "product-1", "product-route-1").Error)
+	}
+	require.NoError(t, database.Model(&models.ProductionPlan{}).
+		Where("id = ?", "plan-route-1").
+		Updates(map[string]any{
+			"product_name":        "产品一",
+			"order_id":            "sales-order-1",
+			"sales_order_line_id": 1001,
+		}).Error)
+	require.NoError(t, database.Exec(
+		"INSERT OR IGNORE INTO sales_orders (id, status, version) VALUES (?, ?, ?)",
+		"sales-order-1", "InProgress", 1,
+	).Error)
+	require.NoError(t, database.Exec(
+		"INSERT OR IGNORE INTO sales_order_lines (id, sales_order_id, qty, delivered_qty, status) VALUES (?, ?, ?, ?, ?)",
+		1001, "sales-order-1", 2, 0, "InProgress",
+	).Error)
 	order := models.OutsourceOrder{
 		BaseModel:           models.BaseModel{ID: "order-1"},
 		OrderNo:             "OSO-TEST-1",
@@ -529,9 +614,6 @@ func seedOutsourceExecutionOrder(t *testing.T, database *gorm.DB, status string)
 		ProductName:      "产品一",
 		Quantity:         2,
 		UOM:              "PCS",
-		ProcessStepID:    "process-a",
-		ProcessCode:      "process-a",
-		ProcessName:      "process-a",
 		Status:           status,
 		Version:          1,
 	}
@@ -542,16 +624,27 @@ func seedOutsourceExecutionOrder(t *testing.T, database *gorm.DB, status string)
 
 func seedOutsourceBarcodeState(t *testing.T, database *gorm.DB, barcode string) {
 	t.Helper()
+	var plan models.ProductionPlan
+	require.NoError(t, database.First(&plan, "id = ?", "plan-route-1").Error)
+	require.NoError(t, database.Create(&models.ProductionExecutionLot{
+		BaseModel:      models.BaseModel{ID: "lot-" + barcode},
+		ProductBarcode: barcode,
+		ProductID:      plan.ProductID,
+		ProductName:    plan.ProductName,
+		PlanID:         plan.ID,
+		Quantity:       1,
+		Status:         ProductionExecutionLotStatusActive,
+	}).Error)
 
 	require.NoError(t, database.Create(&models.ProductBarcodeState{
-		BaseModel:            models.BaseModel{ID: "state-" + barcode},
-		ProductBarcode:       barcode,
-		ProductID:            "product-1",
-		ProductName:          "产品一",
-		RouteID:              "route-1",
-		RouteStepID:          "route-1-step-process-a",
-		CurrentProcessStepID: "process-a",
-		Status:               ProductBarcodeStateStatusInProgress,
+		BaseModel:                models.BaseModel{ID: "state-" + barcode},
+		ProductBarcode:           barcode,
+		ProductID:                "product-1",
+		ProductName:              "产品一",
+		RouteID:                  "route-1",
+		RouteStepID:              "route-1-step-process-a",
+		CurrentBranchOperationID: "process-a",
+		Status:                   ProductBarcodeStateStatusInProgress,
 	}).Error)
 }
 
@@ -892,6 +985,7 @@ func TestOutsourceCancelRejectsStartedOrder(t *testing.T) {
 func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T) {
 	service, database := newOutsourceExecutionTestService(t)
 	_, line := seedOutsourceExecutionOrder(t, database, OutsourceOrderStatusReleased)
+	require.NoError(t, database.Model(&models.OutsourceOrderLine{}).Where("id = ?", line.ID).Update("quantity", 1).Error)
 	seedOutsourceBarcodeState(t, database, "BC-002")
 	seedOutsourceNotificationRule(
 		t,
@@ -905,7 +999,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	send, err := service.SendOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-002",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       "FINISHED",
 		TargetCategory:       ProductionOutsourceInventoryCategory,
@@ -915,7 +1009,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	})
 	require.NoError(t, err)
 	require.Equal(t, OutsourceTransferTypeSend, send.Transfer.TransferType)
-	require.Equal(t, float64(2), send.Order.Lines[0].SentQuantity)
+	require.Equal(t, float64(1), send.Order.Lines[0].SentQuantity)
 	require.Equal(t, OutsourceOrderStatusSent, send.Order.Status)
 	sentLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusSent, "notify", "pending")
 	requireOutsourceRuleLogMetadata(t, sentLog, map[string]any{
@@ -928,7 +1022,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 		"action":         "OUTSOURCE_" + OutsourceTransferTypeSend,
 		"transferId":     send.Transfer.ID,
 		"productBarcode": "BC-002",
-		"quantity":       "2",
+		"quantity":       "1",
 		"status":         OutsourceOrderStatusSent,
 	})
 	require.Equal(t, "tester", sendAudit.Operator)
@@ -937,7 +1031,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	returned, err := service.ReturnOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-002",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       ProductionOutsourceInventoryCategory,
 		TargetCategory:       "FINISHED",
@@ -947,7 +1041,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 	})
 	require.NoError(t, err)
 	require.Equal(t, OutsourceTransferTypeReturn, returned.Transfer.TransferType)
-	require.Equal(t, float64(2), returned.Order.Lines[0].ReturnedQuantity)
+	require.Equal(t, float64(1), returned.Order.Lines[0].ReturnedQuantity)
 	returnedLog := requireOutsourceRuleExecutionLog(t, database, OutsourceOrderStatusReturned, "notify", "pending")
 	requireOutsourceRuleLogMetadata(t, returnedLog, map[string]any{
 		"outsourceOrderLineId": line.ID,
@@ -959,25 +1053,26 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 		"action":         "OUTSOURCE_" + OutsourceTransferTypeReturn,
 		"transferId":     returned.Transfer.ID,
 		"productBarcode": "BC-002",
-		"quantity":       "2",
+		"quantity":       "1",
 		"status":         OutsourceOrderStatusReturned,
 	})
 
 	inspection, err := service.InspectOutsourceOrderLine(OutsourceInspectionRequest{
-		OutsourceOrderLineID: line.ID,
-		ProductBarcode:       "BC-002",
-		Result:               OutsourceInspectionResultPass,
-		InspectedQuantity:    2,
-		UOM:                  "PCS",
-		ActorID:              "user-1",
-		Operator:             "tester",
-		IP:                   "127.0.0.1",
+		OutsourceOrderLineID:     line.ID,
+		ProductBarcode:           "BC-002",
+		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID,
+		Result:                   OutsourceInspectionResultPass,
+		InspectedQuantity:        1,
+		UOM:                      "PCS",
+		ActorID:                  "user-1",
+		Operator:                 "tester",
+		IP:                       "127.0.0.1",
 	})
 	require.NoError(t, err)
 	require.Equal(t, OutsourceInspectionDispositionAccept, inspection.Inspection.Disposition)
 	require.Equal(t, ProductionOperationActionComplete, inspection.Scan.Operation.Action)
 	require.Equal(t, "route-1-step-process-b", inspection.Scan.State.RouteStepID)
-	require.Equal(t, float64(2), inspection.Order.Lines[0].AcceptedQuantity)
+	require.Equal(t, float64(1), inspection.Order.Lines[0].AcceptedQuantity)
 	require.Equal(t, OutsourceOrderStatusClosed, inspection.Order.Status)
 	acceptedLog := requireOutsourceRuleExecutionLog(t, database, businessEventOutsourceStatusInspectionAccepted, "notify", "skipped")
 	requireOutsourceRuleLogMetadata(t, acceptedLog, map[string]any{
@@ -1000,7 +1095,7 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 		"productBarcode": "BC-002",
 		"result":         OutsourceInspectionResultPass,
 		"disposition":    OutsourceInspectionDispositionAccept,
-		"quantity":       "2",
+		"quantity":       "1",
 		"status":         OutsourceOrderStatusClosed,
 	})
 
@@ -1012,15 +1107,16 @@ func TestOutsourceSendReturnAndInspectionUpdateFactsAndBarcodeState(t *testing.T
 func TestOutsourceInspectionUsesConfiguredReworkRouteTarget(t *testing.T) {
 	service, database := newOutsourceExecutionTestService(t)
 	_, line := seedOutsourceExecutionOrder(t, database, OutsourceOrderStatusReleased)
+	require.NoError(t, database.Model(&models.OutsourceOrderLine{}).Where("id = ?", line.ID).Update("quantity", 1).Error)
 	seedOutsourceBarcodeState(t, database, "BC-008")
 	require.NoError(t, database.Model(&models.ProductionRouteStep{}).
 		Where("id = ?", "route-1-step-process-a").
-		Update("quality_routing", `{"REWORK":{"targetRouteStepId":"route-1-step-process-b","targetProcessStepId":"process-b"}}`).Error)
+		Update("quality_routing", `{"REWORK":{"targetRouteStepId":"route-1-step-process-b"}}`).Error)
 
 	_, err := service.SendOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-008",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       "FINISHED",
 		TargetCategory:       ProductionOutsourceInventoryCategory,
@@ -1030,7 +1126,7 @@ func TestOutsourceInspectionUsesConfiguredReworkRouteTarget(t *testing.T) {
 	_, err = service.ReturnOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-008",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       ProductionOutsourceInventoryCategory,
 		TargetCategory:       "FINISHED",
@@ -1039,22 +1135,23 @@ func TestOutsourceInspectionUsesConfiguredReworkRouteTarget(t *testing.T) {
 	require.NoError(t, err)
 
 	inspection, err := service.InspectOutsourceOrderLine(OutsourceInspectionRequest{
-		OutsourceOrderLineID: line.ID,
-		ProductBarcode:       "BC-008",
-		Result:               OutsourceInspectionResultFail,
-		Disposition:          OutsourceInspectionDispositionRework,
-		InspectedQuantity:    2,
-		UOM:                  "PCS",
-		Operator:             "tester",
+		OutsourceOrderLineID:     line.ID,
+		ProductBarcode:           "BC-008",
+		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID,
+		Result:                   OutsourceInspectionResultFail,
+		Disposition:              OutsourceInspectionDispositionRework,
+		InspectedQuantity:        1,
+		UOM:                      "PCS",
+		Operator:                 "tester",
 	})
 
 	require.NoError(t, err)
 	require.Equal(t, ProductionOperationActionRework, inspection.Scan.Operation.Action)
 	require.Equal(t, ProductBarcodeStateStatusRework, inspection.Scan.State.Status)
 	require.Equal(t, "route-1-step-process-b", inspection.Scan.State.RouteStepID)
-	require.Equal(t, "process-b", inspection.Scan.State.CurrentProcessStepID)
-	require.Equal(t, float64(2), inspection.Order.Lines[0].ReworkQuantity)
-	require.Equal(t, OutsourceOrderStatusClosed, inspection.Order.Status)
+	require.Equal(t, "process-b", inspection.Scan.State.CurrentBranchOperationID)
+	require.Equal(t, float64(1), inspection.Order.Lines[0].ReworkQuantity)
+	require.Equal(t, OutsourceOrderStatusReturned, inspection.Order.Status)
 	require.Len(t, inspection.Scan.TransferEvents, 1)
 	require.Equal(t, ProductBarcodeTransferTypeRouteAdvance, inspection.Scan.TransferEvents[0].TransferType)
 	require.Equal(t, QualityInspectionTaskStatusCompleted, inspection.InspectionTask.Status)
@@ -1123,7 +1220,7 @@ func TestOutsourceReturnRejectsDuplicateBarcodeFact(t *testing.T) {
 	_, err := service.SendOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-009",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       "FINISHED",
 		TargetCategory:       ProductionOutsourceInventoryCategory,
@@ -1167,7 +1264,7 @@ func TestOutsourceInspectionRejectsDuplicateBarcodeFact(t *testing.T) {
 	_, err := service.SendOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-010",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       "FINISHED",
 		TargetCategory:       ProductionOutsourceInventoryCategory,
@@ -1177,7 +1274,7 @@ func TestOutsourceInspectionRejectsDuplicateBarcodeFact(t *testing.T) {
 	_, err = service.ReturnOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: line.ID,
 		ProductBarcode:       "BC-010",
-		Quantity:             2,
+		Quantity:             1,
 		UOM:                  "PCS",
 		SourceCategory:       ProductionOutsourceInventoryCategory,
 		TargetCategory:       "FINISHED",
@@ -1185,22 +1282,24 @@ func TestOutsourceInspectionRejectsDuplicateBarcodeFact(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, err = service.InspectOutsourceOrderLine(OutsourceInspectionRequest{
-		OutsourceOrderLineID: line.ID,
-		ProductBarcode:       "BC-010",
-		Result:               OutsourceInspectionResultPass,
-		InspectedQuantity:    1,
-		UOM:                  "PCS",
-		Operator:             "tester",
+		OutsourceOrderLineID:     line.ID,
+		ProductBarcode:           "BC-010",
+		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID,
+		Result:                   OutsourceInspectionResultPass,
+		InspectedQuantity:        1,
+		UOM:                      "PCS",
+		Operator:                 "tester",
 	})
 	require.NoError(t, err)
 
 	_, err = service.InspectOutsourceOrderLine(OutsourceInspectionRequest{
-		OutsourceOrderLineID: line.ID,
-		ProductBarcode:       "BC-010",
-		Result:               OutsourceInspectionResultPass,
-		InspectedQuantity:    1,
-		UOM:                  "PCS",
-		Operator:             "tester",
+		OutsourceOrderLineID:     line.ID,
+		ProductBarcode:           "BC-010",
+		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID,
+		Result:                   OutsourceInspectionResultPass,
+		InspectedQuantity:        1,
+		UOM:                      "PCS",
+		Operator:                 "tester",
 	})
 
 	require.ErrorIs(t, err, ErrInvalidOutsourceOrder)
@@ -1237,12 +1336,13 @@ func TestOutsourceCanceledOrderRejectsAllExecutionActions(t *testing.T) {
 	})
 	require.ErrorIs(t, err, ErrInvalidOutsourceOrder)
 	_, err = service.InspectOutsourceOrderLine(OutsourceInspectionRequest{
-		OutsourceOrderLineID: line.ID,
-		ProductBarcode:       "BC-011",
-		Result:               OutsourceInspectionResultPass,
-		InspectedQuantity:    1,
-		UOM:                  "PCS",
-		Operator:             "tester",
+		OutsourceOrderLineID:     line.ID,
+		ProductBarcode:           "BC-011",
+		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID,
+		Result:                   OutsourceInspectionResultPass,
+		InspectedQuantity:        1,
+		UOM:                      "PCS",
+		Operator:                 "tester",
 	})
 	require.ErrorIs(t, err, ErrInvalidOutsourceOrder)
 

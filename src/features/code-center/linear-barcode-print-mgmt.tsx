@@ -29,6 +29,7 @@ export function LinearBarcodePrintMgmt() {
   const {
     selectedOrderId,
     setSelectedOrderId,
+    isProductCodeIssuanceInProgress,
     printingKeys,
     openedPreviewKeys,
     isBatchPrinting,
@@ -91,7 +92,7 @@ export function LinearBarcodePrintMgmt() {
           </div>
           <div className='flex flex-wrap items-center gap-3'>
             <Button
-              className='rounded-full px-6 text-[10px] font-black uppercase shadow-lg shadow-primary/20'
+              className='rounded-full px-6 shadow-lg shadow-primary/20'
               asChild
             >
               <Link to='/code-center/linear-barcode/protocol'>
@@ -99,11 +100,7 @@ export function LinearBarcodePrintMgmt() {
                 {t('codeCenter.linearBarcode.print.actions.gotoProtocol')}
               </Link>
             </Button>
-            <Button
-              variant='ghost'
-              className='rounded-full px-6 text-[10px] font-black uppercase'
-              asChild
-            >
+            <Button variant='ghost' className='rounded-full px-6' asChild>
               <Link to='/code-center/shared-code-source/numbering-engine'>
                 <Hash className='mr-2 size-4' />
                 {t(
@@ -154,8 +151,9 @@ export function LinearBarcodePrintMgmt() {
                       )}
                     </div>
                     <select
-                      className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[12px] font-bold text-foreground shadow-sm outline-none focus:ring-2 focus:ring-primary/20'
+                      className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-foreground shadow-sm outline-none focus:ring-2 focus:ring-primary/20'
                       value={selectedOrderId}
+                      disabled={isProductCodeIssuanceInProgress}
                       onChange={(event) =>
                         setSelectedOrderId(event.target.value)
                       }
@@ -392,8 +390,10 @@ export function LinearBarcodePrintMgmt() {
                       size='sm'
                       variant='outline'
                       onClick={() => void handleBatchPrint()}
-                      disabled={isBatchPrinting || printableCount === 0}
-                      className='h-8 rounded-full px-4 text-[10px] font-black tracking-[0.18em] uppercase'
+                      disabled={
+                        isProductCodeIssuanceInProgress || printableCount === 0
+                      }
+                      className='h-8 rounded-full px-4'
                     >
                       {isBatchPrinting
                         ? t(
@@ -404,6 +404,22 @@ export function LinearBarcodePrintMgmt() {
                           )}
                     </Button>
                   </div>
+                  {(inventoryQuery.data?.unattributedIssuedQuantity ?? 0) >
+                  0 ? (
+                    <div
+                      role='alert'
+                      className='rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-800'
+                    >
+                      {t(
+                        'codeCenter.linearBarcode.print.sections.preview.states.unattributedIssuedInventory',
+                        {
+                          quantity:
+                            inventoryQuery.data?.unattributedIssuedQuantity ??
+                            0,
+                        }
+                      )}
+                    </div>
+                  ) : null}
                   {batchPrintResult && (
                     <LinearBarcodePrintResultPanel
                       batchPrintResult={batchPrintResult}
@@ -411,6 +427,9 @@ export function LinearBarcodePrintMgmt() {
                       resultFilter={resultFilter}
                       retryingKeys={retryingKeys}
                       isRetryingFailedOnly={isRetryingFailedOnly}
+                      isProductCodeIssuanceInProgress={
+                        isProductCodeIssuanceInProgress
+                      }
                       onRetryFailedOnly={() => void handleRetryFailedOnly()}
                       onRetryItem={(itemKey) => void handleRetryItem(itemKey)}
                       onResultFilterChange={setResultFilter}
@@ -423,6 +442,9 @@ export function LinearBarcodePrintMgmt() {
                         line={line}
                         hasOpenedPreview={Boolean(openedPreviewKeys[line.key])}
                         isPrinting={Boolean(printingKeys[line.key])}
+                        isProductCodeIssuanceInProgress={
+                          isProductCodeIssuanceInProgress
+                        }
                         onQuantityChange={(quantity) =>
                           setLinePrintQuantity(line.key, quantity)
                         }

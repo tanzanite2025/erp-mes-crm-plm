@@ -52,13 +52,13 @@ export function BusinessEventSourceListHeader({
               value={searchValue}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder='搜索事件源名称或编码'
-              className='h-10 rounded-2xl pl-9 text-xs font-black'
+              className='h-10 rounded-2xl pl-9'
             />
           </div>
           <Button
             size='lg'
             variant='outline'
-            className='h-10 gap-2 rounded-2xl px-4 text-xs font-black'
+            className='h-10 gap-2 rounded-2xl px-4'
             onClick={allExpanded ? onCollapseAll : onExpandAll}
           >
             {allExpanded ? (
@@ -71,7 +71,7 @@ export function BusinessEventSourceListHeader({
           <select
             value={templateCode}
             onChange={(event) => onTemplateChange(event.target.value)}
-            className='h-10 min-w-48 rounded-2xl border border-input bg-background px-3 text-xs font-black'
+            className='h-10 min-w-48 rounded-2xl border border-input bg-background px-3'
           >
             {templateOptions.map((template) => (
               <option key={template.code} value={template.code}>
@@ -81,7 +81,7 @@ export function BusinessEventSourceListHeader({
           </select>
           <Button
             size='lg'
-            className='h-10 gap-2 rounded-2xl px-4 text-xs font-black'
+            className='h-10 gap-2 rounded-2xl px-4'
             onClick={onImportTemplate}
           >
             <Download className='size-4' />

@@ -118,7 +118,7 @@ export function SecuritySettings() {
             variant='outline'
             size='sm'
             onClick={() => void loadConfigs()}
-            className='h-9 rounded-full border-dashed text-[10px] font-black tracking-widest uppercase transition-all hover:bg-primary/5 hover:text-primary'
+            className='h-9 rounded-full border-dashed transition-all hover:bg-primary/5 hover:text-primary'
           >
             <RefreshCcw
               className={cn('mr-2 size-3', isLoading && 'animate-spin')}
@@ -150,7 +150,7 @@ export function SecuritySettings() {
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
                   placeholder={t('basicSettings.securityPage.placeholder')}
-                  className='h-12 rounded-2xl border-none bg-muted/50 text-center font-maple-ui text-lg tracking-[0.5em]'
+                  className='h-12 rounded-2xl border-none bg-muted/50 text-center font-maple-ui'
                 />
                 <Button
                   variant='ghost'
@@ -173,7 +173,7 @@ export function SecuritySettings() {
             <Button
               onClick={handleUpdatePassword}
               disabled={isSaving}
-              className='h-11 w-full rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg shadow-primary/20'
+              className='h-11 w-full rounded-full shadow-lg shadow-primary/20'
             >
               {isSaving
                 ? t('basicSettings.securityPage.actions.saving')
