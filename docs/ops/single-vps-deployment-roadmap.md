@@ -26,9 +26,9 @@ ERP 的首个生产实现是：
 
 ## 2. 当前状态与剩余风险
 
-### Phase A：已完成
+### Phase A：ERP 已部署，deploy 账号验证待完成
 
-1. SSH 公钥登录和首次接入已验证。
+1. `root` SSH 公钥登录和首次接入已验证；`deploy` 用户创建、授权及 Docker 权限验证仍待完成。
 2. GHCR Package 已完成首次构建和公开拉取验证。
 3. 网关和 ERP Project 已在 Hostinger 上完成健康检查。
 4. Cloudflare 已切换到 `2.25.85.201` 并恢复 Proxied。

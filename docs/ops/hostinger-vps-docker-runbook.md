@@ -413,7 +413,8 @@ Cloudflare MCP 可读写，但 DNS 写入必须满足：
 - [x] Hostinger 防火墙仅开放 `22/80/443` 并已同步。
 - [x] VPS Docker Manager 使用独立的 `tanzanite-edge` 和 `erp` Compose Projects。
 - [x] `host-kernel-tuning` 已将宿主机 `vm.overcommit_memory` 固定为 `1`，满足 Redis 生产内存基线。
-- [x] Hostinger 账号公钥授权已完成，SSH 登录路径已验证可用。
+- [x] Hostinger 账号公钥已配置，Codex key 可通过 SSH 登录 VPS 的 `root` 账号。
+- [ ] 创建 `deploy` 用户、安装其 SSH 公钥并验证 Docker 权限；当前 VPS 尚无该用户，不能把 root 登录验证视为 deploy 登录已完成。
 - [x] `tanzanite-edge` Project 已部署，容器 Healthy，公网 `/__edge/health` 返回 `ok`。
 - [x] GHCR 四个 ERP Package 已构建并确认可匿名拉取，生产使用不可变 `sha-*` 标签。
 - [x] ERP Project 已创建，`db`、`redis`、`search-engine`、`app` 和 `web` 全部 Healthy。
