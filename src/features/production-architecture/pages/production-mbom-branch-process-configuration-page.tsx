@@ -303,11 +303,11 @@ export function ProductionMBOMBranchProcessConfigurationPage() {
                     }`}
                   >
                     <span className='min-w-0'>
-                      <span className='block truncate text-sm font-medium'>
+                      <span className='block truncate'>
                         {getProductionBOMBranchDisplayName(branch)}
                       </span>
                     </span>
-                    <span className='shrink-0 text-xs text-muted-foreground'>
+                    <span className='shrink-0 text-muted-foreground'>
                       {selectedProcessLibraryIds(branch).length}
                     </span>
                   </button>
