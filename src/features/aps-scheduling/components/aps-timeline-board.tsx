@@ -53,7 +53,6 @@ export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
               />
             ))}
           </div>
-
         </div>
       </CardContent>
     </Card>

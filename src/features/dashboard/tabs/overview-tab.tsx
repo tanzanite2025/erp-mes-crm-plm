@@ -64,10 +64,7 @@ export function DashboardOverviewTab() {
     { name: '合格品 (WIP)', value: wipVal || 1, color: '#10b981' },
     { name: '报废品 (SCRAP)', value: scrapVal, color: '#ef4444' },
   ]
-  const lineIds = useMemo(
-    () => lines.map((line) => line.id),
-    [lines]
-  )
+  const lineIds = useMemo(() => lines.map((line) => line.id), [lines])
 
   const { visibleLineIds: savedVisibleLineIds, saveVisibleLineIds } =
     useVisibleDashboardProductionLines(lineIds)

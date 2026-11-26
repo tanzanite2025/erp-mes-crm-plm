@@ -672,7 +672,10 @@ const engineeringActions: LegacyActionPermissionEntry[] = [
     desc: '允许推广和发布工程BOM。',
     category: 'action',
     parentId: 'menu_engineering',
-    routeBindings: ['POST /engineering/bom/:id/promote', 'POST /engineering/bom/:id/revise'],
+    routeBindings: [
+      'POST /engineering/bom/:id/promote',
+      'POST /engineering/bom/:id/revise',
+    ],
   },
 ]
 

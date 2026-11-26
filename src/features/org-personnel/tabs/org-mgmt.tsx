@@ -332,7 +332,6 @@ export function OrgMgmt() {
                     </ScrollArea>
                   </CardContent>
                 </Card>
-
               </div>
             </>
           ) : (

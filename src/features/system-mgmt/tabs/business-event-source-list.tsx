@@ -36,8 +36,7 @@ function applyDynamicProcessFieldLabel<
   }
 
   const hasLegacyProcessField = source.config.fields.some(
-    (field) =>
-		field.key === 'processName'
+    (field) => field.key === 'processName'
   )
 
   if (!hasLegacyProcessField) {
@@ -49,9 +48,7 @@ function applyDynamicProcessFieldLabel<
     config: {
       ...source.config,
       fields: source.config.fields.map((field) =>
-			field.key === 'processName'
-			? { ...field, label: '工序' }
-          : field
+        field.key === 'processName' ? { ...field, label: '工序' } : field
       ),
     },
   }
@@ -132,8 +129,7 @@ export function BusinessEventSourceList({
   }
 
   const displaySources = useMemo(
-    () =>
-      sources.map((source) => applyDynamicProcessFieldLabel(source)),
+    () => sources.map((source) => applyDynamicProcessFieldLabel(source)),
     [sources]
   )
 

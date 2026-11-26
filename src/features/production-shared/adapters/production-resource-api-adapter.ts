@@ -11,9 +11,7 @@ import type {
   SaveProductionProcessStepApiDTO,
   SaveProductionRouteApiDTO,
 } from '../contracts/production-resource-api-dto'
-import type {
-  ProductionLine,
-} from '../data/production-line'
+import type { ProductionLine } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 import type {
   ProductionRouteBOMBranch,

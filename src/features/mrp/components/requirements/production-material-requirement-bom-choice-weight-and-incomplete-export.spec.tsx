@@ -108,7 +108,7 @@ describe('production requirement source verification', () => {
       >
         <ProductionMaterialRequirementBomBasisReview
           sourceLines={[
-          createProductionRequirementSourceWithDuplicateEffectiveMBOMs(),
+            createProductionRequirementSourceWithDuplicateEffectiveMBOMs(),
           ]}
           isComplete={false}
           isLoading={false}
@@ -116,23 +116,18 @@ describe('production requirement source verification', () => {
         />
       </LanguageProvider>
     )
-    expect(
-      screen.getByText('MBOM-1 · A / V1')
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('MBOM-2 · A / V1')
-    ).toBeInTheDocument()
+    expect(screen.getByText('MBOM-1 · A / V1')).toBeInTheDocument()
+    expect(screen.getByText('MBOM-2 · A / V1')).toBeInTheDocument()
     expect(screen.getByText(/生产物料仓库/)).toBeInTheDocument()
-    expect(
-      screen.getByText(/属于数据完整性异常/)
-    ).toBeInTheDocument()
+    expect(screen.getByText(/属于数据完整性异常/)).toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '重新分析' }))
     expect(onRecalculate).toHaveBeenCalledOnce()
   })
 
   it('shows the automatically adopted unique BOM and its weight in English', () => {
-    const source = createProductionRequirementSourceWithDuplicateEffectiveMBOMs()
+    const source =
+      createProductionRequirementSourceWithDuplicateEffectiveMBOMs()
     source.bom = source.bomCandidates[0]
     source.bomCandidates = [source.bom]
     source.issueCode = ''
@@ -156,7 +151,8 @@ describe('production requirement source verification', () => {
   })
 
   it('blocks print and export while a source is incomplete and enables them only after complete analysis', () => {
-    const source = createProductionRequirementSourceWithDuplicateEffectiveMBOMs()
+    const source =
+      createProductionRequirementSourceWithDuplicateEffectiveMBOMs()
     const props = {
       isOpen: true,
       onClose: vi.fn(),

@@ -64,8 +64,8 @@ export const productionMaterialRequirementSourceLineSchema = z
     if (
       new Set(candidateIds).size !== candidateIds.length ||
       hasUniqueCandidateMismatch ||
-      (hasDuplicateCandidates !==
-        (source.issueCode === 'DUPLICATE_EFFECTIVE_MBOM')) ||
+      hasDuplicateCandidates !==
+        (source.issueCode === 'DUPLICATE_EFFECTIVE_MBOM') ||
       (source.issueCode === '' && !source.bom)
     )
       context.addIssue({

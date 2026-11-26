@@ -31,9 +31,7 @@ function resolveProductionExecutionRecordedRouteStepName(
   const steps = routes.find((route) => route.id === routeId)?.steps ?? []
   const step = steps.find((item) => item.id === routeStepId)
   if (step) return formatProductionExecutionRouteStepName(step)
-  const matches = steps.filter(
-    (item) => item.processStepId === processStepId
-  )
+  const matches = steps.filter((item) => item.processStepId === processStepId)
   return matches.length === 1
     ? formatProductionExecutionRouteStepName(matches[0])
     : ''

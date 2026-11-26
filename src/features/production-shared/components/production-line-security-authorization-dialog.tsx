@@ -85,7 +85,9 @@ export function ProductionLineSecurityAuthorizationDialog({
         <div className='space-y-4 px-2 py-4'>
           <Input
             type='password'
-            placeholder={t('productionArchitecture.lineMgmt.authPasswordPlaceholder')}
+            placeholder={t(
+              'productionArchitecture.lineMgmt.authPasswordPlaceholder'
+            )}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={handleKeyDown}

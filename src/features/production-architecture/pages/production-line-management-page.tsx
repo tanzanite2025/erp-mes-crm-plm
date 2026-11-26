@@ -12,11 +12,11 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { ProductionLineProfileDialog } from '@/features/production-shared/components/production-line-profile-dialog'
+import { ProductionLineSecurityAuthorizationDialog } from '@/features/production-shared/components/production-line-security-authorization-dialog'
 import type { ProductionLineMutationPayload } from '@/features/production-shared/contracts/production-line-mutation'
 import type { ProductionLine } from '@/features/production-shared/data/production-line'
 import { productionResourceQueryKeys } from '@/features/production-shared/data/production-resource-query-keys'
 import { useProductionLines } from '@/features/production-shared/hooks/use-production-lines'
-import { ProductionLineSecurityAuthorizationDialog } from '@/features/production-shared/components/production-line-security-authorization-dialog'
 
 interface PendingProductionLineUpdate {
   delta: Record<string, { o: unknown; n: unknown }>

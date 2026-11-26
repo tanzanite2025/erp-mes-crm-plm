@@ -286,7 +286,8 @@ export const basicSettings = {
   securityPage: {
     loading: 'Entering secure configuration center...',
     title: 'System Security Settings',
-    subtitle: 'Manage system security settings and production line edit authorization',
+    subtitle:
+      'Manage system security settings and production line edit authorization',
     authCardTitle: 'Production Line Edit Authorization Code (AUTH_CODE)',
     authCardDescription:
       'Required by the server when editing existing production line master data.',
@@ -302,10 +303,8 @@ export const basicSettings = {
     auditItems: {
       first:
         'The server checks this code when existing production line master data is edited.',
-      second:
-        'Production line edits are recorded in the audit log.',
-      third:
-        'The authorization code is stored in system configuration.',
+      second: 'Production line edits are recorded in the audit log.',
+      third: 'The authorization code is stored in system configuration.',
     },
     version: 'Architecture Hardening Ver: 1.0.4 - Secure System',
     toasts: {

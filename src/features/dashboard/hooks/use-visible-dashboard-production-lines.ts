@@ -9,11 +9,14 @@ const VISIBLE_PRODUCTION_LINES_QUERY_KEY = [
 ] as const
 const EMPTY_VISIBLE_PRODUCTION_LINE_IDS: string[] = []
 
-export function useVisibleDashboardProductionLines(productionLineIds: string[]) {
+export function useVisibleDashboardProductionLines(
+  productionLineIds: string[]
+) {
   const queryClient = useQueryClient()
   const query = useQuery<string[] | null>({
     queryKey: VISIBLE_PRODUCTION_LINES_QUERY_KEY,
-    queryFn: () => StorageService.getItem<string[]>(VISIBLE_PRODUCTION_LINES_KEY),
+    queryFn: () =>
+      StorageService.getItem<string[]>(VISIBLE_PRODUCTION_LINES_KEY),
     initialData: null,
   })
 
@@ -24,7 +27,8 @@ export function useVisibleDashboardProductionLines(productionLineIds: string[]) 
 
     const defaults = productionLineIds.slice(0, 5)
     void StorageService.setItem(VISIBLE_PRODUCTION_LINES_KEY, defaults).then(
-      () => queryClient.setQueryData(VISIBLE_PRODUCTION_LINES_QUERY_KEY, defaults)
+      () =>
+        queryClient.setQueryData(VISIBLE_PRODUCTION_LINES_QUERY_KEY, defaults)
     )
   }, [productionLineIds, query.data, queryClient])
 

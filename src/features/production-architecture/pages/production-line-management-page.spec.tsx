@@ -37,20 +37,23 @@ vi.mock('@/features/production-shared/hooks/use-production-lines', () => ({
   }),
 }))
 
-vi.mock('@/features/production-shared/components/production-line-security-authorization-dialog', () => ({
-  ProductionLineSecurityAuthorizationDialog: ({
-    open,
-    onConfirm,
-  }: {
-    open: boolean
-    onConfirm: (password: string) => Promise<boolean | void>
-  }) =>
-    open ? (
-      <button type='button' onClick={() => void onConfirm('valid-auth-code')}>
-        确认授权修改
-      </button>
-    ) : null,
-}))
+vi.mock(
+  '@/features/production-shared/components/production-line-security-authorization-dialog',
+  () => ({
+    ProductionLineSecurityAuthorizationDialog: ({
+      open,
+      onConfirm,
+    }: {
+      open: boolean
+      onConfirm: (password: string) => Promise<boolean | void>
+    }) =>
+      open ? (
+        <button type='button' onClick={() => void onConfirm('valid-auth-code')}>
+          确认授权修改
+        </button>
+      ) : null,
+  })
+)
 
 vi.mock('@/lib/application-confirm-prompt-and-alert-dialog-requests', () => ({
   requestApplicationConfirmation: testState.confirmApplicationAction,

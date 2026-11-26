@@ -54,10 +54,7 @@ export async function prepareProductionMaterialIssuanceSources(
     result.sourceLines.length !== request.sources.length ||
     result.sourceLines.some((source) => {
       const selection = expected.get(source.salesOrderLineId)
-      return (
-        !selection ||
-        selection.salesOrderId !== source.salesOrderId
-      )
+      return !selection || selection.salesOrderId !== source.salesOrderId
     })
   )
     throw new Error(

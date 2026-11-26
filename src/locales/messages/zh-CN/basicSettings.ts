@@ -306,8 +306,7 @@ export const basicSettings = {
     authCardDescription: '用于验证现有产线主数据修改操作的授权口令',
     currentPassword: '当前授权码',
     placeholder: '输入至少 4 位数字或字母',
-    warning:
-      '修改后，后续编辑现有产线资料时需要使用新授权码。',
+    warning: '修改后，后续编辑现有产线资料时需要使用新授权码。',
     actions: {
       saving: '正在写入系统...',
       apply: '提交全局变更',
