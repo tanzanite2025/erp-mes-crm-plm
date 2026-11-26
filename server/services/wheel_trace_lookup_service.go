@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"xdfc-server/db"
-	"xdfc-server/models"
-
-	"gorm.io/gorm"
 )
 
 type WheelTraceLookupRequest struct {
@@ -20,19 +16,19 @@ type WheelTraceLookupRequest struct {
 }
 
 type WheelTraceStage struct {
-	Status            string `json:"status"`
-	LineID            string `json:"lineId,omitempty"`
-	LineCode          string `json:"lineCode,omitempty"`
-	LineName          string `json:"lineName,omitempty"`
-	SegmentID         string `json:"segmentId,omitempty"`
-	SegmentName       string `json:"segmentName,omitempty"`
-	BranchOperationID string `json:"branchOperationId,omitempty"`
-	ProcessName       string `json:"processName,omitempty"`
-	TeamID            string `json:"teamId,omitempty"`
-	TeamName          string `json:"teamName,omitempty"`
-	OperatorID        string `json:"operatorId,omitempty"`
-	OperatorName      string `json:"operatorName,omitempty"`
-	ScannedAt         string `json:"scannedAt,omitempty"`
+	Status        string `json:"status"`
+	LineID        string `json:"lineId,omitempty"`
+	LineCode      string `json:"lineCode,omitempty"`
+	LineName      string `json:"lineName,omitempty"`
+	SegmentID     string `json:"segmentId,omitempty"`
+	SegmentName   string `json:"segmentName,omitempty"`
+	ProcessStepID string `json:"processStepId,omitempty"`
+	ProcessName   string `json:"processName,omitempty"`
+	TeamID        string `json:"teamId,omitempty"`
+	TeamName      string `json:"teamName,omitempty"`
+	OperatorID    string `json:"operatorId,omitempty"`
+	OperatorName  string `json:"operatorName,omitempty"`
+	ScannedAt     string `json:"scannedAt,omitempty"`
 }
 
 type WheelTraceTimelineNode struct {
@@ -59,19 +55,6 @@ type WheelTraceLookupResult struct {
 	Timeline     []WheelTraceTimelineNode `json:"timeline"`
 	Warnings     []string                 `json:"warnings"`
 	Meta         *WheelTraceLookupMeta    `json:"meta,omitempty"`
-}
-
-type wheelTraceRouteAnchor struct {
-	LineID            string
-	LineCode          string
-	LineName          string
-	SegmentID         string
-	SegmentName       string
-	BranchOperationID string
-	ProcessName       string
-	TeamID            string
-	TeamName          string
-	OperatorName      string
 }
 
 func LookupWheelTrace(request WheelTraceLookupRequest) (*WheelTraceLookupResult, error) {
@@ -127,131 +110,10 @@ func LookupWheelTrace(request WheelTraceLookupRequest) (*WheelTraceLookupResult,
 		}
 	}
 
-	anchor, anchorErr := resolveWheelTraceRouteAnchor()
-	if anchorErr != nil {
-		result.Warnings = append(result.Warnings, "生产拓扑读取失败，暂时无法给出工段锚点。")
-	} else if anchor != nil {
-		result.CurrentStage = WheelTraceStage{
-			Status:            "partial",
-			LineID:            anchor.LineID,
-			LineCode:          anchor.LineCode,
-			LineName:          anchor.LineName,
-			SegmentID:         anchor.SegmentID,
-			SegmentName:       anchor.SegmentName,
-			BranchOperationID: anchor.BranchOperationID,
-			ProcessName:       anchor.ProcessName,
-			TeamID:            anchor.TeamID,
-			TeamName:          anchor.TeamName,
-			OperatorName:      anchor.OperatorName,
-			ScannedAt:         now.Format(time.RFC3339),
-		}
-
-		result.Warnings = append(result.Warnings, "当前工段基于生产拓扑配置推断，尚未接入真实过站记录。")
-
-		if request.IncludeTimeline {
-			result.Timeline = append(result.Timeline, WheelTraceTimelineNode{
-				ID:           parsed.RawCode + "-route-anchor",
-				Time:         now.Format(time.RFC3339),
-				Title:        "已匹配生产路线锚点",
-				Description:  "根据当前启用的生产拓扑，返回一条可落地的工段与工序锚点，供追溯页先行展示。",
-				Type:         "production",
-				SegmentName:  anchor.SegmentName,
-				ProcessName:  anchor.ProcessName,
-				OperatorName: anchor.OperatorName,
-				Status:       "partial",
-			})
-		}
-	} else {
-		result.Warnings = append(result.Warnings, "未找到启用中的生产拓扑配置，暂时无法显示工段锚点。")
-	}
+	result.Warnings = append(result.Warnings, "尚未关联该条码的生产计划和实际过站记录，无法确定当前产线或工序。")
 
 	result.Warnings = uniqueWheelTraceWarnings(result.Warnings)
 	return result, nil
-}
-
-func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
-	if db.DB == nil {
-		return nil, nil
-	}
-
-	var lines []models.ProductionLine
-	err := db.DB.
-		Where("is_active = ?", true).
-		Order("code asc").
-		Preload("Segments", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc")
-		}).
-		Find(&lines).Error
-	if err != nil {
-		return nil, err
-	}
-	if err := attachProductionBOMBranchOperations(db.DB, lines); err != nil {
-		return nil, err
-	}
-
-	var anchor *wheelTraceRouteAnchor
-	for _, line := range lines {
-		for _, segment := range line.Segments {
-			for _, operation := range segment.BranchOperations {
-				if !operation.IsActive {
-					continue
-				}
-				anchor = &wheelTraceRouteAnchor{
-					LineID:            line.ID,
-					LineCode:          line.Code,
-					LineName:          line.Name,
-					SegmentID:         segment.ID,
-					SegmentName:       segment.Name,
-					BranchOperationID: operation.ID,
-					ProcessName:       operation.Name,
-				}
-
-				team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
-				if teamErr != nil {
-					return nil, teamErr
-				}
-				if team != nil {
-					anchor.TeamID = team.ID
-					anchor.TeamName = team.Name
-					anchor.OperatorName = team.Operator
-				}
-				break
-			}
-			if anchor != nil {
-				break
-			}
-		}
-		if anchor != nil {
-			break
-		}
-	}
-
-	return anchor, nil
-}
-
-func resolveWheelTraceTeam(segmentName, processName string) (*models.Team, error) {
-	if db.DB == nil || (strings.TrimSpace(segmentName) == "" && strings.TrimSpace(processName) == "") {
-		return nil, nil
-	}
-
-	query := db.DB.Model(&models.Team{}).Where("status = ?", "active")
-	if strings.TrimSpace(segmentName) != "" {
-		query = query.Where("section = ?", strings.TrimSpace(segmentName))
-	}
-	if strings.TrimSpace(processName) != "" {
-		query = query.Where("process = ?", strings.TrimSpace(processName))
-	}
-
-	var team models.Team
-	err := query.Order("step asc").First(&team).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &team, nil
 }
 
 func uniqueWheelTraceWarnings(items []string) []string {

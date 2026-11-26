@@ -6,7 +6,7 @@
 
 已有生产领料工作区 `/mrp/production-material-issuance`、独立指南 `/mrp/production-material-issuance-guide`、导航和页面权限。工作区按“物料汇总／订单行进度”展示后端完整范围统计，分别分页，单据与领退记录作为追溯区域。指南解释已接入的进度、领退规则及仍未接入的打印／消息边界，不提供虚构数量、发送、保存或发料确认。前端维护说明见[工作区与指南文档](../frontend/production-material-issuance-workspace-tab-and-warehouse-confirmed-movement-integration-boundaries.md)。
 
-[MRP Go 服务](../../server/services/mrp_requirements.go) 已使用独立的逐订单行配方展开、生产物料仓库可用量及包装投影能力，返回订单 ID／行 ID／版本、BOM ID／版本／修订、性能版本、成品重量与逐来源物料贡献。多份适用配方需要明确选择，来源不完整时不生成汇总。重复配方贡献不再重复累计成品数量。具体字段与文件职责以[共用需求计算契约](production-material-requirement-shared-expansion-bom-selection-stock-allocation-and-packaging-calculation-contract.md)为准。MRP 查询和打印仍是分析参考，不自动创建正式单据。
+[MRP Go 服务](../../server/services/mrp_requirements.go) 已使用独立的逐订单行配方展开、生产物料仓库可用量及包装投影能力，返回订单 ID／行 ID／版本、BOM ID／版本／修订、性能版本、成品重量与逐来源物料贡献。配方必须来自订单行已选 MBOM 稳定分支中的唯一有效发布记录；来源不完整或分支存在重复有效发布记录时不生成汇总。重复配方贡献不再重复累计成品数量。具体字段与文件职责以[共用需求计算契约](production-material-requirement-shared-expansion-bom-selection-stock-allocation-and-packaging-calculation-contract.md)为准。MRP 查询和打印仍是分析参考，不自动创建正式单据。
 
 [当前打印](../../src/features/mrp/components/requirements/requirement-drawer.tsx) 只是浏览器打印，Excel 导出只产生文件，仓库共享提示没有发送处理。裁纱下发建立生产计划和任务，不是物料级库存交接。[通用出库确认](../../server/services/inventory_command_service.go) 带销售发货数量与销售出库凭证逻辑，不能直接作为生产领料命令。
 
@@ -35,7 +35,7 @@ HTTP UUID（包括命令 ID）要求完整规范小写格式；JSON 请求上限
 
 当前系统只有页面／动作权限，没有按客户、组织或个人划分订单的数据范围基础设施。因此该查看动作的授权范围为**当前系统共享生产数据**：可核对选定的有效来源，并查询所有正式领料单及其冻结来源，不按下发人过滤，也不表示已实现客户或组织隔离。未来引入细分范围时，须在来源读取及列表统计、分页之前统一约束，不能靠浏览器过滤或只限制详情。
 
-前端 DTO 复用 MRP 的 BOM 候选与配方贡献 schema，额外校验来源／单据身份、单位、正重量、指纹及分页完整性；API service 无界面副作用，React Query 管理远端快照。没有查看动作权限时不挂载查询组件、不发请求。分析范围、BOM 选择、完整性或加载状态变化时卸载旧核对，旧异步响应不能显示在新范围。核对结果只表示读取成功，不能显示为已发送或已领料。
+前端 DTO 复用 MRP 的 BOM 候选与配方贡献 schema，额外校验来源／单据身份、单位、正重量、指纹及分页完整性；API service 无界面副作用，React Query 管理远端快照。没有查看动作权限时不挂载查询组件、不发请求。分析范围、订单行分支依据、完整性或加载状态变化时卸载旧核对，旧异步响应不能显示在新范围。核对结果只表示读取成功，不能显示为已发送或已领料。
 
 命令 DTO、service、Hook 与下发／撤回控件各自独立；正式结果必须验证来源集合、BOM、预期版本和指纹，撤回另校验返回单据、递增版本、状态及原因。下发旧请求若返回已经撤回的原单，界面明确显示原单已撤回，不冒充新下发。下发成功区订阅同一原单 Query，后续撤回同步更新展示；查询失败明确报错，不继续把旧回执当作当前状态。确认范围为分析的全部来源，不随表内搜索或缺料过滤缩小。
 
@@ -131,11 +131,13 @@ HTTP UUID（包括命令 ID）要求完整规范小写格式；JSON 请求上限
 
 正式单据至少保存：订单 ID、稳定明细身份、业务行号快照、来源版本／用量相关指纹、产品和客户归属、覆盖成品数量、BOM ID／修订／性能版本、配方行身份、标准用量、主单位和计算结果。显示名称快照用于历史解释，不代替实体身份。
 
+冻结的 BOM ID／修订是该领料单采用的具体配方依据，不代表销售订单行的分支身份。订单行保存产品分类展示上下文和已选 MBOM 稳定分支；分类只用于识别和校验归属，不单独决定配方或工序。MRP 候选、领料核对及下发事务均以订单行的 `ProductID + BOMOwnerType + BOMOwnerCustomerID + BOMVersionLevel` 精确限定 MBOM 分支，再从该分支内选择已发布且当前生效的具体修订；不得按订单客户重新推断、跨客户／内部归属回退或选用其他分支。订单行及 MRP 分支约束、正式来源核对和下发重验均已完成；冻结快照继续记录最终采用的配方依据。
+
 2026-10-27 已修正销售保存的明细身份：存量行按真实 ID 保留，行号只作显示和排序；新增行生成新 ID，重复、跨订单及已移除 ID 均拒绝。普通保存、SDRTS、行变更及批量同步共用校验，并明确持久化明细内容；批量同步也校验并递增版本。有效覆盖保护已同步接入订单写入口，以冻结来源核对数量、产品、单位与客户，拒绝移除、取消、删除、转报价或变为不允许的状态；允许重排行号、修改备注／价格及新增未覆盖行。已有覆盖在订单完成后仍保留。具体职责及测试见[订单行身份与来源关联契约](sales-order-line-stable-identity-edit-reorder-version-and-production-material-source-reference-contract.md)。
 
-MRP 与领料共用独立的 Go 配方展开能力。前端提交来源、用户明确的配方选择和预期依据标识，Go 校验并生成正式数量，不接收客户端汇总数直接过账。发送前用量相关依据变化须明确冲突并重新核对，不能静默换配方、跳过缺失来源。
+MRP 与领料共用独立的 Go 配方展开能力。前端提交订单行来源；正式下发同时提交上次核对响应中的预期 BOM 身份、版本和依据指纹，用于发现核对后的来源变化，不代表用户选择配方。Go 从订单行固定分支自动解析唯一当前有效的已发布 MBOM，重新校验并生成正式数量，不接收客户端汇总数直接过账。发送前用量相关依据变化须明确冲突并重新核对，不能静默换配方、跳过缺失来源。
 
-当前 MRP 按发布状态、生效日期、产品和客户归属筛选候选，多份候选由用户逐订单行明确选择，返回版本和配方行贡献。正式下发领域事务已重新读取真实来源、共用同一配方展开能力，核对订单版本、BOM 版本及完整依据 SHA-256 指纹，并冻结选中 BOM、成品重量与单位、配方贡献和物料显示快照；未采用候选不写入历史。即使旧写入口漏递增版本，数量、重量或配方变化也不能沿用旧核对结果。
+当前 MRP 按订单行唯一已保存的 MBOM 稳定分支、发布状态和生效日期读取配方。数据库约束保证同一产品、BOM 类型、归属和性能版本最多一条 `RELEASED` 记录；正常流程中不存在同一分支多个当前有效修订供用户选择。若数据异常导致发现多条符合条件的已发布 MBOM，来源必须阻断并报告完整性错误，不允许用户选择其一或按排序猜选。正式下发领域事务重新读取真实来源，共用同一配方展开能力，再次校验订单行分支及唯一 MBOM 的归属，核对订单版本、BOM 版本及完整依据 SHA-256 指纹，并冻结采用的 BOM、成品重量与单位、配方贡献和物料显示快照。即使旧写入口漏递增版本，分支、数量、重量或配方变化也不能沿用旧核对结果。
 
 下发仅允许未删除、非报价且处于 `Pending`／`Scheduling`／`InProgress` 的订单，要求来源单位、正版本及正成品重量完整；仓库必须为启用且允许出库的系统 `MATERIAL`。核对与下发不读取、预占或扣减库存，包装和库存快照也不成为冻结需求事实。历史查询只读取冻结单据和来源，并校验快照指纹及扁平身份，当前产品、物料或 BOM 改名／修改不会改写原依据；快照损坏明确报错。单位变更、停用等影响后续实际发料的变化，仍须由仓库确认命令再次校验。
 
@@ -178,8 +180,8 @@ PostgreSQL 下发／撤回采用 Serializable 事务；下发按固定顺序锁�
 | 文件                                                                                                                                           | 职责                                                                         |
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | [单据、冻结来源与有效覆盖模型](../../server/models/production_material_issuance_document_source_snapshots_and_active_coverage.go)              | 单据、来源快照、有效覆盖、命令回执及数据库唯一约束                           |
-| [命令及核对 DTO](../../server/services/production_material_issuance_document_command_and_review_dto.go)                                        | 明确选择、预期版本和指纹、冻结依据、查询响应及领域错误                       |
-| [来源核对与冻结依据](../../server/services/production_material_issuance_source_review_and_frozen_basis_service.go)                             | 真实身份、完整性、明确 BOM、共用展开、依据指纹与锁顺序                       |
+| [命令及核对 DTO](../../server/services/production_material_issuance_document_command_and_review_dto.go)                                        | 来源身份、预期 BOM 与版本、指纹、冻结依据、查询响应及领域错误                 |
+| [来源核对与冻结依据](../../server/services/production_material_issuance_source_review_and_frozen_basis_service.go)                             | 真实身份、完整性、分支唯一 MBOM、共用展开、依据指纹与锁顺序                   |
 | [下发、撤回与幂等事务](../../server/services/production_material_issuance_document_dispatch_withdrawal_and_idempotency_service.go)             | 来源重核、冻结、覆盖、命令回执、审计与整体回滚                               |
 | [冻结单据查询](../../server/services/production_material_issuance_frozen_document_query_service.go)                                            | 历史快照校验、详情与单据分页，不按当前 BOM 重算                              |
 | [订单有效覆盖保护](../../server/services/production_material_issuance_active_coverage_order_mutation_guard.go)                                 | 按冻结来源保护订单编辑、移除、取消、删除及批量同步                           |

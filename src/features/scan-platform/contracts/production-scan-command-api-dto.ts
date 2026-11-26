@@ -33,7 +33,7 @@ export interface ProductionOperationExecutionApiDTO {
   executionLotId: string
   routeId: string
   routeStepId: string
-  branchOperationId: string
+  processStepId: string
   productionWorkLocationId: string
   executionMode: string
   partnerId: string
@@ -48,7 +48,7 @@ export interface ProductionOperationExecutionApiDTO {
   updatedAt: string
 }
 
-export interface ProductBarcodeStateBranchOperationApiDTO {
+export interface ProductBarcodeStateProcessStepApiDTO {
   id: string
   code: string
   name: string
@@ -60,8 +60,8 @@ export interface ProductBarcodeStateEventApiDTO {
   operationId?: string
   productBarcode: string
   eventType: string
-  fromBranchOperationId: string
-  toBranchOperationId: string
+  fromProcessStepId: string
+  toProcessStepId: string
   routeId: string
   routeStepId: string
   operator: string
@@ -76,8 +76,8 @@ export interface ProductBarcodeStateApiDTO {
   productName: string
   routeId: string
   routeStepId: string
-  currentBranchOperationId: string
-  currentBranchOperation?: ProductBarcodeStateBranchOperationApiDTO
+  currentProcessStepId: string
+  currentProcessStep?: ProductBarcodeStateProcessStepApiDTO
   status: string
   lastEventId: string
   startedAt: string
@@ -93,8 +93,8 @@ export interface ProductBarcodeLifecycleCurrentStateApiDTO {
   productName: string
   routeId: string
   routeStepId: string
-  currentBranchOperationId: string
-  currentBranchOperation?: ProductBarcodeStateBranchOperationApiDTO | null
+  currentProcessStepId: string
+  currentProcessStep?: ProductBarcodeStateProcessStepApiDTO | null
   status: string
   lastEventId: string
   startedAt: string
@@ -116,11 +116,11 @@ export interface ProductBarcodeLifecycleHistoryApiResponseDTO {
 
 export interface ProductionScanCommandProgressApiDTO {
   executedRouteStepId: string
-  executedBranchOperationId: string
+  executedProcessStepId: string
   currentRouteStepId: string
-  currentBranchOperationId: string
+  currentProcessStepId: string
   nextRouteStepId: string
-  nextBranchOperationId: string
+  nextProcessStepId: string
   advanced: boolean
   routeCompleted: boolean
   transferRequired: boolean
@@ -136,8 +136,8 @@ export interface ProductBarcodeTransferEventApiDTO {
   routeId: string
   fromRouteStepId: string
   toRouteStepId: string
-  fromBranchOperationId: string
-  toBranchOperationId: string
+  fromProcessStepId: string
+  toProcessStepId: string
   fromHolderType: string
   fromHolderId: string
   toHolderType: string

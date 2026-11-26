@@ -4,18 +4,24 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"strings"
+	"xdfc-server/models"
 )
 
 type ProductionRouteSalesOrderLineCandidateDTO struct {
-	ID            uint   `json:"id"`
-	SalesOrderID  string `json:"salesOrderId"`
-	SalesOrderNo  string `json:"salesOrderNo"`
-	CustomerName  string `json:"customerName"`
-	LineNo        int    `json:"lineNo"`
-	ProductID     string `json:"productId"`
-	ProductModel  string `json:"productModel"`
-	ProductCode   string `json:"productCode"`
-	Specification string `json:"specification"`
+	ID                  uint   `json:"id"`
+	SalesOrderID        string `json:"salesOrderId"`
+	SalesOrderNo        string `json:"salesOrderNo"`
+	CustomerName        string `json:"customerName"`
+	LineNo              int    `json:"lineNo"`
+	ProductID           string `json:"productId"`
+	ProductModel        string `json:"productModel"`
+	ProductCode         string `json:"productCode"`
+	Specification       string `json:"specification"`
+	BOMOwnerType        string `json:"bomOwnerType"`
+	BOMOwnerCustomerID  string `json:"bomOwnerCustomerId"`
+	BOMVersionLevel     string `json:"bomVersionLevel"`
+	ProductionRouteMode string `json:"productionRouteMode"`
+	HasProductionRoute  bool   `json:"hasProductionRoute"`
 }
 
 type ProductionRouteSalesOrderLineCandidatesResponse struct {
@@ -28,16 +34,43 @@ func ListProductionRouteSalesOrderLineCandidates(productID string) ([]Production
 
 func (service *ProductionService) ListProductionRouteSalesOrderLineCandidates(productID string) ([]ProductionRouteSalesOrderLineCandidateDTO, error) {
 	productID = strings.TrimSpace(productID)
-	if productID == "" {
-		return nil, fmt.Errorf("productId is required")
-	}
 	var candidates []ProductionRouteSalesOrderLineCandidateDTO
-	err := service.txManager.DB().Table("sales_order_lines AS sol").
-		Select("sol.id, sol.sales_order_id, so.order_no AS sales_order_no, so.customer_name, sol.line_no, sol.product_id, sol.product_model, sol.product_code, sol.specification").
+	currentBranches := queryCurrentProductionRouteBOMBranches(service.txManager.DB()).
+		Select(`b.product_id AS product_id,
+			UPPER(b.owner_type) AS bom_owner_type,
+			COALESCE(b.owner_customer_id, '') AS bom_owner_customer_id,
+			COALESCE(b.version_level, '') AS bom_version_level`).
+		Distinct()
+	query := service.txManager.DB().Table("sales_order_lines AS sol").
+		Select(`sol.id, sol.sales_order_id, so.order_no AS sales_order_no, so.customer_name,
+			sol.line_no, sol.product_id, sol.product_model, sol.product_code, sol.specification,
+			UPPER(COALESCE(sol.bom_owner_type, '')) AS bom_owner_type,
+			COALESCE(sol.bom_owner_customer_id, '') AS bom_owner_customer_id,
+			COALESCE(sol.bom_version_level, '') AS bom_version_level,
+			UPPER(COALESCE(sol.production_route_mode, 'DEFAULT')) AS production_route_mode,
+			CASE WHEN existing_route.id IS NOT NULL THEN 1 ELSE 0 END AS has_production_route`).
 		Joins("INNER JOIN sales_orders AS so ON so.id = sol.sales_order_id").
-		Where("sol.product_id = ? AND so.deleted_at IS NULL", productID).
-		Order("so.order_date DESC, so.order_no ASC, sol.line_no ASC").
-		Scan(&candidates).Error
+		Joins(`INNER JOIN (?) AS current_branch
+			ON current_branch.product_id = sol.product_id
+			AND current_branch.bom_owner_type = UPPER(COALESCE(sol.bom_owner_type, ''))
+			AND current_branch.bom_owner_customer_id = COALESCE(sol.bom_owner_customer_id, '')
+			AND current_branch.bom_version_level = COALESCE(sol.bom_version_level, '')`, currentBranches).
+		Joins(`LEFT JOIN production_route_families AS existing_route
+			ON existing_route.scope_type = ? AND existing_route.sales_order_line_id = sol.id`, productionRouteScopeSalesOrderLine).
+		Where("TRIM(COALESCE(sol.bom_owner_type, '')) <> '' AND so.deleted_at IS NULL")
+	if service.txManager.DB().Migrator().HasTable(&models.ProductionRouteFamily{}) {
+		query = query.Where(`(
+			UPPER(COALESCE(sol.production_route_mode, 'DEFAULT')) = 'CUSTOM'
+			OR NOT EXISTS (
+				SELECT 1 FROM production_route_families AS line_route
+				WHERE line_route.scope_type = ? AND line_route.sales_order_line_id = sol.id
+			)
+		)`, productionRouteScopeSalesOrderLine)
+	}
+	if productID != "" {
+		query = query.Where("sol.product_id = ?", productID)
+	}
+	err := query.Order("so.order_date DESC, so.order_no ASC, sol.line_no ASC").Scan(&candidates).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to list route sales order line candidates: %w", err)
 	}

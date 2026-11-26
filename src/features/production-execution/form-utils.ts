@@ -29,7 +29,7 @@ export function formatProductionExecutionRouteStepName(
   step?: ProductionRouteStep
 ) {
   return step
-    ? `${step.sequence}. ${step.branchOperationName || step.branchOperationId}`
+    ? `${step.sequence}. ${step.processName || step.processStepId}`
     : ''
 }
 
@@ -37,13 +37,13 @@ export function resolveProductionExecutionLifecycleProcessName(
   routes: ProductionRoute[],
   routeId: string,
   routeStepId: string,
-  branchOperationId: string
+  processStepId: string
 ) {
   const steps = routes.find((route) => route.id === routeId)?.steps ?? []
   const step = routeStepId
     ? steps.find((item) => item.id === routeStepId)
-    : steps.find((item) => item.branchOperationId === branchOperationId)
-  return step ? formatProductionExecutionRouteStepName(step) : branchOperationId
+    : steps.find((item) => item.processStepId === processStepId)
+  return step ? formatProductionExecutionRouteStepName(step) : processStepId
 }
 
 export interface ProductionExecutionFormValues {

@@ -38,4 +38,20 @@ export const linesEditor = {
   addFirst: 'Add First Item',
   defaultPlan: 'Default Plan',
   defaultLabeling: 'Default Labeling',
+  productionBinding: {
+    productCategory: 'Category:',
+    title: 'Production Branch and Route',
+    branch: 'Effective MBOM Branch',
+    selectBranch: 'Select an effective production branch for this product',
+    loadingBranches: 'Loading effective production branches',
+    noEffectiveBranch: 'This product has no effective production MBOM branch',
+    unavailableBranch:
+      'The selected branch is no longer effective. Select another.',
+    branchDefault: 'Default operations',
+    orderCustom: 'Redefine operations',
+    internal: 'Internal',
+    customer: 'Customer',
+    noVersion: 'Unspecified version',
+    unselectedProduct: 'No product selected',
+  },
 } as const

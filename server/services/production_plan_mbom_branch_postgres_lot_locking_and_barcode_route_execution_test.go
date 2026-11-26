@@ -63,7 +63,7 @@ func createProductionPlanMBOMBranchPostgresFixture(t *testing.T) productionPlanM
 		require.NoError(t, database.Exec(statement).Error)
 	}
 	require.NoError(t, database.AutoMigrate(&models.ProductionPlan{}, &models.ProductionTask{}, &models.ProductionExecutionLot{},
-		&models.ProcessStep{}, &models.ProductionBOMBranchOperation{}, &models.ProductionBOMBranchOperationProcessLibrarySelection{},
+		&models.ProcessStep{}, &models.ProductionMBOMBranchProcessAssociation{},
 		&models.ProductionRouteFamily{}, &models.ProductionRoute{}, &models.ProductionRouteStep{}, &models.ProductionWorkLocation{},
 		&models.ProductBarcodeState{}, &models.ProductBarcodeStateEvent{}, &models.ProductBarcodeTransferEvent{}, &models.ProductionOperationExecution{}))
 	require.NoError(t, db.EnsureProductionExecutionRequestReplayIntegrity(database))
@@ -75,14 +75,8 @@ func createProductionPlanMBOMBranchPostgresFixture(t *testing.T) productionPlanM
 	}
 	processLibrary := models.ProcessStep{Code: "PLAN-BRANCH-CUT", Name: "裁切", IsActive: true}
 	require.NoError(t, database.Create(&processLibrary).Error)
-	operation := models.ProductionBOMBranchOperation{
-		ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", Name: "裁切", IsActive: true,
-		ProcessLibraryID: processLibrary.ID,
-	}
-	require.NoError(t, database.Create(&operation).Error)
-	require.NoError(t, database.Create(&models.ProductionBOMBranchOperationProcessLibrarySelection{
-		ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard",
-		BranchOperationID: operation.ID, ProcessLibraryID: processLibrary.ID,
+	require.NoError(t, database.Create(&models.ProductionMBOMBranchProcessAssociation{
+		ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", ProcessStepID: processLibrary.ID,
 	}).Error)
 	routeFamily := models.ProductionRouteFamily{
 		BaseModel:       models.BaseModel{ID: uuid.NewString()},
@@ -100,7 +94,7 @@ func createProductionPlanMBOMBranchPostgresFixture(t *testing.T) productionPlanM
 	}
 	require.NoError(t, database.Create(&route).Error)
 	for sequence := 1; sequence <= 2; sequence++ {
-		step := models.ProductionRouteStep{RouteID: route.ID, Sequence: sequence, BranchOperationID: operation.ID}
+		step := models.ProductionRouteStep{RouteID: route.ID, Sequence: sequence, ProcessStepID: processLibrary.ID}
 		require.NoError(t, database.Create(&step).Error)
 		route.Steps = append(route.Steps, step)
 	}
@@ -219,7 +213,7 @@ func TestProductionPlanMBOMBranchPostgresScanRejectsInvalidBranchOrUnpublishedRo
 			case "no_published_route":
 				require.NoError(t, database.Model(&models.ProductionRoute{}).Where("id = ?", fixture.route.ID).Update("status", "DRAFT").Error)
 			case "inactive_operation":
-				require.NoError(t, database.Model(&models.ProductionBOMBranchOperation{}).Where("id = ?", fixture.route.Steps[0].BranchOperationID).Update("is_active", false).Error)
+				require.NoError(t, database.Model(&models.ProcessStep{}).Where("id = ?", fixture.route.Steps[0].ProcessStepID).Update("is_active", false).Error)
 			}
 			service := NewProductionScanCommandService(productionOperationExecutionTestTxManager{db: database})
 			_, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
@@ -273,7 +267,7 @@ func TestProductionPlanMBOMBranchPostgresInitializedBarcodePreventsBranchChangeA
 	require.NoError(t, database.Omit("TaskID").Create(&lot).Error)
 	state := models.ProductBarcodeState{
 		ProductBarcode: lot.ProductBarcode, RouteID: fixture.route.ID, RouteStepID: fixture.route.Steps[0].ID,
-		CurrentBranchOperationID: fixture.route.Steps[0].BranchOperationID,
+		CurrentProcessStepID: fixture.route.Steps[0].ProcessStepID,
 	}
 	require.NoError(t, database.Omit("LastEventID").Create(&state).Error)
 	require.NoError(t, database.Delete(&lot).Error)

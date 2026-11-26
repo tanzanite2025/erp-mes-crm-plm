@@ -100,7 +100,7 @@ func resolveProductionBarcodeExecutionRoundTx(tx *gorm.DB, request RecordProduct
 
 func productionOperationWorkIdentityKey(request RecordProductionOperationExecutionRequest) string {
 	identity, _ := json.Marshal([]string{request.ProductBarcode,
-		normalizeProductionExecutionUUIDIdentity(request.RouteStepID), normalizeProductionExecutionUUIDIdentity(request.BranchOperationID)})
+		normalizeProductionExecutionUUIDIdentity(request.RouteStepID), normalizeProductionExecutionUUIDIdentity(request.ProcessStepID)})
 	hash := sha256.Sum256(identity)
 	return hex.EncodeToString(hash[:])
 }

@@ -113,7 +113,6 @@ describe('production material read-only interaction boundaries', () => {
       isLoading: false,
       selectedCount: 1,
       sourceLines: [source],
-      bomSelections: [],
       onBomSelectionChange: vi.fn(),
       onRecalculate: vi.fn(),
     }

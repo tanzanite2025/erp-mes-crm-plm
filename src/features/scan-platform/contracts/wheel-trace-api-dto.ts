@@ -17,7 +17,7 @@ export interface WheelTraceStageApiDTO {
   lineName?: string
   segmentId?: string
   segmentName?: string
-  branchOperationId?: string
+  processStepId?: string
   processName?: string
   teamId?: string
   teamName?: string

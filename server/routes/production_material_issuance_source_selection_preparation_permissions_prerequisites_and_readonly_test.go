@@ -43,7 +43,7 @@ func TestProductionMaterialIssuanceSourceSelectionWorksWithoutSalesPermissionAnd
 	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &prepared))
 	require.True(t, prepared.IsReady)
 	require.Len(t, prepared.SourceLines, 1)
-	require.Equal(t, source.BOMID, prepared.SourceLines[0].BOM.ID)
+	require.Equal(t, source.ExpectedBOMID, prepared.SourceLines[0].BOM.ID)
 	require.Equal(t, 50.0, prepared.SourceLines[0].Contributions[0].RequiredQty)
 	for _, model := range []any{&models.ProductionMaterialIssuanceDocument{}, &models.ProductionMaterialIssuanceCommandReceipt{}, &models.AuditLog{}} {
 		var count int64
@@ -75,8 +75,10 @@ func TestProductionMaterialIssuanceSourcePreparationReportsMissingAmbiguousWeigh
 	require.NoError(t, database.Exec("INSERT INTO boms SELECT ?, product_id, bom_type, 'SECOND', status, owner_type, owner_customer_id, version, version_text, version_level, revision_no, measured_weight, measured_weight_unit, effective_from, effective_to, deleted_at FROM boms", uuid.NewString()).Error)
 	response := requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader", "POST", "/source-preparation", string(raw))
 	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
-	require.Contains(t, response.Body.String(), "BOM_SELECTION_REQUIRED")
-	withBOM, err := json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourceSelection{source}})
+	require.Contains(t, response.Body.String(), `"isReady":false`)
+	require.Contains(t, response.Body.String(), "DUPLICATE_EFFECTIVE_MBOM")
+	require.NoError(t, database.Exec("UPDATE boms SET status='OBSOLETE' WHERE bom_no='SECOND'").Error)
+	withBOM, err := json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourcePreparationSelection{{SalesOrderID: source.SalesOrderID, SalesOrderLineID: source.SalesOrderLineID}}})
 	require.NoError(t, err)
 	response = requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader", "POST", "/source-preparation", string(withBOM))
 	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
@@ -120,13 +122,14 @@ func TestProductionMaterialIssuanceSourcePreparationRejectsUnauthorizedMalformed
 		response := requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader", "POST", "/source-preparation", body)
 		require.Equal(t, http.StatusBadRequest, response.Code)
 	}
-	raw, err := json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourceSelection{source, source}})
+	preparationSelection := services.ProductionMaterialIssuanceSourcePreparationSelection{SalesOrderID: source.SalesOrderID, SalesOrderLineID: source.SalesOrderLineID}
+	raw, err := json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourcePreparationSelection{preparationSelection, preparationSelection}})
 	require.NoError(t, err)
 	response := requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader", "POST", "/source-preparation", string(raw))
 	require.Equal(t, http.StatusBadRequest, response.Code)
-	foreignSource := source
+	foreignSource := preparationSelection
 	foreignSource.SalesOrderID = uuid.NewString()
-	raw, err = json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourceSelection{foreignSource}})
+	raw, err = json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourcePreparationSelection{foreignSource}})
 	require.NoError(t, err)
 	response = requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader", "POST", "/source-preparation", string(raw))
 	require.Equal(t, http.StatusConflict, response.Code)
@@ -134,7 +137,7 @@ func TestProductionMaterialIssuanceSourcePreparationRejectsUnauthorizedMalformed
 	require.NoError(t, err)
 	detail, err := services.DispatchProductionMaterialIssuanceDocument(context.Background(), database, services.ProductionMaterialIssuanceCommandActor{UserID: "dispatcher"}, services.ProductionMaterialIssuanceDispatchRequest{CommandID: "prepare-coverage-test", Sources: []services.ProductionMaterialIssuanceDispatchSourceExpectation{{ProductionMaterialIssuanceSourceSelection: source, ExpectedOrderVersion: bases[0].OrderVersion, ExpectedBOMVersion: bases[0].BOM.Version, BasisFingerprint: bases[0].BasisFingerprint}}})
 	require.NoError(t, err)
-	raw, err = json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourceSelection{source}})
+	raw, err = json.Marshal(map[string]any{"sources": []services.ProductionMaterialIssuanceSourcePreparationSelection{preparationSelection}})
 	require.NoError(t, err)
 	response = requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader", "POST", "/source-preparation", string(raw))
 	require.Equal(t, http.StatusConflict, response.Code)

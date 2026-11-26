@@ -31,11 +31,7 @@ vi.mock('../hooks/use-org-mgmt', () => ({
     loadData: vi.fn(),
     handleOrgSubmit: selectedOrganizationFixture.handleOrgSubmit,
     handleDelete: vi.fn(),
-    handleLinkSave: vi.fn(),
   }),
-}))
-vi.mock('../components/production-selector', () => ({
-  ProductionSelector: () => null,
 }))
 
 afterEach(() => {

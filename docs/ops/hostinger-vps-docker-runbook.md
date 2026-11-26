@@ -110,11 +110,11 @@ Hostinger 防火墙当前规则：
 
 Docker 发布端口可能绕过 UFW，因此安全基线是“Compose 不发布内部端口 + Hostinger 外层防火墙”，不能只依赖 UFW。
 
-## 5. SSH 初始化
+## 5. SSH 初始化与当前登录入口
 
 优先使用 Hostinger hPanel 添加 SSH 公钥，不传递 root 密码。
 
-首次登录后创建日常用户：
+首次初始化 VPS 时创建日常用户：
 
 ```bash
 adduser deploy
@@ -131,6 +131,26 @@ ssh deploy@2.25.85.201
 docker version
 docker compose version
 ```
+
+2026-11-24 已确认当前 VPS 的 `root` 与 `deploy` 均可用 Hostinger 账号中的 Codex Ed25519 公钥登录；`deploy` 已加入 `docker` 组，Docker Compose 可用，未授予 sudo。工作站私钥文件名为 `~/.ssh/codex_tanzanite_hostinger_ed25519`，不属于 OpenSSH 默认自动尝试的标准文件名，因此直接运行 `ssh deploy@2.25.85.201` 可能报 `Permission denied (publickey,password)`。在工作站 `~/.ssh/config` 为它配置显式身份：
+
+```sshconfig
+Host hostinger-erp
+    HostName 2.25.85.201
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/codex_tanzanite_hostinger_ed25519
+    IdentitiesOnly yes
+
+Host hostinger-erp-root
+    HostName 2.25.85.201
+    User root
+    Port 22
+    IdentityFile ~/.ssh/codex_tanzanite_hostinger_ed25519
+    IdentitiesOnly yes
+```
+
+日常只读诊断和 Docker 操作使用 `ssh hostinger-erp`；仅在确需系统级操作时使用 root 入口。不要为解决本机密钥发现问题而扩大 `deploy` 的 sudo 权限。Hostinger Docker Manager 仍是生产 Compose 和环境变量的正式管理入口。
 
 目标 SSH 配置：
 
@@ -201,7 +221,7 @@ REDIS_PASSWORD=<strong-random-password>
 JWT_SECRET=<at-least-64-random-characters>
 ATTENDANCE_SECRET_ENCRYPTION_KEY=<strong-random-secret>
 INITIAL_ADMIN_PASSWORD=<one-time-strong-password>
-TOPOLOGY_AUTH_PASSWORD=<strong-random-password>
+PRODUCTION_LINE_EDIT_AUTH_PASSWORD=<strong-random-password>
 ALERT_WEBHOOK_TOKEN=<strong-random-token>
 ALLOWED_ORIGIN=https://erp.tanzanite.site
 ```
@@ -285,7 +305,7 @@ docker compose --env-file /docker/erp/.env -f /docker/erp/docker-compose.yml pul
 docker compose --env-file /docker/erp/.env -f /docker/erp/docker-compose.yml up -d
 ```
 
-当前线上 ERP 由 Hostinger Docker Manager 管理，不再使用旧 SSH 发布脚本或 VPS 本地源码构建路径。
+当前线上 ERP 通过 Hostinger Docker Manager 管理容器镜像和服务。
 
 ## 11. 备份与恢复
 
@@ -414,7 +434,7 @@ Cloudflare MCP 可读写，但 DNS 写入必须满足：
 - [x] VPS Docker Manager 使用独立的 `tanzanite-edge` 和 `erp` Compose Projects。
 - [x] `host-kernel-tuning` 已将宿主机 `vm.overcommit_memory` 固定为 `1`，满足 Redis 生产内存基线。
 - [x] Hostinger 账号公钥已配置，Codex key 可通过 SSH 登录 VPS 的 `root` 账号。
-- [ ] 创建 `deploy` 用户、安装其 SSH 公钥并验证 Docker 权限；当前 VPS 尚无该用户，不能把 root 登录验证视为 deploy 登录已完成。
+- [x] `deploy` 用户、公钥 SSH 登录及 Docker 权限已验证；工作站需通过 SSH `IdentityFile` 显式选用非标准命名的 Codex 私钥，`deploy` 未授予 sudo。
 - [x] `tanzanite-edge` Project 已部署，容器 Healthy，公网 `/__edge/health` 返回 `ok`。
 - [x] GHCR 四个 ERP Package 已构建并确认可匿名拉取，生产使用不可变 `sha-*` 标签。
 - [x] ERP Project 已创建，`db`、`redis`、`search-engine`、`app` 和 `web` 全部 Healthy。

@@ -32,7 +32,7 @@
 - `sidebar-tab-preview-registry.ts` 继续复用业务模块现有页签配置，不在新组件中复制功能入口。
 - `use-sidebar-category-selection.ts` 管理仅供浏览的分类选择；每次路由变化清除临时选择，权限移除分类时退回可访问分类。
 - `desktop-sidebar-secondary-navigation.tsx` 渲染桌面和移动端共用的目录、可独立展开或收起的模块和当前入口，不负责请求权限或维护第二份菜单。
-- 已删除旧 `sidebar-category-scrubber.tsx` 浮层实现及旧浮层测试；保留并复用其纯数据整理工具和对应测试。
+- 分类选择仅用于浏览；路由变化时清除临时选择，权限变化后自动定位到当前可访问分类。
 - 新导航样式直接使用完整主题颜色变量，沿用项目已有 Chrome 109 主题回退，不将完整颜色再次嵌入 `hsl()`，也不新增对 `color-mix()` 的依赖。
 
 ## 验证记录

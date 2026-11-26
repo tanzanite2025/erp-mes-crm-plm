@@ -27,8 +27,8 @@ func BindProductionPlanToCurrentPublishedRouteRevisionTx(tx *gorm.DB, plan *mode
 	}
 
 	scopeType := productionRouteScopeBranchDefault
+	salesOrderLineID := uint(0)
 	if plan.SalesOrderLineID != 0 {
-		scopeType = productionRouteScopeSalesOrderLine
 		var line models.SalesOrderLine
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			First(&line, "id = ? AND sales_order_id = ?", plan.SalesOrderLineID, strings.TrimSpace(plan.OrderID)).Error; err != nil {
@@ -37,30 +37,52 @@ func BindProductionPlanToCurrentPublishedRouteRevisionTx(tx *gorm.DB, plan *mode
 		if strings.TrimSpace(line.ProductID) != strings.TrimSpace(plan.ProductID) {
 			return fmt.Errorf("%w: selected sales order line product does not match the production plan MBOM branch product", ErrInvalidProductionPlanBOMBranch)
 		}
-	}
-	family, err := findProductionRouteFamilyForScopeTx(
-		tx,
-		productionRouteBOMBranchIdentityFromModel(branch),
-		scopeType,
-		plan.SalesOrderLineID,
-		true,
-	)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			if scopeType == productionRouteScopeSalesOrderLine {
-				return fmt.Errorf("%w: no route family exists for the selected sales order line and MBOM branch", ErrInvalidProductionPlanBOMBranch)
-			}
-			return fmt.Errorf("%w: no branch default route family exists for the selected MBOM branch", ErrInvalidProductionPlanBOMBranch)
+		lineBranch := productionRouteBOMBranchIdentity{
+			ProductID:          strings.TrimSpace(line.ProductID),
+			BOMOwnerType:       strings.ToUpper(strings.TrimSpace(line.BOMOwnerType)),
+			BOMOwnerCustomerID: strings.TrimSpace(line.BOMOwnerCustomerID),
+			BOMVersionLevel:    strings.TrimSpace(line.BOMVersionLevel),
 		}
-		return fmt.Errorf("failed to find production route family for plan scope: %w", err)
+		if lineBranch != productionRouteBOMBranchIdentityFromModel(branch) {
+			return fmt.Errorf("%w: production plan MBOM branch does not match its sales order line selection", ErrInvalidProductionPlanBOMBranch)
+		}
+		scopeType = productionRouteModeForSalesOrderLine(line.ProductionRouteMode)
+		if scopeType == productionRouteScopeSalesOrderLine {
+			salesOrderLineID = plan.SalesOrderLineID
+		}
+	}
+	var family models.ProductionRouteFamily
+	var route models.ProductionRoute
+	var err error
+	if scopeType == productionRouteScopeBranchDefault {
+		family, route, err = materializeCurrentBranchDefaultProductionRouteRevisionTx(tx, branch)
+		if err != nil {
+			return err
+		}
+	} else {
+		family, err = findProductionRouteFamilyForScopeTx(
+			tx,
+			productionRouteBOMBranchIdentityFromModel(branch),
+			scopeType,
+			salesOrderLineID,
+			true,
+		)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("%w: no custom route exists for the selected sales order line and MBOM branch", ErrInvalidProductionPlanBOMBranch)
+			}
+			return fmt.Errorf("failed to find production route family for plan scope: %w", err)
+		}
 	}
 	if strings.TrimSpace(family.CurrentRevisionID) == "" {
 		return fmt.Errorf("%w: selected MBOM branch has no current published route revision", ErrInvalidProductionPlanBOMBranch)
 	}
 
-	route, err := loadProductionRouteRevisionForExecutionTx(tx, family.CurrentRevisionID)
-	if err != nil {
-		return fmt.Errorf("%w: failed to load current route revision: %v", ErrInvalidProductionPlanBOMBranch, err)
+	if strings.TrimSpace(route.ID) == "" {
+		route, err = loadProductionRouteRevisionForExecutionTx(tx, family.CurrentRevisionID)
+		if err != nil {
+			return fmt.Errorf("%w: failed to load current route revision: %v", ErrInvalidProductionPlanBOMBranch, err)
+		}
 	}
 	if !strings.EqualFold(strings.TrimSpace(route.Status), productionRouteStatusPublished) || route.RouteFamilyID != family.ID {
 		return fmt.Errorf("%w: route family points to an unavailable revision", ErrInvalidProductionPlanBOMBranch)
@@ -68,14 +90,15 @@ func BindProductionPlanToCurrentPublishedRouteRevisionTx(tx *gorm.DB, plan *mode
 	if err := validateProductionRouteFamilyBranch(family, route); err != nil {
 		return fmt.Errorf("%w: %v", ErrInvalidProductionPlanBOMBranch, err)
 	}
-	if productionRouteBOMBranchIdentityFromModel(route) != productionRouteBOMBranchIdentityFromModel(branch) || !productionRouteHasBranchOperationSteps(route) {
-		return fmt.Errorf("%w: current route revision does not match the selected MBOM branch or contains inactive operations", ErrInvalidProductionPlanBOMBranch)
+	if productionRouteBOMBranchIdentityFromModel(route) != productionRouteBOMBranchIdentityFromModel(branch) || !productionRouteHasValidProcessSteps(route) {
+		return fmt.Errorf("%w: current route revision does not match the selected MBOM branch or contains inactive process steps", ErrInvalidProductionPlanBOMBranch)
 	}
 	if len(route.Steps) == 0 {
 		return fmt.Errorf("%w: current route revision has no executable steps", ErrInvalidProductionPlanBOMBranch)
 	}
 	plan.ProductionRouteRevisionID = route.ID
 	plan.ProductionRouteRevisionNo = route.RevisionNo
+	plan.ProductionRouteMode = scopeType
 	return nil
 }
 
@@ -98,15 +121,19 @@ func resolveUniquePublishedProductionRouteForPlanTx(
 	if !strings.EqualFold(strings.TrimSpace(route.Status), productionRouteStatusPublished) ||
 		route.RevisionNo != plan.ProductionRouteRevisionNo ||
 		productionRouteBOMBranchIdentityFromModel(route) != branchIdentity ||
-		!productionRouteHasBranchOperationSteps(route) || len(route.Steps) == 0 {
+		!productionRouteHasValidProcessSteps(route) || len(route.Steps) == 0 {
 		return models.ProductionRoute{}, models.ProductionRouteStep{}, fmt.Errorf("%w: bound route revision is unavailable or does not match the production plan", ErrInvalidProductionScanCommand)
 	}
-	expectedScopeType := productionRouteScopeBranchDefault
-	if plan.SalesOrderLineID != 0 {
-		expectedScopeType = productionRouteScopeSalesOrderLine
+	expectedScopeType := strings.ToUpper(strings.TrimSpace(plan.ProductionRouteMode))
+	if expectedScopeType == "" {
+		expectedScopeType = productionRouteScopeBranchDefault
+	}
+	expectedSalesOrderLineID := uint(0)
+	if expectedScopeType == productionRouteScopeSalesOrderLine {
+		expectedSalesOrderLineID = plan.SalesOrderLineID
 	}
 	if strings.ToUpper(strings.TrimSpace(route.ScopeType)) != expectedScopeType ||
-		productionRouteSalesOrderLineID(route.SalesOrderLineID) != plan.SalesOrderLineID {
+		productionRouteSalesOrderLineID(route.SalesOrderLineID) != expectedSalesOrderLineID {
 		return models.ProductionRoute{}, models.ProductionRouteStep{}, fmt.Errorf("%w: bound route revision scope does not match the production plan", ErrInvalidProductionScanCommand)
 	}
 
@@ -123,7 +150,7 @@ func loadProductionRouteRevisionForExecutionTx(tx *gorm.DB, routeRevisionID stri
 	var route models.ProductionRoute
 	err := tx.Preload("RouteFamily").Preload("Steps", func(query *gorm.DB) *gorm.DB {
 		return query.Order("sequence asc, id asc")
-	}).Preload("Steps.BranchOperation").First(&route, "id = ?", strings.TrimSpace(routeRevisionID)).Error
+	}).Preload("Steps.ProcessStep").First(&route, "id = ?", strings.TrimSpace(routeRevisionID)).Error
 	return route, err
 }
 

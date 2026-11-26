@@ -40,7 +40,7 @@ func TestBOMEffectiveDatesPersistUpdateAndClearWithoutChangingOmittedDatesOrCont
 		controlDates["changeType"] = "ECN"
 		controlDates["changeOrderNo"] = "ECN-8"
 		payload, err := json.Marshal(map[string]any{
-			"id": id, "productId": source.ProductID, "bomNo": "BOM-EFFECTIVE-DATE", "bomVersion": "V1.0", "version": version,
+			"id": id, "productId": source.ProductID, "productionLineId": source.ProductionLineID, "bomNo": "BOM-EFFECTIVE-DATE", "bomVersion": "V1.0", "version": version,
 			"masterDataControl": controlDates,
 			"relationSidecar":   map[string]any{"kind": "parent_children_protocol", "version": "v1", "protocolDraft": map[string]any{"rootChildren": []string{}, "branchNodes": []any{}, "itemNodes": []any{}}},
 		})

@@ -50,13 +50,14 @@ type DeltaSet struct {
 }
 
 type SaveBOMInput struct {
-	PublishOnSave bool   `json:"publishOnSave,omitempty"`
-	ID            string `json:"id"`
-	BOMNo         string `json:"bomNo"`
-	BOMType       string `json:"bomType"`
-	ProductID     string `json:"productId"`
-	VersionText   string `json:"bomVersion"`
-	Status        string `json:"status"`
+	PublishOnSave    bool    `json:"publishOnSave,omitempty"`
+	ID               string  `json:"id"`
+	BOMNo            string  `json:"bomNo"`
+	BOMType          string  `json:"bomType"`
+	ProductID        string  `json:"productId"`
+	ProductionLineID *string `json:"productionLineId"`
+	VersionText      string  `json:"bomVersion"`
+	Status           string  `json:"status"`
 	// 归属语义在 BOM 维度（方案 B + 1:1 设计）：
 	//   - INTERNAL：内部生产 BOM（OwnerCustomerID 留空）
 	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）
@@ -119,6 +120,7 @@ func (input SaveBOMInput) toModel() models.BOM {
 		BOMNo:              input.BOMNo,
 		BOMType:            input.BOMType,
 		ProductID:          input.ProductID,
+		ProductionLineID:   input.ProductionLineID,
 		VersionText:        input.VersionText,
 		Status:             input.Status,
 		OwnerType:          strings.TrimSpace(input.OwnerType),

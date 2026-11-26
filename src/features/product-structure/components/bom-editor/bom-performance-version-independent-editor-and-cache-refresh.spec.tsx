@@ -108,6 +108,9 @@ function BOMProductInformationWithIndependentPerformanceVersionCatalog({
               : []
           }
           productDisplayLabelMap={new Map()}
+          productionLineOptions={[
+            { id: 'line-a', code: 'LINE-A', name: '碳纤维产线' },
+          ]}
           isEdit={false}
         />
         {onBOMSubmit && <button type='submit'>保存 BOM 草稿</button>}
@@ -217,6 +220,43 @@ afterEach(() => {
 })
 
 describe('independent BOM performance version editor', () => {
+  it('lets an EBOM draft select a production line and submits that line identity', async () => {
+    const onBOMSubmit = vi.fn()
+    renderIndependentBOMPerformanceVersionFlow(
+      <BOMProductInformationWithIndependentPerformanceVersionCatalog
+        initialBOM={{}}
+        onBOMSubmit={onBOMSubmit}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('combobox', { name: '产线' }))
+    fireEvent.click(
+      await screen.findByRole('option', {
+        name: 'LINE-A · 碳纤维产线',
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: '保存 BOM 草稿' }))
+
+    await waitFor(() => expect(onBOMSubmit).toHaveBeenCalledTimes(1))
+    expect(onBOMSubmit.mock.calls[0][0].productionLineId).toBe('line-a')
+  })
+
+  it('shows an MBOM source line as read-only', () => {
+    renderIndependentBOMPerformanceVersionFlow(
+      <BOMProductInformationWithIndependentPerformanceVersionCatalog
+        initialBOM={{
+          bomType: 'MBOM',
+          productionLineId: 'source-line',
+          productionLineName: '来源产线',
+        }}
+      />
+    )
+
+    const productionLineSelect = screen.getByRole('combobox', { name: '产线' })
+    expect(productionLineSelect).toHaveTextContent('来源产线')
+    expect(productionLineSelect).toBeDisabled()
+  })
+
   it('requires a product before opening version settings and enables the controls after selecting one', async () => {
     storedOptions = [createStoredBOMPerformanceVersionOption()]
     renderIndependentBOMPerformanceVersionFlow(

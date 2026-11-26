@@ -19,22 +19,13 @@ func GetProductionLinesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.ProductionLinesResponse{Items: lines})
 }
 
-func GetProductionLineProductTemplatesHandler(c *gin.Context) {
-	templates, err := services.ListProductionLineProductTemplates()
+func GetBOMProductionLineOptionsHandler(c *gin.Context) {
+	options, err := services.ListActiveBOMProductionLineOptions()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch production line product templates"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch active production line options"})
 		return
 	}
-	c.JSON(http.StatusOK, services.ProductionLineProductTemplatesResponse{Items: templates})
-}
-
-func GetProductionLineBOMBranchesHandler(c *gin.Context) {
-	branches, err := services.ListProductionLineBOMBranches()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch production line MBOM branches"})
-		return
-	}
-	c.JSON(http.StatusOK, services.ProductionRouteBOMBranchesResponse{Items: branches})
+	c.JSON(http.StatusOK, services.BOMProductionLineOptionsResponse{Items: options})
 }
 
 func SaveProductionLineHandler(c *gin.Context) {
@@ -55,19 +46,11 @@ func SaveProductionLineHandler(c *gin.Context) {
 			respondVersionConflict(c)
 			return
 		}
-		if err == services.ErrProductionTopologyUnauthorized {
+		if err == services.ErrProductionLineUnauthorized {
 			c.JSON(http.StatusForbidden, gin.H{"error": "UNAUTHORIZED", "message": "Topology authorization code is invalid"})
 			return
 		}
-		if errors.Is(err, services.ErrInvalidProductionLineTemplate) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrInvalidProductionLineBOMBranch) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrInvalidProductionLineSegmentOwnership) {
+		if errors.Is(err, services.ErrInvalidProductionLine) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -102,19 +85,11 @@ func PatchProductionLineHandler(c *gin.Context) {
 			respondVersionConflict(c)
 			return
 		}
-		if err == services.ErrProductionTopologyUnauthorized {
+		if err == services.ErrProductionLineUnauthorized {
 			c.JSON(http.StatusForbidden, gin.H{"error": "UNAUTHORIZED", "message": "Topology authorization code is invalid"})
 			return
 		}
-		if errors.Is(err, services.ErrInvalidProductionLineTemplate) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrInvalidProductionLineBOMBranch) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrInvalidProductionLineSegmentOwnership) {
+		if errors.Is(err, services.ErrInvalidProductionLine) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -132,6 +107,10 @@ func PatchProductionLineHandler(c *gin.Context) {
 func DeleteProductionLineHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductionLine(id, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+		if errors.Is(err, services.ErrProductionLineReferencedByBOM) {
+			c.JSON(http.StatusConflict, gin.H{"error": "产线仍被 EBOM 引用，不能删除"})
+			return
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "产线不存在或已删除"})
 			return
@@ -170,59 +149,27 @@ func GetProductionRouteSalesOrderLineCandidatesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.ProductionRouteSalesOrderLineCandidatesResponse{Items: candidates})
 }
 
-func SaveProductionBOMBranchOperationHandler(c *gin.Context) {
-	var input services.SaveProductionBOMBranchOperationHandlerRequest
+func SaveProductionMBOMBranchProcessSelectionHandler(c *gin.Context) {
+	var input services.SaveProductionMBOMBranchProcessSelectionHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	operation, err := services.SaveProductionBOMBranchOperation(services.SaveProductionBOMBranchOperationRequest{
-		Operation: input.ProductionBOMBranchOperationDTO,
-		Operator:  middleware.GetSafeUsername(c),
-		IP:        c.ClientIP(),
-	})
-	if err != nil {
-		if errors.Is(err, services.ErrProductionBOMBranchOperationDeactivationBlocked) {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrInvalidProductionBOMBranchOperation) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save production MBOM branch operation"})
-		return
-	}
-
-	c.JSON(http.StatusOK, operation)
-}
-
-func SaveProductionBOMBranchOperationSelectionHandler(c *gin.Context) {
-	var input services.SaveProductionBOMBranchOperationSelectionHandlerRequest
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	operations, err := services.SaveProductionBOMBranchOperationSelection(services.SaveProductionBOMBranchOperationSelectionRequest{
+	processSteps, err := services.SaveProductionMBOMBranchProcessSelection(services.SaveProductionMBOMBranchProcessSelectionRequest{
 		ProductID: input.ProductID, BOMOwnerType: input.BOMOwnerType,
 		BOMOwnerCustomerID: input.BOMOwnerCustomerID, BOMVersionLevel: input.BOMVersionLevel,
-		ProcessLibraryIDs: input.ProcessLibraryIDs,
-		Operator:          middleware.GetSafeUsername(c), IP: c.ClientIP(),
+		ProcessStepIDs: input.ProcessStepIDs,
+		Operator:       middleware.GetSafeUsername(c), IP: c.ClientIP(),
 	})
 	if err != nil {
-		if errors.Is(err, services.ErrProductionBOMBranchOperationSelectionConflict) {
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrInvalidProductionBOMBranchOperation) {
+		if errors.Is(err, services.ErrInvalidProductionMBOMBranchProcessSelection) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save production MBOM branch operation selection"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save MBOM branch process selection"})
 		return
 	}
-	c.JSON(http.StatusOK, services.ProductionBOMBranchOperationSelectionResponse{Items: operations})
+	c.JSON(http.StatusOK, services.ProductionMBOMBranchProcessSelectionResponse{Items: processSteps})
 }
 
 func SaveProductionRouteHandler(c *gin.Context) {
@@ -239,6 +186,10 @@ func SaveProductionRouteHandler(c *gin.Context) {
 	})
 	if err != nil {
 		if errors.Is(err, services.ErrProductionRouteRevisionConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrProductionSalesOrderLineRouteModeLocked) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}

@@ -31,7 +31,6 @@ import { productionArchitecture } from './productionArchitecture'
 import { productionExecution } from './productionExecution'
 import { productionOutsourcing } from './productionOutsourcing'
 import { productionQuality } from './productionQuality'
-import { productionShared } from './productionShared'
 import { purchase } from './purchase'
 import { quality } from './quality'
 import { quickActions } from './quickActions'
@@ -82,7 +81,6 @@ export const enUSMessages = {
   quality,
   aiAssistant,
   dashboard,
-  productionShared,
   productCodeLinearBarcodeAndQrCodeOperationGuide,
   scanPlatform,
   quickActions,

@@ -3,7 +3,6 @@ import { Loader2 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import {
   countConnectedBusinessEventSources,
@@ -24,12 +23,6 @@ import { BusinessEventSourceCard } from './components/business-event-source-card
 import { BusinessEventSourceListHeader } from './components/business-event-source-list-header'
 import { BusinessEventSourceListHint } from './components/business-event-source-list-hint'
 
-const LEGACY_LEVEL3_FIELD_LABELS = new Set([
-  '工序',
-  '末级层级',
-  'Process',
-  'Level 3',
-])
 const logger = createLogger('BusinessEventSourceList')
 
 function applyDynamicProcessFieldLabel<
@@ -37,15 +30,14 @@ function applyDynamicProcessFieldLabel<
     code: string
     config: { fields: Array<{ key: string; label: string }> }
   },
->(source: T, level3Name: string): T {
+>(source: T): T {
   if (source.code !== 'PRODUCTION_TASK') {
     return source
   }
 
   const hasLegacyProcessField = source.config.fields.some(
     (field) =>
-      field.key === 'processName' &&
-      LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
+		field.key === 'processName'
   )
 
   if (!hasLegacyProcessField) {
@@ -57,9 +49,8 @@ function applyDynamicProcessFieldLabel<
     config: {
       ...source.config,
       fields: source.config.fields.map((field) =>
-        field.key === 'processName' &&
-        LEGACY_LEVEL3_FIELD_LABELS.has(field.label.trim())
-          ? { ...field, label: level3Name }
+			field.key === 'processName'
+			? { ...field, label: '工序' }
           : field
       ),
     },
@@ -81,7 +72,6 @@ export function BusinessEventSourceList({
     partial: Partial<BusinessEventSourceListSearchState>
   ) => void
 } = {}) {
-  const { level3Name } = useProductionTopologyLabels()
   const {
     sources,
     isLoaded,
@@ -143,10 +133,8 @@ export function BusinessEventSourceList({
 
   const displaySources = useMemo(
     () =>
-      sources.map((source) =>
-        applyDynamicProcessFieldLabel(source, level3Name)
-      ),
-    [level3Name, sources]
+      sources.map((source) => applyDynamicProcessFieldLabel(source)),
+    [sources]
   )
 
   const selectedTemplate =
@@ -196,7 +184,7 @@ export function BusinessEventSourceList({
     if (!selectedTemplate) return
     const saved = await addSource(
       createEventSourceFromTemplate(
-        applyDynamicProcessFieldLabel(selectedTemplate, level3Name),
+        applyDynamicProcessFieldLabel(selectedTemplate),
         sources
       )
     )

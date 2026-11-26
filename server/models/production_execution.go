@@ -7,18 +7,18 @@ import "time"
 // ordinary production or outsourcing flow.
 type ProductBarcodeState struct {
 	BaseModel
-	ProductBarcode           string                        `gorm:"size:120;uniqueIndex;not null" json:"productBarcode"`
-	ProductID                string                        `gorm:"size:36;index" json:"productId"`
-	ProductName              string                        `gorm:"size:255" json:"productName"`
-	RouteID                  string                        `gorm:"type:uuid;index" json:"routeId"`
-	RouteStepID              string                        `gorm:"type:uuid;index" json:"routeStepId"`
-	CurrentBranchOperationID string                        `gorm:"type:uuid;index" json:"currentBranchOperationId"`
-	CurrentBranchOperation   *ProductionBOMBranchOperation `gorm:"foreignKey:CurrentBranchOperationID" json:"currentBranchOperation,omitempty"`
-	Status                   string                        `gorm:"size:30;index;not null;default:'NOT_STARTED'" json:"status"`
-	LastEventID              string                        `gorm:"type:uuid;index" json:"lastEventId"`
-	StartedAt                *time.Time                    `json:"startedAt,omitempty"`
-	CompletedAt              *time.Time                    `json:"completedAt,omitempty"`
-	Events                   []ProductBarcodeStateEvent    `gorm:"foreignKey:StateID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"events,omitempty"`
+	ProductBarcode       string                     `gorm:"size:120;uniqueIndex;not null" json:"productBarcode"`
+	ProductID            string                     `gorm:"size:36;index" json:"productId"`
+	ProductName          string                     `gorm:"size:255" json:"productName"`
+	RouteID              string                     `gorm:"type:uuid;index" json:"routeId"`
+	RouteStepID          string                     `gorm:"type:uuid;index" json:"routeStepId"`
+	CurrentProcessStepID string                     `gorm:"type:uuid;index" json:"currentProcessStepId"`
+	CurrentProcessStep   *ProcessStep               `gorm:"foreignKey:CurrentProcessStepID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"currentProcessStep,omitempty"`
+	Status               string                     `gorm:"size:30;index;not null;default:'NOT_STARTED'" json:"status"`
+	LastEventID          string                     `gorm:"type:uuid;index" json:"lastEventId"`
+	StartedAt            *time.Time                 `json:"startedAt,omitempty"`
+	CompletedAt          *time.Time                 `json:"completedAt,omitempty"`
+	Events               []ProductBarcodeStateEvent `gorm:"foreignKey:StateID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"events,omitempty"`
 }
 
 func (ProductBarcodeState) TableName() string {
@@ -28,18 +28,18 @@ func (ProductBarcodeState) TableName() string {
 // ProductBarcodeStateEvent is the append-only history for barcode process state changes.
 type ProductBarcodeStateEvent struct {
 	BaseModel
-	StateID               string               `gorm:"type:uuid;index;not null" json:"stateId"`
-	State                 *ProductBarcodeState `gorm:"foreignKey:StateID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"state,omitempty"`
-	OperationID           string               `gorm:"type:uuid;index" json:"operationId,omitempty"`
-	ProductBarcode        string               `gorm:"size:120;index;not null" json:"productBarcode"`
-	EventType             string               `gorm:"size:40;index;not null" json:"eventType"`
-	FromBranchOperationID string               `gorm:"type:uuid;index" json:"fromBranchOperationId"`
-	ToBranchOperationID   string               `gorm:"type:uuid;index" json:"toBranchOperationId"`
-	RouteID               string               `gorm:"type:uuid;index" json:"routeId"`
-	RouteStepID           string               `gorm:"type:uuid;index" json:"routeStepId"`
-	Operator              string               `gorm:"size:120;not null" json:"operator"`
-	PayloadSnapshot       string               `gorm:"type:text;not null" json:"payloadSnapshot"`
-	OccurredAt            *time.Time           `gorm:"index" json:"occurredAt,omitempty"`
+	StateID           string               `gorm:"type:uuid;index;not null" json:"stateId"`
+	State             *ProductBarcodeState `gorm:"foreignKey:StateID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"state,omitempty"`
+	OperationID       string               `gorm:"type:uuid;index" json:"operationId,omitempty"`
+	ProductBarcode    string               `gorm:"size:120;index;not null" json:"productBarcode"`
+	EventType         string               `gorm:"size:40;index;not null" json:"eventType"`
+	FromProcessStepID string               `gorm:"type:uuid;index" json:"fromProcessStepId"`
+	ToProcessStepID   string               `gorm:"type:uuid;index" json:"toProcessStepId"`
+	RouteID           string               `gorm:"type:uuid;index" json:"routeId"`
+	RouteStepID       string               `gorm:"type:uuid;index" json:"routeStepId"`
+	Operator          string               `gorm:"size:120;not null" json:"operator"`
+	PayloadSnapshot   string               `gorm:"type:text;not null" json:"payloadSnapshot"`
+	OccurredAt        *time.Time           `gorm:"index" json:"occurredAt,omitempty"`
 }
 
 func (ProductBarcodeStateEvent) TableName() string {
@@ -52,22 +52,22 @@ func (ProductBarcodeStateEvent) TableName() string {
 // different facts.
 type ProductBarcodeTransferEvent struct {
 	BaseModel
-	ProductBarcode        string     `gorm:"size:120;index;not null" json:"productBarcode"`
-	StateID               string     `gorm:"type:uuid;index" json:"stateId"`
-	OperationID           string     `gorm:"type:uuid;index" json:"operationId"`
-	TransferType          string     `gorm:"size:40;index;not null" json:"transferType"`
-	RouteID               string     `gorm:"type:uuid;index" json:"routeId"`
-	FromRouteStepID       string     `gorm:"type:uuid;index" json:"fromRouteStepId"`
-	ToRouteStepID         string     `gorm:"type:uuid;index" json:"toRouteStepId"`
-	FromBranchOperationID string     `gorm:"type:uuid;index" json:"fromBranchOperationId"`
-	ToBranchOperationID   string     `gorm:"type:uuid;index" json:"toBranchOperationId"`
-	FromHolderType        string     `gorm:"size:40;index" json:"fromHolderType"`
-	FromHolderID          string     `gorm:"type:uuid;index" json:"fromHolderId"`
-	ToHolderType          string     `gorm:"size:40;index" json:"toHolderType"`
-	ToHolderID            string     `gorm:"type:uuid;index" json:"toHolderId"`
-	Operator              string     `gorm:"size:120;not null" json:"operator"`
-	PayloadSnapshot       string     `gorm:"type:text;not null" json:"payloadSnapshot"`
-	OccurredAt            *time.Time `gorm:"index" json:"occurredAt,omitempty"`
+	ProductBarcode    string     `gorm:"size:120;index;not null" json:"productBarcode"`
+	StateID           string     `gorm:"type:uuid;index" json:"stateId"`
+	OperationID       string     `gorm:"type:uuid;index" json:"operationId"`
+	TransferType      string     `gorm:"size:40;index;not null" json:"transferType"`
+	RouteID           string     `gorm:"type:uuid;index" json:"routeId"`
+	FromRouteStepID   string     `gorm:"type:uuid;index" json:"fromRouteStepId"`
+	ToRouteStepID     string     `gorm:"type:uuid;index" json:"toRouteStepId"`
+	FromProcessStepID string     `gorm:"type:uuid;index" json:"fromProcessStepId"`
+	ToProcessStepID   string     `gorm:"type:uuid;index" json:"toProcessStepId"`
+	FromHolderType    string     `gorm:"size:40;index" json:"fromHolderType"`
+	FromHolderID      string     `gorm:"type:uuid;index" json:"fromHolderId"`
+	ToHolderType      string     `gorm:"size:40;index" json:"toHolderType"`
+	ToHolderID        string     `gorm:"type:uuid;index" json:"toHolderId"`
+	Operator          string     `gorm:"size:120;not null" json:"operator"`
+	PayloadSnapshot   string     `gorm:"type:text;not null" json:"payloadSnapshot"`
+	OccurredAt        *time.Time `gorm:"index" json:"occurredAt,omitempty"`
 }
 
 func (ProductBarcodeTransferEvent) TableName() string {
@@ -107,7 +107,7 @@ type ProductionOperationExecution struct {
 	ExecutionLotID            string     `gorm:"type:uuid;index" json:"executionLotId"`
 	RouteID                   string     `gorm:"type:uuid;index" json:"routeId"`
 	RouteStepID               string     `gorm:"type:uuid;index" json:"routeStepId"`
-	BranchOperationID         string     `gorm:"type:uuid;index;not null" json:"branchOperationId"`
+	ProcessStepID             string     `gorm:"type:uuid;index;not null" json:"processStepId"`
 	ProductionWorkLocationID  string     `gorm:"type:uuid;index;not null" json:"productionWorkLocationId"`
 	ExecutionMode             string     `gorm:"size:30;index;not null;default:'IN_HOUSE'" json:"executionMode"`
 	PartnerID                 string     `gorm:"type:uuid;index" json:"partnerId"`

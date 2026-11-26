@@ -56,7 +56,7 @@ func createProductionProcessStepTestSchema(t *testing.T, database *gorm.DB) {
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE TABLE production_bom_branch_operation_process_library_selections (
+		CREATE TABLE production_mbom_branch_process_associations (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
 			updated_at DATETIME,
@@ -65,8 +65,7 @@ func createProductionProcessStepTestSchema(t *testing.T, database *gorm.DB) {
 			bom_owner_type TEXT NOT NULL,
 			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
 			bom_version_level TEXT NOT NULL DEFAULT '',
-			branch_operation_id TEXT NOT NULL UNIQUE,
-			process_library_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL,
 			sort_order INTEGER NOT NULL DEFAULT 0
 		)
 	`).Error)

@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
 import { toast } from 'sonner'
 import { getCookie } from '@/lib/cookies'
-import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
 import { handleServerError } from '@/lib/handle-server-error'
 import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
@@ -118,37 +117,6 @@ export function useOrgMgmt() {
     },
   })
 
-  const linkMutation = useMutation({
-    mutationFn: async (
-      items: { type: 'line' | 'segment'; id: string; name: string }[]
-    ) => {
-      if (!selectedNode || !selectedNode.id) {
-        throw new Error('Missing selected organization node')
-      }
-
-      const delta: DeltaSet = buildFlattenDelta(
-        selectedNode.linkedArchitecture || [],
-        items,
-        {
-          basePath: 'linkedArchitecture',
-        }
-      )
-
-      return OrgService.patchOrgNode(
-        selectedNode.id,
-        delta,
-        selectedNode.version || 1
-      )
-    },
-    onSuccess: async (savedNode) => {
-      setSelectedNodeId(savedNode.id ?? null)
-      await queryClient.invalidateQueries({
-        queryKey: personnelQueryKeys.orgTree(),
-      })
-      toast.success(t('orgPersonnel.org.saveSuccess'))
-    },
-  })
-
   const handleOrgSubmit = async (
     data: OrgNode,
     isPatch?: boolean,
@@ -173,19 +141,6 @@ export function useOrgMgmt() {
     }
   }
 
-  const handleLinkSave = async (
-    items: { type: 'line' | 'segment'; id: string; name: string }[]
-  ) => {
-    if (!selectedNode || !selectedNode.id) return
-
-    try {
-      await linkMutation.mutateAsync(items)
-    } catch (err) {
-      logger.error('Link architecture failed', err)
-      toast.error(t('orgPersonnel.org.saveFailed'))
-    }
-  }
-
   const loadError = orgTreeQuery.error
     ? translate(
         (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE,
@@ -206,6 +161,5 @@ export function useOrgMgmt() {
     loadData,
     handleOrgSubmit,
     handleDelete,
-    handleLinkSave,
   }
 }

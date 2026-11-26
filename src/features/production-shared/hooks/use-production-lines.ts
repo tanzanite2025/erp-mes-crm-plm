@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
@@ -19,13 +19,13 @@ function isStructuredValue(value: unknown): boolean {
   return value !== null && typeof value === 'object'
 }
 
-function isTopologyAuthForbidden(error: unknown): boolean {
+function isProductionLineEditUnauthorized(error: unknown): boolean {
   if (!(error instanceof Error)) {
     return false
   }
 
   return (
-    /topology authorization code is invalid/i.test(error.message) ||
+    /production line authorization failed/i.test(error.message) ||
     /^UNAUTHORIZED$/i.test(error.message)
   )
 }
@@ -63,7 +63,6 @@ function createOptimisticLine(line: ProductionLine): ProductionLine {
   return {
     ...line,
     id: `temp-${Date.now()}`,
-    segments: line.segments ?? [],
     version: line.version ?? 0,
     createdAt: line.createdAt || now,
     updatedAt: line.updatedAt || now,
@@ -110,10 +109,20 @@ function applyLineOverlays(
   return [...pendingCreates, ...confirmedLines]
 }
 
-export function useProductionLines() {
+interface ProductionLinesHookOptions {
+  enabled?: UseQueryOptions<ProductionLine[], Error>['enabled']
+}
+
+export function useProductionLines(options?: ProductionLinesHookOptions) {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
-  const { data: queryLines, isLoading, error } = useProductionLinesQuery()
+  const {
+    data: queryLines,
+    isLoading,
+    error,
+  } = useProductionLinesQuery({
+    enabled: options?.enabled,
+  })
   const [pendingCreates, setPendingCreates] = useState<ProductionLine[]>([])
   const [pendingUpdates, setPendingUpdates] = useState<PendingLineUpdate[]>([])
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([])
@@ -192,8 +201,8 @@ export function useProductionLines() {
       toast.success(
         t(
           isUpdate
-            ? 'orgPersonnel.lineMgmt.list.updateSuccess'
-            : 'orgPersonnel.lineMgmt.list.addSuccess'
+            ? 'productionArchitecture.lineMgmt.updateSuccess'
+            : 'productionArchitecture.lineMgmt.addSuccess'
         )
       )
       return saved
@@ -214,7 +223,7 @@ export function useProductionLines() {
         'status' in error &&
         Number(error.status) === 409
       ) {
-        toast.error(t('orgPersonnel.lineMgmt.toasts.saveConflict'))
+        toast.error(t('productionArchitecture.lineMgmt.saveConflict'))
       } else if (
         error &&
         typeof error === 'object' &&
@@ -222,12 +231,12 @@ export function useProductionLines() {
         Number(error.status) === 403
       ) {
         toast.error(
-          isTopologyAuthForbidden(error)
-            ? t('orgPersonnel.lineMgmt.toasts.saveForbiddenAuthCode')
-            : t('orgPersonnel.lineMgmt.toasts.saveForbiddenPermission')
+          isProductionLineEditUnauthorized(error)
+            ? t('productionArchitecture.lineMgmt.saveForbiddenAuthCode')
+            : t('productionArchitecture.lineMgmt.saveForbiddenPermission')
         )
       } else {
-        toast.error(t('orgPersonnel.lineMgmt.toasts.saveError'))
+        toast.error(t('productionArchitecture.lineMgmt.saveError'))
       }
 
       if (rethrowError) {
@@ -238,7 +247,7 @@ export function useProductionLines() {
     }
   }
 
-  const handleDeleteLine = async (id: string) => {
+  const handleDeleteLine = async (id: string, rethrowError = false) => {
     setPendingDeletes((prev) => [...prev, id])
 
     try {
@@ -249,7 +258,12 @@ export function useProductionLines() {
     } catch (error) {
       setPendingDeletes((prev) => prev.filter((currentId) => currentId !== id))
       failLoudly(error, 'useProductionLines.handleDeleteLine')
-      toast.error(t('orgPersonnel.lineMgmt.toasts.deleteFailed'))
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : t('productionArchitecture.lineMgmt.deleteFailed')
+      )
+      if (rethrowError) throw error
     }
   }
 
@@ -259,6 +273,7 @@ export function useProductionLines() {
     createLineStrict: (data: ProductionLine, authCode?: string) =>
       handleUpdateLine({ type: 'CREATE', data }, authCode, true),
     deleteLine: handleDeleteLine,
+    deleteLineStrict: (id: string) => handleDeleteLine(id, true),
     error,
     isLoading,
     lines,

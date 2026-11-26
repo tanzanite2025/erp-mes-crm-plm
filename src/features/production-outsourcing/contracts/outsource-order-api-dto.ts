@@ -38,7 +38,7 @@ export interface OutsourceTransferApiDTO {
   partnerId?: string
   routeId?: string
   routeStepId?: string
-  branchOperationId?: string
+  processStepId?: string
   fromHolderType?: string
   fromHolderId?: string
   toHolderType?: string
@@ -73,7 +73,7 @@ export interface OutsourceInspectionApiDTO {
   uom?: string
   routeId?: string
   routeStepId?: string
-  branchOperationId?: string
+  processStepId?: string
   operationId?: string
   inspectedAt?: string
   inspector?: string

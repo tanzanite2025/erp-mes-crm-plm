@@ -204,6 +204,11 @@ export function BOMActionDialog({
                       form={typedForm}
                       products={products}
                       productDisplayLabelMap={productDisplayLabelMap}
+                      productionLineOptions={
+                        optionsResource.status === 'ready'
+                          ? optionsResource.productionLines
+                          : []
+                      }
                       isEdit={isEdit}
                     />
                   }

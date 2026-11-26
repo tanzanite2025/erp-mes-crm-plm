@@ -58,7 +58,6 @@ export const productionMaterialIssuanceSourcePreparationSelectionSchema =
   z.strictObject({
     salesOrderId: z.uuid(),
     salesOrderLineId: positiveIdentity,
-    bomId: z.uuid().optional(),
   })
 export const productionMaterialIssuanceSourcePreparationRequestSchema = z
   .strictObject({
@@ -78,7 +77,7 @@ export const productionMaterialIssuanceSourcePreparationResponseSchema = z
   .object({
     sourceLines: z
       .array(
-        productionMaterialRequirementSourceLineSchema.extend({
+        productionMaterialRequirementSourceLineSchema.safeExtend({
           salesOrderId: z.uuid(),
           salesOrderLineId: positiveIdentity,
         })
@@ -90,8 +89,7 @@ export const productionMaterialIssuanceSourcePreparationResponseSchema = z
         salesOrderLineId: positiveIdentity,
         code: z.enum([
           'MISSING_PRODUCT',
-          'BOM_SELECTION_REQUIRED',
-          'BOM_SELECTION_CHANGED',
+          'DUPLICATE_EFFECTIVE_MBOM',
           'MISSING_BOM',
           'INVALID_SOURCE_LINE',
           'INVALID_MATERIAL',

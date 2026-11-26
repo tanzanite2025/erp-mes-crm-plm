@@ -11,23 +11,23 @@ export const dashboard = {
     },
     throughput: {
       title: 'Throughput Overview',
-      description: 'Real-time output distribution across {{levelName}}',
+      description: 'Real-time output distribution across {{lineName}}',
       empty: {
-        title: 'Waiting for {{levelName}} attachment...',
-        description: 'Configure visible {{levelName}} entries via settings...',
+        title: 'Waiting for {{lineName}} attachment...',
+        description: 'Configure visible {{lineName}} entries via settings...',
       },
     },
     scanStream: {
       title: 'Latest Scan Activity',
       description: 'Raw event streams from cameras and scanners',
     },
-    segmentDialog: {
-      title: 'Configure Visible {{levelName}}',
+    lineDialog: {
+      title: 'Configure Visible {{lineName}}',
       description:
-        'Choose which {{levelName}} entries should appear in the overview chart.',
-      emptyTitle: 'No {{levelName}} defined',
+        'Choose which {{lineName}} entries should appear in the overview chart.',
+      emptyTitle: 'No {{lineName}} defined',
       emptyDescription:
-        'Please go to "Production Architecture -> Line Mindmap" and add {{levelName}} first.',
+        'Please go to "Production Architecture -> Production Lines" and add {{lineName}} first.',
       cancel: 'Cancel',
       save: 'Save Configuration',
     },

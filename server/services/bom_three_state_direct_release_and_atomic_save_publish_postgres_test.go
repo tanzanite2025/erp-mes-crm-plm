@@ -12,7 +12,8 @@ import (
 func buildBOMAtomicSaveAndPublishInputForPostgresVerification(source models.BOM, updating bool) SaveBOMInput {
 	input := SaveBOMInput{
 		ProductID: source.ProductID, BOMNo: "ATOMIC-" + uuid.NewString(), BOMType: source.BOMType,
-		VersionText: source.VersionText, MeasuredWeight: 390, MeasuredWeightUnit: "g",
+		ProductionLineID: source.ProductionLineID,
+		VersionText:      source.VersionText, MeasuredWeight: 390, MeasuredWeightUnit: "g",
 		OwnerType: source.OwnerType, Description: "Recipe verified for direct publication", PublishOnSave: true,
 		RelationSidecar: json.RawMessage(`{"kind":"parent_children_protocol","version":"v1","protocolDraft":{"rootChildren":[],"branchNodes":[],"itemNodes":[]}}`),
 		Items:           []models.BOMItem{{ID: uuid.NewString(), Section: "PREPARE", MaterialID: source.Items[0].MaterialID, Unit: "m2", UnitUsage: 3, StandardUsage: 3.15, WastagePercent: 5}},

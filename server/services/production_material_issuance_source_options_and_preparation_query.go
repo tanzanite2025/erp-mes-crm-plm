@@ -42,7 +42,6 @@ type ProductionMaterialIssuanceSourceOptions struct {
 type ProductionMaterialIssuanceSourcePreparationSelection struct {
 	SalesOrderID     string `json:"salesOrderId"`
 	SalesOrderLineID uint   `json:"salesOrderLineId"`
-	BOMID            string `json:"bomId,omitempty"`
 }
 
 type ProductionMaterialIssuanceSourcePrerequisiteIssue struct {
@@ -139,7 +138,6 @@ func PrepareProductionMaterialIssuanceSources(ctx context.Context, database *gor
 			return err
 		}
 		keys := []string{}
-		choices := []ProductionMaterialRequirementBOMSelection{}
 		units := make(map[uint]string)
 		productIDs := []string{}
 		for _, order := range orders {
@@ -154,9 +152,6 @@ func PrepareProductionMaterialIssuanceSources(ctx context.Context, database *gor
 				keys = append(keys, fmt.Sprintf("%s-%d", order.OrderNo, line.LineNo))
 				units[line.ID] = line.UOM
 				productIDs = append(productIDs, line.ProductID)
-				if selection.BOMID != "" {
-					choices = append(choices, ProductionMaterialRequirementBOMSelection{SalesOrderID: order.ID, SalesOrderLineID: line.ID, BOMID: selection.BOMID})
-				}
 			}
 		}
 		if len(keys) != len(selections) {
@@ -166,7 +161,7 @@ func PrepareProductionMaterialIssuanceSources(ctx context.Context, database *gor
 		if err != nil {
 			return err
 		}
-		input.Orders, input.SelectedKeys, input.BOMSelections, input.AsOf = orders, keys, choices, time.Now().UTC()
+		input.Orders, input.SelectedKeys, input.AsOf = orders, keys, time.Now().UTC()
 		expansion, err := ExpandProductionMaterialRequirements(input)
 		if err != nil {
 			return err

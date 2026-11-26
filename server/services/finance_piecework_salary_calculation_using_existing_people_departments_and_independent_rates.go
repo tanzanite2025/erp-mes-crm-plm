@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 	"xdfc-server/models"
 
@@ -32,6 +33,7 @@ type FinancePieceworkSalaryCalculationRow struct {
 	EmployeeID   string  `json:"employeeId"`
 	DepartmentID string  `json:"departmentId"`
 	PayItemID    string  `json:"payItemId"`
+	Unit         string  `json:"unit"`
 	Quantity     float64 `json:"quantity"`
 }
 type FinancePieceworkSalaryCalculationRequest struct {
@@ -44,7 +46,6 @@ type FinancePieceworkSalaryCalculatedRow struct {
 	StaffID        string  `json:"staffId"`
 	DepartmentName string  `json:"departmentName"`
 	PayItemName    string  `json:"payItemName"`
-	Unit           string  `json:"unit"`
 	UnitPrice      float64 `json:"unitPrice"`
 	Currency       string  `json:"currency"`
 	AmountCents    int64   `json:"amountCents"`
@@ -87,6 +88,9 @@ func calculateFinancePieceworkSalaryFromMasterData(ctx context.Context, database
 				return result, fmt.Errorf("%w: row %d requires existing employee, department and pay item IDs", ErrInvalidFinancePieceworkCalculation, index+1)
 			}
 		}
+		if strings.TrimSpace(row.Unit) == "" {
+			return result, fmt.Errorf("%w: row %d unit is required", ErrInvalidFinancePieceworkCalculation, index+1)
+		}
 		if err := validatePieceworkDecimalPrecision(row.Quantity, 99999999.9999); err != nil {
 			return result, fmt.Errorf("%w: row %d quantity: %v", ErrInvalidFinancePieceworkCalculation, index+1, err)
 		}
@@ -108,6 +112,7 @@ func calculateFinancePieceworkSalaryFromMasterData(ctx context.Context, database
 		items := map[string]models.PieceworkPayItem{}
 		for index, row := range request.Rows {
 			row.EmployeeID, row.DepartmentID, row.PayItemID = normalizeUUIDIdentity(row.EmployeeID), normalizeUUIDIdentity(row.DepartmentID), normalizeUUIDIdentity(row.PayItemID)
+			row.Unit = strings.TrimSpace(row.Unit)
 			employee, employeeExists := employees[row.EmployeeID]
 			department, departmentExists := departments[row.DepartmentID]
 			if !employeeExists || !departmentExists {
@@ -119,18 +124,23 @@ func calculateFinancePieceworkSalaryFromMasterData(ctx context.Context, database
 					return err
 				}
 				items[row.PayItemID] = item
-				match, err := resolvePieceworkRateForPayrollItemTx(ctx, tx, PieceworkRateLookup{PayItemID: item.ID, Unit: item.Unit, At: date})
+			}
+			rateKey := row.PayItemID + "\x00" + strings.TrimSpace(row.Unit)
+			rate, hasRate := rates[rateKey]
+			if !hasRate {
+				match, err := resolvePieceworkRateForPayrollItemTx(ctx, tx, PieceworkRateLookup{PayItemID: item.ID, Unit: row.Unit, At: date})
 				if err != nil {
 					return fmt.Errorf("row %d (%s): %w", index+1, item.Name, err)
 				}
-				rates[row.PayItemID] = match.Rate
+				rate = match.Rate
+				rates[rateKey] = rate
 			}
-			rate := rates[row.PayItemID]
 			amount, err := calculateFinancePieceworkSalaryAmount(row.Quantity, rate.UnitPrice)
 			if err != nil {
 				return fmt.Errorf("%w: row %d: %v", ErrInvalidFinancePieceworkCalculation, index+1, err)
 			}
-			result.Rows = append(result.Rows, FinancePieceworkSalaryCalculatedRow{FinancePieceworkSalaryCalculationRow: row, EmployeeName: employee.Name, StaffID: employee.StaffID, DepartmentName: department.Name, PayItemName: item.Name, Unit: item.Unit, UnitPrice: rate.UnitPrice, Currency: rate.Currency, AmountCents: int64(math.Round(amount * 100))})
+			row.Unit = rate.Unit
+			result.Rows = append(result.Rows, FinancePieceworkSalaryCalculatedRow{FinancePieceworkSalaryCalculationRow: row, EmployeeName: employee.Name, StaffID: employee.StaffID, DepartmentName: department.Name, PayItemName: item.Name, UnitPrice: rate.UnitPrice, Currency: rate.Currency, AmountCents: int64(math.Round(amount * 100))})
 		}
 		return nil
 	})

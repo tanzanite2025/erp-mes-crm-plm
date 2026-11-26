@@ -10,8 +10,6 @@ export const orgPersonnel = {
     accounts: 'Accounts',
     rights: 'User Permissions',
     permissions: 'Permission Audit',
-    line: 'Line Mindmap',
-    topology: 'Templates',
     leave: 'Leave Management',
     stats: 'Top Employees',
     attendanceDevices: 'Attendance Devices',
@@ -285,18 +283,15 @@ export const orgPersonnel = {
   },
   org: {
     title: 'Organization Architecture',
-    subtitle:
-      'Maintain the physical topology, administrative hierarchy, and cross-functional relations of the entire group.',
+    subtitle: 'Maintain the group organization hierarchy and its functions.',
     treeTitle: 'Hierarchy STRUCTURE',
     detailTitle: 'Details DATA',
     childrenTitle: 'Units UNITS',
-    linkedTitle: 'Linked LINKED',
     manager: 'MANAGER',
     units: 'Sub-units',
+    unitCountSuffix: 'units',
     functions: 'Core Functions',
     systemId: 'System ID',
-    connected: 'Linked',
-    noLinked: 'No linked architecture',
     noChildren: 'No children at this level',
     emptyTree: 'No organization nodes yet',
     emptyTreeHint:
@@ -306,7 +301,6 @@ export const orgPersonnel = {
     addChild: 'Add Child',
     addRoot: 'Add level-1 organization',
     removeItem: 'Remove Item',
-    manageLinks: 'Manage Links',
     manageDetail: 'Manage Details',
     deleteConfirm:
       'Are you sure you want to delete the department "{{name}}"? This action is irreversible.',
@@ -332,8 +326,6 @@ export const orgPersonnel = {
       hierarchyInvalid:
         'Organization hierarchy is invalid for the selected parent. Refresh and select again.',
       depthExceeded: 'Organization depth exceeds the supported three levels.',
-      linkedArchitectureInvalid:
-        'Organization linked architecture is invalid. Select it again and save.',
     },
     nodeTypes: {
       root: 'ROOT / HQ',
@@ -345,10 +337,6 @@ export const orgPersonnel = {
     personnelProfile: {
       title: 'Personnel Profile Center PROFILE_HUB',
       desc: 'Management of personnel archives and onboarding lifecycles.',
-    },
-    types: {
-      productionLine: 'Production Line LINE',
-      workshopLevel: 'Production {{levelName}}',
     },
     jobDialog: {
       editTitle: 'Edit Job Type JOB_EDIT',
@@ -363,13 +351,6 @@ export const orgPersonnel = {
       submit: 'Save Changes SAVE_JOB',
       successEdit: 'Job type updated',
       successCreate: 'New job type created',
-    },
-    productionSelector: {
-      title: 'Link Production Arch LINE_ARCH_LINK',
-      descDynamic:
-        'Select the production lines and specific {{levelName}} managed or followed by this department.',
-      searchPlaceholder: 'Search name...',
-      submit: 'Confirm Link SAVE_LINK',
     },
     employeeDialog: {
       editTitle: 'Edit Personnel Archive ARCHIVE_EDIT',
@@ -428,153 +409,6 @@ export const orgPersonnel = {
       teamCodeRequired: 'Team code is required',
       teamNameRequired: 'Team name is required',
       leaveEmployeeRequired: 'Please select an employee',
-    },
-  },
-  lineMgmt: {
-    header: {
-      title: 'L1/L2/L3 Structure Mindmap Center',
-      subtitleDynamic:
-        'PRODUCTION MINDMAP / Manage multi-{{level1Name}} structures with fixed hierarchy keys and user-defined node names',
-    },
-    list: {
-      searchPlaceholder: 'Search by L1 code or name...',
-      addButton: 'Add L1',
-      emptyTitle: 'No L1 Data',
-      emptyDescDynamic:
-        'Click "Add L1" to create the top-level structure, then define {{level2Name}} and {{level3Name}}.',
-      initButton: 'Add First L1',
-      deleteConfirm: 'Are you sure you want to delete this L1 definition?',
-      requestSent: 'Request sent',
-      updateSuccess: 'L1 configuration updated',
-      addSuccess: 'New L1 submitted',
-    },
-    card: {
-      editInfo: 'Edit Info',
-      saveTemplate: 'Save as Topology Template',
-      delete: 'Delete L1',
-      enable: 'Enable',
-      stop: 'Stop',
-      status: 'Status',
-      hierarchy: 'Hierarchy Nodes',
-      hierarchyStatsDynamic:
-        '{{level1Count}} {{level1Name}} / {{level2Count}} {{level2Name}} / {{level3Count}} {{level3Name}}',
-      topologyMgmt: 'Hierarchy Structure Console',
-      running: 'Running',
-      offline: 'Offline',
-      defineHierarchyLevel: 'Define New {{levelName}}',
-      initTopology: 'Initialize Hierarchy Topology',
-      emptyTopologyDescDynamic:
-        'This L1 is currently empty. You can import a structure from a standard template or manually create the first {{levelName}}.',
-      manualBuildHierarchyLevel: 'Manually Build First {{levelName}}',
-      templateBackup: 'Topology Backup',
-      saveTemplateFrom: 'Template saved from L1 {{name}}',
-      templateSuccess: 'Topology template saved successfully!',
-    },
-    dialog: {
-      editTitle: 'Edit L1 Basic Config',
-      createTitle: 'Add L1',
-      description:
-        'Configure core L1 info; maintain L2/L3 structure in the mindmap.',
-      nameLabel: 'L1 Name',
-      namePlaceholder: 'e.g., Carbon Rim Molding',
-      codeLabel: 'Unique ID',
-      codePlaceholder: 'Auto-deriving code...',
-      autoGen: 'Auto Gen',
-      codeHint: '* Automatically generates prefix and sequence based on name',
-      descLabel: 'Description',
-      descPlaceholder: 'Optional L1 description',
-      cancel: 'Cancel',
-      save: 'Save Config',
-      confirm: 'Confirm Add',
-    },
-    auth: {
-      editTitle: 'L1 Archive Edit Authorization',
-      deleteTitle: 'L1 Resource Deletion Authorization',
-      editDesc:
-        'Modifying the L1 definition. Please enter the authorization code to continue',
-      deleteDesc:
-        'Removing this L1 will break associated scheduling, quality, and equipment logic. Please enter the authorization code to continue',
-    },
-    toasts: {
-      loadFailed: 'Failed to load L1/L2/L3 structure data',
-      saveConflict:
-        'Save failed: L1/L2/L3 structure has been updated by others, fetching latest version...',
-      saveForbidden:
-        'Save failed: Backend command validation failed, please check authorization code',
-      saveForbiddenAuthCode:
-        'Save failed: The topology authorization code is invalid. Please verify it again.',
-      saveForbiddenPermission:
-        'Save failed: The current account does not have permission to maintain L1/L2/L3 structure.',
-      saveError: 'Save failed, please check network or refresh and try again',
-      deleteFailed: 'Deletion failed',
-      loading: 'Loading L1/L2/L3 structure from cloud...',
-    },
-    topology: {
-      addLevel: 'Add {{levelName}}',
-      renameAuth: 'Auth Rename',
-      removeCurrentLevel: 'Remove Current {{levelName}}',
-      removeLevel: 'Remove {{levelName}}',
-      renameLevel: 'Rename {{levelName}}',
-      levelRenameTitle: '{{levelName}} Definition Change',
-      levelRemoveTitle: 'Remove {{levelName}} Resource',
-      levelRenameDesc:
-        'Renaming {{levelName}} will affect the current hierarchy structure. Please verify the authorization code',
-      levelRemoveDesc:
-        'Removing {{levelName}} will also clear its child structure. Please enter the authorization code to continue',
-      authGenericTitle: 'Auth Verification',
-      authGenericDesc:
-        'This operation involves core L1/L2/L3 structure changes, please enter auth password to confirm.',
-      authPasswordPlaceholder: 'Enter 6-digit auth password',
-      authError: 'Incorrect auth password, please try again',
-      authVerify: 'Verify & Execute',
-    },
-    editor: {
-      title: 'L1/L2/L3 Topology Configuration',
-      configuring: 'Configuring',
-      saveConfig: 'Save Configuration',
-      newHierarchyLevelName: 'New {{levelName}}',
-      saveSuccess: 'L1/L2/L3 topology configuration saved',
-      noLevelsConfigured: 'No {{levelName}} configured',
-    },
-  },
-  topologyTemplateMgmt: {
-    header: {
-      title: 'Topology Template Center',
-      subtitle:
-        'TOPOLOGY TEMPLATES / Define standard hierarchy blueprints for rapid reuse and standardized configuration',
-    },
-    list: {
-      searchPlaceholder: 'Search template name or description...',
-      addTemplate: 'Add Template',
-      noTemplates: 'No Templates',
-      emptyDescDynamic:
-        'By defining common topology templates, you can avoid repetitive configuration of {{level1Name}} / {{level2Name}} structures when creating similar hierarchy setups, enabling standardized reuse.',
-      initButton: 'Create First Template',
-    },
-    card: {
-      standardTopology: 'Standard Structure Template',
-      noDescription: 'No description',
-      editInfo: 'Edit Basic Info',
-      deleteTemplate: 'Delete Template',
-      deleteStandardLevelTitle: 'Remove Standard {{levelName}} Template?',
-      deleteStandardLevelDesc:
-        'Removing the {{levelName}} template [{{name}}] will also clear its child structure.',
-      addStandardLevel: 'Define New Standard {{levelName}}',
-      defaultStandardLevel: 'Standard {{levelName}} {{index}}',
-    },
-    dialog: {
-      editTitle: 'Edit Topology Blueprint Info',
-      createTitle: 'Create New Topology Template',
-      descriptionDynamic:
-        'TEMPLATE_SPEC / Templates define the base {{level1Name}} and {{level2Name}} structure. After creation, you can continue editing detailed hierarchy entries in the template list.',
-      nameLabel: 'Template Name',
-      namePlaceholder: 'e.g., Composite Forming Base Structure Template',
-      nameRequired: 'Template name must be at least 2 characters',
-      descLabel: 'Description (Optional)',
-      descPlaceholder:
-        'Briefly describe the production scenarios this template applies to...',
-      saveChanges: 'Save Changes',
-      initTemplate: 'Create Now',
     },
   },
 }

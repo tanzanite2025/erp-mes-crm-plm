@@ -51,6 +51,7 @@ func createProductionExecutionLotTestSchema(t *testing.T, database *gorm.DB) {
 			bom_owner_type TEXT NOT NULL DEFAULT '',
 			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
 			bom_version_level TEXT NOT NULL DEFAULT '',
+			production_route_mode TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT',
 			production_route_revision_id TEXT,
 			production_route_revision_no INTEGER NOT NULL DEFAULT 0,
 			quantity REAL,

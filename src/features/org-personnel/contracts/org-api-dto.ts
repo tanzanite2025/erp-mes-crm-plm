@@ -1,9 +1,3 @@
-export interface OrgLinkedArchitectureApiDTO {
-  type: 'line' | 'segment'
-  id: string
-  name: string
-}
-
 export interface OrgNodeApiDTO {
   id: string
   name: string
@@ -11,7 +5,6 @@ export interface OrgNodeApiDTO {
   manager?: string
   description?: string
   type: 'company' | 'department' | 'team'
-  linkedArchitecture?: OrgLinkedArchitectureApiDTO[] | null
   children?: OrgNodeApiDTO[]
   createdAt?: string
   updatedAt?: string

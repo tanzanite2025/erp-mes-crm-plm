@@ -48,7 +48,7 @@ func createProductionPlanMBOMBranchHTTPPostgresDatabase(t *testing.T) *gorm.DB {
 	require.NoError(t, err)
 	require.NoError(t, database.AutoMigrate(
 		&models.ProductionPlan{}, &models.ProductionTask{}, &models.ProductionExecutionLot{},
-		&models.ProcessStep{}, &models.ProductionBOMBranchOperation{}, &models.ProductionBOMBranchOperationProcessLibrarySelection{},
+		&models.ProcessStep{}, &models.ProductionMBOMBranchProcessAssociation{},
 		&models.ProductionRouteFamily{}, &models.ProductionRoute{}, &models.ProductionRouteStep{},
 	))
 	for _, statement := range []string{
@@ -76,16 +76,10 @@ func seedProductionPlanHTTPPublishedRouteRevision(
 	t.Helper()
 	processLibrary := models.ProcessStep{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "PLAN-" + uuid.NewString(), Name: "排产工序", IsActive: true}
 	require.NoError(t, database.Create(&processLibrary).Error)
-	operation := models.ProductionBOMBranchOperation{
+	require.NoError(t, database.Create(&models.ProductionMBOMBranchProcessAssociation{
 		BaseModel: models.BaseModel{ID: uuid.NewString()}, ProductID: productID,
 		BOMOwnerType: ownerType, BOMOwnerCustomerID: ownerCustomerID, BOMVersionLevel: versionLevel,
-		Name: "排产工序", IsActive: true,
-	}
-	require.NoError(t, database.Create(&operation).Error)
-	require.NoError(t, database.Create(&models.ProductionBOMBranchOperationProcessLibrarySelection{
-		BaseModel: models.BaseModel{ID: uuid.NewString()}, ProductID: productID,
-		BOMOwnerType: ownerType, BOMOwnerCustomerID: ownerCustomerID, BOMVersionLevel: versionLevel,
-		BranchOperationID: operation.ID, ProcessLibraryID: processLibrary.ID,
+		ProcessStepID: processLibrary.ID,
 	}).Error)
 	routeID := uuid.NewString()
 	family := models.ProductionRouteFamily{
@@ -101,7 +95,7 @@ func seedProductionPlanHTTPPublishedRouteRevision(
 		Status: "PUBLISHED", Version: 1,
 		Steps: []models.ProductionRouteStep{{
 			BaseModel: models.BaseModel{ID: uuid.NewString()}, Sequence: 1,
-			BranchOperationID: operation.ID, BranchOperationNameSnapshot: operation.Name,
+			ProcessStepID: processLibrary.ID, ProcessNameSnapshot: processLibrary.Name,
 			ExecutionMode: "IN_HOUSE", QualityGate: "NONE",
 		}},
 	}).Error)

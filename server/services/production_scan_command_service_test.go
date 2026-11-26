@@ -86,8 +86,8 @@ func createProductionScanCommandTestSchema(t *testing.T, database *gorm.DB) {
 			route_id TEXT,
 			from_route_step_id TEXT,
 			to_route_step_id TEXT,
-			from_branch_operation_id TEXT,
-			to_branch_operation_id TEXT,
+			from_process_step_id TEXT,
+			to_process_step_id TEXT,
 			from_holder_type TEXT,
 			from_holder_id TEXT,
 			to_holder_type TEXT,
@@ -132,6 +132,7 @@ func createProductionScanCommandTestSchema(t *testing.T, database *gorm.DB) {
 			deleted_at DATETIME, order_no TEXT, order_id TEXT,
 			sales_order_line_id INTEGER, product_id TEXT, product_name TEXT,
 			bom_owner_type TEXT, bom_owner_customer_id TEXT, bom_version_level TEXT,
+			production_route_mode TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT',
 			quantity REAL, status TEXT, start_date DATETIME, end_date DATETIME, notes TEXT
 		)
 	`).Error)
@@ -167,6 +168,7 @@ func seedProductionScanRoute(t *testing.T, database *gorm.DB, routeID string, pr
 		ProductName:               "测试产品",
 		BOMOwnerType:              "INTERNAL",
 		BOMVersionLevel:           "std",
+		ProductionRouteMode:       productionRouteScopeBranchDefault,
 		ProductionRouteRevisionID: routeID,
 		ProductionRouteRevisionNo: 1,
 		Status:                    "SCHEDULED",
@@ -174,22 +176,20 @@ func seedProductionScanRoute(t *testing.T, database *gorm.DB, routeID string, pr
 
 	stepIDs := make([]string, 0, len(processIDs))
 	for index, processID := range processIDs {
-		require.NoError(t, database.Create(&models.ProductionBOMBranchOperation{
-			BaseModel:       models.BaseModel{ID: processID},
-			ProductID:       productID,
-			BOMOwnerType:    "INTERNAL",
-			BOMVersionLevel: "std",
-			Name:            processID,
-			IsActive:        true,
+		require.NoError(t, database.Create(&models.ProcessStep{
+			BaseModel: models.BaseModel{ID: processID},
+			Code:      processID,
+			Name:      processID,
+			IsActive:  true,
 		}).Error)
 		stepID := routeID + "-step-" + processID
 		require.NoError(t, database.Create(&models.ProductionRouteStep{
-			BaseModel:         models.BaseModel{ID: stepID},
-			RouteID:           routeID,
-			Sequence:          index + 1,
-			BranchOperationID: processID,
-			ExecutionMode:     "IN_HOUSE",
-			QualityGate:       "NONE",
+			BaseModel:     models.BaseModel{ID: stepID},
+			RouteID:       routeID,
+			Sequence:      index + 1,
+			ProcessStepID: processID,
+			ExecutionMode: "IN_HOUSE",
+			QualityGate:   "NONE",
 		}).Error)
 		stepIDs = append(stepIDs, stepID)
 	}
@@ -204,14 +204,14 @@ func TestExecuteProductionScanCommandRejectsDraftRoutes(t *testing.T) {
 		Update("status", "DRAFT").Error)
 
 	_, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-draft-route-denied",
-		ProductBarcode:    "DRAFT-001",
-		RouteID:           "route-draft",
-		RouteStepID:       stepIDs[0],
-		BranchOperationID: "operation-draft",
-		Action:            ProductionOperationActionStart,
-		CommandSource:     ProductionScanCommandSourceWeb,
-		Operator:          "tester",
+		IdempotencyKey: "scan-draft-route-denied",
+		ProductBarcode: "DRAFT-001",
+		RouteID:        "route-draft",
+		RouteStepID:    stepIDs[0],
+		ProcessStepID:  "operation-draft",
+		Action:         ProductionOperationActionStart,
+		CommandSource:  ProductionScanCommandSourceWeb,
+		Operator:       "tester",
 	})
 	require.ErrorIs(t, err, ErrInvalidProductionScanCommand)
 
@@ -277,13 +277,13 @@ func TestExecuteProductionScanCommandRequiresWorkLocation(t *testing.T) {
 	stepIDs := seedProductionScanRoute(t, database, "route-location-required", "operation-location-required")
 
 	_, err := service.service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-without-work-location",
-		ProductBarcode:    "LOCATION-REQUIRED-001",
-		RouteID:           "route-location-required",
-		RouteStepID:       stepIDs[0],
-		BranchOperationID: "operation-location-required",
-		Action:            ProductionOperationActionStart,
-		Operator:          "tester",
+		IdempotencyKey: "scan-without-work-location",
+		ProductBarcode: "LOCATION-REQUIRED-001",
+		RouteID:        "route-location-required",
+		RouteStepID:    stepIDs[0],
+		ProcessStepID:  "operation-location-required",
+		Action:         ProductionOperationActionStart,
+		Operator:       "tester",
 	})
 	require.ErrorIs(t, err, ErrInvalidProductionScanCommand)
 
@@ -311,7 +311,7 @@ func TestExecuteProductionScanCommandStartsFirstRouteStep(t *testing.T) {
 	require.Equal(t, ProductionScanCommandSourceUSB, response.CommandSource)
 	require.Equal(t, "ABC-001", response.Operation.ProductBarcode)
 	require.Equal(t, stepIDs[0], response.Operation.RouteStepID)
-	require.Equal(t, "process-a", response.Operation.BranchOperationID)
+	require.Equal(t, "process-a", response.Operation.ProcessStepID)
 	require.Equal(t, ProductBarcodeStateStatusInProgress, response.State.Status)
 	require.Equal(t, stepIDs[0], response.Progress.CurrentRouteStepID)
 	require.False(t, response.Progress.Advanced)
@@ -475,10 +475,10 @@ func TestExecuteProductionScanCommandCompletesAndAdvancesToNextRouteStep(t *test
 
 	require.NoError(t, err)
 	require.Equal(t, stepIDs[0], response.Operation.RouteStepID)
-	require.Equal(t, "process-a", response.Operation.BranchOperationID)
+	require.Equal(t, "process-a", response.Operation.ProcessStepID)
 	require.Equal(t, ProductBarcodeStateStatusNotStarted, response.State.Status)
 	require.Equal(t, stepIDs[1], response.State.RouteStepID)
-	require.Equal(t, "process-b", response.State.CurrentBranchOperationID)
+	require.Equal(t, "process-b", response.State.CurrentProcessStepID)
 	require.True(t, response.Progress.Advanced)
 	require.False(t, response.Progress.RouteCompleted)
 	require.Equal(t, stepIDs[1], response.Progress.CurrentRouteStepID)
@@ -488,8 +488,8 @@ func TestExecuteProductionScanCommandCompletesAndAdvancesToNextRouteStep(t *test
 	require.Equal(t, response.Operation.ID, response.TransferEvents[0].OperationID)
 	require.Equal(t, stepIDs[0], response.TransferEvents[0].FromRouteStepID)
 	require.Equal(t, stepIDs[1], response.TransferEvents[0].ToRouteStepID)
-	require.Equal(t, "process-a", response.TransferEvents[0].FromBranchOperationID)
-	require.Equal(t, "process-b", response.TransferEvents[0].ToBranchOperationID)
+	require.Equal(t, "process-a", response.TransferEvents[0].FromProcessStepID)
+	require.Equal(t, "process-b", response.TransferEvents[0].ToProcessStepID)
 	require.Len(t, response.State.Events, 3)
 	eventsByType := make(map[string]ProductBarcodeStateEventResponse, len(response.State.Events))
 	for _, event := range response.State.Events {
@@ -500,8 +500,8 @@ func TestExecuteProductionScanCommandCompletesAndAdvancesToNextRouteStep(t *test
 	require.Equal(t, response.State.LastEventID, transferEvent.ID)
 	require.Equal(t, response.State.ID, transferEvent.StateID)
 	require.Equal(t, response.Operation.ID, transferEvent.OperationID)
-	require.Equal(t, "process-a", transferEvent.FromBranchOperationID)
-	require.Equal(t, "process-b", transferEvent.ToBranchOperationID)
+	require.Equal(t, "process-a", transferEvent.FromProcessStepID)
+	require.Equal(t, "process-b", transferEvent.ToProcessStepID)
 	completedEvent := eventsByType[ProductBarcodeStateEventComplete]
 	require.NotEmpty(t, completedEvent.ID)
 	require.Equal(t, response.Operation.ID, completedEvent.OperationID)
@@ -521,12 +521,12 @@ func TestExecuteProductionScanCommandUsesBarcodePositionWhenRequestKeyChanges(t 
 	require.NoError(t, err)
 
 	completionRequest := ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-repeat-complete-first",
-		ProductBarcode:    productBarcode,
-		RouteID:           "route-repeat-complete",
-		RouteStepID:       stepIDs[0],
-		BranchOperationID: "process-repeat-a",
-		Action:            ProductionOperationActionComplete,
+		IdempotencyKey: "scan-repeat-complete-first",
+		ProductBarcode: productBarcode,
+		RouteID:        "route-repeat-complete",
+		RouteStepID:    stepIDs[0],
+		ProcessStepID:  "process-repeat-a",
+		Action:         ProductionOperationActionComplete,
 	}
 	firstCompletion, err := service.ExecuteProductionScanCommand(completionRequest)
 	require.NoError(t, err)
@@ -541,11 +541,11 @@ func TestExecuteProductionScanCommandUsesBarcodePositionWhenRequestKeyChanges(t 
 	require.NotEqual(t, firstCompletion.State.LastEventID, repeatedCompletion.State.LastEventID)
 	require.Equal(t, ProductBarcodeStateStatusNotStarted, repeatedCompletion.State.Status)
 	require.Equal(t, stepIDs[2], repeatedCompletion.State.RouteStepID)
-	require.Equal(t, "process-repeat-c", repeatedCompletion.State.CurrentBranchOperationID)
+	require.Equal(t, "process-repeat-c", repeatedCompletion.State.CurrentProcessStepID)
 	require.Len(t, repeatedCompletion.State.Events, 5)
 	require.True(t, repeatedCompletion.Progress.Advanced)
 	require.Equal(t, stepIDs[2], repeatedCompletion.Progress.NextRouteStepID)
-	require.Equal(t, "process-repeat-c", repeatedCompletion.Progress.NextBranchOperationID)
+	require.Equal(t, "process-repeat-c", repeatedCompletion.Progress.NextProcessStepID)
 	require.Len(t, repeatedCompletion.TransferEvents, 1)
 
 	assertProductionExecutionReplayFactCounts(t, database, 3, 5, 0)
@@ -619,13 +619,13 @@ func TestExecuteProductionScanCommandCompletesFinalRouteStep(t *testing.T) {
 	require.NoError(t, err)
 
 	completionRequest := ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-final-step-complete",
-		ProductBarcode:    "ABC-003",
-		RouteID:           "route-a",
-		RouteStepID:       stepIDs[0],
-		BranchOperationID: "process-a",
-		Action:            ProductionOperationActionComplete,
-		Operator:          "tester",
+		IdempotencyKey: "scan-final-step-complete",
+		ProductBarcode: "ABC-003",
+		RouteID:        "route-a",
+		RouteStepID:    stepIDs[0],
+		ProcessStepID:  "process-a",
+		Action:         ProductionOperationActionComplete,
+		Operator:       "tester",
 	}
 	response, err := service.ExecuteProductionScanCommand(completionRequest)
 
@@ -684,33 +684,33 @@ func TestExecuteProductionScanCommandUsesFirstStepWhenRouteRepeatsAnOperation(t 
 	service, database := newProductionScanCommandTestService(t)
 	stepIDs := seedProductionScanRoute(t, database, "route-a", "process-a")
 	require.NoError(t, database.Create(&models.ProductionRouteStep{
-		BaseModel:         models.BaseModel{ID: "route-a-step-process-a-duplicate"},
-		RouteID:           "route-a",
-		Sequence:          2,
-		BranchOperationID: "process-a",
-		ExecutionMode:     "IN_HOUSE",
-		QualityGate:       "NONE",
+		BaseModel:     models.BaseModel{ID: "route-a-step-process-a-duplicate"},
+		RouteID:       "route-a",
+		Sequence:      2,
+		ProcessStepID: "process-a",
+		ExecutionMode: "IN_HOUSE",
+		QualityGate:   "NONE",
 	}).Error)
 
 	response, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-ambiguous-route-step",
-		ProductBarcode:    "ABC-004",
-		RouteID:           "route-a",
-		BranchOperationID: "process-a",
-		Action:            ProductionOperationActionStart,
-		Operator:          "tester",
+		IdempotencyKey: "scan-ambiguous-route-step",
+		ProductBarcode: "ABC-004",
+		RouteID:        "route-a",
+		ProcessStepID:  "process-a",
+		Action:         ProductionOperationActionStart,
+		Operator:       "tester",
 	})
 	require.NoError(t, err)
 	require.Equal(t, stepIDs[0], response.Operation.RouteStepID)
 
 	response, err = service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-non-first-route-step",
-		ProductBarcode:    "ABC-005",
-		RouteID:           "route-a",
-		RouteStepID:       "route-a-step-process-a-duplicate",
-		BranchOperationID: "process-a",
-		Action:            ProductionOperationActionStart,
-		Operator:          "tester",
+		IdempotencyKey: "scan-non-first-route-step",
+		ProductBarcode: "ABC-005",
+		RouteID:        "route-a",
+		RouteStepID:    "route-a-step-process-a-duplicate",
+		ProcessStepID:  "process-a",
+		Action:         ProductionOperationActionStart,
+		Operator:       "tester",
 	})
 	require.NoError(t, err)
 	require.Equal(t, stepIDs[0], response.Operation.RouteStepID)
@@ -721,12 +721,12 @@ func TestExecuteProductionScanCommandUsesPlanFirstRouteStepAndAdvancesFromBarcod
 	stepIDs := seedProductionScanRoute(t, database, "route-step-position", "process-position-a", "process-position-b")
 
 	firstResponse, err := service.ExecuteProductionScanCommand(ExecuteProductionScanCommandRequest{
-		IdempotencyKey:    "scan-skip-first-step",
-		ProductBarcode:    "SCAN-STEP-POSITION-SKIP",
-		RouteID:           "route-step-position",
-		RouteStepID:       stepIDs[1],
-		BranchOperationID: "process-position-b",
-		Action:            ProductionOperationActionStart,
+		IdempotencyKey: "scan-skip-first-step",
+		ProductBarcode: "SCAN-STEP-POSITION-SKIP",
+		RouteID:        "route-step-position",
+		RouteStepID:    stepIDs[1],
+		ProcessStepID:  "process-position-b",
+		Action:         ProductionOperationActionStart,
 	})
 	require.NoError(t, err)
 	require.Equal(t, stepIDs[0], firstResponse.Operation.RouteStepID)
@@ -743,11 +743,11 @@ func TestExecuteProductionScanCommandUsesPlanFirstRouteStepAndAdvancesFromBarcod
 	startRequest.IdempotencyKey = "scan-complete-current-step"
 	startRequest.Action = ProductionOperationActionComplete
 	startRequest.RouteStepID = stepIDs[1]
-	startRequest.BranchOperationID = "process-position-b"
+	startRequest.ProcessStepID = "process-position-b"
 	response, err := service.ExecuteProductionScanCommand(startRequest)
 	require.NoError(t, err)
 	require.Equal(t, stepIDs[1], response.State.RouteStepID)
-	require.Equal(t, "process-position-b", response.State.CurrentBranchOperationID)
+	require.Equal(t, "process-position-b", response.State.CurrentProcessStepID)
 
 	state, events, err := loadProductBarcodeStateWithEvents(database, "SCAN-STEP-POSITION-CURRENT")
 	require.NoError(t, err)
@@ -762,14 +762,14 @@ func TestExecuteProductionScanCommandPreservesBarcodeProductIdentity(t *testing.
 	stepIDs := seedProductionScanRoute(t, database, "route-a", "process-a", "process-b")
 
 	_, err := NewProductBarcodeStateService(productionOperationExecutionTestTxManager{db: database}).InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    "ABC-005",
-		ProductID:         "product-route-a",
-		ProductName:       "测试产品",
-		RouteID:           "route-a",
-		RouteStepID:       stepIDs[0],
-		BranchOperationID: "process-a",
-		Status:            ProductBarcodeStateStatusNotStarted,
-		Operator:          "tester",
+		ProductBarcode: "ABC-005",
+		ProductID:      "product-route-a",
+		ProductName:    "测试产品",
+		RouteID:        "route-a",
+		RouteStepID:    stepIDs[0],
+		ProcessStepID:  "process-a",
+		Status:         ProductBarcodeStateStatusNotStarted,
+		Operator:       "tester",
 	})
 	require.NoError(t, err)
 
@@ -790,13 +790,13 @@ func TestExecuteProductionScanCommandRejectsBarcodeStateForDifferentPlanProduct(
 	service, database := newProductionScanCommandTestService(t)
 	stepIDs := seedProductionScanRoute(t, database, "route-product-mismatch", "operation-product-mismatch")
 	_, err := NewProductBarcodeStateService(productionOperationExecutionTestTxManager{db: database}).InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    "PRODUCT-MISMATCH-001",
-		ProductID:         "different-product",
-		ProductName:       "Different product",
-		RouteID:           "route-product-mismatch",
-		RouteStepID:       stepIDs[0],
-		BranchOperationID: "operation-product-mismatch",
-		Status:            ProductBarcodeStateStatusNotStarted,
+		ProductBarcode: "PRODUCT-MISMATCH-001",
+		ProductID:      "different-product",
+		ProductName:    "Different product",
+		RouteID:        "route-product-mismatch",
+		RouteStepID:    stepIDs[0],
+		ProcessStepID:  "operation-product-mismatch",
+		Status:         ProductBarcodeStateStatusNotStarted,
 	})
 	require.NoError(t, err)
 
@@ -843,12 +843,12 @@ func TestExecuteProductionScanCommandReworkAdvancesToExplicitTargetRouteStep(t *
 	require.Equal(t, stepIDs[1], response.Operation.RouteStepID)
 	require.Equal(t, ProductBarcodeStateStatusRework, response.State.Status)
 	require.Equal(t, stepIDs[0], response.State.RouteStepID)
-	require.Equal(t, "process-a", response.State.CurrentBranchOperationID)
+	require.Equal(t, "process-a", response.State.CurrentProcessStepID)
 	require.True(t, response.Progress.Advanced)
 	require.Len(t, response.TransferEvents, 1)
 	require.Equal(t, ProductBarcodeTransferTypeRouteAdvance, response.TransferEvents[0].TransferType)
-	require.Equal(t, "process-b", response.TransferEvents[0].FromBranchOperationID)
-	require.Equal(t, "process-a", response.TransferEvents[0].ToBranchOperationID)
+	require.Equal(t, "process-b", response.TransferEvents[0].FromProcessStepID)
+	require.Equal(t, "process-a", response.TransferEvents[0].ToProcessStepID)
 }
 
 func TestExecuteProductionScanCommandRejectsTargetRouteStepOutsideRoute(t *testing.T) {

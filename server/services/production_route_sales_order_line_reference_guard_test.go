@@ -29,6 +29,9 @@ func TestSalesOrderLineProductionReferencesBlockDeletionAndProductReplacement(t 
 	err = validateSalesOrderLinesAgainstProductionReferencesTx(database, "order-1", previous, []models.SalesOrderLine{{ID: lineID, LineNo: 1, ProductID: "product-2"}})
 	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByProductionRouteOrPlan)
 	require.NoError(t, validateSalesOrderLinesAgainstProductionReferencesTx(database, "order-1", previous, []models.SalesOrderLine{{ID: lineID, LineNo: 1, ProductID: "product-1"}}))
+	routeModePrevious := []models.SalesOrderLine{{ID: lineID, LineNo: 1, ProductID: "product-1", ProductionRouteMode: "CUSTOM"}}
+	routeModeNext := []models.SalesOrderLine{{ID: lineID, LineNo: 1, ProductID: "product-1", ProductionRouteMode: "DEFAULT"}}
+	require.NoError(t, validateSalesOrderLinesAgainstProductionReferencesTx(database, "order-1", routeModePrevious, routeModeNext))
 	require.NoError(t, database.Exec(`UPDATE production_route_families SET deleted_at = CURRENT_TIMESTAMP WHERE sales_order_line_id = ?`, lineID).Error)
 	err = validateSalesOrderLinesAgainstProductionReferencesTx(database, "order-1", previous, nil)
 	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByProductionRouteOrPlan)
@@ -41,6 +44,10 @@ func TestSalesOrderLineProductionReferencesBlockDeletionAndProductReplacement(t 
 		[]models.SalesOrderLine{{ID: planLineID, LineNo: 2, ProductID: "product-1"}},
 		nil,
 	)
+	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByProductionRouteOrPlan)
+	planModePrevious := []models.SalesOrderLine{{ID: planLineID, LineNo: 2, ProductID: "product-1", ProductionRouteMode: "CUSTOM"}}
+	planModeNext := []models.SalesOrderLine{{ID: planLineID, LineNo: 2, ProductID: "product-1", ProductionRouteMode: "DEFAULT"}}
+	err = validateSalesOrderLinesAgainstProductionReferencesTx(database, "order-2", planModePrevious, planModeNext)
 	require.ErrorIs(t, err, ErrSalesOrderLineProtectedByProductionRouteOrPlan)
 	require.NoError(t, database.Exec(`UPDATE production_plans SET deleted_at = CURRENT_TIMESTAMP WHERE id = 'plan-42'`).Error)
 	err = validateSalesOrderLinesAgainstProductionReferencesTx(

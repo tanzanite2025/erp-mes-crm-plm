@@ -73,7 +73,7 @@ Go 的 global_business_search_snapshot_coordinator.go 统一管理同步，替�
 
 ## 部署
 
-本次同时修改 Go 与 Rust 的内部 RPC 协议，需要配套构建并发布两者（先停止旧 Go 写入，再替换 Rust 和 Go），随后等待完整快照发布日志。旧 Go 的逐条 /v1/index 推送和 GET /v1/search 协议已移除；不支持混用新旧实例。无需新增 PostgreSQL 文本索引或手工执行 pg_trgm 迁移。
+Go 与 Rust 使用同一版内部 RPC 协议，构建和发布时需保持版本一致；不支持混合版本。发布后等待完整快照完成日志。无需新增 PostgreSQL 文本索引或手工执行 pg_trgm 迁移。
 
 开发可用 SEARCH_ENGINE_PORT 为测试 Rust 进程设置独立端口；Go 继续通过 SEARCH_ENGINE_URL 配置侧车。生产侧车端口仅应暴露给 Go 或受控本机网络。
 

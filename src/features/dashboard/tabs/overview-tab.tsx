@@ -29,10 +29,8 @@ import {
 import { KpiGrid } from '@/features/dashboard/components/kpi-grid'
 import { Overview } from '@/features/dashboard/components/overview'
 import { useTraceStats } from '@/features/dashboard/hooks/use-trace-stats'
-import { useVisibleDashboardSegments } from '@/features/dashboard/hooks/use-visible-dashboard-segments'
-import { type ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
+import { useVisibleDashboardProductionLines } from '@/features/dashboard/hooks/use-visible-dashboard-production-lines'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -44,9 +42,9 @@ function getErrorMessage(error: unknown): string {
 
 export function DashboardOverviewTab() {
   const { t } = useLanguage()
-  const { level1Name } = useProductionTopologyLabels()
+  const lineName = t('productionArchitecture.layout.tabs.productionLines')
   const [isConfigOpen, setIsConfigOpen] = useState(false)
-  const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<
+  const [draftVisibleLineIds, setDraftVisibleLineIds] = useState<
     string[] | null
   >(null)
   const {
@@ -66,47 +64,37 @@ export function DashboardOverviewTab() {
     { name: '合格品 (WIP)', value: wipVal || 1, color: '#10b981' },
     { name: '报废品 (SCRAP)', value: scrapVal, color: '#ef4444' },
   ]
-  const segments = useMemo<(Segment & { lineName: string })[]>(
-    () =>
-      lines.flatMap((line) =>
-        (line.segments || []).map((segment) => ({
-          ...segment,
-          lineName: line.name,
-        }))
-      ),
+  const lineIds = useMemo(
+    () => lines.map((line) => line.id),
     [lines]
   )
-  const segmentIds = useMemo(
-    () => segments.map((segment) => segment.id),
-    [segments]
-  )
 
-  const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } =
-    useVisibleDashboardSegments(segmentIds)
-  const selectedSegmentIds = draftVisibleSegmentIds ?? savedVisibleSegmentIds
+  const { visibleLineIds: savedVisibleLineIds, saveVisibleLineIds } =
+    useVisibleDashboardProductionLines(lineIds)
+  const selectedLineIds = draftVisibleLineIds ?? savedVisibleLineIds
 
   const handleConfigOpenChange = (open: boolean) => {
     setIsConfigOpen(open)
     if (!open) {
-      setDraftVisibleSegmentIds(null)
+      setDraftVisibleLineIds(null)
     }
   }
 
   const handleOpenConfig = () => {
-    setDraftVisibleSegmentIds([...savedVisibleSegmentIds])
+    setDraftVisibleLineIds([...savedVisibleLineIds])
     setIsConfigOpen(true)
   }
 
   const handleSaveConfig = async () => {
-    await saveVisibleSegmentIds(selectedSegmentIds)
-    setDraftVisibleSegmentIds(null)
+    await saveVisibleLineIds(selectedLineIds)
+    setDraftVisibleLineIds(null)
     setIsConfigOpen(false)
   }
 
-  const chartData = segments
-    .filter((segment) => savedVisibleSegmentIds.includes(segment.id))
-    .map((segment) => ({
-      name: segment.name,
+  const chartData = lines
+    .filter((line) => savedVisibleLineIds.includes(line.id))
+    .map((line) => ({
+      name: line.name,
       total: 0,
     }))
 
@@ -160,9 +148,7 @@ export function DashboardOverviewTab() {
                   {t('dashboard.page.throughput.title')}
                 </CardTitle>
                 <CardDescription className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
-                  {t('dashboard.page.throughput.description', {
-                    levelName: level1Name,
-                  })}
+                  {t('dashboard.page.throughput.description', { lineName })}
                 </CardDescription>
               </div>
               <Button
@@ -175,7 +161,7 @@ export function DashboardOverviewTab() {
               </Button>
             </CardHeader>
             <CardContent className='z-10 flex-1 bg-background/30 p-0 pt-4'>
-              <Overview data={chartData} levelName={level1Name} />
+              <Overview data={chartData} lineName={lineName} />
             </CardContent>
           </Card>
 
@@ -264,51 +250,44 @@ export function DashboardOverviewTab() {
           <div className='relative space-y-6 p-8'>
             <DialogHeader className='space-y-1.5 text-left'>
               <DialogTitle className='text-lg font-black tracking-tighter text-slate-800 uppercase'>
-                {t('dashboard.page.segmentDialog.title', {
-                  levelName: level1Name,
-                })}
+                {t('dashboard.page.lineDialog.title', { lineName })}
               </DialogTitle>
               <DialogDescription className='text-[9px] font-black tracking-widest uppercase opacity-60'>
-                {t('dashboard.page.segmentDialog.description', {
-                  levelName: level1Name,
-                })}
+                {t('dashboard.page.lineDialog.description', { lineName })}
               </DialogDescription>
             </DialogHeader>
 
             <div className='max-h-[40vh] overflow-y-auto px-1'>
               <div className='grid grid-cols-2 gap-3 py-2'>
-                {segments.map((segment) => (
+                {lines.map((line) => (
                   <div
-                    key={segment.id}
+                    key={line.id}
                     className={`group flex cursor-pointer items-center space-x-3 rounded-2xl border-2 border-dashed p-3 transition-all ${
-                      selectedSegmentIds.includes(segment.id)
+                      selectedLineIds.includes(line.id)
                         ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/10'
                         : 'border-muted/40 bg-muted/5 hover:border-muted/80'
                     }`}
                     onClick={() => {
-                      const newIds = selectedSegmentIds.includes(segment.id)
-                        ? selectedSegmentIds.filter((id) => id !== segment.id)
-                        : [...selectedSegmentIds, segment.id]
-                      setDraftVisibleSegmentIds(newIds)
+                      const newIds = selectedLineIds.includes(line.id)
+                        ? selectedLineIds.filter((id) => id !== line.id)
+                        : [...selectedLineIds, line.id]
+                      setDraftVisibleLineIds(newIds)
                     }}
                   >
                     <div
                       className={`flex size-5 items-center justify-center rounded-lg border-2 transition-all ${
-                        selectedSegmentIds.includes(segment.id)
+                        selectedLineIds.includes(line.id)
                           ? 'border-primary bg-primary'
                           : 'border-muted-foreground/20 bg-transparent group-hover:border-muted-foreground/40'
                       }`}
                     >
-                      {selectedSegmentIds.includes(segment.id) && (
+                      {selectedLineIds.includes(line.id) && (
                         <Check className='size-3 text-white' />
                       )}
                     </div>
                     <div className='flex min-w-0 flex-col'>
                       <span className='truncate text-[11px] leading-none font-black tracking-tighter uppercase'>
-                        {segment.name}
-                      </span>
-                      <span className='mt-1 font-maple-ui text-[8px] tracking-widest text-muted-foreground/50 uppercase'>
-                        {segment.lineName}
+                        {line.name}
                       </span>
                     </div>
                   </div>

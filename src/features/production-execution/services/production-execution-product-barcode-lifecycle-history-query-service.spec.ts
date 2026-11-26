@@ -15,8 +15,8 @@ const productionExecutionLifecyclePage = {
     productName: 'Test product',
     routeId: 'route-1',
     routeStepId: 'step-1',
-    currentBranchOperationId: 'operation-1',
-    currentBranchOperation: {
+    currentProcessStepId: 'operation-1',
+    currentProcessStep: {
       id: 'operation-1',
       code: 'CUT',
       name: 'Cutting',
@@ -115,8 +115,8 @@ describe('production execution product barcode lifecycle history query', () => {
           stateId: 'state-1',
           productBarcode: 'OTHER',
           eventType: 'START',
-          fromBranchOperationId: '',
-          toBranchOperationId: 'operation-1',
+          fromProcessStepId: '',
+          toProcessStepId: 'operation-1',
           routeId: 'route-1',
           routeStepId: 'step-1',
           operator: 'operator',

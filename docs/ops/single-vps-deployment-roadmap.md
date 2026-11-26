@@ -26,18 +26,18 @@ ERP 的首个生产实现是：
 
 ## 2. 当前状态与剩余风险
 
-### Phase A：ERP 已部署，deploy 账号验证待完成
+### Phase A：ERP 与 SSH 运维账号已验证
 
-1. `root` SSH 公钥登录和首次接入已验证；`deploy` 用户创建、授权及 Docker 权限验证仍待完成。
+1. `root` 与 `deploy` 的 SSH 公钥登录均已验证；`deploy` 已加入 Docker 组并可运行 Compose，未授予 sudo。工作站使用非标准命名私钥时必须在 SSH 配置中显式设置 `IdentityFile` 和 `IdentitiesOnly yes`。
 2. GHCR Package 已完成首次构建和公开拉取验证。
 3. 网关和 ERP Project 已在 Hostinger 上完成健康检查。
 4. Cloudflare 已切换到 `2.25.85.201` 并恢复 Proxied。
 
-### P1：数据恢复能力尚未验证
+### P1：异地备份尚未完成
 
-1. PostgreSQL 只有持久卷设计，尚未建立异机逻辑备份。
-2. 上传文件使用 VPS 持久卷，尚未建立异地副本。
-3. Hostinger 当前没有可用恢复点，Snapshot 计划仍需确认。
+1. PostgreSQL、上传文件及审计归档已有 VPS 本地每日备份，并已完成隔离恢复演练。
+2. Cloudflare R2/restic 异地同步、仓库初始化和异地恢复演练仍待完成；本机备份不能替代异地副本。
+3. Hostinger Snapshot 作为整机灾备的可用恢复点仍需确认。
 
 ### P2：单机资源需要预算
 

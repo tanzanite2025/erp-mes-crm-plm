@@ -10,14 +10,15 @@ import (
 )
 
 type ProductionRouteBOMBranchDTO struct {
-	ProductID            string                            `json:"productId"`
-	ProductSKU           string                            `json:"productSKU"`
-	ProductName          string                            `json:"productName"`
-	BOMOwnerType         string                            `json:"bomOwnerType"`
-	BOMOwnerCustomerID   string                            `json:"bomOwnerCustomerId"`
-	BOMOwnerCustomerName string                            `json:"bomOwnerCustomerName"`
-	BOMVersionLevel      string                            `json:"bomVersionLevel"`
-	BranchOperations     []ProductionBOMBranchOperationDTO `gorm:"-" json:"branchOperations"`
+	ProductID            string           `json:"productId"`
+	ProductSKU           string           `json:"productSKU"`
+	ProductName          string           `json:"productName"`
+	ProductTypeName      string           `json:"productTypeName,omitempty"`
+	BOMOwnerType         string           `json:"bomOwnerType"`
+	BOMOwnerCustomerID   string           `json:"bomOwnerCustomerId"`
+	BOMOwnerCustomerName string           `json:"bomOwnerCustomerName"`
+	BOMVersionLevel      string           `json:"bomVersionLevel"`
+	Processes            []ProcessStepDTO `gorm:"-" json:"processes"`
 }
 
 type ProductionRouteBOMBranchesResponse struct {
@@ -35,10 +36,6 @@ func ListProductionRouteBOMBranches() ([]ProductionRouteBOMBranchDTO, error) {
 	return defaultProductionService.ListProductionRouteBOMBranches()
 }
 
-func ListProductionLineBOMBranches() ([]ProductionRouteBOMBranchDTO, error) {
-	return defaultProductionService.ListProductionRouteBOMBranches()
-}
-
 func (s *ProductionService) ListProductionRouteBOMBranches() ([]ProductionRouteBOMBranchDTO, error) {
 	var branches []ProductionRouteBOMBranchDTO
 	err := queryCurrentProductionRouteBOMBranches(s.txManager.DB()).
@@ -47,6 +44,9 @@ func (s *ProductionService) ListProductionRouteBOMBranches() ([]ProductionRouteB
 		Scan(&branches).Error
 	if err != nil || len(branches) == 0 {
 		return branches, err
+	}
+	if err := attachProductTypeNamesToProductionRouteBOMBranches(s.txManager.DB(), branches); err != nil {
+		return nil, err
 	}
 
 	productIDs := make([]string, 0, len(branches))
@@ -59,23 +59,40 @@ func (s *ProductionService) ListProductionRouteBOMBranches() ([]ProductionRouteB
 		productIDs = append(productIDs, branch.ProductID)
 	}
 
-	var operations []models.ProductionBOMBranchOperation
+	var associations []models.ProductionMBOMBranchProcessAssociation
 	if err := s.txManager.DB().Where("product_id IN ?", productIDs).
 		Order("sort_order ASC, created_at ASC, id ASC").
-		Find(&operations).Error; err != nil {
+		Find(&associations).Error; err != nil {
 		return nil, err
 	}
-	if err := filterProductionBOMBranchOperationsToLibrarySelections(s.txManager.DB(), &operations); err != nil {
-		return nil, err
+	processStepIDs := make([]string, 0, len(associations))
+	for _, association := range associations {
+		processStepIDs = append(processStepIDs, association.ProcessStepID)
 	}
-
-	operationsByBranch := make(map[productionRouteBOMBranchIdentity][]ProductionBOMBranchOperationDTO)
-	for _, operation := range operations {
-		identity := productionBOMBranchOperationIdentity(operation)
-		operationsByBranch[identity] = append(
-			operationsByBranch[identity],
-			mapProductionBOMBranchOperationToDTO(operation),
-		)
+	var processSteps []models.ProcessStep
+	if len(processStepIDs) > 0 {
+		if err := s.txManager.DB().Where("id IN ?", processStepIDs).Find(&processSteps).Error; err != nil {
+			return nil, err
+		}
+	}
+	processStepsByID := make(map[string]models.ProcessStep, len(processSteps))
+	for _, processStep := range processSteps {
+		processStepsByID[processStep.ID] = processStep
+	}
+	processesByBranch := make(map[productionRouteBOMBranchIdentity][]ProcessStepDTO)
+	for _, association := range associations {
+		processStep, exists := processStepsByID[association.ProcessStepID]
+		if !exists {
+			return nil, fmt.Errorf("MBOM branch process association references a missing process step")
+		}
+		processStep.SortOrder = association.SortOrder
+		identity := productionRouteBOMBranchIdentity{
+			ProductID:          strings.TrimSpace(association.ProductID),
+			BOMOwnerType:       strings.ToUpper(strings.TrimSpace(association.BOMOwnerType)),
+			BOMOwnerCustomerID: strings.TrimSpace(association.BOMOwnerCustomerID),
+			BOMVersionLevel:    strings.TrimSpace(association.BOMVersionLevel),
+		}
+		processesByBranch[identity] = append(processesByBranch[identity], mapProcessStepToDTO(processStep))
 	}
 	for index := range branches {
 		identity := productionRouteBOMBranchIdentity{
@@ -84,16 +101,43 @@ func (s *ProductionService) ListProductionRouteBOMBranches() ([]ProductionRouteB
 			BOMOwnerCustomerID: strings.TrimSpace(branches[index].BOMOwnerCustomerID),
 			BOMVersionLevel:    strings.TrimSpace(branches[index].BOMVersionLevel),
 		}
-		branches[index].BranchOperations = append(
-			[]ProductionBOMBranchOperationDTO{},
-			operationsByBranch[identity]...,
+		branches[index].Processes = append(
+			[]ProcessStepDTO{},
+			processesByBranch[identity]...,
 		)
 	}
 	return branches, nil
 }
 
-func (s *ProductionService) ListProductionLineBOMBranches() ([]ProductionRouteBOMBranchDTO, error) {
-	return s.ListProductionRouteBOMBranches()
+func attachProductTypeNamesToProductionRouteBOMBranches(database *gorm.DB, branches []ProductionRouteBOMBranchDTO) error {
+	if database == nil || !database.Migrator().HasTable(&models.ProductType{}) {
+		return nil
+	}
+
+	productIDs := make([]string, 0, len(branches))
+	for _, branch := range branches {
+		productIDs = append(productIDs, branch.ProductID)
+	}
+	type productTypeNameRow struct {
+		ProductID       string `gorm:"column:product_id"`
+		ProductTypeName string `gorm:"column:product_type_name"`
+	}
+	var productTypeNames []productTypeNameRow
+	if err := database.Table("products AS p").
+		Select("p.id AS product_id, COALESCE(pt.name, '') AS product_type_name").
+		Joins("LEFT JOIN product_types pt ON pt.id = p.type_id").
+		Where("p.id IN ?", productIDs).
+		Scan(&productTypeNames).Error; err != nil {
+		return fmt.Errorf("failed to load product category names for MBOM branches: %w", err)
+	}
+	nameByProductID := make(map[string]string, len(productTypeNames))
+	for _, row := range productTypeNames {
+		nameByProductID[row.ProductID] = strings.TrimSpace(row.ProductTypeName)
+	}
+	for index := range branches {
+		branches[index].ProductTypeName = nameByProductID[branches[index].ProductID]
+	}
+	return nil
 }
 
 func validateProductionRouteBOMBranchIdentity(route models.ProductionRoute) error {

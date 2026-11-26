@@ -21,6 +21,7 @@ import { type SalesOrder } from '../data/schema'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
 import { useSalesOrderSave } from '../hooks/use-sales-order-save'
 import { isSalesOrderSnapshotOnly } from '../utils/sales-order-actions'
+import { SalesOrderLineProductionBindingEditor } from './sales-order-line-production-binding-editor'
 
 const logger = createLogger('SalesOrderActionDialog')
 
@@ -200,6 +201,11 @@ export function SalesOrderActionDialog({
                 onRemoveLine={handleRemoveLine}
                 onLineChange={updateLine}
                 readOnly={readOnlySnapshot}
+              />
+
+              <SalesOrderLineProductionBindingEditor
+                lines={formData.lines || []}
+                onLineChange={updateLine}
               />
 
               <DocumentNotesSection

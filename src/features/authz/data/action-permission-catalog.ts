@@ -195,6 +195,8 @@ const systemActions: LegacyActionPermissionEntry[] = [
       'DELETE /knowledge-base/entries/:id',
       'POST /enterprise/config',
       'POST /enterprise/config/logo',
+      'PUT /approvals/policies/:businessType',
+      'POST /production/mbom-branch-processes/selection',
       'PATCH /quality/standards/:id',
       'POST /quality/inspection-stages',
       'PUT /quality/inspection-stages/:id',
@@ -670,7 +672,7 @@ const engineeringActions: LegacyActionPermissionEntry[] = [
     desc: '允许推广和发布工程BOM。',
     category: 'action',
     parentId: 'menu_engineering',
-    routeBindings: ['POST /engineering/bom/:id/promote'],
+    routeBindings: ['POST /engineering/bom/:id/promote', 'POST /engineering/bom/:id/revise'],
   },
 ]
 
@@ -837,8 +839,8 @@ const productionMaterialIssuanceActions: LegacyActionPermissionEntry[] = [
 const productionActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_production_line_update',
-    label: '生产：更新产线拓扑',
-    desc: '允许更新产线拓扑快照。',
+    label: '生产：维护产线资料',
+    desc: '允许更新独立产线主数据。',
     category: 'action',
     parentId: 'menu_prod_config',
     routeBindings: ['PATCH /production/lines/:id'],
@@ -849,7 +851,14 @@ const productionActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建、更新和删除生产路线及其步骤。',
     category: 'action',
     parentId: 'menu_prod_config',
-    routeBindings: ['POST /production/routes', 'DELETE /production/routes/:id'],
+    routeBindings: [
+      'POST /production/routes',
+      'DELETE /production/routes/:id',
+      'PATCH /production/routes/sales-order-lines/:id/default',
+      'POST /production/work-locations',
+      'POST /production/routes/:id/revisions',
+      'POST /production/routes/:id/publish',
+    ],
   },
   {
     id: 'action_production_plan_manage',
@@ -896,6 +905,7 @@ const productionActions: LegacyActionPermissionEntry[] = [
       'DELETE /production/outsourcing/orders/:id',
       'POST /production/outsourcing/orders/:id/release',
       'POST /production/outsourcing/orders/:id/cancel',
+      'PUT /production/outsourcing/order-lines/:lineId/registered-barcodes',
     ],
   },
   {
@@ -907,6 +917,7 @@ const productionActions: LegacyActionPermissionEntry[] = [
     routeBindings: [
       'POST /production/outsourcing/order-lines/:lineId/send',
       'POST /production/outsourcing/order-lines/:lineId/return',
+      'PUT /production/outsourcing/order-lines/:lineId/registered-barcodes',
     ],
   },
   {

@@ -14,6 +14,7 @@ import { apiFetch } from '@/lib/api-client'
 import { LanguageProvider } from '@/context/language-provider'
 import { createProductionMaterialIssuanceReviewedSourceAndFrozenDocumentTestFixture } from '../testing/production-material-issuance-reviewed-source-and-frozen-document-test-fixtures'
 import { createProductionMaterialIssuanceWarehouseReviewBatchAndMovementTestFixture } from '../testing/production-material-issuance-warehouse-review-batch-and-movement-test-fixtures'
+import type { ProductionMaterialIssuanceSourcePreparation } from '../contracts/production-material-issuance-source-selection-and-preparation-api-dto'
 import { ProductionMaterialIssuanceFrozenDocumentTraceability } from './production-material-issuance-frozen-document-traceability'
 import { ProductionMaterialIssuanceStartWorkflowLauncher } from './production-material-issuance-start-workflow-launcher'
 
@@ -50,7 +51,7 @@ vi.mock('@tanstack/react-router', () => ({
 const clients: QueryClient[] = []
 const fixture =
   createProductionMaterialIssuanceReviewedSourceAndFrozenDocumentTestFixture()
-function createProductionMaterialIssuanceSourcePreparationForStartWorkflowTest() {
+function createProductionMaterialIssuanceSourcePreparationForStartWorkflowTest(): ProductionMaterialIssuanceSourcePreparation {
   return {
     sourceLines: [
       {
@@ -289,7 +290,7 @@ describe('production issuance start workflow', () => {
     ).not.toBeInTheDocument()
     expect(screen.queryByText('已核对 1 条来源。')).not.toBeInTheDocument()
   })
-  it('invalidates a reviewed basis immediately when the selected BOM changes', async () => {
+  it('blocks duplicate effective MBOMs instead of allowing a manual revision choice', async () => {
     const alternativeBom = {
       ...fixture.basis.bom,
       id: '12345678-1234-4234-8234-123456789abc',
@@ -301,7 +302,16 @@ describe('production issuance start workflow', () => {
       if (endpoint.endsWith('/source-preparation')) {
         const prepared =
           createProductionMaterialIssuanceSourcePreparationForStartWorkflowTest()
+        prepared.sourceLines[0].bom = null
         prepared.sourceLines[0].bomCandidates.push(alternativeBom)
+        prepared.sourceLines[0].issueCode = 'DUPLICATE_EFFECTIVE_MBOM'
+        prepared.isReady = false
+        prepared.issues = [
+          {
+            salesOrderLineId: fixture.basis.salesOrderLineId,
+            code: 'DUPLICATE_EFFECTIVE_MBOM',
+          },
+        ]
         return prepared
       }
       return fixture.review
@@ -315,28 +325,17 @@ describe('production issuance start workflow', () => {
     fireEvent.click(
       screen.getByRole('button', { name: '2. 核对 BOM 与领料前提' })
     )
-    fireEvent.click(
-      await screen.findByRole('button', { name: '核对生产领料依据' })
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        '/mrp/production-material-issuance/source-preparation',
+        expect.objectContaining({ method: 'POST' })
+      )
     )
-    await screen.findByRole('button', { name: '确认下发领料单' })
-    fireEvent.click(screen.getByText('查看 1 条订单行的配方依据'))
-    fireEvent.change(
-      screen.getByLabelText('SO-HTTP / 1 · R50', { selector: 'select' }),
-      {
-        target: { value: alternativeBom.id },
-      }
-    )
-    expect(
-      screen.queryByRole('button', { name: '确认下发领料单' })
-    ).not.toBeInTheDocument()
+    expect(await screen.findAllByText(/属于数据完整性异常/)).toHaveLength(2)
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: '核对生产领料依据' })
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByText(
-        '来源或 BOM 选择已变化，请重新核对前提，再核对正式领料依据。'
-      )
-    ).toBeInTheDocument()
     expect(
       vi
         .mocked(apiFetch)

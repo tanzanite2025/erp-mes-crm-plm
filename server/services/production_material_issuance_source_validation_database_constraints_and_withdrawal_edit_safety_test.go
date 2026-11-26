@@ -26,7 +26,7 @@ func TestProductionMaterialIssuanceInvalidSourcesNeverExpandToAllOrdersOrCreateD
 			case "missing-line":
 				request.Sources[0].SalesOrderLineID = 0
 			case "missing-bom":
-				request.Sources[0].BOMID = ""
+				request.Sources[0].ExpectedBOMID = ""
 			case "missing-fingerprint":
 				request.Sources[0].BasisFingerprint = ""
 			case "invalid-fingerprint":

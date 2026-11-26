@@ -20,7 +20,6 @@ export const IndependentPieceworkPayrollService = {
       body: JSON.stringify({
         ...(request.id ? { id: request.id, version: request.version } : {}),
         name: request.name,
-        unit: request.unit,
         status: request.status,
         remarks: request.remarks,
       }),
@@ -35,10 +34,11 @@ export const IndependentPieceworkPayrollService = {
       body: JSON.stringify({
         calculationDate: request.calculationDate,
         rows: request.rows.map(
-          ({ employeeId, departmentId, payItemId, quantity }) => ({
+          ({ employeeId, departmentId, payItemId, unit, quantity }) => ({
             employeeId,
             departmentId,
             payItemId,
+            unit,
             quantity,
           })
         ),

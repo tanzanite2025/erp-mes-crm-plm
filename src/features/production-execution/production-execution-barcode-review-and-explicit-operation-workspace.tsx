@@ -164,14 +164,14 @@ export function ProductionExecutionBarcodeReviewAndExplicitOperationWorkspace() 
       [...(selectedRoute?.steps ?? [])].sort((a, b) => a.sequence - b.sequence),
     [selectedRoute]
   )
-  const currentBranchOperationMatches = routeSteps.filter(
-    (step) => step.branchOperationId === currentState?.currentBranchOperationId
+  const currentProcessStepMatches = routeSteps.filter(
+    (step) => step.processStepId === currentState?.currentProcessStepId
   )
   const selectedStep =
     routeSteps.find((step) => step.id === currentState?.routeStepId) ||
-    (currentState?.currentBranchOperationId
-      ? currentBranchOperationMatches.length === 1
-        ? currentBranchOperationMatches[0]
+    (currentState?.currentProcessStepId
+      ? currentProcessStepMatches.length === 1
+        ? currentProcessStepMatches[0]
         : undefined
       : action === 'START'
         ? routeSteps[0]

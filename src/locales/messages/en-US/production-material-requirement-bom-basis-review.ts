@@ -3,18 +3,17 @@ export const productionMaterialRequirementBomBasisReview = {
   scope:
     'Stock scope: Production Material Warehouse, excluding active reservations. Groups share one stock pool. Group allocation is an analysis preview and does not reserve or deduct inventory.',
   incomplete:
-    'The requirement basis is incomplete. Select a BOM or resolve the issues below, then analyze again. Printing and export remain unavailable until the full result is ready.',
+    'The requirement basis is incomplete. Correct the MBOM branch or recipe data on the affected order lines, then analyze again. Printing and export remain unavailable until the full result is ready.',
   sources: 'Review recipe bases for {{count}} order lines',
-  chooseBom: 'Select the BOM for this analysis',
   unspecifiedVersion: 'Unspecified performance version',
-  recalculate: 'Analyze with the current selection',
+  recalculate: 'Analyze again',
   issues: {
-    BOM_SELECTION_REQUIRED:
-      'Multiple released manufacturing BOMs apply. Select the intended performance version.',
-    BOM_SELECTION_CHANGED:
-      'The previous BOM no longer applies. Select an applicable recipe or correct the BOM.',
+    DUPLICATE_EFFECTIVE_MBOM:
+      'Multiple currently effective released MBOM records exist in the selected branch. This is a data integrity error. Correct the duplicate publications before analyzing again.',
     MISSING_BOM:
-      'No currently effective released manufacturing BOM matches this customer scope. Maintain the recipe first.',
+      'No currently effective released manufacturing BOM exists in the branch selected on this order line. Maintain that branch recipe first.',
+    MISSING_MBOM_BRANCH:
+      'This order line has no valid MBOM branch. Select its product branch on the sales order first.',
     INVALID_SOURCE_LINE:
       'The source identity, product or finished quantity is invalid. Review the order first.',
     INVALID_MATERIAL:

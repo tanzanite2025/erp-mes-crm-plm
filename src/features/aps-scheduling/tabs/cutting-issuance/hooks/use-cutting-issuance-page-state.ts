@@ -6,7 +6,7 @@ import {
   getProductionBOMBranchIdentityKey,
   type ProductionBOMBranch,
 } from '@/features/production-shared/data/production-bom-branch'
-import { useProductionLineBOMBranchesQuery } from '@/features/production-shared/hooks/use-production-resources'
+import { useProductionRouteBOMBranchesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { CUTTING_ISSUANCE_QUERY_KEYS } from '../constants'
 import {
@@ -39,7 +39,7 @@ export function useCuttingIssuancePageState() {
     queryFn: getCuttingIssuanceTemplates,
   })
 
-  const bomBranchesQuery = useProductionLineBOMBranchesQuery()
+  const bomBranchesQuery = useProductionRouteBOMBranchesQuery()
 
   const executionsQuery = useQuery({
     queryKey: CUTTING_ISSUANCE_QUERY_KEYS.executions,

@@ -4,16 +4,13 @@
 > 文档状态：已更新销售、采购、库存、规则执行和品质标准的入口及审批通知边界。
 > 本文描述当前代码；跨设备收件箱的运行契约见[消息中心长期契约](system-notification-inbox-cross-device-synchronization-and-delivery-contract.md)，本轮统一收件与投递已于2026-10-20部署到生产，验收边界见[生产发布记录](../../quality-standard-approval-transaction-and-notification-delivery-contract.md#2026-10-20-生产发布记录)。
 
-## 1. 重要现状校正
+## 1. 当前事实入口
 
-旧版拓扑中的以下链路已过期，不再作为开发依据：
-
-- 销售认领由浏览器拼接订单行再发送字段 Patch。当前认领、状态推进、取消已有语义事务入口。
-- 销售新建成功 Hook 通过 `NotificationService.dispatch` 作为销售状态通知主入口。当前已存在后端销售状态事件服务，前端变更 Hook 主要负责反馈和查询刷新。
-- 销售、采购建单创建 Workflow 实例，随后由 Workflow 任务推进单据。当前仓库没有这些运行服务；`server/db/db.go` 的 `dropLegacyWorkflowArtifacts` 明确删除旧定义、实例、任务表及单据 `workflow_instance_id` 字段。
-- 浏览器执行正式规则、扫描补发并维护本地消息。当前这些执行器与 Store 已移除，`workflow-core` 保留配置和查询。
-
-真实审批模型为 `server/models/approval.go` 的 `ApprovalRequest`，服务入口为 `server/services/approval_service.go`。品质标准通过业务事务关联当前申请。业务通知、规则日志与真实审批申请分别保存，不能相互替代。
+- 销售认领、状态推进和取消通过销售域语义事务执行；前端负责提交、反馈和查询刷新。
+- 销售状态通知由后端业务事件服务根据已提交的状态变化生成。
+- 审批申请以 `server/models/approval.go` 中的 `ApprovalRequest` 为权威记录，服务入口为 `server/services/approval_service.go`。品质标准通过业务事务关联当前申请。
+- 业务通知、规则执行日志与审批申请分别保存，各自承担收件提醒、执行证据和审批状态职责。
+- 浏览器从服务端读取收件和审批状态；业务事件及通知投递由服务端事务和共用队列处理。
 
 ## 2. 销售域
 

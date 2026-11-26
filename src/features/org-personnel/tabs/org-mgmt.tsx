@@ -4,9 +4,7 @@ import { useState } from 'react'
 import {
   Briefcase,
   Edit,
-  GitCommit,
   Info,
-  LayoutGrid,
   Loader2,
   Plus,
   RefreshCw,
@@ -15,7 +13,6 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { isForbiddenError } from '@/lib/error-status'
-import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,10 +27,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import { OrgActionDialog } from '../components/org-action-dialog'
 import { OrgTree } from '../components/org-tree'
-import { ProductionSelector } from '../components/production-selector'
 import { type OrgNode } from '../data/org-schema'
 import { useOrgMgmt } from '../hooks/use-org-mgmt'
 
@@ -49,14 +44,12 @@ export function OrgMgmt() {
     loadData,
     handleOrgSubmit,
     handleDelete,
-    handleLinkSave,
   } = useOrgMgmt()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add')
   const [organizationCreationParentNode, setOrganizationCreationParentNode] =
     useState<OrgNode | undefined>(undefined)
-  const [selectorOpen, setSelectorOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const retryText = locale === 'zh-CN' ? '重新加载' : 'Retry'
@@ -82,8 +75,6 @@ export function OrgMgmt() {
     if (type === 'department') return '二级部门'
     return '三级生产单元'
   }
-
-  const { level1Name } = useProductionTopologyLabels()
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -266,7 +257,7 @@ export function OrgMgmt() {
                       </p>
                       <p className='text-sm font-black text-slate-700'>
                         {selectedNode.children?.length || 0}{' '}
-                        {t('orgPersonnel.org.connected')}
+                        {t('orgPersonnel.org.unitCountSuffix')}
                       </p>
                     </div>
                   </div>
@@ -342,85 +333,6 @@ export function OrgMgmt() {
                   </CardContent>
                 </Card>
 
-                <Card className='flex flex-col overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
-                  <CardHeader className='flex shrink-0 flex-row items-center justify-between border-b border-dashed border-muted/50 px-6 py-4'>
-                    <CardTitle className='text-sm font-black tracking-tighter uppercase'>
-                      {t('orgPersonnel.org.linkedTitle')} (
-                      {selectedNode.linkedArchitecture?.length || 0})
-                    </CardTitle>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='h-8 rounded-full border border-dashed border-muted-foreground/20 px-4 transition-all hover:bg-background'
-                      onClick={() => setSelectorOpen(true)}
-                    >
-                      {t('orgPersonnel.org.manageLinks')}
-                    </Button>
-                  </CardHeader>
-                  <CardContent className='flex-1 overflow-hidden p-0'>
-                    <ScrollArea className='h-[300px]'>
-                      {selectedNode.linkedArchitecture &&
-                      selectedNode.linkedArchitecture.length > 0 ? (
-                        <div className='divide-y divide-dashed divide-muted/50'>
-                          {selectedNode.linkedArchitecture.map(
-                            (
-                              item: NonNullable<
-                                OrgNode['linkedArchitecture']
-                              >[number]
-                            ) => (
-                              <div
-                                key={item.id}
-                                className='flex items-center justify-between px-6 py-5 transition-colors hover:bg-background'
-                              >
-                                <div className='flex items-center gap-4'>
-                                  <div
-                                    className={cn(
-                                      'flex size-10 items-center justify-center rounded-full border border-dashed border-muted-foreground/10',
-                                      item.type === 'line'
-                                        ? 'bg-blue-50 text-blue-600'
-                                        : 'bg-slate-50 text-slate-600'
-                                    )}
-                                  >
-                                    {item.type === 'line' ? (
-                                      <LayoutGrid className='size-4' />
-                                    ) : (
-                                      <GitCommit className='size-4' />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className='text-sm font-black text-slate-700'>
-                                      {item.name}
-                                    </p>
-                                    <p className='text-[9px] font-black tracking-widest text-muted-foreground/50 uppercase'>
-                                      {item.type === 'line'
-                                        ? t(
-                                            'orgPersonnel.org.types.productionLine'
-                                          )
-                                        : t(
-                                            'orgPersonnel.org.types.workshopLevel',
-                                            { levelName: level1Name }
-                                          )}
-                                    </p>
-                                  </div>
-                                </div>
-                                <Badge className='h-5 rounded-full border-none bg-emerald-500/10 px-2 text-[8px] font-black text-emerald-600 uppercase'>
-                                  {t('orgPersonnel.org.connected')}
-                                </Badge>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      ) : (
-                        <div className='flex h-full flex-col items-center justify-center p-8 text-muted-foreground/20'>
-                          <LayoutGrid className='mb-2 size-8 opacity-20' />
-                          <p className='text-[10px] font-black tracking-widest uppercase'>
-                            {t('orgPersonnel.org.noLinked')}
-                          </p>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
               </div>
             </>
           ) : (
@@ -446,13 +358,6 @@ export function OrgMgmt() {
           dialogMode === 'add' ? organizationCreationParentNode : undefined
         }
         onSubmit={handleOrgSubmit}
-      />
-
-      <ProductionSelector
-        open={selectorOpen}
-        onOpenChange={setSelectorOpen}
-        selectedItems={selectedNode?.linkedArchitecture || []}
-        onSave={handleLinkSave}
       />
 
       <ConfirmDialog

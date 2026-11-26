@@ -24,11 +24,12 @@ export const productionMaterialIssuanceStartWorkflow = {
   prepare: '2. 核对 BOM 与领料前提',
   bomScope:
     '核对全部已选订单行的适用 BOM、成品重量与标准需求。实际数量和库存批次在下发后由仓库填写。',
-  bomIncomplete: '领料前提尚未齐全。请选择适用 BOM 或补齐下方资料后重新核对。',
+  bomIncomplete:
+    '领料前提尚未齐全。请先修复订单行所绑定分支的 MBOM 或补齐下方资料，然后重新核对。',
   preparing: '正在核对 BOM 与前提…',
   prepareFailed: '领料准备未完成，请核对原因后重试。',
   selectionChanged:
-    '来源或 BOM 选择已变化，请重新核对前提，再核对正式领料依据。',
+    '订单行来源或其依据已变化，请重新核对前提，再核对正式领料依据。',
   prerequisitesTitle: '请先补齐以下领料前提',
   prerequisites: {
     MISSING_PRODUCT: '来源产品已不可用，请由产品或订单维护人员核对。',

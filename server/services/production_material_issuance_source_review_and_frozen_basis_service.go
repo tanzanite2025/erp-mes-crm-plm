@@ -23,9 +23,9 @@ func normalizeProductionMaterialIssuanceSourceSelections(selections []Production
 	for index := range normalized {
 		selection := &normalized[index]
 		selection.SalesOrderID = strings.TrimSpace(selection.SalesOrderID)
-		selection.BOMID = strings.TrimSpace(selection.BOMID)
-		if selection.SalesOrderID == "" || selection.BOMID == "" || selection.SalesOrderLineID == 0 || seenLines[selection.SalesOrderLineID] {
-			return nil, fmt.Errorf("%w: 来源身份和 BOM 必须明确且不能重复", ErrProductionMaterialIssuanceInvalidRequest)
+		selection.ExpectedBOMID = strings.TrimSpace(selection.ExpectedBOMID)
+		if selection.SalesOrderID == "" || selection.ExpectedBOMID == "" || selection.SalesOrderLineID == 0 || seenLines[selection.SalesOrderLineID] {
+			return nil, fmt.Errorf("%w: 来源身份和预期 BOM 必须明确且不能重复", ErrProductionMaterialIssuanceInvalidRequest)
 		}
 		seenLines[selection.SalesOrderLineID] = true
 	}
@@ -57,12 +57,14 @@ func reviewProductionMaterialIssuanceSourcesWithinTransaction(tx *gorm.DB, selec
 	}
 	orderIDs, lineIDs := make([]string, 0), make([]uint, 0, len(normalized))
 	seenOrders := make(map[string]bool)
+	expectedBOMIDs := make(map[uint]string, len(normalized))
 	for _, selection := range normalized {
 		if !seenOrders[selection.SalesOrderID] {
 			orderIDs = append(orderIDs, selection.SalesOrderID)
 			seenOrders[selection.SalesOrderID] = true
 		}
 		lineIDs = append(lineIDs, selection.SalesOrderLineID)
+		expectedBOMIDs[selection.SalesOrderLineID] = selection.ExpectedBOMID
 	}
 	orderQuery := applySalesOrderRecordScope(tx.Where("id IN ?", orderIDs)).Order("id ASC")
 	if lockSources {
@@ -101,7 +103,7 @@ func reviewProductionMaterialIssuanceSourcesWithinTransaction(tx *gorm.DB, selec
 			linesByID[line.ID] = line
 		}
 	}
-	keys, choices := make([]string, 0, len(normalized)), make([]ProductionMaterialRequirementBOMSelection, 0, len(normalized))
+	keys := make([]string, 0, len(normalized))
 	for _, selection := range normalized {
 		line, exists := linesByID[selection.SalesOrderLineID]
 		if !exists || line.SalesOrderID != selection.SalesOrderID || line.ProductID == "" || strings.TrimSpace(line.UOM) == "" {
@@ -109,7 +111,6 @@ func reviewProductionMaterialIssuanceSourcesWithinTransaction(tx *gorm.DB, selec
 		}
 		// These transient keys are derived only after locating the real line ID.
 		keys = append(keys, fmt.Sprintf("%s-%d", ordersByID[line.SalesOrderID].OrderNo, line.LineNo))
-		choices = append(choices, ProductionMaterialRequirementBOMSelection{SalesOrderID: line.SalesOrderID, SalesOrderLineID: line.ID, BOMID: selection.BOMID})
 		if !seenProducts[line.ProductID] {
 			productIDs = append(productIDs, line.ProductID)
 			seenProducts[line.ProductID] = true
@@ -171,7 +172,7 @@ func reviewProductionMaterialIssuanceSourcesWithinTransaction(tx *gorm.DB, selec
 	if err := tx.Where("category = ?", "versionLevel").Find(&options).Error; err != nil {
 		return nil, err
 	}
-	expansion, err := ExpandProductionMaterialRequirements(ProductionMaterialRequirementExpansionInput{Orders: orders, BOMs: boms, Materials: materials, Products: products, SelectedKeys: keys, BOMSelections: choices, PerformanceVersionOptions: options, AsOf: asOf})
+	expansion, err := ExpandProductionMaterialRequirements(ProductionMaterialRequirementExpansionInput{Orders: orders, BOMs: boms, Materials: materials, Products: products, SelectedKeys: keys, PerformanceVersionOptions: options, AsOf: asOf})
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +190,9 @@ func reviewProductionMaterialIssuanceSourcesWithinTransaction(tx *gorm.DB, selec
 	for _, source := range expansion.SourceLines {
 		if source.BOM == nil || len(productionMaterialIssuanceSourcePrerequisiteIssueCodes(source, linesByID[source.SalesOrderLineID].UOM)) > 0 {
 			return nil, fmt.Errorf("%w: 来源版本或成品重量不完整", ErrProductionMaterialIssuanceBasisChanged)
+		}
+		if source.BOM.ID != expectedBOMIDs[source.SalesOrderLineID] {
+			return nil, fmt.Errorf("%w: 当前唯一有效 MBOM 已变化，请重新核对", ErrProductionMaterialIssuanceBasisChanged)
 		}
 		basis := ProductionMaterialIssuanceReviewedSourceBasis{SalesOrderID: source.SalesOrderID, SalesOrderLineID: source.SalesOrderLineID, OrderVersion: source.OrderVersion,
 			OrderNo: source.OrderNo, LineNo: source.LineNo, CustomerID: source.CustomerID, CustomerName: source.CustomerName, ProductID: source.ProductID, ProductName: source.ProductName,

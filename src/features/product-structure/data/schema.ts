@@ -74,6 +74,8 @@ export const bomSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   product: productSchema.optional(),
   sourceEbomId: z.string().nullable().optional(),
+  productionLineId: z.string().nullable().optional(),
+  productionLineName: z.string().optional(),
   bomVersion: z
     .string()
     .trim()

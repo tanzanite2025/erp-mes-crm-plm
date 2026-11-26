@@ -55,6 +55,8 @@ export function createEmptyBOMFormValue(
     bomNo: '',
     bomType: 'EBOM',
     productId: '',
+    productionLineId: '',
+    productionLineName: '',
     bomVersion: normalizeEngineeringBomVersion('V1.0'),
     revisionNo: normalizeEngineeringRevisionNo('R1'),
     changeType: normalizeEngineeringBomChangeType('MANUAL'),

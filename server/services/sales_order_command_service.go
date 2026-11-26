@@ -258,13 +258,17 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 			return err
 		}
 		preserveSalesOrderLineExecutionFactsByStableIdentity(nil, input.Lines)
-		for _, line := range input.Lines {
+		for index := range input.Lines {
+			line := &input.Lines[index]
 			var product models.Product
 			if err := tx.Where("id = ?", line.ProductID).First(&product).Error; err != nil {
 				var material models.Material
 				if errM := tx.Where("id = ?", line.ProductID).First(&material).Error; errM != nil {
 					return errors.New("[CRITICAL_DATA_INTEGRITY] 订单保存失败：明细行物料 ID " + line.ProductID + " 不存在")
 				}
+			}
+			if err := normalizeAndValidateSalesOrderLineProductionBindingTx(tx, line); err != nil {
+				return err
 			}
 		}
 

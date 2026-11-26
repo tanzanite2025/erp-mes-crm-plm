@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -44,7 +45,7 @@ func createIsolatedBOMReleaseAndManufacturingDerivationPostgresFixture(t *testin
 	})
 	require.NoError(t, err)
 	require.NoError(t, database.AutoMigrate(
-		&models.BOM{}, &models.BOMItem{}, &models.Material{}, &models.BOMVersionSnapshot{}, &models.AuditLog{},
+		&models.ProductionLine{}, &models.BOM{}, &models.BOMItem{}, &models.Material{}, &models.BOMVersionSnapshot{}, &models.AuditLog{},
 		&models.BusinessEventSource{}, &models.NotificationRule{}, &models.RuleExecutionLog{},
 		&models.SystemNotificationInboxEntry{}, &models.WorkflowNotificationOutboxEntry{},
 	))
@@ -57,9 +58,11 @@ func createIsolatedBOMReleaseAndManufacturingDerivationPostgresFixture(t *testin
 	}).Error)
 	material := models.Material{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "CARBON", Name: "Carbon", Status: "Active"}
 	require.NoError(t, database.Create(&material).Error)
+	productionLine := models.ProductionLine{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "BOM-TEST-LINE", Name: "BOM test line", IsActive: true}
+	require.NoError(t, database.Create(&productionLine).Error)
 	bom := models.BOM{
 		BaseModel: models.BaseModel{ID: uuid.NewString()}, BOMNo: "BOM-RELEASE-SOURCE", BOMType: models.BOMTypeEBOM,
-		ProductID: productID, VersionText: "V1.0", Status: models.BOMStatusApproved, IsLocked: true, Version: 4,
+		ProductID: productID, ProductionLineID: &productionLine.ID, VersionText: "V1.0", Status: models.BOMStatusApproved, IsLocked: true, Version: 4,
 		OwnerType: "INTERNAL", MeasuredWeight: 420, MeasuredWeightUnit: "g", Description: "Approved recipe",
 		Items: []models.BOMItem{{ID: uuid.NewString(), Section: "PREPARE", MaterialID: material.ID, Unit: "m2", UnitUsage: 2, StandardUsage: 2.1, WastagePercent: 5}},
 	}
@@ -95,6 +98,9 @@ func TestBOMLockedApprovedReleasePreservesContentAndAllowsManufacturingDerivatio
 				require.False(t, derived.IsLocked)
 				require.NotNil(t, derived.SourceEBOMID)
 				require.Equal(t, source.ID, *derived.SourceEBOMID)
+				require.NotNil(t, derived.ProductionLineID)
+				require.Equal(t, *source.ProductionLineID, *derived.ProductionLineID)
+				require.Equal(t, "BOM test line", derived.ProductionLineName)
 				require.Equal(t, source.MeasuredWeight, derived.MeasuredWeight)
 				require.Equal(t, source.MeasuredWeightUnit, derived.MeasuredWeightUnit)
 				require.Len(t, derived.Items, 1)
@@ -102,6 +108,67 @@ func TestBOMLockedApprovedReleasePreservesContentAndAllowsManufacturingDerivatio
 			}
 		})
 	}
+}
+
+func TestBOMProductionLineSelectionDerivationAndMBOMReadOnlySourceDisplay(t *testing.T) {
+	database, ctx, source := createIsolatedBOMReleaseAndManufacturingDerivationPostgresFixture(t)
+	require.NoError(t, database.AutoMigrate(&models.BOMSection{}))
+	require.NoError(t, database.Create(&models.BOMSection{Code: "PREPARE", Name: "Preparation", Active: true, IsDefault: true}).Error)
+
+	newEBOMInput := buildBOMAtomicSaveAndPublishInputForPostgresVerification(source, false)
+	newEBOMInput.PublishOnSave = false
+	createdEBOM, err := SaveBOM(ctx, newEBOMInput)
+	require.NoError(t, err)
+	require.Equal(t, source.ProductionLineID, createdEBOM.ProductionLineID)
+	require.Equal(t, "BOM test line", createdEBOM.ProductionLineName)
+
+	otherLine := models.ProductionLine{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "BOM-TEST-OTHER", Name: "Other line", IsActive: true}
+	require.NoError(t, database.Create(&otherLine).Error)
+	forgedProductionLineID := otherLine.ID
+	releasedSource, err := PromoteBOMStatus(ctx, source.ID, PromoteBOMStatusInput{Status: models.BOMStatusReleased, ExpectedVersion: &source.Version})
+	require.NoError(t, err)
+	derivedMBOM, err := DeriveMBOMFromEBOM(ctx, releasedSource.ID, DeriveMBOMInput{})
+	require.NoError(t, err)
+	require.Equal(t, source.ProductionLineID, derivedMBOM.ProductionLineID)
+	require.Equal(t, "BOM test line", derivedMBOM.ProductionLineName)
+	updatedMBOM, err := SaveBOM(ctx, SaveBOMInput{
+		ID: derivedMBOM.ID, BOMNo: derivedMBOM.BOMNo, BOMType: models.BOMTypeMBOM, ProductID: source.ProductID,
+		ProductionLineID: &forgedProductionLineID, VersionText: derivedMBOM.BOMVersion, Version: derivedMBOM.Version,
+		OwnerType: derivedMBOM.OwnerType, MeasuredWeight: derivedMBOM.MeasuredWeight, MeasuredWeightUnit: derivedMBOM.MeasuredWeightUnit,
+		Items: derivedMBOM.Items, RelationSidecar: json.RawMessage(`{"kind":"parent_children_protocol","version":"v1","protocolDraft":{"rootChildren":[],"branchNodes":[],"itemNodes":[]}}`),
+	})
+	require.NoError(t, err)
+	require.Equal(t, source.ProductionLineID, updatedMBOM.ProductionLineID)
+	require.Equal(t, "BOM test line", updatedMBOM.ProductionLineName)
+	var persistedMBOM models.BOM
+	require.NoError(t, database.First(&persistedMBOM, "id = ?", derivedMBOM.ID).Error)
+	require.Nil(t, persistedMBOM.ProductionLineID)
+	releasedMBOM, err := PromoteBOMStatus(ctx, derivedMBOM.ID, PromoteBOMStatusInput{
+		Status: models.BOMStatusReleased, ExpectedVersion: &updatedMBOM.Version,
+	})
+	require.NoError(t, err)
+	revisedMBOM, err := ReviseMBOM(ctx, releasedMBOM.ID, ReviseMBOMInput{
+		Reason: "Verify source line remains read-only across MBOM revision", ExpectedVersion: &releasedMBOM.Version,
+	})
+	require.NoError(t, err)
+	require.Equal(t, source.ProductionLineID, revisedMBOM.ProductionLineID)
+	require.Equal(t, "BOM test line", revisedMBOM.ProductionLineName)
+	require.NoError(t, database.First(&persistedMBOM, "id = ?", revisedMBOM.ID).Error)
+	require.Nil(t, persistedMBOM.ProductionLineID)
+
+	_, err = SaveBOM(ctx, SaveBOMInput{
+		ProductID: source.ProductID, BOMType: models.BOMTypeEBOM, BOMNo: "BOM-MISSING-LINE", Items: source.Items,
+		RelationSidecar: json.RawMessage(`{"kind":"parent_children_protocol","version":"v1","protocolDraft":{"rootChildren":[],"branchNodes":[],"itemNodes":[]}}`),
+	})
+	require.ErrorIs(t, err, ErrBOMProductionLineRequired)
+
+	lineID := *source.ProductionLineID
+	require.NoError(t, database.Model(&models.ProductionLine{}).Where("id = ?", lineID).Update("is_active", false).Error)
+	invalidInput := buildBOMAtomicSaveAndPublishInputForPostgresVerification(source, false)
+	invalidInput.BOMNo = "BOM-INACTIVE-LINE"
+	_, err = SaveBOM(ctx, invalidInput)
+	require.ErrorIs(t, err, ErrInvalidBOMProductionLine)
+	require.ErrorIs(t, DeleteProductionLine(lineID, "test", ""), ErrProductionLineReferencedByBOM)
 }
 
 func TestBOMLockedApprovedReleaseRetainsPermissionVersionAndIntegrityChecks(t *testing.T) {

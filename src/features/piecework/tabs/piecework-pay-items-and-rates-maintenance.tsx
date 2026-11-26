@@ -59,7 +59,7 @@ export function PieceworkRules() {
     useState<PieceworkRate | null>(null)
   const filterText = search.toLowerCase()
   const items = (itemsQuery.data || []).filter((item) =>
-    (item.name + ' ' + item.unit).toLowerCase().includes(filterText)
+    item.name.toLowerCase().includes(filterText)
   )
   const rates = (ratesQuery.data || []).filter((rate) =>
     (rate.payItemName + ' ' + rate.unit).toLowerCase().includes(filterText)
@@ -105,7 +105,6 @@ export function PieceworkRules() {
           <PieceworkPayrollQueryTable
             headers={[
               t('piecework.payroll.name'),
-              t('piecework.payroll.unit'),
               t('piecework.payroll.status'),
               t('piecework.payroll.edit'),
             ]}
@@ -116,7 +115,6 @@ export function PieceworkRules() {
             {items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
-                <TableCell>{item.unit}</TableCell>
                 <TableCell>
                   {t(
                     item.status === 'active'
@@ -289,7 +287,6 @@ function PieceworkPayItemMaintenanceDialog({
   const shellClasses = buildPieceworkFinanceActionDialogShellClasses()
   const [data, setData] = useState({
     name: item?.name || '',
-    unit: item?.unit || '',
     status: item?.status || 'active',
     remarks: item?.remarks || '',
   })
@@ -364,24 +361,6 @@ function PieceworkPayItemMaintenanceDialog({
               value={data.name}
               onChange={(event) =>
                 setData({ ...data, name: event.target.value })
-              }
-            />
-          </div>
-          <div className='grid gap-2'>
-            <Label
-              className={pieceworkFinanceFieldLabelClassName}
-              htmlFor='pay-item-unit'
-            >
-              {t('piecework.payroll.unit')}
-            </Label>
-            <Input
-              id='pay-item-unit'
-              className={pieceworkFinanceFieldControlClassName}
-              required
-              maxLength={20}
-              value={data.unit}
-              onChange={(event) =>
-                setData({ ...data, unit: event.target.value })
               }
             />
           </div>

@@ -874,8 +874,7 @@ func migrateOrganizationsAndEmployeeDeptIDsToOrgUnits() {
 				0 AS sort_order,
 				jsonb_strip_nulls(jsonb_build_object(
 					'manager', NULLIF(o.manager, ''),
-					'description', NULLIF(o.description, ''),
-					'linkedArchitecture', o.linked_architecture
+					'description', NULLIF(o.description, '')
 				)) AS metadata
 			FROM organizations o
 			ON CONFLICT (id) DO UPDATE SET
@@ -1510,9 +1509,8 @@ func logLocalDbAuthHint(dsn string, err error) {
 	log.Printf("[DEV_HINT]   powershell -ExecutionPolicy Bypass -File .\\server\\dev-up.ps1 -ResetDb")
 }
 
-// cleanupDeletedProductionTopologySchema removes tables and columns that are
-// no longer part of the fixed L1/L2/L3 production topology.
-func cleanupDeletedProductionTopologySchema() {
+// cleanupRetiredProductionArchitectureSchema removes schema no longer used by production.
+func cleanupRetiredProductionArchitectureSchema() {
 	if DB == nil {
 		return
 	}
@@ -1523,7 +1521,6 @@ func cleanupDeletedProductionTopologySchema() {
 		`DROP TABLE IF EXISTS line_segment_process_mappings CASCADE`,
 		`DROP TABLE IF EXISTS process_step_allowed_positions CASCADE`,
 		`ALTER TABLE IF EXISTS production_route_steps DROP COLUMN IF EXISTS job_category_id`,
-		`ALTER TABLE IF EXISTS line_segments DROP COLUMN IF EXISTS hierarchy_option_id`,
 		`ALTER TABLE IF EXISTS product_barcode_state_events DROP COLUMN IF EXISTS operator_position_id`,
 		`ALTER TABLE IF EXISTS production_operation_executions DROP COLUMN IF EXISTS operator_position_id`,
 	}
@@ -1532,6 +1529,12 @@ func cleanupDeletedProductionTopologySchema() {
 			log.Printf("Failed to clean legacy production topology schema: %v", err)
 			log.Fatal(err)
 		}
+	}
+	if err := retireProductionLineLegacyAssociations(DB); err != nil {
+		log.Fatal("Failed to remove retired production line associations:", err)
+	}
+	if err := dropRetiredProductionTopologyTemplateStorage(DB); err != nil {
+		log.Fatal("Failed to clean retired production topology template storage:", err)
 	}
 }
 
@@ -1551,13 +1554,6 @@ func InitDB(dsn string) {
 	fmt.Println("Migrating database schemas...")
 	failOnDuplicatePackagingRules()
 	migrateAccountPermissionPresetSchemaNames()
-	if err := PrepareProductionBOMBranchOperationExecutionIdentityMigration(DB); err != nil {
-		log.Fatal("Failed to cut over production execution to branch operation identity:", err)
-	}
-	if err := PrepareProductionLineSegmentProductBindingSchemaMigration(DB); err != nil {
-		log.Fatal("Failed to prepare production line segment product bindings:", err)
-	}
-
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.PermissionPreset{},
@@ -1608,12 +1604,9 @@ func InitDB(dsn string) {
 		&models.NumberingRule{},
 		&models.Position{},
 		&models.ProcessStep{},
-		&models.ProductionBOMBranchOperation{},
-		&models.ProductionBOMBranchOperationProcessLibrarySelection{},
+		&models.ProductionMBOMBranchProcessAssociation{},
 		&models.ProductionWorkLocation{},
 		&models.ProductionLine{},
-		&models.ProductionTopologyTemplate{},
-		&models.LineSegment{},
 		&models.ProductionRouteFamily{},
 		&models.ProductionRoute{},
 		&models.ProductionRouteStep{},
@@ -1745,6 +1738,12 @@ func InitDB(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
+	if err := MigrateProductionLineEditAuthorizationConfigIdentity(DB); err != nil {
+		log.Fatal("Failed to migrate production line authorization config:", err)
+	}
+	if err := EnsureProductionMBOMBranchProcessIdentityCutover(DB); err != nil {
+		log.Fatal("Failed to migrate production process identities:", err)
+	}
 	if err := BackfillMoldGroupMasterIdentities(DB); err != nil {
 		log.Fatal("Failed to establish independent mold group references:", err)
 	}
@@ -1763,17 +1762,17 @@ func InitDB(dsn string) {
 	if err := EnsureProductionRouteFamilyRevisionIntegrity(DB); err != nil {
 		log.Fatal("Failed to establish production route revision families:", err)
 	}
-	if err := EnsureProductionBOMBranchOperationProcessLibraryIdentity(DB); err != nil {
-		log.Fatal("Failed to establish production branch operation process library identities:", err)
-	}
 	if err := EnsureIndependentPieceworkPayrollStorageContract(DB); err != nil {
 		log.Fatal("Failed to enforce independent payroll storage contract:", err)
 	}
-	cleanupDeletedProductionTopologySchema()
+	cleanupRetiredProductionArchitectureSchema()
 	dropLegacyPermissionPresetArtifacts()
 	dropLegacyWorkflowArtifacts()
 	dropLegacyProductWeightColumn()
 	migrateOrganizationsAndEmployeeDeptIDsToOrgUnits()
+	if err := retireOrganizationProductionArchitectureReferences(DB); err != nil {
+		log.Fatal("Failed to remove retired organization production links:", err)
+	}
 	dropLegacyOrganizationsTable()
 	dropLegacyEmployeeProductionAnchorColumns()
 	migrateProductOwnershipToBOMs()
@@ -1864,24 +1863,24 @@ func InitDB(dsn string) {
 
 	// 6. 闂傚倸鍊风粈渚€骞夐敍鍕殰婵°倕鍟畷鏌ユ煕瀹€鈧崕鎴犵礊閺嶎厽鐓欓梺顓ㄧ畱閺嬫盯鎮楅崹顐ゅ弨闁哄被鍊栭幈銊╁箛椤戣棄浜炬俊銈呮噹閺勩儵鏌ｅΟ鑲╁笡闁绘挻娲樼换娑㈠幢濡ゅ啰顔囬梺閫炲苯澧紓宥咃工椤?Seed
 	var configCount int64
-	DB.Model(&models.SystemConfig{}).Where("key = ?", "topology_auth_password").Count(&configCount)
+	DB.Model(&models.SystemConfig{}).Where("key = ?", "production_line_edit_auth_password").Count(&configCount)
 	if configCount == 0 {
-		topoPass := os.Getenv("TOPOLOGY_AUTH_PASSWORD")
+		lineEditAuthPassword := os.Getenv("PRODUCTION_LINE_EDIT_AUTH_PASSWORD")
 		ginMode := os.Getenv("GIN_MODE")
-		if topoPass == "" {
+		if lineEditAuthPassword == "" {
 			if ginMode == "release" {
-				log.Fatal("[CRITICAL_SECURITY] TOPOLOGY_AUTH_PASSWORD is required in release mode for production safety.")
+				log.Fatal("[CRITICAL_SECURITY] PRODUCTION_LINE_EDIT_AUTH_PASSWORD is required in release mode for production safety.")
 			} else {
-				topoPass = "622575"
-				fmt.Println("[DEV_SEC_NOTICE] TOPOLOGY_AUTH_PASSWORD not set. Using debug fallback.")
+				lineEditAuthPassword = "local-development-only"
+				fmt.Println("[DEV_SEC_NOTICE] PRODUCTION_LINE_EDIT_AUTH_PASSWORD not set. Using debug fallback.")
 			}
 		}
 
 		config := models.SystemConfig{
-			Key:         "topology_auth_password",
-			Value:       topoPass,
-			Label:       "Topology Auth Password",
-			Description: "Password used by topology-related endpoints. Must be at least 6 characters.",
+			Key:         "production_line_edit_auth_password",
+			Value:       lineEditAuthPassword,
+			Label:       "Production Line Edit Authorization Code",
+			Description: "Password required to edit existing production line master data.",
 		}
 		DB.Create(&config)
 		fmt.Println("Initial system config seeded.")

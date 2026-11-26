@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"strings"
 	"xdfc-server/models"
 
@@ -21,9 +20,6 @@ func normalizeOrganizationModelBeforeSave(model *models.Organization) error {
 		return err
 	}
 	if err := normalizeOptionalOrganizationParentID(model); err != nil {
-		return err
-	}
-	if err := normalizeOrganizationLinkedArchitecture(model); err != nil {
 		return err
 	}
 	return nil
@@ -68,19 +64,5 @@ func normalizeOptionalOrganizationParentID(model *models.Organization) error {
 	}
 	stableParentID := parsedParentID.String()
 	model.ParentID = &stableParentID
-	return nil
-}
-
-func normalizeOrganizationLinkedArchitecture(model *models.Organization) error {
-	trimmed := strings.TrimSpace(string(model.LinkedArchitecture))
-	if trimmed == "" || trimmed == "null" {
-		model.LinkedArchitecture = nil
-		return nil
-	}
-
-	if !json.Valid([]byte(trimmed)) {
-		return ErrOrganizationLinkedArchitectureInvalid
-	}
-	model.LinkedArchitecture = json.RawMessage(trimmed)
 	return nil
 }

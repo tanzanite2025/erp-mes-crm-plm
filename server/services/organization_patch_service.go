@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"strings"
 	"xdfc-server/models"
@@ -14,17 +13,15 @@ import (
 var ErrOrganizationPatchVersionConflict = errors.New("organization patch version conflict")
 
 type PatchOrganizationRequest struct {
-	ID                    string
-	ExpectedVersion       int
-	DeltaKeys             []string
-	Name                  *string
-	ParentID              *string
-	ParentIDSet           bool
-	Manager               *string
-	Description           *string
-	Type                  *string
-	LinkedArchitecture    json.RawMessage
-	LinkedArchitectureSet bool
+	ID              string
+	ExpectedVersion int
+	DeltaKeys       []string
+	Name            *string
+	ParentID        *string
+	ParentIDSet     bool
+	Manager         *string
+	Description     *string
+	Type            *string
 }
 
 func (s *OrganizationService) PatchOrganization(ctx context.Context, input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
@@ -66,10 +63,6 @@ func (s *OrganizationService) PatchOrganization(ctx context.Context, input Patch
 		if input.Type != nil {
 			current.Type = strings.TrimSpace(*input.Type)
 		}
-		if input.LinkedArchitectureSet {
-			current.LinkedArchitecture = append(json.RawMessage(nil), input.LinkedArchitecture...)
-		}
-
 		if err := s.validateOrganizationHierarchyWithDB(tx, &current); err != nil {
 			return err
 		}

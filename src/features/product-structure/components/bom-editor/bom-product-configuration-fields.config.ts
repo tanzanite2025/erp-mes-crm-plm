@@ -6,6 +6,7 @@ type BOMProductConfigurationFieldName = Extract<
   keyof BOM,
   | 'bomNo'
   | 'productId'
+  | 'productionLineId'
   | 'bomType'
   | 'effectiveFrom'
   | 'ownerType'
@@ -15,8 +16,10 @@ type BOMProductConfigurationFieldName = Extract<
 export interface BOMProductConfigurationFieldContext {
   isEdit: boolean
   ownerType: BOM['ownerType']
+  bomType: BOM['bomType']
   t: (key: TranslationKey) => string
   productItems: { label: string; value: string }[]
+  productionLineItems: { label: string; value: string }[]
   ownerTypeItems: { label: string; value: string }[]
   customerItems: { label: string; value: string }[]
 }
@@ -84,6 +87,16 @@ export function getBOMProductConfigurationFields(
         options.t(
           value === 'MBOM' ? 'engineering.dict.MBOM' : 'engineering.dict.EBOM'
         ),
+    },
+    {
+      name: 'productionLineId',
+      label: context.t('engineering.bomArchive.form.productionLine'),
+      type: 'select',
+      placeholder: context.t(
+        'engineering.bomArchive.form.productionLinePlaceholder'
+      ),
+      getItems: (options) => options.productionLineItems,
+      isDisabled: (options) => options.bomType === 'MBOM',
     },
     {
       name: 'effectiveFrom',

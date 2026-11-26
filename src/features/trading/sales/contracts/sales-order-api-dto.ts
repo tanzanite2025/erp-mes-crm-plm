@@ -55,6 +55,10 @@ export const salesOrderLineApiDTOSchema = z
     id: z.number().int().positive().optional(),
     lineNo: z.number().int().positive(),
     productId: z.string().optional(),
+    bomOwnerType: z.string().optional(),
+    bomOwnerCustomerId: z.string().optional(),
+    bomVersionLevel: z.string().optional(),
+    productionRouteMode: z.enum(['DEFAULT', 'CUSTOM']).optional(),
     productModel: z.string(),
     productCode: z.string(),
     specification: z.string(),
@@ -100,6 +104,10 @@ export interface SalesOrderLineApiDTO {
   id?: number
   lineNo: number
   productId?: string
+  bomOwnerType?: string
+  bomOwnerCustomerId?: string
+  bomVersionLevel?: string
+  productionRouteMode?: 'DEFAULT' | 'CUSTOM'
   productModel: string
   productCode: string
   specification: string

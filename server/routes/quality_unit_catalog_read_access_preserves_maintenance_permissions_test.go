@@ -35,6 +35,8 @@ func TestQualityUnitCatalogReadAccessPreservesMaintenancePermissions(t *testing.
 	}{
 		{nil, http.MethodGet, "/basic/units", http.StatusForbidden},
 		{[]string{authz.MenuQuality}, http.MethodGet, "/basic/units", http.StatusOK},
+		{[]string{authz.MenuPiecework}, http.MethodGet, "/basic/units", http.StatusOK},
+		{[]string{authz.MenuPiecework}, http.MethodPost, "/basic/units", http.StatusForbidden},
 		{[]string{authz.MenuQuality}, http.MethodPost, "/basic/units", http.StatusForbidden},
 		{[]string{authz.MenuQuality, authz.PermissionManage}, http.MethodPatch, "/basic/units/pcs", http.StatusForbidden},
 		{[]string{authz.MenuQuality, authz.PermissionManage}, http.MethodDelete, "/basic/units/pcs", http.StatusForbidden},

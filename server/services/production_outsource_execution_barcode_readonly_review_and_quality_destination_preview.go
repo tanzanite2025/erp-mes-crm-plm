@@ -67,7 +67,7 @@ func (s *ProductionOutsourcingService) ReviewProductionOutsourceExecutionBarcode
 	if err != nil {
 		return ProductionOutsourceExecutionBarcodeReview{}, err
 	}
-	if step.RouteID != state.RouteID || step.BranchOperationID != state.CurrentBranchOperationID {
+	if step.RouteID != state.RouteID || step.ProcessStepID != state.CurrentProcessStepID {
 		return ProductionOutsourceExecutionBarcodeReview{}, fmt.Errorf("%w: 产品当前路线步骤与工序不一致", ErrInvalidOutsourceOrder)
 	}
 	available := 1.0
@@ -115,8 +115,8 @@ func (s *ProductionOutsourcingService) ReviewProductionOutsourceExecutionBarcode
 		return ProductionOutsourceExecutionBarcodeReview{}, err
 	}
 	processName := ""
-	if step.BranchOperation != nil {
-		processName = step.BranchOperation.Name
+	if step.ProcessStep != nil {
+		processName = step.ProcessStep.Name
 	}
 	response := ProductionOutsourceExecutionBarcodeReview{LineID: line.ID, ProductBarcode: barcode, ProductName: firstNonEmpty(state.ProductName, line.ProductName), Action: action, CycleNo: cycleNo, InspectionRoundNo: inspectionRoundNo, RouteStepID: state.RouteStepID, ProcessName: processName, Status: state.Status, AvailableQuantity: available, UOM: line.UOM, Destinations: map[string]ProductionOutsourceExecutionDestinationPreview{}}
 	if action == "INSPECT" {
@@ -154,9 +154,9 @@ func previewProductionOutsourceInspectionDestination(database *gorm.DB, order mo
 		return preview, nil
 	}
 	preview.RouteStepID = next.ID
-	preview.ProcessName = next.BranchOperationID
-	if next.BranchOperation != nil {
-		preview.ProcessName = next.BranchOperation.Name
+	preview.ProcessName = next.ProcessStepID
+	if next.ProcessStep != nil {
+		preview.ProcessName = next.ProcessStep.Name
 	}
 	preview.Status = ProductBarcodeStateStatusNotStarted
 	if command.Action == ProductionOperationActionRework {

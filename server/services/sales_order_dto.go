@@ -25,6 +25,10 @@ type SalesOrderLineRequest struct {
 	ID                                    uint                                     `json:"id"`
 	LineNo                                int                                      `json:"lineNo"`
 	ProductID                             string                                   `json:"productId"`
+	BOMOwnerType                          string                                   `json:"bomOwnerType"`
+	BOMOwnerCustomerID                    string                                   `json:"bomOwnerCustomerId"`
+	BOMVersionLevel                       string                                   `json:"bomVersionLevel"`
+	ProductionRouteMode                   string                                   `json:"productionRouteMode"`
 	ProductModel                          string                                   `json:"productModel"`
 	ProductCode                           string                                   `json:"productCode"`
 	Specification                         string                                   `json:"specification"`
@@ -129,6 +133,10 @@ type SalesOrderLineResponse struct {
 	ID                                    uint                                     `json:"id"`
 	LineNo                                int                                      `json:"lineNo"`
 	ProductID                             string                                   `json:"productId"`
+	BOMOwnerType                          string                                   `json:"bomOwnerType"`
+	BOMOwnerCustomerID                    string                                   `json:"bomOwnerCustomerId"`
+	BOMVersionLevel                       string                                   `json:"bomVersionLevel"`
+	ProductionRouteMode                   string                                   `json:"productionRouteMode"`
 	ProductModel                          string                                   `json:"productModel"`
 	ProductCode                           string                                   `json:"productCode"`
 	Specification                         string                                   `json:"specification"`

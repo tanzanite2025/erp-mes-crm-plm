@@ -59,6 +59,7 @@ export function ProductionRouteRevisionHistoryDialog({
               <Button
                 type='button'
                 size='sm'
+                className='rounded-full'
                 onClick={() => onCreateRevision(currentRevision)}
                 disabled={
                   !canManage || isCheckingPermission || isCreatingRevision
@@ -84,7 +85,7 @@ export function ProductionRouteRevisionHistoryDialog({
           <div className='divide-y rounded-md border'>
             {revisions.map((route) => {
               const stepNameById = new Map(
-                route.steps.map((step) => [step.id, step.branchOperationName])
+                route.steps.map((step) => [step.id, step.processName])
               )
               return (
                 <section key={route.id} className='space-y-3 p-4'>
@@ -130,7 +131,7 @@ export function ProductionRouteRevisionHistoryDialog({
                           {step.sequence}
                         </span>
                         <span className='min-w-0 font-semibold break-words'>
-                          {step.branchOperationName || step.branchOperationId}
+                          {step.processName || step.processStepId}
                         </span>
                         <span className='break-words text-muted-foreground sm:text-right'>
                           {t(

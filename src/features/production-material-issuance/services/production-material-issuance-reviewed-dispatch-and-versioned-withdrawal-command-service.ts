@@ -27,7 +27,7 @@ export async function dispatchProductionMaterialIssuanceReviewedBasis(
       return (
         !expected ||
         basis.salesOrderId !== expected.salesOrderId ||
-        basis.bom.id !== expected.bomId ||
+        basis.bom.id !== expected.expectedBomId ||
         basis.orderVersion !== expected.expectedOrderVersion ||
         basis.bom.version !== expected.expectedBomVersion ||
         basis.basisFingerprint !== expected.basisFingerprint

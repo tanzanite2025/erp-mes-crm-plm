@@ -120,7 +120,7 @@ export function useProductionMaterialIssuanceReviewedBasisDispatch(
     .map((source) => ({
       salesOrderId: source.salesOrderId,
       salesOrderLineId: source.salesOrderLineId,
-      bomId: source.bom.id,
+      expectedBomId: source.bom.id,
       expectedOrderVersion: source.orderVersion,
       expectedBomVersion: source.bom.version,
       basisFingerprint: source.basisFingerprint,

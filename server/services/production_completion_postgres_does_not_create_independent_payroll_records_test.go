@@ -35,10 +35,10 @@ func TestProductionCompletionPostgresDoesNotCreateWagesWithIndependentRatesPrese
 		Status:    "PUBLISHED",
 	}).Error)
 	require.NoError(t, database.Create(&models.ProductionRouteStep{
-		BaseModel:         models.BaseModel{ID: routeStepID},
-		RouteID:           routeID,
-		Sequence:          10,
-		BranchOperationID: processStepID,
+		BaseModel:     models.BaseModel{ID: routeStepID},
+		RouteID:       routeID,
+		Sequence:      10,
+		ProcessStepID: processStepID,
 	}).Error)
 	start := time.Now().UTC().Add(-time.Hour)
 	require.NoError(t, database.Create(&models.PieceworkRate{
@@ -70,12 +70,12 @@ func TestProductionCompletionPostgresDoesNotCreateWagesWithIndependentRatesPrese
 			}
 			require.NoError(t, database.Omit("plan_id", "task_id").Create(&lot).Error)
 			request := RecordProductionOperationExecutionRequest{
-				IdempotencyKey:    uuid.NewString(),
-				ProductBarcode:    lot.ProductBarcode,
-				ExecutionLotID:    lot.ID,
-				BranchOperationID: processStepID,
-				Action:            ProductionOperationActionComplete,
-				Operator:          "postgres-integration-test",
+				IdempotencyKey: uuid.NewString(),
+				ProductBarcode: lot.ProductBarcode,
+				ExecutionLotID: lot.ID,
+				ProcessStepID:  processStepID,
+				Action:         ProductionOperationActionComplete,
+				Operator:       "postgres-integration-test",
 			}
 			if withRoute {
 				request.RouteID = routeID

@@ -8,7 +8,7 @@
 
 本阶段已接入来源核对、明确下发、正式单据查询和带原因撤回，以及原单内仓库发料、补料、退料、本单订单行进度和交接历史。仓储增加独立“生产领退”入口，复用同一原单。工作区顶部已接入完整有效订单范围及物料／订单总体进度，包含未下发来源，读取失败不冒充空列表或零数量。
 
-工作区页首已补“发起领料”，提供独立来源搜索分页、已选整行清单、BOM 选择及前提准备，再复用正式核对与下发。指南通过 `?intent=start` 进入相同流程，MRP 抽屉预填本次分析来源；流程打开前不请求业务来源。独立 `source-options`／`source-preparation` 接口只要求生产业务与查看权限，选单不再依赖销售接口或总体进度聚合。共享依据 DTO 及展示位于 `src/features/production-material-requirements/`。实现、职责及验收见[发起流程架构](../architecture/production-material-issuance-start-entry-source-selection-prerequisite-validation-shared-workflow-and-warehouse-handoff-architecture-review.md)。
+工作区页首已补“发起领料”，提供独立来源搜索分页、已选整行清单和分支 MBOM 前提准备，再复用正式核对与下发。MBOM 按订单行已绑定的稳定分支自动解析；多条当前有效发布记录作为数据完整性异常阻断，不提供手选。指南通过 `?intent=start` 进入相同流程，MRP 抽屉预填本次分析来源；流程打开前不请求业务来源。独立 `source-options`／`source-preparation` 接口只要求生产业务与查看权限，选单不再依赖销售接口或总体进度聚合。共享依据 DTO 及展示位于 `src/features/production-material-requirements/`。实现、职责及验收见[发起流程架构](../architecture/production-material-issuance-start-entry-source-selection-prerequisite-validation-shared-workflow-and-warehouse-handoff-architecture-review.md)。
 
 两个视角共用一份完整范围的后端结果。默认按订单查看，每条订单行直接展示各物料的标准应领、净已领和还差（待领），超领单独提示，数量不随配方明细折叠。物料汇总复用相同三列展示与来源行数；累计领退、超领六项数量及冻结／当前依据、性能版本与重量按需展开。异常来源在主列表明确显示无法判断数量，不显示为零。页首只保留标题、发起领料和相关页面菜单，范围说明折叠，手机以三列数量卡片展示关键数据。先汇总后分别分页，不将不同物料、不同单位相加。总体范围及只读接口见[有效订单进度契约](../architecture/production-material-issuance-active-order-scope-frozen-current-basis-progress-and-pagination-contract.md)。
 
@@ -91,7 +91,7 @@ A 行标准 200、净领 220，B 行标准 200、净领 160：总体待领 40、
 ## 后续实现顺序
 
 1. 共用逐订单行需求分析、稳定来源身份、冻结下发与覆盖保护，以及只读核对／正式单查询 HTTP、独立查看权限、前端 DTO／service／Query 均已建立，详见[共用计算契约](../architecture/production-material-requirement-shared-expansion-bom-selection-stock-allocation-and-packaging-calculation-contract.md)。查看动作与页面路由权限均不等同于下发或仓库确认权限。
-2. 明确下发／撤回动作、命令 HTTP 与独立前端 DTO／service／Hook／控件已接入。下发提交真实订单／行 ID、明确 BOM、预期版本及指纹，一次 1 至 500 条整行来源；同键重试返回原单当前状态，不冒充再次下发。组件仅保存选中、确认及原因等临时交互，不用浏览器存储承接正式领料账。
+2. 明确下发／撤回动作、命令 HTTP 与独立前端 DTO／service／Hook／控件已接入。下发提交真实订单／行 ID、核对时解析出的预期 BOM ID、预期版本及指纹，一次 1 至 500 条整行来源；预期 BOM ID 仅用于发现依据变化，不用于人工选择。同键重试返回原单当前状态，不冒充再次下发。组件仅保存选中、确认及原因等临时交互，不用浏览器存储承接正式领料账。
 3. 仓库专用领域命令确认发料、补料、退料，由后端原子维护订单行分配、库存过账、权限、并发、幂等及审计；生产领料引用已确认的收发与归属事实，不维护第二套库存余额。
 4. 后端对完整有效订单范围提供物料汇总和订单行进度查询，包含未下发需求，逐行汇总待领和超标准，并引用共用需求、库存缺口和包装结果；前端不从完工、发货、生产下发数量反推已领，不直接套用销售出库确认路径。
 5. MRP 已提供明确核对后下发，继续完善正式打印、原单定位、仓库待办及消息；不能将分析打印当成正式单据或实际交接。旧分析与正式单保留可追溯来源，不反向耦合 MRP 理论需求。

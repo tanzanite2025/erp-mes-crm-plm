@@ -43,29 +43,31 @@ type BOMRelationSidecar struct {
 }
 
 type BOMDetailResponse struct {
-	ID                string                    `json:"id"`
-	CreatedAt         time.Time                 `json:"createdAt"`
-	UpdatedAt         time.Time                 `json:"updatedAt"`
-	BOMType           string                    `json:"bomType"`
-	BOMNo             string                    `json:"bomNo"`
-	ProductID         string                    `json:"productId"`
-	SourceEBOMID      *string                   `json:"sourceEbomId,omitempty"`
-	BOMVersion        string                    `json:"bomVersion"`
-	Status            string                    `json:"status"`
-	IsLocked          bool                      `json:"isLocked"`
-	Version           int                       `json:"version"`
+	ID                 string    `json:"id"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
+	BOMType            string    `json:"bomType"`
+	BOMNo              string    `json:"bomNo"`
+	ProductID          string    `json:"productId"`
+	ProductionLineID   *string   `json:"productionLineId,omitempty"`
+	ProductionLineName string    `json:"productionLineName,omitempty"`
+	SourceEBOMID       *string   `json:"sourceEbomId,omitempty"`
+	BOMVersion         string    `json:"bomVersion"`
+	Status             string    `json:"status"`
+	IsLocked           bool      `json:"isLocked"`
+	Version            int       `json:"version"`
 	// 归属语义在 BOM 维度（方案 B + 1:1）：服务于内部 / 某客户。
-	OwnerType         string                    `json:"ownerType"`
-	OwnerCustomerID   string                    `json:"ownerCustomerId,omitempty"`
+	OwnerType       string `json:"ownerType"`
+	OwnerCustomerID string `json:"ownerCustomerId,omitempty"`
 	// VersionLevel 是 BOM 性能版本标签（思路 3 重构，来源产品属性主数据 versionLevel category）。
-	VersionLevel      string                    `json:"versionLevel,omitempty"`
+	VersionLevel string `json:"versionLevel,omitempty"`
 	// MeasuredWeight 是该 BOM 对应最终产品的实测/目标重量(方案 B 端到端权威源)。
-	MeasuredWeight     float64                   `json:"measuredWeight"`
+	MeasuredWeight float64 `json:"measuredWeight"`
 	// MeasuredWeightUnit 引用 basic_settings 单位主数据(WEIGHT 类目)的 code。
-	MeasuredWeightUnit string                    `json:"measuredWeightUnit"`
-	Items             []models.BOMItem          `json:"items"`
-	Description       string                    `json:"description"`
-	RelationSidecar   *BOMRelationSidecar       `json:"relationSidecar,omitempty"`
+	MeasuredWeightUnit string              `json:"measuredWeightUnit"`
+	Items              []models.BOMItem    `json:"items"`
+	Description        string              `json:"description"`
+	RelationSidecar    *BOMRelationSidecar `json:"relationSidecar,omitempty"`
 	// --- MasterDataControl 嵌套命名空间（唯一输出格式） ---
 	MasterDataControl *dto.MasterDataControlDTO `json:"masterDataControl,omitempty"`
 }
@@ -76,27 +78,34 @@ func MapBOMToDetailResponse(bom models.BOM) (BOMDetailResponse, error) {
 		return BOMDetailResponse{}, err
 	}
 
+	productionLineID := bom.ResolvedProductionLineID
+	productionLineName := bom.ResolvedProductionLineName
+	if bom.BOMType == models.BOMTypeEBOM && productionLineID == nil {
+		productionLineID = bom.ProductionLineID
+	}
 	return BOMDetailResponse{
-		ID:                bom.ID,
-		CreatedAt:         bom.CreatedAt,
-		UpdatedAt:         bom.UpdatedAt,
-		BOMType:           bom.BOMType,
-		BOMNo:             bom.BOMNo,
-		ProductID:         bom.ProductID,
-		SourceEBOMID:      bom.SourceEBOMID,
-		BOMVersion:        bom.VersionText,
-		Status:            bom.Status,
-		IsLocked:          bom.IsLocked,
-		Version:           bom.Version,
-		OwnerType:         bom.OwnerType,
-		OwnerCustomerID:   bom.OwnerCustomerID,
-		VersionLevel:      bom.VersionLevel,
+		ID:                 bom.ID,
+		CreatedAt:          bom.CreatedAt,
+		UpdatedAt:          bom.UpdatedAt,
+		BOMType:            bom.BOMType,
+		BOMNo:              bom.BOMNo,
+		ProductID:          bom.ProductID,
+		ProductionLineID:   productionLineID,
+		ProductionLineName: productionLineName,
+		SourceEBOMID:       bom.SourceEBOMID,
+		BOMVersion:         bom.VersionText,
+		Status:             bom.Status,
+		IsLocked:           bom.IsLocked,
+		Version:            bom.Version,
+		OwnerType:          bom.OwnerType,
+		OwnerCustomerID:    bom.OwnerCustomerID,
+		VersionLevel:       bom.VersionLevel,
 		MeasuredWeight:     bom.MeasuredWeight,
 		MeasuredWeightUnit: bom.MeasuredWeightUnit,
-		Items:             bom.Items,
-		Description:       bom.Description,
-		RelationSidecar:   sidecar,
-		MasterDataControl: dto.MapMasterDataControl(bom.MasterDataControl),
+		Items:              bom.Items,
+		Description:        bom.Description,
+		RelationSidecar:    sidecar,
+		MasterDataControl:  dto.MapMasterDataControl(bom.MasterDataControl),
 	}, nil
 }
 

@@ -41,6 +41,7 @@ describe('finance salary calculation', () => {
             employeeId: 'person-1',
             departmentId: 'dept-1',
             payItemId: 'step-1',
+            unit: 'PCS',
             quantity: 3,
           },
         ],

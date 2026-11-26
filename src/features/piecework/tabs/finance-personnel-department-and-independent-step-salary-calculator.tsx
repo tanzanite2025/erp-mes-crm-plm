@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IndustrialActionBar } from '@/components/uds/industrial-action-bar'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import {
   pieceworkFinanceFieldControlClassName,
   pieceworkFinanceFieldLabelClassName,
@@ -30,6 +31,7 @@ import {
   useFinancePieceworkCalculationOptions,
   useGetPieceworkPayItems,
 } from '../hooks/use-independent-piecework-payroll'
+import { useGetPieceworkRates } from '../hooks/use-piecework'
 import {
   formatFinanceSalaryCurrencyCents,
   summarizeFinanceSalaryByEmployeeDepartmentAndCurrency,
@@ -41,6 +43,7 @@ interface FinanceSalaryEditableRow {
   employeeId: string
   departmentId: string
   payItemId: string
+  unit: string
   quantity: string
 }
 
@@ -50,6 +53,7 @@ function createEmptyFinanceSalaryInputRow(): FinanceSalaryEditableRow {
     employeeId: '',
     departmentId: '',
     payItemId: '',
+    unit: '',
     quantity: '',
   }
 }
@@ -65,6 +69,8 @@ function FinancePersonnelDepartmentSalaryCalculator() {
   const { t } = useLanguage()
   const options = useFinancePieceworkCalculationOptions()
   const items = useGetPieceworkPayItems()
+  const rates = useGetPieceworkRates()
+  const unitsQuery = useUnitsQuery()
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
   const [rows, setRows] = useState<FinanceSalaryEditableRow[]>(() => [
     createEmptyFinanceSalaryInputRow(),
@@ -79,7 +85,12 @@ function FinancePersonnelDepartmentSalaryCalculator() {
     groupBy === 'department' ? 'department' : 'employee'
   )
   const unavailable =
-    options.isPending || items.isPending || options.isError || items.isError
+    options.isPending ||
+    items.isPending ||
+    rates.isPending ||
+    options.isError ||
+    items.isError ||
+    rates.isError
   const selectClass = pieceworkFinanceFieldControlClassName
 
   function updateFinanceSalaryInputRow(
@@ -106,10 +117,11 @@ function FinancePersonnelDepartmentSalaryCalculator() {
           calculation.mutate({
             calculationDate: date,
             rows: rows.map(
-              ({ employeeId, departmentId, payItemId, quantity }) => ({
+              ({ employeeId, departmentId, payItemId, unit, quantity }) => ({
                 employeeId,
                 departmentId,
                 payItemId,
+                unit,
                 quantity: Number(quantity),
               })
             ),
@@ -175,13 +187,13 @@ function FinancePersonnelDepartmentSalaryCalculator() {
           {unavailable && (
             <p className='text-sm text-muted-foreground' role='status'>
               {t(
-                options.isError || items.isError
+                options.isError || items.isError || rates.isError
                   ? 'piecework.payroll.loadFailed'
                   : 'piecework.payroll.loading'
               )}
             </p>
           )}
-          {(options.isError || items.isError) && (
+          {(options.isError || items.isError || rates.isError) && (
             <Button
               className={pieceworkFinanceSecondaryActionClassName}
               type='button'
@@ -189,6 +201,8 @@ function FinancePersonnelDepartmentSalaryCalculator() {
               onClick={() => {
                 void options.refetch()
                 void items.refetch()
+                void rates.refetch()
+                void unitsQuery.refetch()
               }}
             >
               <RefreshCw className='size-4' />
@@ -197,12 +211,28 @@ function FinancePersonnelDepartmentSalaryCalculator() {
           )}
           <div className='divide-y divide-dashed border-y border-dashed border-muted/50'>
             {rows.map((row, index) => {
-              const item = items.data?.find((item) => item.id === row.payItemId)
+              const availableUnitCodes = Array.from(
+                new Set(
+                  (rates.data ?? [])
+                    .filter(
+                      (rate) =>
+                        rate.payItemId === row.payItemId &&
+                        rate.status === 'active' &&
+                        rate.effectiveFrom.slice(0, 10) <= date &&
+                        (!rate.effectiveTo ||
+                          rate.effectiveTo.slice(0, 10) > date)
+                    )
+                    .map((rate) => rate.unit)
+                )
+              )
+              const selectedUnit = unitsQuery.units.find(
+                (unit) => unit.code === row.unit
+              )
               const result = results[index]
               return (
                 <div
                   key={row.key}
-                  className='grid min-w-0 grid-cols-2 items-start gap-3 py-4 xl:grid-cols-[minmax(150px,1.3fr)_minmax(140px,1fr)_minmax(160px,1.3fr)_minmax(100px,.7fr)_minmax(100px,.7fr)_36px]'
+                  className='grid min-w-0 grid-cols-2 items-start gap-3 py-4 xl:grid-cols-[minmax(140px,1.2fr)_minmax(130px,1fr)_minmax(150px,1.2fr)_minmax(110px,.8fr)_minmax(100px,.7fr)_minmax(120px,.8fr)_36px]'
                 >
                   <div className='grid min-w-0 gap-1'>
                     <Label
@@ -281,6 +311,7 @@ function FinancePersonnelDepartmentSalaryCalculator() {
                       onChange={(event) =>
                         updateFinanceSalaryInputRow(row.key, {
                           payItemId: event.target.value,
+                          unit: '',
                         })
                       }
                     >
@@ -289,9 +320,43 @@ function FinancePersonnelDepartmentSalaryCalculator() {
                         ?.filter((item) => item.status === 'active')
                         .map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.name} ({item.unit})
+                            {item.name}
                           </option>
                         ))}
+                    </select>
+                  </div>
+                  <div className='grid min-w-0 gap-1'>
+                    <Label
+                      className={pieceworkFinanceFieldLabelClassName}
+                      htmlFor={'salary-unit-' + row.key}
+                    >
+                      {t('piecework.payroll.unit')}
+                    </Label>
+                    <select
+                      id={'salary-unit-' + row.key}
+                      required
+                      value={row.unit}
+                      className={selectClass}
+                      disabled={
+                        !row.payItemId || availableUnitCodes.length === 0
+                      }
+                      onChange={(event) =>
+                        updateFinanceSalaryInputRow(row.key, {
+                          unit: event.target.value,
+                        })
+                      }
+                    >
+                      <option value=''>{t('piecework.payroll.choose')}</option>
+                      {availableUnitCodes.map((unitCode) => {
+                        const unit = unitsQuery.units.find(
+                          (entry) => entry.code === unitCode
+                        )
+                        return (
+                          <option key={unitCode} value={unitCode}>
+                            {unit ? `${unit.name} (${unit.code})` : unitCode}
+                          </option>
+                        )
+                      })}
                     </select>
                   </div>
                   <div className='grid min-w-0 gap-1'>
@@ -300,7 +365,7 @@ function FinancePersonnelDepartmentSalaryCalculator() {
                       htmlFor={'salary-quantity-' + row.key}
                     >
                       {t('piecework.calculator.quantity')}
-                      {item ? ` (${item.unit})` : ''}
+                      {row.unit ? ` (${selectedUnit?.name || row.unit})` : ''}
                     </Label>
                     <Input
                       id={'salary-quantity-' + row.key}

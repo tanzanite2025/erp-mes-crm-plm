@@ -57,10 +57,6 @@ func SaveOrgHandler(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "Organization depth exceeds the supported three levels"})
 			return
 		}
-		if err == services.ErrOrganizationLinkedArchitectureInvalid {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization linked architecture is invalid"})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save organization"})
 		return
 	}
@@ -84,7 +80,7 @@ func PatchOrgHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization patch payload"})
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "parentId", "manager", "description", "type", "linkedArchitecture"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "parentId", "manager", "description", "type"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization delta: " + err.Error()})
 		return
 	}
@@ -147,9 +143,6 @@ func PatchOrgHandler(c *gin.Context) {
 				return
 			}
 			patch.Type = &value
-		case "linkedArchitecture":
-			patch.LinkedArchitecture = append(json.RawMessage(nil), valueRaw...)
-			patch.LinkedArchitectureSet = true
 		}
 	}
 

@@ -56,13 +56,12 @@ export async function prepareProductionMaterialIssuanceSources(
       const selection = expected.get(source.salesOrderLineId)
       return (
         !selection ||
-        selection.salesOrderId !== source.salesOrderId ||
-        (selection.bomId && source.bom && selection.bomId !== source.bom.id)
+        selection.salesOrderId !== source.salesOrderId
       )
     })
   )
     throw new Error(
-      '[CRITICAL] Source preparation returned different source identities or BOM choices'
+      '[CRITICAL] Source preparation returned different source identities'
     )
   return result
 }

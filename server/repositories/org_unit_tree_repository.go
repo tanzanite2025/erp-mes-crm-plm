@@ -10,9 +10,8 @@ import (
 )
 
 type orgUnitOrganizationMetadata struct {
-	Manager            string          `json:"manager,omitempty"`
-	Description        string          `json:"description,omitempty"`
-	LinkedArchitecture json.RawMessage `json:"linkedArchitecture,omitempty"`
+	Manager     string `json:"manager,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 func (GormOrgPersonnelRepository) ListOrganizations(database *gorm.DB) ([]models.Organization, error) {
@@ -127,13 +126,12 @@ func mapOrgUnitToOrganizationProjection(unit models.OrgUnit) models.Organization
 	metadata := parseOrgUnitOrganizationMetadata(unit.Metadata)
 
 	return models.Organization{
-		BaseModel:          unit.BaseModel,
-		Name:               unit.Name,
-		ParentID:           cloneRepositoryStringPointer(unit.ParentID),
-		Manager:            metadata.Manager,
-		Description:        metadata.Description,
-		Type:               normalizeOrgUnitTypeForOrganizationProjection(unit.UnitType),
-		LinkedArchitecture: cloneRepositoryRawMessage(metadata.LinkedArchitecture),
+		BaseModel:   unit.BaseModel,
+		Name:        unit.Name,
+		ParentID:    cloneRepositoryStringPointer(unit.ParentID),
+		Manager:     metadata.Manager,
+		Description: metadata.Description,
+		Type:        normalizeOrgUnitTypeForOrganizationProjection(unit.UnitType),
 	}
 }
 
@@ -167,9 +165,8 @@ func parseOrgUnitOrganizationMetadata(raw string) orgUnitOrganizationMetadata {
 
 func buildOrgUnitOrganizationMetadataJSON(organization models.Organization) string {
 	metadata := orgUnitOrganizationMetadata{
-		Manager:            strings.TrimSpace(organization.Manager),
-		Description:        strings.TrimSpace(organization.Description),
-		LinkedArchitecture: cloneRepositoryRawMessage(organization.LinkedArchitecture),
+		Manager:     strings.TrimSpace(organization.Manager),
+		Description: strings.TrimSpace(organization.Description),
 	}
 
 	payload, err := json.Marshal(metadata)
@@ -210,11 +207,4 @@ func cloneRepositoryStringPointer(value *string) *string {
 		return nil
 	}
 	return &normalized
-}
-
-func cloneRepositoryRawMessage(value json.RawMessage) json.RawMessage {
-	if len(value) == 0 {
-		return nil
-	}
-	return append(json.RawMessage(nil), value...)
 }

@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { ConfiguredActiveUnitSelect } from '@/features/basic-settings/components/configured-active-unit-select'
+import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { financeQueryKeys } from '@/features/finance/query-keys'
 import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
 import type { PieceworkRate } from '../data/schema'
@@ -46,6 +48,7 @@ export function RateActionDialog({
   const { t } = useLanguage()
   const shellClasses = buildPieceworkFinanceActionDialogShellClasses()
   const { data: items = [] } = useGetPieceworkPayItems()
+  const unitsQuery = useUnitsQuery({ enabled: open })
   const currenciesQuery = useQuery({
     queryKey: financeQueryKeys.currencies(),
     queryFn: () => CurrencyCoreService.getCurrencies(),
@@ -78,6 +81,15 @@ export function RateActionDialog({
     [currentRow]
   )
   const { data, tracker } = useDeltaTracker(initial, open)
+  const isPreservingExistingUnit = Boolean(
+    currentRow && currentRow.unit === data.unit
+  )
+  const hasSelectedConfiguredUnit = unitsQuery.units.some(
+    (unit) => unit.code === data.unit && unit.status === 'active'
+  )
+  const hasSelectedUnit =
+    isPreservingExistingUnit ||
+    (!unitsQuery.isLoading && !unitsQuery.error && hasSelectedConfiguredUnit)
   const hasSelectedSystemCurrency =
     !currenciesQuery.isPending &&
     !currenciesQuery.isError &&
@@ -91,6 +103,7 @@ export function RateActionDialog({
       !data.payItemId ||
       !data.unit ||
       !data.effectiveFrom ||
+      !hasSelectedUnit ||
       !hasSelectedSystemCurrency
     ) {
       toast.error(t('piecework.payroll.required'))
@@ -150,7 +163,9 @@ export function RateActionDialog({
             className={`${pieceworkFinanceDialogActionClassName} shadow-lg shadow-primary/20`}
             type='submit'
             form='piecework-rate-form'
-            disabled={isLoading || !hasSelectedSystemCurrency}
+            disabled={
+              isLoading || !hasSelectedUnit || !hasSelectedSystemCurrency
+            }
           >
             <Save className='size-4' />
             {t('piecework.payroll.save')}
@@ -182,7 +197,6 @@ export function RateActionDialog({
                 )
                 Object.assign(data, {
                   payItemId: item?.id || '',
-                  unit: item?.unit || '',
                   payItemCode: item?.code || '',
                   payItemName: item?.name || '',
                 })
@@ -196,7 +210,7 @@ export function RateActionDialog({
                 )
                 .map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.name} ({item.unit})
+                    {item.name}
                   </option>
                 ))}
             </select>
@@ -232,11 +246,20 @@ export function RateActionDialog({
               >
                 {t('piecework.payroll.unit')}
               </Label>
-              <Input
-                className={pieceworkFinanceFieldControlClassName}
+              <ConfiguredActiveUnitSelect
+                labels={{
+                  placeholder: t('piecework.payroll.unitPlaceholder'),
+                  empty: t('piecework.payroll.unitsEmpty'),
+                  loadFailed: t('piecework.payroll.unitsLoadFailed'),
+                  unavailable: t('piecework.payroll.unitUnavailable'),
+                }}
                 id='rate-unit'
-                readOnly
                 value={data.unit}
+                onValueChange={(unit) => {
+                  updatePieceworkRateFormFields({ unit })
+                }}
+                disabled={isLoading}
+                enabled={open}
               />
             </div>
             <div className='grid gap-2'>

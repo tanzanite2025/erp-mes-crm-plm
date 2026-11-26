@@ -63,14 +63,14 @@ func (f productionOutsourceAcceptanceFixture) seedBarcodeAtFirstRouteStepForBarc
 	}).Error)
 
 	_, err := f.stateService.InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    barcode,
-		ProductID:         "product-1",
-		ProductName:       "产品一",
-		RouteID:           "route-1",
-		RouteStepID:       f.routeStepIDs[0],
-		BranchOperationID: "process-a",
-		Status:            ProductBarcodeStateStatusNotStarted,
-		Operator:          "acceptance-fixture",
+		ProductBarcode: barcode,
+		ProductID:      "product-1",
+		ProductName:    "产品一",
+		RouteID:        "route-1",
+		RouteStepID:    f.routeStepIDs[0],
+		ProcessStepID:  "process-a",
+		Status:         ProductBarcodeStateStatusNotStarted,
+		Operator:       "acceptance-fixture",
 	})
 	require.NoError(t, err)
 }
@@ -129,7 +129,7 @@ func (f productionOutsourceAcceptanceFixture) startAndCompleteFirstRouteStepForB
 	require.NoError(t, err)
 	require.Equal(t, f.routeStepIDs[0], completed.Operation.RouteStepID)
 	require.Equal(t, f.routeStepIDs[1], completed.State.RouteStepID)
-	require.Equal(t, "process-b", completed.State.CurrentBranchOperationID)
+	require.Equal(t, "process-b", completed.State.CurrentProcessStepID)
 	require.True(t, completed.Progress.Advanced)
 	require.Len(t, completed.TransferEvents, 1)
 	require.Equal(t, ProductBarcodeTransferTypeRouteAdvance, completed.TransferEvents[0].TransferType)
@@ -618,7 +618,7 @@ func TestProductionOutsourceAcceptanceRejectsProductProcessMismatch(t *testing.T
 	fixture.startAndCompleteFirstRouteStep(t)
 	require.NoError(t, fixture.database.Model(&models.ProductBarcodeState{}).
 		Where("product_barcode = ?", fixture.productBarcode).
-		Update("current_branch_operation_id", "process-a").Error)
+		Update("current_process_step_id", "process-a").Error)
 
 	_, err := fixture.outsource.SendOutsourceOrderLine(OutsourceTransferRequest{
 		OutsourceOrderLineID: fixture.line.ID,

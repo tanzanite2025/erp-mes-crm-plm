@@ -16,7 +16,7 @@ var (
 type ProductionMaterialIssuanceSourceSelection struct {
 	SalesOrderID     string `json:"salesOrderId"`
 	SalesOrderLineID uint   `json:"salesOrderLineId"`
-	BOMID            string `json:"bomId"`
+	ExpectedBOMID    string `json:"expectedBomId"`
 }
 
 type ProductionMaterialIssuanceFrozenMaterialContribution struct {
@@ -26,7 +26,7 @@ type ProductionMaterialIssuanceFrozenMaterialContribution struct {
 	MaterialSpec string `json:"materialSpec"`
 }
 
-// Only the selected BOM is frozen; unused candidate BOMs are not historical basis.
+// The unique effective BOM is frozen as part of the reviewed historical basis.
 type ProductionMaterialIssuanceReviewedSourceBasis struct {
 	SalesOrderID     string                                                 `json:"salesOrderId"`
 	SalesOrderLineID uint                                                   `json:"salesOrderLineId"`

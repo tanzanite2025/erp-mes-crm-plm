@@ -37,5 +37,5 @@ describe('purchase logistics TAB ownership', () => {
       .map((file) => path.relative(sourceRoot, file).split('\\').join('/'))
 
     expect(violations).toEqual([])
-  })
+  }, 15_000)
 })

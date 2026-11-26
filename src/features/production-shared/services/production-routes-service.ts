@@ -21,15 +21,31 @@ import type {
 
 export const productionRoutesService = {
   getSalesOrderLineCandidates: async (
-    productId: string
+    productId = ''
   ): Promise<ProductionRouteSalesOrderLineCandidate[]> => {
-    const response = await apiFetch<ProductionRouteSalesOrderLineCandidatesResponseApiDTO>(
-      `/production/routes/sales-order-line-candidates?productId=${encodeURIComponent(productId)}`
-    )
+    const query = productId ? `?productId=${encodeURIComponent(productId)}` : ''
+    const response =
+      await apiFetch<ProductionRouteSalesOrderLineCandidatesResponseApiDTO>(
+        `/production/routes/sales-order-line-candidates${query}`
+      )
     const checked = ensureObjectResponse<
-      ProductionRouteSalesOrderLineCandidatesResponseApiDTO & Record<string, unknown>
+      ProductionRouteSalesOrderLineCandidatesResponseApiDTO &
+        Record<string, unknown>
     >(response, 'productionRoutesService.getSalesOrderLineCandidates')
     return checked.items || []
+  },
+
+  resetSalesOrderLineRouteToBranchDefault: async (
+    salesOrderLineID: number
+  ): Promise<void> => {
+    const response = await apiFetch<ProductionMessageApiDTO>(
+      `/production/routes/sales-order-lines/${salesOrderLineID}/default`,
+      { method: 'PATCH' }
+    )
+    ensureObjectResponse<ProductionMessageApiDTO & Record<string, unknown>>(
+      response,
+      'productionRoutesService.resetSalesOrderLineRouteToBranchDefault'
+    )
   },
 
   getBOMBranches: async (): Promise<ProductionRouteBOMBranch[]> => {

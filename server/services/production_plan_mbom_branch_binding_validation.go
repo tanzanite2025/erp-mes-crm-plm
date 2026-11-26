@@ -6,6 +6,7 @@ import (
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func ValidateProductionPlanBOMBranchTx(
@@ -13,6 +14,41 @@ func ValidateProductionPlanBOMBranchTx(
 	plan *models.ProductionPlan,
 	previous *models.ProductionPlan,
 ) error {
+	if plan.SalesOrderLineID != 0 {
+		var line models.SalesOrderLine
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&line, "id = ? AND sales_order_id = ?", plan.SalesOrderLineID, strings.TrimSpace(plan.OrderID)).Error; err != nil {
+			return fmt.Errorf("%w: selected sales order line does not belong to the production plan order", ErrInvalidProductionPlanBOMBranch)
+		}
+		if plan.ProductID == "" {
+			plan.ProductID = strings.TrimSpace(line.ProductID)
+		}
+		if strings.TrimSpace(line.ProductID) != strings.TrimSpace(plan.ProductID) {
+			return fmt.Errorf("%w: selected sales order line product does not match the production plan MBOM branch product", ErrInvalidProductionPlanBOMBranch)
+		}
+		lineBranch := productionRouteBOMBranchIdentity{
+			ProductID:          strings.TrimSpace(line.ProductID),
+			BOMOwnerType:       strings.ToUpper(strings.TrimSpace(line.BOMOwnerType)),
+			BOMOwnerCustomerID: strings.TrimSpace(line.BOMOwnerCustomerID),
+			BOMVersionLevel:    strings.TrimSpace(line.BOMVersionLevel),
+		}
+		requestedBranch := productionRouteBOMBranchIdentity{
+			ProductID:          strings.TrimSpace(plan.ProductID),
+			BOMOwnerType:       strings.ToUpper(strings.TrimSpace(plan.BOMOwnerType)),
+			BOMOwnerCustomerID: strings.TrimSpace(plan.BOMOwnerCustomerID),
+			BOMVersionLevel:    strings.TrimSpace(plan.BOMVersionLevel),
+		}
+		if requestedBranch.BOMOwnerType != "" && requestedBranch != lineBranch {
+			return fmt.Errorf("%w: production plan MBOM branch must match its sales order line", ErrInvalidProductionPlanBOMBranch)
+		}
+		plan.BOMOwnerType = lineBranch.BOMOwnerType
+		plan.BOMOwnerCustomerID = lineBranch.BOMOwnerCustomerID
+		plan.BOMVersionLevel = lineBranch.BOMVersionLevel
+		plan.ProductionRouteMode = productionRouteModeForSalesOrderLine(line.ProductionRouteMode)
+	} else {
+		plan.ProductionRouteMode = productionRouteScopeBranchDefault
+	}
+
 	if plan.ProductID == "" && previous != nil {
 		plan.ProductID = strings.TrimSpace(previous.ProductID)
 	}
@@ -59,6 +95,13 @@ func ValidateProductionPlanBOMBranchTx(
 	plan.BOMOwnerCustomerID = branch.BOMOwnerCustomerID
 	plan.BOMVersionLevel = branch.BOMVersionLevel
 	return nil
+}
+
+func productionRouteModeForSalesOrderLine(mode string) string {
+	if strings.EqualFold(strings.TrimSpace(mode), "CUSTOM") {
+		return productionRouteScopeSalesOrderLine
+	}
+	return productionRouteScopeBranchDefault
 }
 
 func productionPlanHasSameBOMBranch(plan models.ProductionPlan, branch models.ProductionRoute) bool {

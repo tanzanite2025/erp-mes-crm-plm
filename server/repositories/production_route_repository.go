@@ -35,7 +35,7 @@ func preloadProductionRouteSteps(database *gorm.DB) *gorm.DB {
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sequence asc")
 		}).
-		Preload("Steps.BranchOperation")
+		Preload("Steps.ProcessStep")
 }
 
 func (GormProductionRepository) BumpProductionRouteVersion(database *gorm.DB, id string, version int64) (bool, error) {

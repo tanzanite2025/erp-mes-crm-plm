@@ -19,15 +19,18 @@ const (
 type BOM struct {
 	BaseModel
 	MasterDataControl
-	BOMType      string   `gorm:"size:20;not null;default:'EBOM'" json:"bomType"`
-	BOMNo        string   `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
-	ProductID    string   `gorm:"type:uuid;index;not null" json:"productId"`
-	Product      *Product `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-	SourceEBOMID *string  `gorm:"type:uuid;index" json:"sourceEbomId,omitempty"`
-	VersionText  string   `gorm:"size:20;default:'V1.0'" json:"bomVersion"`
-	Status       string   `gorm:"size:20;default:'DRAFT'" json:"status"`
-	IsLocked     bool     `gorm:"default:false" json:"isLocked"`
-	Version      int      `gorm:"default:1" json:"version"`
+	BOMType                    string   `gorm:"size:20;not null;default:'EBOM'" json:"bomType"`
+	BOMNo                      string   `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
+	ProductID                  string   `gorm:"type:uuid;index;not null" json:"productId"`
+	Product                    *Product `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	SourceEBOMID               *string  `gorm:"type:uuid;index" json:"sourceEbomId,omitempty"`
+	ProductionLineID           *string  `gorm:"type:uuid;index" json:"productionLineId,omitempty"`
+	ResolvedProductionLineID   *string  `gorm:"-" json:"-"`
+	ResolvedProductionLineName string   `gorm:"-" json:"-"`
+	VersionText                string   `gorm:"size:20;default:'V1.0'" json:"bomVersion"`
+	Status                     string   `gorm:"size:20;default:'DRAFT'" json:"status"`
+	IsLocked                   bool     `gorm:"default:false" json:"isLocked"`
+	Version                    int      `gorm:"default:1" json:"version"`
 	// 归属语义在 BOM 维度（方案 B + 1:1 设计）：
 	//   - INTERNAL：内部生产 BOM（OwnerCustomerID 留空）
 	//   - CUSTOMER：某客户专供 BOM（OwnerCustomerID 必填，关联 Customer.ID）

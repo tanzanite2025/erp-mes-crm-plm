@@ -278,7 +278,7 @@ export const codeCenter = {
       location: {
         title: 'Production Status Second-level Location',
         description:
-          'Production execution status is the first-level state. The concrete L3 position is represented by route step and current process as a second-level location. The UI may call it L3 selection, but writes must persist routeStepId to avoid ambiguity when the same L3 appears in multiple routes or repeated steps.',
+          'Production execution status is the primary state. routeStepId identifies the route position, and currentProcessStepId identifies its process.',
         required: 'Required Anchor',
         optional: 'Auxiliary Anchor',
         writePolicyTitle: 'Write Boundary',
@@ -290,12 +290,12 @@ export const codeCenter = {
             'Identifies which production route the barcode belongs to. A status can exist without it, but route sequencing cannot advance automatically.',
         },
         ROUTE_STEP: {
-          label: 'L3 Node in Route',
+          label: 'Route Step',
           description:
-            'The primary anchor for the current production position. It means a concrete step inside a route, not a reusable bare process definition.',
+            'The primary anchor for the current production position. It identifies a concrete step inside a route, not a reusable process definition.',
         },
-        L3_PROCESS: {
-          label: 'Current L3 Process',
+        PROCESS_STEP: {
+          label: 'Current Process',
           description:
             'The process definition derived from the route step and used to display the current process. Writes should validate and derive it from routeStepId.',
         },
@@ -310,8 +310,8 @@ export const codeCenter = {
           'Status definitions are read-only contract values. This page displays meanings and must not edit them.',
         PRODUCTION_STATUS_WITH_LOCATION:
           'Production execution status is the first-level state; routeStepId and currentProcessStepId are the second-level location under it.',
-        ROUTE_STEP_IS_PRECISE_L3_ANCHOR:
-          'The UI may call this “select L3”, but persisted writes must store routeStepId to prevent reused L3 definitions from resolving to the wrong position.',
+        ROUTE_STEP_IS_PRECISE_ROUTE_POSITION:
+          'Persist routeStepId so the same process used at multiple route positions remains unambiguous.',
         WRITE_THROUGH_SCAN_OR_EXECUTION_COMMAND:
           'Barcode state changes should be written by scan, execution, transfer, or audited correction commands, not by direct dictionary edits.',
       },

@@ -1448,6 +1448,8 @@ export const engineering = {
       bomNo: 'BOM Number',
       bomNoAutoPlaceholder: 'Auto-generated after save',
       bomType: 'BOM Type',
+      productionLine: 'Production Line',
+      productionLinePlaceholder: 'Select a production line',
       product: 'Product',
       productPlaceholder: 'Select a product...',
       version: 'System Version',

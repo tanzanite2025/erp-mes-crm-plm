@@ -47,6 +47,10 @@ type SalesOrderLine struct {
 	SalesOrderID                          string          `gorm:"type:uuid;index" json:"-"`
 	LineNo                                int             `json:"lineNo"`
 	ProductID                             string          `json:"productId"`
+	BOMOwnerType                          string          `gorm:"size:20" json:"bomOwnerType"`
+	BOMOwnerCustomerID                    string          `gorm:"size:36" json:"bomOwnerCustomerId"`
+	BOMVersionLevel                       string          `gorm:"size:50" json:"bomVersionLevel"`
+	ProductionRouteMode                   string          `gorm:"size:20;not null;default:'DEFAULT'" json:"productionRouteMode"`
 	ProductModel                          string          `json:"productModel"`
 	ProductCode                           string          `json:"productCode"`
 	Specification                         string          `json:"specification"`

@@ -205,7 +205,7 @@ export function ProductionExecutionProductBarcodeLifecycleHistory({
                         routes,
                         entry.operation.routeId,
                         entry.operation.routeStepId,
-                        entry.operation.branchOperationId
+                        entry.operation.processStepId
                       ) || t('productionExecution.workflow.unknownProcess')}
                     </p>
                     {entry.operation.operator && (
@@ -425,13 +425,13 @@ function resolveProductionExecutionLifecycleStateEventDescription(
     routes,
     event.routeId,
     '',
-    event.fromBranchOperationId
+    event.fromProcessStepId
   )
   const to = resolveProductionExecutionLifecycleProcessName(
     routes,
     event.routeId,
     event.routeStepId,
-    event.toBranchOperationId
+    event.toProcessStepId
   )
   if (from && to && from !== to) return from + ' → ' + to
   if (to) return to
@@ -455,13 +455,13 @@ function resolveProductionExecutionLifecycleTransferDescription(
       routes,
       event.routeId,
       event.fromRouteStepId,
-      event.fromBranchOperationId
+      event.fromProcessStepId
     )
     const to = resolveProductionExecutionLifecycleProcessName(
       routes,
       event.routeId,
       event.toRouteStepId,
-      event.toBranchOperationId
+      event.toProcessStepId
     )
     return from && to ? transferLabel + ': ' + from + ' → ' + to : transferLabel
   }

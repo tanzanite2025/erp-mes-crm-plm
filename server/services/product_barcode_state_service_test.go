@@ -37,23 +37,6 @@ func newProductBarcodeStateTestService(t *testing.T) (*ProductBarcodeStateServic
 func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 	t.Helper()
 	require.NoError(t, database.Exec(`
-		CREATE TABLE production_bom_branch_operations (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			product_id TEXT NOT NULL,
-			bom_owner_type TEXT NOT NULL,
-			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
-			bom_version_level TEXT NOT NULL DEFAULT '',
-			name TEXT NOT NULL,
-		description TEXT,
-		sort_order INTEGER NOT NULL DEFAULT 0,
-			is_active BOOLEAN NOT NULL DEFAULT true
-		)
-	`).Error)
-
-	require.NoError(t, database.Exec(`
 		CREATE TABLE process_steps (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -77,7 +60,6 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 			product_id TEXT,
 			product_sku TEXT,
 			product_name TEXT,
-			product_template_id TEXT,
 			bom_owner_type TEXT,
 			bom_owner_customer_id TEXT,
 			bom_owner_customer_name TEXT,
@@ -95,7 +77,7 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 			deleted_at DATETIME,
 			route_id TEXT,
 			sequence INTEGER,
-			branch_operation_id TEXT,
+			process_step_id TEXT,
 			execution_mode TEXT,
 			quality_gate TEXT,
 			quality_routing TEXT,
@@ -115,7 +97,7 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 			product_name TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			current_branch_operation_id TEXT,
+			current_process_step_id TEXT,
 			status TEXT,
 			last_event_id TEXT,
 			started_at DATETIME,
@@ -132,8 +114,8 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 			operation_id TEXT,
 			product_barcode TEXT NOT NULL,
 			event_type TEXT NOT NULL,
-			from_branch_operation_id TEXT,
-			to_branch_operation_id TEXT,
+			from_process_step_id TEXT,
+			to_process_step_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
 			operator TEXT,
@@ -144,15 +126,14 @@ func createProductBarcodeStateTestSchema(t *testing.T, database *gorm.DB) {
 	migrateProductionRouteRevisionTestSchema(t, database, false)
 }
 
-func seedProductBarcodeStateBranchOperation(t *testing.T, database *gorm.DB, id string, name string) {
+func seedProductBarcodeStateProcessStep(t *testing.T, database *gorm.DB, id string, name string) {
 	t.Helper()
 
-	require.NoError(t, database.Create(&models.ProductionBOMBranchOperation{
-		BaseModel:    models.BaseModel{ID: id},
-		ProductID:    "product-1",
-		Name:         name,
-		BOMOwnerType: "INTERNAL",
-		IsActive:     true,
+	require.NoError(t, database.Create(&models.ProcessStep{
+		BaseModel: models.BaseModel{ID: id},
+		Code:      id,
+		Name:      name,
+		IsActive:  true,
 	}).Error)
 }
 
@@ -171,12 +152,12 @@ func seedProductBarcodeStateRoute(t *testing.T, database *gorm.DB, routeID strin
 	for index, processStepID := range processStepIDs {
 		routeStepID := routeID + "-step-" + processStepID
 		require.NoError(t, database.Create(&models.ProductionRouteStep{
-			BaseModel:         models.BaseModel{ID: routeStepID},
-			RouteID:           routeID,
-			Sequence:          index + 1,
-			BranchOperationID: processStepID,
-			ExecutionMode:     "IN_HOUSE",
-			QualityGate:       "NONE",
+			BaseModel:     models.BaseModel{ID: routeStepID},
+			RouteID:       routeID,
+			Sequence:      index + 1,
+			ProcessStepID: processStepID,
+			ExecutionMode: "IN_HOUSE",
+			QualityGate:   "NONE",
 		}).Error)
 		routeStepIDs = append(routeStepIDs, routeStepID)
 	}
@@ -185,17 +166,17 @@ func seedProductBarcodeStateRoute(t *testing.T, database *gorm.DB, routeID strin
 
 func TestInitializeProductBarcodeStateCreatesNotStartedStateAndEvent(t *testing.T) {
 	service, database := newProductBarcodeStateTestService(t)
-	seedProductBarcodeStateBranchOperation(t, database, "process-a", "首道工序")
+	seedProductBarcodeStateProcessStep(t, database, "process-a", "首道工序")
 	routeStepIDs := seedProductBarcodeStateRoute(t, database, "route-a", "process-a")
 
 	state, err := service.InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    " abc-001 ",
-		ProductID:         "product-1",
-		ProductName:       "产品A",
-		RouteID:           "route-a",
-		RouteStepID:       routeStepIDs[0],
-		BranchOperationID: "process-a",
-		Operator:          "tester",
+		ProductBarcode: " abc-001 ",
+		ProductID:      "product-1",
+		ProductName:    "产品A",
+		RouteID:        "route-a",
+		RouteStepID:    routeStepIDs[0],
+		ProcessStepID:  "process-a",
+		Operator:       "tester",
 	})
 
 	require.NoError(t, err)
@@ -203,9 +184,9 @@ func TestInitializeProductBarcodeStateCreatesNotStartedStateAndEvent(t *testing.
 	require.Equal(t, ProductBarcodeStateStatusNotStarted, state.Status)
 	require.Equal(t, "route-a", state.RouteID)
 	require.Equal(t, routeStepIDs[0], state.RouteStepID)
-	require.Equal(t, "process-a", state.CurrentBranchOperationID)
-	require.NotNil(t, state.CurrentBranchOperation)
-	require.Equal(t, "首道工序", state.CurrentBranchOperation.Name)
+	require.Equal(t, "process-a", state.CurrentProcessStepID)
+	require.NotNil(t, state.CurrentProcessStep)
+	require.Equal(t, "首道工序", state.CurrentProcessStep.Name)
 	require.Len(t, state.Events, 1)
 	require.Equal(t, ProductBarcodeStateEventInitialized, state.Events[0].EventType)
 	require.Empty(t, state.Events[0].OperationID)
@@ -275,8 +256,8 @@ func TestInitializeProductBarcodeStateRejectsMissingProcess(t *testing.T) {
 	service, _ := newProductBarcodeStateTestService(t)
 
 	_, err := service.InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    "ABC-004",
-		BranchOperationID: "missing-process",
+		ProductBarcode: "ABC-004",
+		ProcessStepID:  "missing-process",
 	})
 
 	require.ErrorIs(t, err, ErrInvalidProductBarcodeState)
@@ -284,15 +265,15 @@ func TestInitializeProductBarcodeStateRejectsMissingProcess(t *testing.T) {
 
 func TestInitializeProductBarcodeStateRejectsNonFirstRouteStep(t *testing.T) {
 	service, database := newProductBarcodeStateTestService(t)
-	seedProductBarcodeStateBranchOperation(t, database, "process-a", "首道工序")
-	seedProductBarcodeStateBranchOperation(t, database, "process-b", "第二工序")
+	seedProductBarcodeStateProcessStep(t, database, "process-a", "首道工序")
+	seedProductBarcodeStateProcessStep(t, database, "process-b", "第二工序")
 	routeStepIDs := seedProductBarcodeStateRoute(t, database, "route-a", "process-a", "process-b")
 
 	_, err := service.InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    "ABC-005",
-		RouteID:           "route-a",
-		RouteStepID:       routeStepIDs[1],
-		BranchOperationID: "process-b",
+		ProductBarcode: "ABC-005",
+		RouteID:        "route-a",
+		RouteStepID:    routeStepIDs[1],
+		ProcessStepID:  "process-b",
 	})
 	require.ErrorIs(t, err, ErrInvalidProductBarcodeState)
 
@@ -306,17 +287,17 @@ func TestInitializeProductBarcodeStateRejectsNonFirstRouteStep(t *testing.T) {
 
 func TestInitializeProductBarcodeStateRejectsDraftRoute(t *testing.T) {
 	service, database := newProductBarcodeStateTestService(t)
-	seedProductBarcodeStateBranchOperation(t, database, "process-draft-route", "草稿路线工序")
+	seedProductBarcodeStateProcessStep(t, database, "process-draft-route", "草稿路线工序")
 	routeStepIDs := seedProductBarcodeStateRoute(t, database, "route-draft", "process-draft-route")
 	require.NoError(t, database.Model(&models.ProductionRoute{}).
 		Where("id = ?", "route-draft").
 		Update("status", "DRAFT").Error)
 
 	_, err := service.InitializeProductBarcodeState(InitializeProductBarcodeStateRequest{
-		ProductBarcode:    "DRAFT-STATE-001",
-		RouteID:           "route-draft",
-		RouteStepID:       routeStepIDs[0],
-		BranchOperationID: "process-draft-route",
+		ProductBarcode: "DRAFT-STATE-001",
+		RouteID:        "route-draft",
+		RouteStepID:    routeStepIDs[0],
+		ProcessStepID:  "process-draft-route",
 	})
 	require.ErrorIs(t, err, ErrInvalidProductBarcodeState)
 

@@ -33,6 +33,11 @@ import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
 import { type BOMSectionOption } from '../data/bom-section-schema'
 import { type Product } from '../data/schema'
+import { BOM_PRODUCTION_LINE_OPTIONS_QUERY_KEY } from '../query-keys'
+import {
+  BOMProductionLineOptionService,
+  type BOMProductionLineOption,
+} from '../services/bom-production-line-option-service'
 import { useBOMSectionOptions } from './use-bom-section-config'
 
 const logger = createLogger('useBOMReferenceResource')
@@ -44,7 +49,11 @@ const logger = createLogger('useBOMReferenceResource')
  * productAttributeCategories / productAttributeOptions 5 个 query —— 因为
  * productDisplayLabelMap 的构造需要这 4 张属性表才能正确派生 label。
  */
-export type BOMReferenceResourceKey = 'products' | 'materials' | 'sections'
+export type BOMReferenceResourceKey =
+  | 'products'
+  | 'materials'
+  | 'sections'
+  | 'productionLines'
 
 /**
  * 全部资源组的常量数组。新增"全集"消费方使用此常量，
@@ -68,6 +77,7 @@ export type BOMReferenceResourceFields = {
   productTypes: ProductType[]
   productAttributeCategories: ProductTemplateAttributeLevelOneCategory[]
   productAttributeOptions: ProductTemplateAttributeLevelTwoOption[]
+  productionLines: BOMProductionLineOption[]
 }
 
 /**
@@ -95,14 +105,18 @@ export type BOMReferenceResourceFor<K extends BOMReferenceResourceKey> =
       : object) &
     ('sections' extends K
       ? Pick<BOMReferenceResourceFields, 'sections'>
+      : object) &
+    ('productionLines' extends K
+      ? Pick<BOMReferenceResourceFields, 'productionLines'>
       : object)
 
 /**
  * 全集消费方使用的类型别名，等价于 BOMReferenceResourceFor<BOMReferenceResourceKey>。
  * 等同于 BOMReferenceResourceFields，保留以便向后兼容。
  */
-export type BOMReferenceResource =
-  CompositeReadResource<BOMReferenceResourceFields>
+export type BOMReferenceResource = CompositeReadResource<
+  Omit<BOMReferenceResourceFields, 'productionLines'>
+>
 
 interface UseBOMReferenceResourceParams<K extends BOMReferenceResourceKey> {
   /**
@@ -136,6 +150,7 @@ export function useBOMReferenceResource<
   const wantProducts = includeSet.has('products')
   const wantMaterials = includeSet.has('materials')
   const wantSections = includeSet.has('sections')
+  const wantProductionLines = includeSet.has('productionLines')
 
   const { locale } = useLanguage()
 
@@ -176,6 +191,11 @@ export function useBOMReferenceResource<
     enabled: enabled && wantProducts,
   })
   const sectionsQuery = useBOMSectionOptions(enabled && wantSections)
+  const productionLinesQuery = useQuery({
+    queryKey: BOM_PRODUCTION_LINE_OPTIONS_QUERY_KEY,
+    queryFn: () => BOMProductionLineOptionService.getActiveProductionLines(),
+    enabled: enabled && wantProductionLines,
+  })
 
   const resource = useMemo<
     CompositeReadResource<BOMReferenceResourceFor<K>>
@@ -305,6 +325,25 @@ export function useBOMReferenceResource<
       }
     }
 
+    if (wantProductionLines) {
+      const productionLinesFailure = resolveQueryFailure({
+        data: productionLinesQuery.data,
+        error: productionLinesQuery.error,
+        isPending: productionLinesQuery.isPending,
+        scope: 'useBOMReferenceResource.productionLines',
+        missingMessage:
+          '[CRITICAL] Missing BOM production line options query data',
+        failureMessage: '[CRITICAL] BOM production line options query failed',
+      })
+      if (productionLinesFailure) {
+        return {
+          status: 'error',
+          error: productionLinesFailure.error,
+          scope: productionLinesFailure.scope,
+        }
+      }
+    }
+
     const isStillLoading =
       (wantProducts &&
         (productsQuery.isPending ||
@@ -313,7 +352,8 @@ export function useBOMReferenceResource<
           productAttributeCategoriesQuery.isPending ||
           productAttributeOptionsQuery.isPending)) ||
       (wantMaterials && materialsQuery.isPending) ||
-      (wantSections && sectionsQuery.isPending)
+      (wantSections && sectionsQuery.isPending) ||
+      (wantProductionLines && productionLinesQuery.isPending)
     if (isStillLoading) {
       return { status: 'loading' }
     }
@@ -351,6 +391,10 @@ export function useBOMReferenceResource<
     if (wantSections) {
       ready.sections = sectionsQuery.data as BOMSectionOption[]
     }
+    if (wantProductionLines) {
+      ready.productionLines =
+        productionLinesQuery.data as BOMProductionLineOption[]
+    }
 
     return {
       status: 'ready',
@@ -361,6 +405,7 @@ export function useBOMReferenceResource<
     wantProducts,
     wantMaterials,
     wantSections,
+    wantProductionLines,
     materialsQuery.data,
     materialsQuery.error,
     materialsQuery.isPending,
@@ -382,6 +427,9 @@ export function useBOMReferenceResource<
     sectionsQuery.data,
     sectionsQuery.error,
     sectionsQuery.isPending,
+    productionLinesQuery.data,
+    productionLinesQuery.error,
+    productionLinesQuery.isPending,
   ])
 
   useEffect(() => {

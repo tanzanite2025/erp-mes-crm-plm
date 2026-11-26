@@ -9,7 +9,6 @@ import (
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -85,7 +84,6 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			product_id TEXT,
 			product_sku TEXT,
 			product_name TEXT,
-			product_template_id TEXT,
 			bom_owner_type TEXT,
 			bom_owner_customer_id TEXT,
 			bom_owner_customer_name TEXT,
@@ -103,7 +101,7 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			deleted_at DATETIME,
 			route_id TEXT,
 			sequence INTEGER,
-			branch_operation_id TEXT,
+			process_step_id TEXT,
 			execution_mode TEXT,
 			quality_gate TEXT,
 			quality_routing TEXT,
@@ -191,7 +189,7 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			product_name TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			current_branch_operation_id TEXT,
+			current_process_step_id TEXT,
 			status TEXT,
 			last_event_id TEXT,
 			started_at DATETIME,
@@ -208,8 +206,8 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			operation_id TEXT,
 			product_barcode TEXT NOT NULL,
 			event_type TEXT NOT NULL,
-			from_branch_operation_id TEXT,
-			to_branch_operation_id TEXT,
+			from_process_step_id TEXT,
+			to_process_step_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
 			operator TEXT,
@@ -228,7 +226,7 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			execution_lot_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			branch_operation_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL,
 			production_work_location_id TEXT NOT NULL,
 			execution_mode TEXT,
 			partner_id TEXT,
@@ -242,7 +240,7 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
-		CREATE TABLE production_bom_branch_operations (
+		CREATE TABLE production_mbom_branch_process_associations (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
 			updated_at DATETIME,
@@ -251,10 +249,8 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 			bom_owner_type TEXT NOT NULL,
 			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
 			bom_version_level TEXT NOT NULL DEFAULT '',
-			name TEXT NOT NULL,
-			description TEXT,
-			sort_order INTEGER NOT NULL DEFAULT 0,
-			is_active BOOLEAN NOT NULL DEFAULT true
+			process_step_id TEXT NOT NULL,
+			sort_order INTEGER NOT NULL DEFAULT 0
 		)
 	`).Error)
 	require.NoError(t, database.Exec(`
@@ -284,15 +280,14 @@ func createProductionOperationExecutionTestSchema(t *testing.T, database *gorm.D
 	require.NoError(t, database.Create(&models.PieceworkPayItem{BaseModel: models.BaseModel{ID: pieceworkTestPayItemID}, Code: "PAY-001", Name: "Independent payroll item", Unit: "PCS", Status: "active", Version: 1}).Error)
 }
 
-func seedProductionOperationBranch(t *testing.T, database *gorm.DB, branchOperationID string) {
+func seedProductionOperationBranch(t *testing.T, database *gorm.DB, processStepID string) {
 	t.Helper()
 
-	require.NoError(t, database.Create(&models.ProductionBOMBranchOperation{
-		BaseModel:    models.BaseModel{ID: branchOperationID},
-		ProductID:    uuid.NewString(),
-		Name:         branchOperationID,
-		IsActive:     true,
-		BOMOwnerType: "INTERNAL",
+	require.NoError(t, database.Create(&models.ProcessStep{
+		BaseModel: models.BaseModel{ID: processStepID},
+		Code:      processStepID,
+		Name:      processStepID,
+		IsActive:  true,
 	}).Error)
 }
 
@@ -300,31 +295,30 @@ func completeProductionOperationExecutionTestRequest(database *gorm.DB, request 
 	if strings.TrimSpace(request.ProductionWorkLocationID) == "" {
 		request.ProductionWorkLocationID = productionOperationExecutionTestWorkLocationID
 	}
-	branchOperationID := strings.TrimSpace(request.BranchOperationID)
-	if branchOperationID == "" {
+	processStepID := strings.TrimSpace(request.ProcessStepID)
+	if processStepID == "" {
 		return request
 	}
 	if strings.TrimSpace(request.RouteID) == "" {
-		request.RouteID = "production-test-route-" + branchOperationID
+		request.RouteID = "production-test-route-" + processStepID
 	}
 	if strings.TrimSpace(request.RouteStepID) == "" {
-		request.RouteStepID = "production-test-route-step-" + branchOperationID
+		request.RouteStepID = "production-test-route-step-" + processStepID
 	}
 	var route models.ProductionRoute
 	if err := database.First(&route, "id = ?", request.RouteID).Error; err != nil {
-		var operation models.ProductionBOMBranchOperation
-		if database.First(&operation, "id = ?", branchOperationID).Error == nil {
+		var processStep models.ProcessStep
+		if database.First(&processStep, "id = ?", processStepID).Error == nil {
 			var err error
 			route, err = saveProductionRouteRevisionTestRecord(database, models.ProductionRoute{
-				BaseModel:          models.BaseModel{ID: request.RouteID},
-				Code:               "TEST-" + request.RouteID,
-				Name:               "Production test route",
-				ProductID:          operation.ProductID,
-				BOMOwnerType:       operation.BOMOwnerType,
-				BOMOwnerCustomerID: operation.BOMOwnerCustomerID,
-				BOMVersionLevel:    operation.BOMVersionLevel,
-				Version:            1,
-				Status:             "PUBLISHED",
+				BaseModel:       models.BaseModel{ID: request.RouteID},
+				Code:            "TEST-" + request.RouteID,
+				Name:            "Production test route",
+				ProductID:       "production-operation-test-product",
+				BOMOwnerType:    "INTERNAL",
+				BOMVersionLevel: "standard",
+				Version:         1,
+				Status:          "PUBLISHED",
 			})
 			if err != nil {
 				return request
@@ -334,12 +328,12 @@ func completeProductionOperationExecutionTestRequest(database *gorm.DB, request 
 	var routeStep models.ProductionRouteStep
 	if database.First(&routeStep, "id = ?", request.RouteStepID).Error != nil {
 		_ = database.Create(&models.ProductionRouteStep{
-			BaseModel:         models.BaseModel{ID: request.RouteStepID},
-			RouteID:           request.RouteID,
-			Sequence:          1,
-			BranchOperationID: branchOperationID,
-			ExecutionMode:     ProductionOperationExecutionModeInHouse,
-			QualityGate:       "NONE",
+			BaseModel:     models.BaseModel{ID: request.RouteStepID},
+			RouteID:       request.RouteID,
+			Sequence:      1,
+			ProcessStepID: processStepID,
+			ExecutionMode: ProductionOperationExecutionModeInHouse,
+			QualityGate:   "NONE",
 		}).Error
 	}
 	return request
@@ -350,11 +344,11 @@ func TestRecordProductionOperationExecutionCreatesOperationAndBarcodeState(t *te
 	seedProductionOperationBranch(t, database, "process-a")
 
 	operation, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-		IdempotencyKey:    "operation-start-basic",
-		ProductBarcode:    " abc-001 ",
-		BranchOperationID: "process-a",
-		Action:            "start",
-		Operator:          "tester",
+		IdempotencyKey: "operation-start-basic",
+		ProductBarcode: " abc-001 ",
+		ProcessStepID:  "process-a",
+		Action:         "start",
+		Operator:       "tester",
 	})
 
 	require.NoError(t, err)
@@ -365,7 +359,7 @@ func TestRecordProductionOperationExecutionCreatesOperationAndBarcodeState(t *te
 
 	state, events, err := loadProductBarcodeStateWithEvents(database, "ABC-001")
 	require.NoError(t, err)
-	require.Equal(t, "process-a", state.CurrentBranchOperationID)
+	require.Equal(t, "process-a", state.CurrentProcessStepID)
 	require.Equal(t, ProductBarcodeStateStatusInProgress, state.Status)
 	require.Len(t, events, 1)
 	require.Equal(t, ProductBarcodeStateEventStart, events[0].EventType)
@@ -380,11 +374,11 @@ func TestRecordProductionOperationExecutionRejectsDraftRoute(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
 	seedProductionOperationBranch(t, database, "process-draft-route")
 	request := completeProductionOperationExecutionTestRequest(database, RecordProductionOperationExecutionRequest{
-		IdempotencyKey:    "operation-draft-route-denied",
-		ProductBarcode:    "DRAFT-OPERATION-001",
-		BranchOperationID: "process-draft-route",
-		Action:            ProductionOperationActionStart,
-		Operator:          "tester",
+		IdempotencyKey: "operation-draft-route-denied",
+		ProductBarcode: "DRAFT-OPERATION-001",
+		ProcessStepID:  "process-draft-route",
+		Action:         ProductionOperationActionStart,
+		Operator:       "tester",
 	})
 	require.NoError(t, database.Model(&models.ProductionRoute{}).
 		Where("id = ?", request.RouteID).
@@ -404,10 +398,10 @@ func TestHeldProductBarcodeCanResumeCurrentProcess(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
 	seedProductionOperationBranch(t, database, "process-held-resume")
 	request := RecordProductionOperationExecutionRequest{
-		IdempotencyKey:    "held-resume-start",
-		ProductBarcode:    "HELD-RESUME-001",
-		BranchOperationID: "process-held-resume",
-		Action:            ProductionOperationActionStart,
+		IdempotencyKey: "held-resume-start",
+		ProductBarcode: "HELD-RESUME-001",
+		ProcessStepID:  "process-held-resume",
+		Action:         ProductionOperationActionStart,
 	}
 
 	started, err := service.RecordProductionOperationExecution(request)
@@ -442,10 +436,10 @@ func TestRecordProductionOperationExecutionRequiresWorkLocation(t *testing.T) {
 	service, database := newProductionOperationExecutionTestService(t)
 	seedProductionOperationBranch(t, database, "process-location-required")
 	request := completeProductionOperationExecutionTestRequest(database, RecordProductionOperationExecutionRequest{
-		IdempotencyKey:    "operation-without-work-location",
-		ProductBarcode:    "ABC-003",
-		BranchOperationID: "process-location-required",
-		Action:            ProductionOperationActionComplete,
+		IdempotencyKey: "operation-without-work-location",
+		ProductBarcode: "ABC-003",
+		ProcessStepID:  "process-location-required",
+		Action:         ProductionOperationActionComplete,
 	})
 	request.ProductionWorkLocationID = ""
 
@@ -471,10 +465,10 @@ func TestProductionCompletionPreservesProductStateWithoutCreatingWageRecords(t *
 		Status:       "PUBLISHED",
 	})
 	require.NoError(t, database.Create(&models.ProductionRouteStep{
-		BaseModel:         models.BaseModel{ID: "route-step-a"},
-		RouteID:           "route-a",
-		Sequence:          10,
-		BranchOperationID: "process-a",
+		BaseModel:     models.BaseModel{ID: "route-step-a"},
+		RouteID:       "route-a",
+		Sequence:      10,
+		ProcessStepID: "process-a",
 	}).Error)
 	require.NoError(t, database.Create(&models.ProductionExecutionLot{
 		BaseModel:      models.BaseModel{ID: "lot-a"},
@@ -499,14 +493,14 @@ func TestProductionCompletionPreservesProductStateWithoutCreatingWageRecords(t *
 	}).Error)
 
 	operation, err := service.RecordProductionOperationExecutionWithContext(context.Background(), RecordProductionOperationExecutionRequest{
-		IdempotencyKey:    "operation-complete-product-state",
-		ProductBarcode:    "ABC-004",
-		ExecutionLotID:    "lot-a",
-		RouteID:           "route-a",
-		RouteStepID:       "route-step-a",
-		BranchOperationID: "process-a",
-		Action:            ProductionOperationActionComplete,
-		Operator:          "tester",
+		IdempotencyKey: "operation-complete-product-state",
+		ProductBarcode: "ABC-004",
+		ExecutionLotID: "lot-a",
+		RouteID:        "route-a",
+		RouteStepID:    "route-step-a",
+		ProcessStepID:  "process-a",
+		Action:         ProductionOperationActionComplete,
+		Operator:       "tester",
 	})
 
 	require.NoError(t, err)

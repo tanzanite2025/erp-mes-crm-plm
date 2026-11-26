@@ -13,10 +13,7 @@ import {
 } from '@/components/ui/sheet'
 import { ProductionMaterialIssuanceStartWorkflowLauncher } from '@/features/production-material-issuance/components/production-material-issuance-start-workflow-launcher'
 import { ProductionMaterialRequirementBomBasisReview } from '@/features/production-material-requirements/components/production-material-requirement-bom-basis-review'
-import type {
-  ProductionMaterialRequirementBomSelection,
-  ProductionMaterialRequirementSourceLine,
-} from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
+import type { ProductionMaterialRequirementSourceLine } from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 import { type MaterialRequirement } from '../../data/requirement-schema'
 import { RequirementExportService } from '../../services/requirement-export-service'
 import { MoldRequirementAlert } from './mold-requirement-alert'
@@ -34,11 +31,7 @@ interface RequirementDrawerProps {
   isLoading: boolean
   selectedCount: number
   sourceLines: ProductionMaterialRequirementSourceLine[]
-  bomSelections: ProductionMaterialRequirementBomSelection[]
   isComplete: boolean
-  onBomSelectionChange: (
-    selection: ProductionMaterialRequirementBomSelection
-  ) => void
   onRecalculate: () => void
 }
 
@@ -51,9 +44,7 @@ export function RequirementDrawer({
   isLoading,
   selectedCount,
   sourceLines,
-  bomSelections,
   isComplete,
-  onBomSelectionChange,
   onRecalculate,
 }: RequirementDrawerProps) {
   const { locale, t } = useLanguage()
@@ -140,10 +131,8 @@ export function RequirementDrawer({
           >
             <ProductionMaterialRequirementBomBasisReview
               sourceLines={sourceLines}
-              selections={bomSelections}
               isComplete={isComplete}
               isLoading={isLoading}
-              onSelectionChange={onBomSelectionChange}
               onRecalculate={onRecalculate}
             />
             {isOpen && (
@@ -152,7 +141,6 @@ export function RequirementDrawer({
                 initialSources={sourceLines.map((source) => ({
                   salesOrderId: source.salesOrderId,
                   salesOrderLineId: source.salesOrderLineId,
-                  ...(source.bom ? { bomId: source.bom.id } : {}),
                   orderNo: source.orderNo,
                   lineNo: source.lineNo,
                   productName: source.productName,

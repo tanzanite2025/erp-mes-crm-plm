@@ -176,7 +176,7 @@ func TestProductionExecutionPostgresConcurrentCompletionKeysCreateOneProductionF
 					processID = strings.ToUpper(processID)
 				}
 				result, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
-					IdempotencyKey: key, ProductBarcode: fixture.barcode, BranchOperationID: processID, Action: ProductionOperationActionComplete,
+					IdempotencyKey: key, ProductBarcode: fixture.barcode, ProcessStepID: processID, Action: ProductionOperationActionComplete,
 				})
 				return result.ID, err
 			})

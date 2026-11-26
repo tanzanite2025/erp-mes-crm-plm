@@ -1,6 +1,5 @@
 import { type AppLocale, translate } from '@/locales'
 import { apiFetch } from '@/lib/api-client'
-import type { ProductionMaterialRequirementBomSelection } from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 import {
   productionMaterialRequirementAnalysisResponseSchema,
   type ProductionMaterialRequirementAnalysisResponse,
@@ -9,17 +8,12 @@ import { type MaterialRequirement } from '../data/requirement-schema'
 
 export const RequirementCoreService = {
   async getMrpRequirements(
-    selectedKeys: string[] = [],
-    bomSelections: ProductionMaterialRequirementBomSelection[] = []
+    selectedKeys: string[] = []
   ): Promise<ProductionMaterialRequirementAnalysisResponse> {
     const params = new URLSearchParams()
     if (selectedKeys.length > 0) {
       params.set('selectedKeys', selectedKeys.join(','))
     }
-    if (bomSelections.length > 0) {
-      params.set('bomSelections', JSON.stringify(bomSelections))
-    }
-
     const query = params.toString()
     const endpoint = query ? `/mrp/requirements?${query}` : '/mrp/requirements'
     const res = await apiFetch<unknown>(endpoint)

@@ -118,7 +118,7 @@ type OutsourceTransfer struct {
 	PartnerID            string              `gorm:"size:36;index" json:"partnerId"`
 	RouteID              string              `gorm:"type:uuid;index" json:"routeId"`
 	RouteStepID          string              `gorm:"type:uuid;index" json:"routeStepId"`
-	BranchOperationID    string              `gorm:"type:uuid;index;not null" json:"branchOperationId"`
+	ProcessStepID        string              `gorm:"type:uuid;index;not null" json:"processStepId"`
 	FromHolderType       string              `gorm:"size:40;index" json:"fromHolderType"`
 	FromHolderID         string              `gorm:"type:uuid;index" json:"fromHolderId"`
 	ToHolderType         string              `gorm:"size:40;index" json:"toHolderType"`
@@ -162,7 +162,7 @@ type OutsourceInspection struct {
 	UOM                  string              `gorm:"size:20" json:"uom"`
 	RouteID              string              `gorm:"type:uuid;index" json:"routeId"`
 	RouteStepID          string              `gorm:"type:uuid;index" json:"routeStepId"`
-	BranchOperationID    string              `gorm:"type:uuid;index;not null" json:"branchOperationId"`
+	ProcessStepID        string              `gorm:"type:uuid;index;not null" json:"processStepId"`
 	OperationID          string              `gorm:"type:uuid;index" json:"operationId"`
 	InspectedAt          *time.Time          `gorm:"index" json:"inspectedAt"`
 	Inspector            string              `gorm:"size:120" json:"inspector"`

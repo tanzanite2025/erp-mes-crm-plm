@@ -49,7 +49,7 @@ func normalizeProductionMaterialIssuanceDispatchRequest(request ProductionMateri
 	selections := make([]ProductionMaterialIssuanceSourceSelection, 0, len(request.Sources))
 	expectations := make(map[uint]ProductionMaterialIssuanceDispatchSourceExpectation)
 	for _, source := range request.Sources {
-		source.SalesOrderID, source.BOMID = strings.TrimSpace(source.SalesOrderID), strings.TrimSpace(source.BOMID)
+		source.SalesOrderID, source.ExpectedBOMID = strings.TrimSpace(source.SalesOrderID), strings.TrimSpace(source.ExpectedBOMID)
 		source.BasisFingerprint = strings.ToLower(strings.TrimSpace(source.BasisFingerprint))
 		fingerprint, err := hex.DecodeString(source.BasisFingerprint)
 		if err != nil || len(fingerprint) != sha256.Size || source.ExpectedOrderVersion <= 0 || source.ExpectedBOMVersion <= 0 {

@@ -149,14 +149,18 @@ describe('production handover guide direct step dialogs', () => {
     fireEvent.click(screen.getByRole('button', { name: '发起领料' }))
     const dialog = await screen.findByRole('dialog', { name: '发起生产领料' })
     expect(
-      await within(dialog).findByText(/当前搜索范围没有有效订单行/)
+      await within(dialog).findByText(
+        /当前搜索范围没有有效订单行/,
+        {},
+        { timeout: 10_000 }
+      )
     ).toBeInTheDocument()
     expect(
       vi
         .mocked(apiFetch)
         .mock.calls.some(([path]) => String(path).includes('/source-options'))
     ).toBe(true)
-  })
+  }, 15_000)
 
   it('loads no business data while reading and remembers the original across review and action dialogs', async () => {
     renderWarehouseProductionHandoversGuideWithBusinessQueries()

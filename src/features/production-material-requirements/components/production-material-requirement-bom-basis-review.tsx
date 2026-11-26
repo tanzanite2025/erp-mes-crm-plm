@@ -1,18 +1,11 @@
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
-import type {
-  ProductionMaterialRequirementBomSelection,
-  ProductionMaterialRequirementSourceLine,
-} from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
+import type { ProductionMaterialRequirementSourceLine } from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 
 interface ProductionMaterialRequirementBomBasisReviewProps {
   sourceLines: ProductionMaterialRequirementSourceLine[]
-  selections: ProductionMaterialRequirementBomSelection[]
   isComplete: boolean
   isLoading: boolean
-  onSelectionChange: (
-    selection: ProductionMaterialRequirementBomSelection
-  ) => void
   onRecalculate: () => void
   scopeDescription?: string
   incompleteDescription?: string
@@ -21,10 +14,8 @@ interface ProductionMaterialRequirementBomBasisReviewProps {
 
 export function ProductionMaterialRequirementBomBasisReview({
   sourceLines,
-  selections,
   isComplete,
   isLoading,
-  onSelectionChange,
   onRecalculate,
   scopeDescription,
   incompleteDescription,
@@ -66,17 +57,6 @@ export function ProductionMaterialRequirementBomBasisReview({
         </summary>
         <div className='mt-3 space-y-3'>
           {sourceLines.map((source) => {
-            const selected = selections.find(
-              (selection) =>
-                selection.salesOrderId === source.salesOrderId &&
-                selection.salesOrderLineId === source.salesOrderLineId
-            )
-            const value = selected?.bomId ?? source.bom?.id ?? ''
-            const validValue = source.bomCandidates.some(
-              (candidate) => candidate.id === value
-            )
-              ? value
-              : ''
             const label = `${source.orderNo} / ${source.lineNo} · ${source.productName}`
             return (
               <div
@@ -84,36 +64,7 @@ export function ProductionMaterialRequirementBomBasisReview({
                 className='min-w-0 space-y-2 rounded-xl border border-sky-200 bg-background p-3 dark:border-sky-800'
               >
                 <p className='text-sm font-medium wrap-break-word'>{label}</p>
-                {source.bomCandidates.length > 1 ||
-                source.issueCode === 'BOM_SELECTION_CHANGED' ? (
-                  <select
-                    aria-label={label}
-                    value={validValue}
-                    disabled={isLoading}
-                    className='min-h-10 w-full min-w-0 rounded-md border bg-background px-2'
-                    onChange={(event) => {
-                      if (event.target.value)
-                        onSelectionChange({
-                          salesOrderId: source.salesOrderId,
-                          salesOrderLineId: source.salesOrderLineId,
-                          bomId: event.target.value,
-                        })
-                    }}
-                  >
-                    <option value='' disabled>
-                      {t('mrp.requirements.basisReview.chooseBom')}
-                    </option>
-                    {source.bomCandidates.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id}>
-                        {candidate.bomNo} ·{' '}
-                        {formatPerformanceVersionLabel(candidate)} ·{' '}
-                        {candidate.revisionNo} / {candidate.bomVersion} ·{' '}
-                        {candidate.measuredWeight}{' '}
-                        {candidate.measuredWeightUnit}
-                      </option>
-                    ))}
-                  </select>
-                ) : source.bom ? (
+                {source.bom ? (
                   <p className='text-xs leading-6'>
                     {source.bom.bomNo} ·{' '}
                     {formatPerformanceVersionLabel(source.bom)} ·{' '}
@@ -121,6 +72,16 @@ export function ProductionMaterialRequirementBomBasisReview({
                     {source.bom.measuredWeight} {source.bom.measuredWeightUnit}
                   </p>
                 ) : null}
+                {source.issueCode === 'DUPLICATE_EFFECTIVE_MBOM' && (
+                  <ul className='space-y-1 text-xs text-amber-900 dark:text-amber-100'>
+                    {source.bomCandidates.map((candidate) => (
+                      <li key={candidate.id}>
+                        {candidate.bomNo} · {candidate.revisionNo} /{' '}
+                        {candidate.bomVersion}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {source.issueCode && (
                   <p className='text-xs leading-6 text-amber-800 dark:text-amber-200'>
                     {t(

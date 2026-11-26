@@ -135,7 +135,7 @@ func DispatchProductionOperationStatusChangedTx(tx *gorm.DB, operation models.Pr
 		"productBarcode":           operation.ProductBarcode,
 		"routeId":                  operation.RouteID,
 		"routeStepId":              operation.RouteStepID,
-		"branchOperationId":        operation.BranchOperationID,
+		"processStepId":            operation.ProcessStepID,
 		"productionWorkLocationId": operation.ProductionWorkLocationID,
 		"action":                   operation.Action,
 		"result":                   operation.Result,
@@ -146,7 +146,7 @@ func DispatchProductionOperationStatusChangedTx(tx *gorm.DB, operation models.Pr
 		"ProductBarcode":           operation.ProductBarcode,
 		"RouteId":                  operation.RouteID,
 		"RouteStepId":              operation.RouteStepID,
-		"BranchOperationId":        operation.BranchOperationID,
+		"ProcessStepId":            operation.ProcessStepID,
 		"ProductionWorkLocationId": operation.ProductionWorkLocationID,
 		"Action":                   operation.Action,
 		"Result":                   operation.Result,
@@ -243,7 +243,7 @@ func DispatchOutsourceTransferStatusChangedTx(
 	metadata["uom"] = transfer.UOM
 	metadata["routeId"] = transfer.RouteID
 	metadata["routeStepId"] = transfer.RouteStepID
-	metadata["branchOperationId"] = transfer.BranchOperationID
+	metadata["processStepId"] = transfer.ProcessStepID
 	metadata["fromHolderType"] = transfer.FromHolderType
 	metadata["fromHolderId"] = transfer.FromHolderID
 	metadata["toHolderType"] = transfer.ToHolderType
@@ -263,7 +263,7 @@ func DispatchOutsourceTransferStatusChangedTx(
 	templateValues["UOM"] = transfer.UOM
 	templateValues["RouteId"] = transfer.RouteID
 	templateValues["RouteStepId"] = transfer.RouteStepID
-	templateValues["BranchOperationId"] = transfer.BranchOperationID
+	templateValues["ProcessStepId"] = transfer.ProcessStepID
 	templateValues["TransferEventId"] = transfer.TransferEventID
 	templateValues["PreviousOrderStatus"] = strings.TrimSpace(previousOrderStatus)
 	templateValues["OrderStatus"] = order.Status
@@ -309,7 +309,7 @@ func DispatchOutsourceInspectionStatusChangedTx(
 	metadata["uom"] = inspection.UOM
 	metadata["routeId"] = inspection.RouteID
 	metadata["routeStepId"] = inspection.RouteStepID
-	metadata["branchOperationId"] = inspection.BranchOperationID
+	metadata["processStepId"] = inspection.ProcessStepID
 	metadata["operationId"] = inspection.OperationID
 	metadata["previousOrderStatus"] = strings.TrimSpace(previousOrderStatus)
 	metadata["orderStatus"] = order.Status
@@ -331,7 +331,7 @@ func DispatchOutsourceInspectionStatusChangedTx(
 	templateValues["UOM"] = inspection.UOM
 	templateValues["RouteId"] = inspection.RouteID
 	templateValues["RouteStepId"] = inspection.RouteStepID
-	templateValues["BranchOperationId"] = inspection.BranchOperationID
+	templateValues["ProcessStepId"] = inspection.ProcessStepID
 	templateValues["OperationId"] = inspection.OperationID
 	templateValues["PreviousOrderStatus"] = strings.TrimSpace(previousOrderStatus)
 	templateValues["OrderStatus"] = order.Status

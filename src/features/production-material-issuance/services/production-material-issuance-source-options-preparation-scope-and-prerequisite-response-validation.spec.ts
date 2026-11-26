@@ -10,6 +10,10 @@ vi.mock('@/lib/api-client', () => ({ apiFetch: vi.fn() }))
 beforeEach(() => vi.mocked(apiFetch).mockReset())
 const fixture =
   createProductionMaterialIssuanceReviewedSourceAndFrozenDocumentTestFixture()
+const sourcePreparationSelection = {
+  salesOrderId: fixture.basis.salesOrderId,
+  salesOrderLineId: fixture.basis.salesOrderLineId,
+}
 function createProductionMaterialIssuanceSourceOptionsValidationTestResponse() {
   return {
     items: [
@@ -80,8 +84,8 @@ describe('production source selection and preparation response boundaries', () =
     await expect(prepareProductionMaterialIssuanceSources([])).rejects.toThrow()
     await expect(
       prepareProductionMaterialIssuanceSources([
-        fixture.selection,
-        fixture.selection,
+        sourcePreparationSelection,
+        sourcePreparationSelection,
       ])
     ).rejects.toThrow()
     expect(apiFetch).not.toHaveBeenCalled()
@@ -104,7 +108,7 @@ describe('production source selection and preparation response boundaries', () =
         sourceLines: [{ ...prepared.sourceLines[0], ...identity }],
       })
       await expect(
-        prepareProductionMaterialIssuanceSources([fixture.selection])
+        prepareProductionMaterialIssuanceSources([sourcePreparationSelection])
       ).rejects.toThrow()
     }
   })
@@ -114,7 +118,7 @@ describe('production source selection and preparation response boundaries', () =
     prepared.sourceLines[0].bom = { ...fixture.basis.bom, measuredWeight: 0 }
     vi.mocked(apiFetch).mockResolvedValue(prepared)
     await expect(
-      prepareProductionMaterialIssuanceSources([fixture.selection])
+      prepareProductionMaterialIssuanceSources([sourcePreparationSelection])
     ).rejects.toThrow()
     vi.mocked(apiFetch).mockResolvedValue({
       ...prepared,
@@ -122,7 +126,7 @@ describe('production source selection and preparation response boundaries', () =
       issues: [{ salesOrderLineId: 101, code: 'INVALID_FINISHED_WEIGHT' }],
     })
     await expect(
-      prepareProductionMaterialIssuanceSources([fixture.selection])
+      prepareProductionMaterialIssuanceSources([sourcePreparationSelection])
     ).resolves.toMatchObject({ isReady: false })
   })
 })

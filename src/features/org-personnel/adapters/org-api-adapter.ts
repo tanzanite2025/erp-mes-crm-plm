@@ -1,23 +1,5 @@
-import type {
-  OrgLinkedArchitectureApiDTO,
-  OrgNodeApiDTO,
-  OrgNodeSaveApiDTO,
-} from '../contracts/org-api-dto'
+import type { OrgNodeApiDTO, OrgNodeSaveApiDTO } from '../contracts/org-api-dto'
 import type { OrgNode } from '../data/org-schema'
-
-function toLinkedArchitectureContract(
-  items?: OrgLinkedArchitectureApiDTO[] | null
-): OrgNode['linkedArchitecture'] {
-  if (!Array.isArray(items) || items.length === 0) {
-    return undefined
-  }
-
-  return items.map((item: OrgLinkedArchitectureApiDTO) => ({
-    type: item.type,
-    id: item.id,
-    name: item.name,
-  }))
-}
 
 export function toOrgNodeContract(dto: OrgNodeApiDTO): OrgNode {
   return {
@@ -27,7 +9,6 @@ export function toOrgNodeContract(dto: OrgNodeApiDTO): OrgNode {
     manager: dto.manager?.trim() || undefined,
     description: dto.description?.trim() || undefined,
     type: dto.type,
-    linkedArchitecture: toLinkedArchitectureContract(dto.linkedArchitecture),
     children: Array.isArray(dto.children)
       ? dto.children.map(toOrgNodeContract)
       : undefined,
@@ -42,13 +23,6 @@ export function toOrgNodeSaveApiDTO(contract: OrgNode): OrgNodeSaveApiDTO {
     manager: contract.manager?.trim() || undefined,
     description: contract.description?.trim() || undefined,
     type: contract.type,
-    linkedArchitecture: contract.linkedArchitecture?.map(
-      (item: NonNullable<OrgNode['linkedArchitecture']>[number]) => ({
-        type: item.type,
-        id: item.id,
-        name: item.name,
-      })
-    ),
   }
 
   const normalizedID = contract.id?.trim()

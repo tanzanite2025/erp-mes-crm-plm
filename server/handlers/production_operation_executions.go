@@ -12,7 +12,7 @@ func GetProductionOperationExecutionsHandler(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	response, err := services.ListProductionOperationExecutions(services.ProductionOperationExecutionListQuery{
 		ProductBarcode:           c.Query("productBarcode"),
-		BranchOperationID:        c.Query("branchOperationId"),
+		ProcessStepID:            c.Query("processStepId"),
 		RouteStepID:              c.Query("routeStepId"),
 		ProductionWorkLocationID: c.Query("productionWorkLocationId"),
 		ExecutionLotID:           c.Query("executionLotId"),

@@ -2,10 +2,60 @@ package services
 
 import (
 	"fmt"
+	"strings"
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
 )
+
+func normalizeAndValidateSalesOrderLineProductionBindingTx(tx *gorm.DB, line *models.SalesOrderLine) error {
+	line.ProductionRouteMode = strings.ToUpper(strings.TrimSpace(line.ProductionRouteMode))
+	if line.ProductionRouteMode == "" {
+		line.ProductionRouteMode = "DEFAULT"
+	}
+	if line.ProductionRouteMode != "DEFAULT" && line.ProductionRouteMode != "CUSTOM" {
+		return fmt.Errorf("%w: productionRouteMode must be DEFAULT or CUSTOM", ErrSalesTransactionInvalidPayload)
+	}
+
+	line.BOMOwnerType = strings.ToUpper(strings.TrimSpace(line.BOMOwnerType))
+	line.BOMOwnerCustomerID = strings.TrimSpace(line.BOMOwnerCustomerID)
+	line.BOMVersionLevel = strings.TrimSpace(line.BOMVersionLevel)
+	branchFieldsAreEmpty := line.BOMOwnerType == "" && line.BOMOwnerCustomerID == "" && line.BOMVersionLevel == ""
+	if branchFieldsAreEmpty {
+		if line.ProductionRouteMode == "CUSTOM" {
+			return fmt.Errorf("%w: a custom production route requires a selected MBOM branch", ErrSalesTransactionInvalidPayload)
+		}
+		if tx.Migrator().HasTable(&models.BOM{}) && tx.Migrator().HasTable(&models.Customer{}) {
+			var branchCount int64
+			if err := queryCurrentProductionRouteBOMBranches(tx).
+				Where("b.product_id = ?", strings.TrimSpace(line.ProductID)).
+				Count(&branchCount).Error; err != nil {
+				return fmt.Errorf("failed to check effective MBOM branches for the sales order line: %w", err)
+			}
+			if branchCount > 0 {
+				return fmt.Errorf("%w: select an effective MBOM branch for product %s", ErrSalesTransactionInvalidPayload, line.ProductID)
+			}
+		}
+		return nil
+	}
+
+	branch := models.ProductionRoute{
+		ProductID:          strings.TrimSpace(line.ProductID),
+		BOMOwnerType:       line.BOMOwnerType,
+		BOMOwnerCustomerID: line.BOMOwnerCustomerID,
+		BOMVersionLevel:    line.BOMVersionLevel,
+	}
+	if err := validateProductionRouteBOMBranchIdentity(branch); err != nil {
+		return fmt.Errorf("%w: invalid selected MBOM branch: %v", ErrSalesTransactionInvalidPayload, err)
+	}
+	if err := hydrateProductionRouteBOMBranch(tx, &branch); err != nil {
+		return fmt.Errorf("%w: selected MBOM branch is not currently effective: %v", ErrSalesTransactionInvalidPayload, err)
+	}
+	line.BOMOwnerType = branch.BOMOwnerType
+	line.BOMOwnerCustomerID = branch.BOMOwnerCustomerID
+	line.BOMVersionLevel = branch.BOMVersionLevel
+	return nil
+}
 
 // validateAndAssignSalesOrderLineOwnershipForSave treats ID as identity and LineNo
 // as presentation only. A removed (detached) ID cannot be reclaimed by a later save.
@@ -82,6 +132,11 @@ func persistSalesOrderLinesByStableIdentityTx(tx *gorm.DB, orderID string, lines
 	}
 	if err := validateAndAssignSalesOrderLineOwnershipForSave(orderID, previousLines, lines); err != nil {
 		return err
+	}
+	for index := range lines {
+		if err := normalizeAndValidateSalesOrderLineProductionBindingTx(tx, &lines[index]); err != nil {
+			return err
+		}
 	}
 	if err := validateSalesOrderLinesAgainstProductionReferencesTx(tx, orderID, previousLines, lines); err != nil {
 		return err

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -9,35 +8,32 @@ import (
 )
 
 type OrganizationSaveRequest struct {
-	ID                 string          `json:"id"`
-	Name               string          `json:"name"`
-	ParentID           *string         `json:"parentId"`
-	Manager            string          `json:"manager"`
-	Description        string          `json:"description"`
-	Type               string          `json:"type"`
-	LinkedArchitecture json.RawMessage `json:"linkedArchitecture"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	ParentID    *string `json:"parentId"`
+	Manager     string  `json:"manager"`
+	Description string  `json:"description"`
+	Type        string  `json:"type"`
 }
 
 type OrganizationSaveResponse struct {
-	ID                 string          `json:"id"`
-	Name               string          `json:"name"`
-	ParentID           *string         `json:"parentId"`
-	Manager            string          `json:"manager"`
-	Description        string          `json:"description"`
-	Type               string          `json:"type"`
-	LinkedArchitecture json.RawMessage `json:"linkedArchitecture"`
-	CreatedAt          time.Time       `json:"createdAt"`
-	UpdatedAt          time.Time       `json:"updatedAt"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	ParentID    *string   `json:"parentId"`
+	Manager     string    `json:"manager"`
+	Description string    `json:"description"`
+	Type        string    `json:"type"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 type BulkSyncOrganizationRequest struct {
-	ID                 string          `json:"id"`
-	Name               string          `json:"name"`
-	ParentID           *string         `json:"parentId"`
-	Manager            string          `json:"manager"`
-	Description        string          `json:"description"`
-	Type               string          `json:"type"`
-	LinkedArchitecture json.RawMessage `json:"linkedArchitecture"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	ParentID    *string `json:"parentId"`
+	Manager     string  `json:"manager"`
+	Description string  `json:"description"`
+	Type        string  `json:"type"`
 }
 
 type EmployeeSaveRequest struct {
@@ -61,17 +57,16 @@ type EmployeeSaveRequest struct {
 }
 
 type OrganizationTreeNodeResponse struct {
-	ID                 string                         `json:"id"`
-	Name               string                         `json:"name"`
-	ParentID           *string                        `json:"parentId"`
-	Manager            string                         `json:"manager"`
-	Description        string                         `json:"description"`
-	Type               string                         `json:"type"`
-	LinkedArchitecture json.RawMessage                `json:"linkedArchitecture"`
-	Children           []OrganizationTreeNodeResponse `json:"children,omitempty"`
-	CreatedAt          time.Time                      `json:"createdAt"`
-	UpdatedAt          time.Time                      `json:"updatedAt"`
-	Version            int                            `json:"version"`
+	ID          string                         `json:"id"`
+	Name        string                         `json:"name"`
+	ParentID    *string                        `json:"parentId"`
+	Manager     string                         `json:"manager"`
+	Description string                         `json:"description"`
+	Type        string                         `json:"type"`
+	Children    []OrganizationTreeNodeResponse `json:"children,omitempty"`
+	CreatedAt   time.Time                      `json:"createdAt"`
+	UpdatedAt   time.Time                      `json:"updatedAt"`
+	Version     int                            `json:"version"`
 }
 
 type EmployeeListItemResponse struct {
@@ -165,13 +160,12 @@ type BulkSyncEmployeeRequest struct {
 
 func MapOrganizationSaveRequestToModel(input OrganizationSaveRequest) models.Organization {
 	return models.Organization{
-		BaseModel:          models.BaseModel{ID: input.ID},
-		Name:               input.Name,
-		ParentID:           input.ParentID,
-		Manager:            input.Manager,
-		Description:        input.Description,
-		Type:               input.Type,
-		LinkedArchitecture: input.LinkedArchitecture,
+		BaseModel:   models.BaseModel{ID: input.ID},
+		Name:        input.Name,
+		ParentID:    input.ParentID,
+		Manager:     input.Manager,
+		Description: input.Description,
+		Type:        input.Type,
 	}
 }
 
@@ -230,27 +224,25 @@ func maskEmployeeBankCard(value string) string {
 
 func MapOrganizationToSaveResponse(model models.Organization) OrganizationSaveResponse {
 	return OrganizationSaveResponse{
-		ID:                 model.ID,
-		Name:               model.Name,
-		ParentID:           model.ParentID,
-		Manager:            model.Manager,
-		Description:        model.Description,
-		Type:               model.Type,
-		LinkedArchitecture: model.LinkedArchitecture,
-		CreatedAt:          model.CreatedAt,
-		UpdatedAt:          model.UpdatedAt,
+		ID:          model.ID,
+		Name:        model.Name,
+		ParentID:    model.ParentID,
+		Manager:     model.Manager,
+		Description: model.Description,
+		Type:        model.Type,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
 	}
 }
 
 func MapBulkSyncOrganizationRequestToModel(input BulkSyncOrganizationRequest) models.Organization {
 	return models.Organization{
-		BaseModel:          models.BaseModel{ID: input.ID},
-		Name:               input.Name,
-		ParentID:           input.ParentID,
-		Manager:            input.Manager,
-		Description:        input.Description,
-		Type:               input.Type,
-		LinkedArchitecture: input.LinkedArchitecture,
+		BaseModel:   models.BaseModel{ID: input.ID},
+		Name:        input.Name,
+		ParentID:    input.ParentID,
+		Manager:     input.Manager,
+		Description: input.Description,
+		Type:        input.Type,
 	}
 }
 
@@ -290,16 +282,15 @@ func MapOrganizationNodeToResponse(node *models.Organization) OrganizationTreeNo
 	}
 
 	response := OrganizationTreeNodeResponse{
-		ID:                 node.ID,
-		Name:               node.Name,
-		ParentID:           node.ParentID,
-		Manager:            node.Manager,
-		Description:        node.Description,
-		Type:               node.Type,
-		LinkedArchitecture: node.LinkedArchitecture,
-		CreatedAt:          node.CreatedAt,
-		UpdatedAt:          node.UpdatedAt,
-		Version:            optimisticVersionFromTimestamps(node.UpdatedAt, node.CreatedAt),
+		ID:          node.ID,
+		Name:        node.Name,
+		ParentID:    node.ParentID,
+		Manager:     node.Manager,
+		Description: node.Description,
+		Type:        node.Type,
+		CreatedAt:   node.CreatedAt,
+		UpdatedAt:   node.UpdatedAt,
+		Version:     optimisticVersionFromTimestamps(node.UpdatedAt, node.CreatedAt),
 	}
 
 	if len(node.Children) > 0 {

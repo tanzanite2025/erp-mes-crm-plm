@@ -1,32 +1,6 @@
-import type {
-  ProductionLine,
-  ProductionProcessStep,
-  ProductionSegment,
-} from '@/features/production-shared/data/production-line'
 import type { ApsJob, ApsStageCard, ApsTimelineLaneDefinition } from '../types'
 
 export type { ApsJob } from '../types'
-
-export type ApsProcessTreeProcess = {
-  id: string
-  name: string
-  description?: string
-}
-
-export type ApsProcessTreeSegment = {
-  id: string
-  name: string
-  description?: string
-  processes: ApsProcessTreeProcess[]
-}
-
-export type ApsProcessTreeLine = {
-  id: string
-  code: string
-  name: string
-  description?: string
-  segments: ApsProcessTreeSegment[]
-}
 
 export type ApsSchedulingSource = {
   jobs: ApsJob[]
@@ -34,48 +8,15 @@ export type ApsSchedulingSource = {
   timelineSlots: string[]
   lanes: ApsTimelineLaneDefinition[]
   stageCards: ApsStageCard[]
-  processTree: ApsProcessTreeLine[]
-}
-
-function buildProcessNode(
-  process: ProductionProcessStep
-): ApsProcessTreeProcess {
-  return {
-    id: process.id,
-    name: process.name,
-    description: process.description,
-  }
-}
-
-function buildSegmentNode(segment: ProductionSegment): ApsProcessTreeSegment {
-  return {
-    id: segment.id,
-    name: segment.name,
-    description: segment.description,
-    processes: (segment.processes ?? []).map(buildProcessNode),
-  }
-}
-
-function buildLineNode(line: ProductionLine): ApsProcessTreeLine {
-  return {
-    id: line.id,
-    code: line.code,
-    name: line.name,
-    description: line.description,
-    segments: (line.segments ?? []).map(buildSegmentNode),
-  }
 }
 
 export function buildApsSchedulingSource(source: {
-  lines?: ProductionLine[]
   jobs?: ApsJob[]
   timelineSlots?: string[]
   lanes?: ApsTimelineLaneDefinition[]
   stageCards?: ApsStageCard[]
 }): ApsSchedulingSource {
   const jobs = source.jobs ?? []
-  const lines = source.lines ?? []
-  const processTree = lines.map(buildLineNode)
   const lanes =
     source.lanes ??
     jobs.reduce<ApsTimelineLaneDefinition[]>((acc, job) => {
@@ -126,6 +67,5 @@ export function buildApsSchedulingSource(source: {
         jobs: jobs.filter((job) => job.status === 'late').slice(0, 2),
       },
     ],
-    processTree,
   }
 }

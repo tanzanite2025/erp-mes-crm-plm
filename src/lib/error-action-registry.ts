@@ -48,7 +48,4 @@ export const ERROR_ACTION_REGISTRY: Record<string, ErrorActionMetadata> = {
   'Organization depth exceeds the supported three levels': {
     messageKey: 'orgPersonnel.org.backendErrors.depthExceeded',
   },
-  'Organization linked architecture is invalid': {
-    messageKey: 'orgPersonnel.org.backendErrors.linkedArchitectureInvalid',
-  },
 }

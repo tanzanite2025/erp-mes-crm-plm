@@ -175,6 +175,9 @@ func GetBOMByID(id string) (BOMDetailResponse, error) {
 		First(&bom, "id = ?", id).Error; err != nil {
 		return BOMDetailResponse{}, err
 	}
+	if err := populateBOMProductionLineDisplay(db.DB, &bom); err != nil {
+		return BOMDetailResponse{}, err
+	}
 	return MapBOMToDetailResponse(bom)
 }
 

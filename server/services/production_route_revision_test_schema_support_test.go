@@ -35,9 +35,8 @@ func migrateProductionRouteRevisionTestSchema(t *testing.T, database *gorm.DB, i
 	addProductionRouteRevisionTestColumn(t, database, "production_routes", "based_on_route_id", "TEXT")
 	addProductionRouteRevisionTestColumn(t, database, "production_routes", "scope_type", "TEXT NOT NULL DEFAULT 'BRANCH_DEFAULT'")
 	addProductionRouteRevisionTestColumn(t, database, "production_routes", "sales_order_line_id", "INTEGER")
-	addProductionRouteRevisionTestColumn(t, database, "production_route_steps", "branch_operation_name_snapshot", "TEXT NOT NULL DEFAULT ''")
-	addProductionRouteRevisionTestColumn(t, database, "production_route_steps", "branch_operation_description_snapshot", "TEXT")
-	addProductionRouteRevisionTestColumn(t, database, "production_bom_branch_operations", "process_library_id", "TEXT NOT NULL DEFAULT ''")
+	addProductionRouteRevisionTestColumn(t, database, "production_route_steps", "process_name_snapshot", "TEXT NOT NULL DEFAULT ''")
+	addProductionRouteRevisionTestColumn(t, database, "production_route_steps", "process_description_snapshot", "TEXT")
 	if includeProductionPlan {
 		addProductionRouteRevisionTestColumn(t, database, "production_plans", "production_route_revision_id", "TEXT")
 		addProductionRouteRevisionTestColumn(t, database, "production_plans", "production_route_revision_no", "INTEGER NOT NULL DEFAULT 0")

@@ -1,23 +1,18 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
-import type {
-  ProductionLineBOMBranch,
-  ProductionLine,
-  ProductionLineProductTemplate,
-} from '../data/production-line'
+import type { ProductionLine } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 import { productionResourceQueryOptions } from '../data/production-resource-query-options'
-import type { ProductionRoute } from '../data/production-route'
+import type {
+  ProductionRoute,
+  ProductionRouteBOMBranch,
+} from '../data/production-route'
 
 type ProductionLinesQueryOptions = Omit<
   UseQueryOptions<ProductionLine[], Error>,
   'queryKey' | 'queryFn'
 >
-type ProductionLineProductTemplatesQueryOptions = Omit<
-  UseQueryOptions<ProductionLineProductTemplate[], Error>,
-  'queryKey' | 'queryFn'
->
-type ProductionLineBOMBranchesQueryOptions = Omit<
-  UseQueryOptions<ProductionLineBOMBranch[], Error>,
+type ProductionRouteBOMBranchesQueryOptions = Omit<
+  UseQueryOptions<ProductionRouteBOMBranch[], Error>,
   'queryKey' | 'queryFn'
 >
 type ProductionProcessesQueryOptions = Omit<
@@ -36,20 +31,11 @@ export function useProductionLinesQuery(options?: ProductionLinesQueryOptions) {
   })
 }
 
-export function useProductionLineProductTemplatesQuery(
-  options?: ProductionLineProductTemplatesQueryOptions
+export function useProductionRouteBOMBranchesQuery(
+  options?: ProductionRouteBOMBranchesQueryOptions
 ) {
   return useQuery({
-    ...productionResourceQueryOptions.lineProductTemplates(),
-    ...options,
-  })
-}
-
-export function useProductionLineBOMBranchesQuery(
-  options?: ProductionLineBOMBranchesQueryOptions
-) {
-  return useQuery({
-    ...productionResourceQueryOptions.lineBOMBranches(),
+    ...productionResourceQueryOptions.routeBOMBranches(),
     ...options,
   })
 }

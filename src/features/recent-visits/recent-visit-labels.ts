@@ -20,7 +20,6 @@ const RECENT_VISIT_EXACT_LABEL_KEYS: Record<string, TranslationKey> = {
   '/warehouse': 'warehouse.tabs.stock',
   '/equipment-maintenance/plans': 'equipmentMaintenance.tabs.plans',
   '/equipment-maintenance/analytics': 'equipmentMaintenance.tabs.analytics',
-  '/personnel/architecture': 'productionShared.workArchitecture.title',
   '/wheel-trace': 'scanPlatform.modules.wheelTrace.name',
 }
 

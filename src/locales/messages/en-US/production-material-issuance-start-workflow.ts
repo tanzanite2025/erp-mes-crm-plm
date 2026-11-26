@@ -28,11 +28,11 @@ export const productionMaterialIssuanceStartWorkflow = {
   bomScope:
     'Review applicable BOMs, finished weights and standard requirements for every selected order line. Warehouse staff enter actual quantities and batches after dispatch.',
   bomIncomplete:
-    'Issuance prerequisites are incomplete. Select an applicable BOM or complete the details below, then review again.',
+    'Issuance prerequisites are incomplete. Repair the MBOM on the branch bound to the order line or complete the details below, then review again.',
   preparing: 'Reviewing BOM and prerequisites…',
   prepareFailed: 'Preparation failed. Resolve the reported issue and retry.',
   selectionChanged:
-    'Sources or BOM choices changed. Review prerequisites again before reviewing the formal basis.',
+    'Order lines or their production basis changed. Review prerequisites again before reviewing the formal basis.',
   prerequisitesTitle: 'Resolve these prerequisites first',
   prerequisites: {
     MISSING_PRODUCT:
@@ -40,9 +40,9 @@ export const productionMaterialIssuanceStartWorkflow = {
     MISSING_FINISHED_UNIT:
       'The finished unit is missing. Ask the order maintainer to complete it.',
     INVALID_SOURCE_VERSION:
-      'The order or selected BOM has no valid version. Contact its maintainer.',
+      'The order or resolved branch MBOM has no valid version. Contact its maintainer.',
     INVALID_FINISHED_WEIGHT:
-      'The selected BOM needs a positive finished weight and weight unit. Ask the BOM maintainer to publish an applicable version.',
+      'The resolved branch MBOM needs a positive finished weight and weight unit. Ask the BOM maintainer to publish an applicable version.',
   },
   repairHint:
     'Ask the BOM or material maintainer to resolve recipe issues and the order maintainer to resolve order issues. Review again after maintenance.',

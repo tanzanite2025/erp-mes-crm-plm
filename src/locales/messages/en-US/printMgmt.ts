@@ -28,6 +28,7 @@ export const printMgmt = {
     nameLabel: 'Name: BOM Sheet',
     productSpec: 'Product Spec: {{productName}}',
     columns: {
+      section: 'Section',
       materialCode: 'Material Code',
       materialName: 'Material Name',
       materialSpec: 'Spec / Model',

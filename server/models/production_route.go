@@ -39,20 +39,19 @@ type ProductionRoute struct {
 	Steps                []ProductionRouteStep  `gorm:"foreignKey:RouteID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"steps"`
 }
 
-// ProductionRouteStep binds a route sequence to an operation maintained for its MBOM branch.
+// ProductionRouteStep binds a process identity to a unique position in one route.
 type ProductionRouteStep struct {
 	BaseModel
-	RouteID                            string                        `gorm:"type:uuid;index;not null" json:"routeId"`
-	Sequence                           int                           `gorm:"not null;default:0" json:"sequence"`
-	BranchOperationID                  string                        `gorm:"type:uuid;index;not null" json:"branchOperationId"`
-	ProcessLibraryID                   string                        `gorm:"-" json:"processLibraryId,omitempty"`
-	BranchOperation                    *ProductionBOMBranchOperation `gorm:"foreignKey:BranchOperationID" json:"branchOperation,omitempty"`
-	BranchOperationNameSnapshot        string                        `gorm:"size:255;not null;default:''" json:"branchOperationNameSnapshot"`
-	BranchOperationDescriptionSnapshot string                        `gorm:"type:text" json:"branchOperationDescriptionSnapshot"`
-	ExecutionMode                      string                        `gorm:"size:30;not null;default:'IN_HOUSE'" json:"executionMode"`
-	QualityGate                        string                        `gorm:"size:30;not null;default:'NONE'" json:"qualityGate"`
-	QualityRouting                     datatypes.JSON                `gorm:"type:jsonb" json:"qualityRouting"`
-	EstimatedMinutes                   int                           `gorm:"not null;default:0" json:"estimatedMinutes"`
-	TransferRequired                   bool                          `gorm:"not null;default:false" json:"transferRequired"`
-	Description                        string                        `gorm:"type:text" json:"description"`
+	RouteID                    string         `gorm:"type:uuid;index;not null" json:"routeId"`
+	Sequence                   int            `gorm:"not null;default:0" json:"sequence"`
+	ProcessStepID              string         `gorm:"type:uuid;index;not null" json:"processStepId"`
+	ProcessStep                *ProcessStep   `gorm:"foreignKey:ProcessStepID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"processStep,omitempty"`
+	ProcessNameSnapshot        string         `gorm:"size:255;not null;default:''" json:"processNameSnapshot"`
+	ProcessDescriptionSnapshot string         `gorm:"type:text" json:"processDescriptionSnapshot"`
+	ExecutionMode              string         `gorm:"size:30;not null;default:'IN_HOUSE'" json:"executionMode"`
+	QualityGate                string         `gorm:"size:30;not null;default:'NONE'" json:"qualityGate"`
+	QualityRouting             datatypes.JSON `gorm:"type:jsonb" json:"qualityRouting"`
+	EstimatedMinutes           int            `gorm:"not null;default:0" json:"estimatedMinutes"`
+	TransferRequired           bool           `gorm:"not null;default:false" json:"transferRequired"`
+	Description                string         `gorm:"type:text" json:"description"`
 }

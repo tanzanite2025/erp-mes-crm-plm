@@ -23,20 +23,21 @@ func openProductionMaterialIssuanceDocumentTransactionTestDatabase(t *testing.T)
 		`CREATE TABLE boms (id TEXT PRIMARY KEY, product_id TEXT, bom_type TEXT, bom_no TEXT, status TEXT, owner_type TEXT, owner_customer_id TEXT, version INTEGER, version_text TEXT, version_level TEXT, revision_no TEXT, measured_weight REAL, measured_weight_unit TEXT, effective_from DATETIME, effective_to DATETIME, deleted_at DATETIME)`,
 		`CREATE TABLE bom_items (id TEXT PRIMARY KEY, bom_id TEXT, sort_order INTEGER, section TEXT, material_id TEXT, unit TEXT, standard_usage REAL)`,
 		`CREATE TABLE materials (id TEXT PRIMARY KEY, code TEXT, name TEXT, spec TEXT, uom TEXT, status TEXT, deleted_at DATETIME)`,
-		`CREATE TABLE products (id TEXT PRIMARY KEY, sku TEXT, name TEXT, tech_series TEXT, brake_type TEXT, deleted_at DATETIME)`,
+		`CREATE TABLE products (id TEXT PRIMARY KEY, sku TEXT, name TEXT, tech_series TEXT, brake_type TEXT, status TEXT, deleted_at DATETIME)`,
+		`CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT, deleted_at DATETIME)`,
 		`INSERT INTO product_attribute_options VALUES ('option-1','versionLevel','standard','标准版','Standard',NULL)`,
 		`INSERT INTO warehouse_categories VALUES ('warehouse-1','MATERIAL',1,1,1,NULL)`,
 		`UPDATE sales_orders SET customer_id='customer-1', customer_name='客户' WHERE id='order-1'`,
-		`UPDATE sales_order_lines SET product_id='product-1', uom='PCS' WHERE sales_order_id='order-1'`,
+		`UPDATE sales_order_lines SET product_id='product-1', bom_owner_type='INTERNAL', bom_owner_customer_id='', bom_version_level='standard', uom='PCS' WHERE sales_order_id='order-1'`,
 		`INSERT INTO boms VALUES ('bom-1','product-1','MBOM','MBOM-1','RELEASED','INTERNAL','',3,'V1','standard','A',480,'g',NULL,NULL,NULL)`,
 		`INSERT INTO bom_items VALUES ('item-1','bom-1',1,'A','material-1','m2',0.6), ('item-2','bom-1',2,'B','material-1','m2',0.4)`,
 		`INSERT INTO materials VALUES ('material-1','m1','材料原名','规格','m2','Active',NULL)`,
-		`INSERT INTO products VALUES ('product-1','SKU-1','产品名称','系列','碟刹',NULL)`,
+		`INSERT INTO products VALUES ('product-1','SKU-1','产品名称','系列','碟刹','ACTIVE',NULL)`,
 	}
 	for _, statement := range statements {
 		require.NoError(t, database.Exec(statement).Error)
 	}
-	selections := []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: "order-1", SalesOrderLineID: 102, BOMID: "bom-1"}, {SalesOrderID: "order-1", SalesOrderLineID: 101, BOMID: "bom-1"}}
+	selections := []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: "order-1", SalesOrderLineID: 102, ExpectedBOMID: "bom-1"}, {SalesOrderID: "order-1", SalesOrderLineID: 101, ExpectedBOMID: "bom-1"}}
 	bases, err := ReviewProductionMaterialIssuanceSources(context.Background(), database, selections)
 	require.NoError(t, err)
 	require.Len(t, bases, 2)
@@ -48,7 +49,7 @@ func buildProductionMaterialIssuanceDispatchTestRequest(commandID string, bases 
 	request := ProductionMaterialIssuanceDispatchRequest{CommandID: commandID, Sources: make([]ProductionMaterialIssuanceDispatchSourceExpectation, 0, len(bases))}
 	for _, basis := range bases {
 		request.Sources = append(request.Sources, ProductionMaterialIssuanceDispatchSourceExpectation{
-			ProductionMaterialIssuanceSourceSelection: ProductionMaterialIssuanceSourceSelection{SalesOrderID: basis.SalesOrderID, SalesOrderLineID: basis.SalesOrderLineID, BOMID: basis.BOM.ID},
+			ProductionMaterialIssuanceSourceSelection: ProductionMaterialIssuanceSourceSelection{SalesOrderID: basis.SalesOrderID, SalesOrderLineID: basis.SalesOrderLineID, ExpectedBOMID: basis.BOM.ID},
 			ExpectedOrderVersion:                      basis.OrderVersion, ExpectedBOMVersion: basis.BOM.Version, BasisFingerprint: basis.BasisFingerprint,
 		})
 	}
@@ -113,6 +114,7 @@ func TestProductionMaterialIssuanceDispatchFreezesSharedBasisAndIdempotentOrigin
 func TestProductionMaterialIssuanceDispatchRejectsChangedAndIncompleteBasisBeforeAnyWrite(t *testing.T) {
 	for _, scenario := range []struct{ name, statement string }{
 		{"order-version", `UPDATE sales_orders SET version=5 WHERE id='order-1'`},
+		{"changed-mbom-branch", `UPDATE sales_order_lines SET bom_version_level='lightweight' WHERE id=101`},
 		{"quantity-without-version", `UPDATE sales_order_lines SET qty=99 WHERE id=101`},
 		{"recipe-without-version", `UPDATE bom_items SET standard_usage=0.7 WHERE id='item-1'`},
 		{"weight-without-version", `UPDATE boms SET measured_weight=420 WHERE id='bom-1'`},
@@ -132,6 +134,14 @@ func TestProductionMaterialIssuanceDispatchRejectsChangedAndIncompleteBasisBefor
 			requireProductionMaterialIssuancePersistedRecordCounts(t, database, 0, 0, 0, 0, 0)
 		})
 	}
+}
+
+func TestProductionMaterialIssuanceSourceReviewRejectsBOMFromAnotherMBOMBranch(t *testing.T) {
+	database, _ := openProductionMaterialIssuanceDocumentTransactionTestDatabase(t)
+	require.NoError(t, database.Exec(`INSERT INTO boms VALUES ('bom-other-branch','product-1','MBOM','MBOM-OTHER','RELEASED','INTERNAL','',3,'V1','lightweight','A',480,'g',NULL,NULL,NULL)`).Error)
+	_, err := ReviewProductionMaterialIssuanceSources(context.Background(), database, []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: "order-1", SalesOrderLineID: 101, ExpectedBOMID: "bom-other-branch"}})
+	require.ErrorIs(t, err, ErrProductionMaterialIssuanceBasisChanged)
+	requireProductionMaterialIssuancePersistedRecordCounts(t, database, 0, 0, 0, 0, 0)
 }
 
 func TestProductionMaterialIssuanceDispatchAuditFailureRollsBackSnapshotsCoverageAndReceipt(t *testing.T) {
@@ -216,7 +226,8 @@ func TestProductionMaterialIssuanceActiveCoverageBlocksOrderChangesAcrossWriteEn
 			case "line-quantity":
 				requests[0].Qty++
 			case "line-product":
-				require.NoError(t, database.Exec(`INSERT INTO products (id,name) VALUES ('product-2','另一个产品')`).Error)
+				require.NoError(t, database.Exec(`INSERT INTO products (id,name,status) VALUES ('product-2','另一个产品','ACTIVE')`).Error)
+				require.NoError(t, database.Exec(`INSERT INTO boms VALUES ('bom-product-2','product-2','MBOM','MBOM-PRODUCT-2','RELEASED','INTERNAL','',3,'V1','standard','A',480,'g',NULL,NULL,NULL)`).Error)
 				requests[0].ProductID = "product-2"
 			case "line-unit":
 				requests[0].UOM = "BOX"
@@ -258,7 +269,7 @@ func TestProductionMaterialIssuanceActiveCoverageAllowsReindexNotesAndUncoveredN
 	requests := convertSalesOrderLinesToStableIdentityTransactionTestRequests(t, []models.SalesOrderLine{original.Lines[1], original.Lines[0]})
 	requests[0].LineNo, requests[1].LineNo = 1, 2
 	requests[0].Note = "只改备注"
-	requests = append(requests, SalesOrderLineRequest{LineNo: 3, ProductID: "product-1", Qty: 5, UOM: "PCS"})
+	requests = append(requests, SalesOrderLineRequest{LineNo: 3, ProductID: "product-1", BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", Qty: 5, UOM: "PCS"})
 	saved, err := executeSalesOrderStableIdentityTestCommand(t, database, SalesTransactionIntentOrderLinesChange, 4, SalesOrderLinesChangePayload{Lines: requests})
 	require.NoError(t, err)
 	require.Equal(t, 5, saved.Version)

@@ -258,7 +258,7 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			partner_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			branch_operation_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL,
 			from_holder_type TEXT,
 			from_holder_id TEXT,
 			to_holder_type TEXT,
@@ -299,7 +299,7 @@ func createOutsourceExecutionTestSchema(t *testing.T, database *gorm.DB) {
 			uom TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			branch_operation_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL,
 			operation_id TEXT,
 			inspected_at DATETIME,
 			inspector TEXT,
@@ -582,15 +582,16 @@ func seedOutsourceExecutionOrder(t *testing.T, database *gorm.DB, status string)
 		"INSERT INTO products (id, sku, name, status) VALUES (?, ?, ?, ?)",
 		"product-1", "P-1", "产品一", "ACTIVE",
 	).Error)
-	for _, table := range []string{"boms", "production_routes", "production_plans", "production_bom_branch_operations"} {
+	for _, table := range []string{"boms", "production_routes", "production_plans", "production_mbom_branch_process_associations"} {
 		require.NoError(t, database.Exec("UPDATE "+table+" SET product_id = ? WHERE product_id = ?", "product-1", "product-route-1").Error)
 	}
 	require.NoError(t, database.Model(&models.ProductionPlan{}).
 		Where("id = ?", "plan-route-1").
 		Updates(map[string]any{
-			"product_name":        "产品一",
-			"order_id":            "sales-order-1",
-			"sales_order_line_id": 1001,
+			"product_name":          "产品一",
+			"order_id":              "sales-order-1",
+			"sales_order_line_id":   1001,
+			"production_route_mode": productionRouteScopeSalesOrderLine,
 		}).Error)
 	require.NoError(t, database.Exec(
 		"INSERT OR IGNORE INTO sales_orders (id, status, version) VALUES (?, ?, ?)",
@@ -646,14 +647,14 @@ func seedOutsourceBarcodeState(t *testing.T, database *gorm.DB, barcode string) 
 	}).Error)
 
 	require.NoError(t, database.Create(&models.ProductBarcodeState{
-		BaseModel:                models.BaseModel{ID: "state-" + barcode},
-		ProductBarcode:           barcode,
-		ProductID:                "product-1",
-		ProductName:              "产品一",
-		RouteID:                  "route-1",
-		RouteStepID:              "route-1-step-process-a",
-		CurrentBranchOperationID: "process-a",
-		Status:                   ProductBarcodeStateStatusInProgress,
+		BaseModel:            models.BaseModel{ID: "state-" + barcode},
+		ProductBarcode:       barcode,
+		ProductID:            "product-1",
+		ProductName:          "产品一",
+		RouteID:              "route-1",
+		RouteStepID:          "route-1-step-process-a",
+		CurrentProcessStepID: "process-a",
+		Status:               ProductBarcodeStateStatusInProgress,
 	}).Error)
 }
 
@@ -1158,7 +1159,7 @@ func TestOutsourceInspectionUsesConfiguredReworkRouteTarget(t *testing.T) {
 	require.Equal(t, ProductionOperationActionRework, inspection.Scan.Operation.Action)
 	require.Equal(t, ProductBarcodeStateStatusRework, inspection.Scan.State.Status)
 	require.Equal(t, "route-1-step-process-b", inspection.Scan.State.RouteStepID)
-	require.Equal(t, "process-b", inspection.Scan.State.CurrentBranchOperationID)
+	require.Equal(t, "process-b", inspection.Scan.State.CurrentProcessStepID)
 	require.Equal(t, float64(1), inspection.Order.Lines[0].ReworkQuantity)
 	require.Equal(t, OutsourceOrderStatusReturned, inspection.Order.Status)
 	require.Len(t, inspection.Scan.TransferEvents, 1)

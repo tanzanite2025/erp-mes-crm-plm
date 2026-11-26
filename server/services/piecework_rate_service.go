@@ -59,6 +59,9 @@ func (s *PieceworkRateService) CreatePieceworkRate(ctx context.Context, command 
 	rate.ID, rate.Version = uuid.NewString(), 1
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		tx = tx.WithContext(ctx)
+		if err := validateActivePieceworkRateUnit(tx, rate.Unit); err != nil {
+			return err
+		}
 		if err := normalizeAndValidatePieceworkRate(tx, &rate); err != nil {
 			return err
 		}
@@ -107,6 +110,11 @@ func (s *PieceworkRateService) PatchPieceworkRate(ctx context.Context, id string
 		before := mapPieceworkRateToDTO(rate)
 		if err := applyPieceworkRatePatch(&rate, command); err != nil {
 			return err
+		}
+		if strings.TrimSpace(rate.Unit) != before.Unit {
+			if err := validateActivePieceworkRateUnit(tx, rate.Unit); err != nil {
+				return err
+			}
 		}
 		if before.PayItemID != normalizeUUIDIdentity(rate.PayItemID) {
 			var lockedItems []models.PieceworkPayItem
@@ -207,11 +215,22 @@ func normalizeAndValidatePieceworkRate(tx *gorm.DB, rate *models.PieceworkRate) 
 			return fmt.Errorf("%w: effectiveTo must be after effectiveFrom", ErrInvalidPieceworkRate)
 		}
 	}
-	item, err := lockActivePieceworkPayItemTx(tx, rate.PayItemID, rate.Unit)
+	if rate.Unit == "" {
+		return fmt.Errorf("%w: unit is required", ErrInvalidPieceworkRate)
+	}
+	item, err := lockActivePieceworkPayItemTx(tx, rate.PayItemID)
 	if err != nil {
 		return err
 	}
 	rate.PayItemCode, rate.PayItemName = item.Code, item.Name
+	return nil
+}
+
+func validateActivePieceworkRateUnit(tx *gorm.DB, unitCode string) error {
+	var unit models.Unit
+	if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).Where("code = ? AND status = ?", strings.TrimSpace(unitCode), "active").First(&unit).Error; err != nil {
+		return fmt.Errorf("%w: unit must be an active configured unit", ErrInvalidPieceworkRate)
+	}
 	return nil
 }
 

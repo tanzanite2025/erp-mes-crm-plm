@@ -41,11 +41,10 @@ func TestProductionProcessLibraryReferenceProtectionBlocksDeactivateAndDeleteUnt
 		IsActive:  true,
 	}).Error)
 	require.NoError(t, database.Exec(`
-		INSERT INTO production_bom_branch_operation_process_library_selections
-		(id, product_id, bom_owner_type, bom_owner_customer_id, bom_version_level,
-		 branch_operation_id, process_library_id, sort_order)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, "selection-cut", "product-rim", "INTERNAL", "", "standard", "operation-cut", "library-cut", 0).Error)
+		INSERT INTO production_mbom_branch_process_associations
+		(id, product_id, bom_owner_type, bom_owner_customer_id, bom_version_level, process_step_id, sort_order)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, "selection-cut", "product-rim", "INTERNAL", "", "standard", "library-cut", 0).Error)
 
 	_, err = service.SaveProcessStep(SaveProcessStepRequest{Step: ProcessStepDTO{
 		ID: "library-cut", Code: "CUT", Name: "裁切", IsActive: false,
@@ -56,7 +55,7 @@ func TestProductionProcessLibraryReferenceProtectionBlocksDeactivateAndDeleteUnt
 	require.ErrorIs(t, service.DeleteProcessStep("library-cut", "operator", "127.0.0.1"), ErrProductionProcessLibraryReferenceConflict)
 	require.NoError(t, serviceDatabaseProcessStepIsActive(database, "library-cut"))
 
-	require.NoError(t, database.Exec(`DELETE FROM production_bom_branch_operation_process_library_selections WHERE id = ?`, "selection-cut").Error)
+	require.NoError(t, database.Exec(`DELETE FROM production_mbom_branch_process_associations WHERE id = ?`, "selection-cut").Error)
 	updated, err := service.SaveProcessStep(SaveProcessStepRequest{Step: ProcessStepDTO{
 		ID: "library-cut", Code: "CUT", Name: "裁切", IsActive: false,
 	}})

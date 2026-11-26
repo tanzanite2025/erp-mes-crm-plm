@@ -69,6 +69,5 @@ type MrpRequirementsResponse struct {
 }
 
 type GetMrpRequirementsParams struct {
-	SelectedKeys  []string
-	BOMSelections []ProductionMaterialRequirementBOMSelection
+	SelectedKeys []string
 }

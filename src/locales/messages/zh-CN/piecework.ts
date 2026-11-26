@@ -29,6 +29,11 @@ export const piecework = {
     name: '环节名称',
     item: '环节',
     unit: '单位',
+    unitPlaceholder: '请选择计量单位',
+    unitsEmpty: '暂无已启用的计量单位，请先在单位管理中新增或启用。',
+    unitsLoading: '计量单位正在加载，请稍后重试。',
+    unitsLoadFailed: '计量单位加载失败，请重试。',
+    unitUnavailable: '请选择系统中已启用的计量单位。',
     unitPrice: '单价',
     currency: '币种',
     noAvailableCurrencies: '暂无可用币种',
@@ -83,7 +88,7 @@ export const piecework = {
   },
   rules: {
     title: '计件规则',
-    description: '统一维护工资环节、计量单位、计件单价与工价有效期。',
+    description: '统一维护工资环节，以及按计量单位和有效期配置的计件工价。',
     toast: {
       saveSuccess: '计件工价已更新',
       saveFailed: '保存工价失败：{{message}}',

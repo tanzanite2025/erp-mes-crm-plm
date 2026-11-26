@@ -45,7 +45,7 @@ export function createProductionMaterialIssuanceReviewedSourceAndFrozenDocumentT
   const selection = {
     salesOrderId: basis.salesOrderId,
     salesOrderLineId: basis.salesOrderLineId,
-    bomId: basis.bom.id,
+    expectedBomId: basis.bom.id,
   }
   const document = {
     id: '66666666-6666-4666-8666-666666666666',

@@ -16,7 +16,6 @@ vi.mock('../../hooks/use-requirements', () => ({
     activeOrders: [],
     requirements: [],
     sourceLines: [],
-    bomSelections: [],
     isComplete: false,
     error: new Error('Incomplete order scope from pagination'),
     ordersError: new Error('Incomplete order scope from pagination'),
@@ -24,7 +23,6 @@ vi.mock('../../hooks/use-requirements', () => ({
     isLoadingOrders: false,
     stats: { analyzedModels: [] },
     calculate: vi.fn(),
-    setBomSelection: vi.fn(),
     recalculate: vi.fn(),
     refresh: vi.fn(),
   }),
@@ -42,7 +40,7 @@ vi.mock('../../services/requirement-export-service', () => ({
 
 afterEach(cleanup)
 
-function createProductionRequirementSourceWithTwoPerformanceVariants(): ProductionMaterialRequirementSourceLine {
+function createProductionRequirementSourceWithDuplicateEffectiveMBOMs(): ProductionMaterialRequirementSourceLine {
   const candidate = {
     id: 'bom-standard',
     bomNo: 'MBOM-1',
@@ -75,16 +73,12 @@ function createProductionRequirementSourceWithTwoPerformanceVariants(): Producti
       candidate,
       {
         ...candidate,
-        id: 'bom-light',
+        id: 'bom-duplicate',
         bomNo: 'MBOM-2',
-        versionLevel: 'ultralight',
-        versionLevelLabelZh: '超轻版',
-        versionLevelLabelEn: 'Ultralight',
-        measuredWeight: 420,
       },
     ],
     contributions: [],
-    issueCode: 'BOM_SELECTION_REQUIRED',
+    issueCode: 'DUPLICATE_EFFECTIVE_MBOM',
   }
 }
 
@@ -105,8 +99,7 @@ describe('production requirement source verification', () => {
     expect(screen.getByRole('button', { name: '重新加载订单' })).toBeEnabled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
-  it('shows variant weights together and submits the stable order-line identity when choosing a BOM', () => {
-    const onSelectionChange = vi.fn()
+  it('blocks duplicate effective MBOMs and shows their identities without a selector', () => {
     const onRecalculate = vi.fn()
     render(
       <LanguageProvider
@@ -115,38 +108,31 @@ describe('production requirement source verification', () => {
       >
         <ProductionMaterialRequirementBomBasisReview
           sourceLines={[
-            createProductionRequirementSourceWithTwoPerformanceVariants(),
+          createProductionRequirementSourceWithDuplicateEffectiveMBOMs(),
           ]}
-          selections={[]}
           isComplete={false}
           isLoading={false}
-          onSelectionChange={onSelectionChange}
           onRecalculate={onRecalculate}
         />
       </LanguageProvider>
     )
     expect(
-      screen.getByRole('option', { name: /标准版.*480 g/ })
+      screen.getByText('MBOM-1 · A / V1')
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('option', { name: /超轻版.*420 g/ })
+      screen.getByText('MBOM-2 · A / V1')
     ).toBeInTheDocument()
     expect(screen.getByText(/生产物料仓库/)).toBeInTheDocument()
-    fireEvent.change(screen.getByRole('combobox'), {
-      target: { value: 'bom-light' },
-    })
-    expect(onSelectionChange).toHaveBeenCalledWith({
-      salesOrderId: 'order-stable-identity',
-      salesOrderLineId: 12,
-      bomId: 'bom-light',
-    })
-    expect(onRecalculate).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: '按当前选择重新分析' }))
+    expect(
+      screen.getByText(/属于数据完整性异常/)
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '重新分析' }))
     expect(onRecalculate).toHaveBeenCalledOnce()
   })
 
   it('shows the automatically adopted unique BOM and its weight in English', () => {
-    const source = createProductionRequirementSourceWithTwoPerformanceVariants()
+    const source = createProductionRequirementSourceWithDuplicateEffectiveMBOMs()
     source.bom = source.bomCandidates[0]
     source.bomCandidates = [source.bom]
     source.issueCode = ''
@@ -157,10 +143,8 @@ describe('production requirement source verification', () => {
       >
         <ProductionMaterialRequirementBomBasisReview
           sourceLines={[source]}
-          selections={[]}
           isComplete
           isLoading={false}
-          onSelectionChange={vi.fn()}
           onRecalculate={vi.fn()}
         />
       </LanguageProvider>
@@ -172,7 +156,7 @@ describe('production requirement source verification', () => {
   })
 
   it('blocks print and export while a source is incomplete and enables them only after complete analysis', () => {
-    const source = createProductionRequirementSourceWithTwoPerformanceVariants()
+    const source = createProductionRequirementSourceWithDuplicateEffectiveMBOMs()
     const props = {
       isOpen: true,
       onClose: vi.fn(),
@@ -181,9 +165,7 @@ describe('production requirement source verification', () => {
       isLoading: false,
       selectedCount: 1,
       sourceLines: [source],
-      bomSelections: [],
       isComplete: false,
-      onBomSelectionChange: vi.fn(),
       onRecalculate: vi.fn(),
     }
     const { rerender } = render(

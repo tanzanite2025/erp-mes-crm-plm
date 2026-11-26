@@ -76,22 +76,8 @@ export function ProductionMaterialIssuanceSourceSelectionBomReviewAndDispatchWor
             )}
             recalculateLabel={t('mrp.productionMaterialIssuance.start.prepare')}
             sourceLines={displayedPreparation.sourceLines}
-            selections={workflow.selected.flatMap((source) =>
-              source.bomId
-                ? [
-                    {
-                      salesOrderId: source.salesOrderId,
-                      salesOrderLineId: source.salesOrderLineId,
-                      bomId: source.bomId,
-                    },
-                  ]
-                : []
-            )}
             isComplete={Boolean(currentPreparation?.isReady)}
             isLoading={preparationPending}
-            onSelectionChange={
-              workflow.changeProductionMaterialIssuanceSelectedBom
-            }
             onRecalculate={
               workflow.prepareSelectedProductionMaterialIssuanceSources
             }
@@ -147,7 +133,7 @@ export function ProductionMaterialIssuanceSourceSelectionBomReviewAndDispatchWor
           sources={currentPreparation.sourceLines.map((source) => ({
             salesOrderId: source.salesOrderId,
             salesOrderLineId: source.salesOrderLineId,
-            bomId: source.bom?.id ?? '',
+            expectedBomId: source.bom?.id ?? '',
           }))}
           isAnalysisReady
         />

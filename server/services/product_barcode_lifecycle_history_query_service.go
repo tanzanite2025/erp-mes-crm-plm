@@ -24,19 +24,19 @@ type ProductBarcodeLifecycleHistoryQuery struct {
 }
 
 type ProductBarcodeLifecycleCurrentStateResponse struct {
-	ID                       string                                      `json:"id"`
-	ProductBarcode           string                                      `json:"productBarcode"`
-	ProductID                string                                      `json:"productId"`
-	ProductName              string                                      `json:"productName"`
-	RouteID                  string                                      `json:"routeId"`
-	RouteStepID              string                                      `json:"routeStepId"`
-	CurrentBranchOperationID string                                      `json:"currentBranchOperationId"`
-	CurrentBranchOperation   *ProductBarcodeStateBranchOperationResponse `json:"currentBranchOperation,omitempty"`
-	Status                   string                                      `json:"status"`
-	LastEventID              string                                      `json:"lastEventId"`
-	StartedAt                string                                      `json:"startedAt"`
-	CompletedAt              string                                      `json:"completedAt"`
-	UpdatedAt                string                                      `json:"updatedAt"`
+	ID                   string                                  `json:"id"`
+	ProductBarcode       string                                  `json:"productBarcode"`
+	ProductID            string                                  `json:"productId"`
+	ProductName          string                                  `json:"productName"`
+	RouteID              string                                  `json:"routeId"`
+	RouteStepID          string                                  `json:"routeStepId"`
+	CurrentProcessStepID string                                  `json:"currentProcessStepId"`
+	CurrentProcessStep   *ProductBarcodeStateProcessStepResponse `json:"currentProcessStep,omitempty"`
+	Status               string                                  `json:"status"`
+	LastEventID          string                                  `json:"lastEventId"`
+	StartedAt            string                                  `json:"startedAt"`
+	CompletedAt          string                                  `json:"completedAt"`
+	UpdatedAt            string                                  `json:"updatedAt"`
 }
 
 type ProductBarcodeLifecycleHistoryResponse struct {
@@ -168,7 +168,7 @@ func normalizeProductBarcodeLifecycleHistoryQuery(
 func loadProductBarcodeLifecycleCurrentStateTx(tx *gorm.DB, productBarcode string) (models.ProductBarcodeState, error) {
 	var state models.ProductBarcodeState
 	if err := tx.
-		Preload("CurrentBranchOperation").
+		Preload("CurrentProcessStep").
 		Where("product_barcode = ?", productBarcode).
 		First(&state).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -181,19 +181,19 @@ func loadProductBarcodeLifecycleCurrentStateTx(tx *gorm.DB, productBarcode strin
 
 func mapProductBarcodeLifecycleCurrentState(state models.ProductBarcodeState) ProductBarcodeLifecycleCurrentStateResponse {
 	return ProductBarcodeLifecycleCurrentStateResponse{
-		ID:                       strings.TrimSpace(state.ID),
-		ProductBarcode:           strings.TrimSpace(state.ProductBarcode),
-		ProductID:                strings.TrimSpace(state.ProductID),
-		ProductName:              strings.TrimSpace(state.ProductName),
-		RouteID:                  strings.TrimSpace(state.RouteID),
-		RouteStepID:              strings.TrimSpace(state.RouteStepID),
-		CurrentBranchOperationID: strings.TrimSpace(state.CurrentBranchOperationID),
-		CurrentBranchOperation:   mapProductBarcodeStateBranchOperation(state.CurrentBranchOperation),
-		Status:                   strings.TrimSpace(state.Status),
-		LastEventID:              strings.TrimSpace(state.LastEventID),
-		StartedAt:                formatProductBarcodeStateTime(state.StartedAt),
-		CompletedAt:              formatProductBarcodeStateTime(state.CompletedAt),
-		UpdatedAt:                formatProductionExecutionLotTime(state.UpdatedAt),
+		ID:                   strings.TrimSpace(state.ID),
+		ProductBarcode:       strings.TrimSpace(state.ProductBarcode),
+		ProductID:            strings.TrimSpace(state.ProductID),
+		ProductName:          strings.TrimSpace(state.ProductName),
+		RouteID:              strings.TrimSpace(state.RouteID),
+		RouteStepID:          strings.TrimSpace(state.RouteStepID),
+		CurrentProcessStepID: strings.TrimSpace(state.CurrentProcessStepID),
+		CurrentProcessStep:   mapProductBarcodeStateProcessStep(state.CurrentProcessStep),
+		Status:               strings.TrimSpace(state.Status),
+		LastEventID:          strings.TrimSpace(state.LastEventID),
+		StartedAt:            formatProductBarcodeStateTime(state.StartedAt),
+		CompletedAt:          formatProductBarcodeStateTime(state.CompletedAt),
+		UpdatedAt:            formatProductionExecutionLotTime(state.UpdatedAt),
 	}
 }
 

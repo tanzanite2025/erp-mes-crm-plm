@@ -28,23 +28,17 @@ function createEmptyProductionRequirementAnalysisResponse() {
 }
 
 describe('production requirement API boundary', () => {
-  it('encodes explicit BOM choices with stable identities and validates the response', async () => {
+  it('sends only the order-line scope and validates the response', async () => {
     vi.mocked(apiFetch).mockResolvedValue(
       createEmptyProductionRequirementAnalysisResponse()
     )
-    const selections = [
-      { salesOrderId: 'order-1', salesOrderLineId: 12, bomId: 'bom-light' },
-    ]
-    await RequirementCoreService.getMrpRequirements(
-      ['SO-2026-01-1'],
-      selections
-    )
+    await RequirementCoreService.getMrpRequirements(['SO-2026-01-1'])
     const query = new URL(
       String(vi.mocked(apiFetch).mock.calls[0][0]),
       'https://example.test'
     ).searchParams
     expect(query.get('selectedKeys')).toBe('SO-2026-01-1')
-    expect(JSON.parse(query.get('bomSelections')!)).toEqual(selections)
+    expect(query.has('bomSelections')).toBe(false)
     vi.mocked(apiFetch).mockResolvedValue({ requirements: [] })
     await expect(RequirementCoreService.getMrpRequirements()).rejects.toThrow()
   })

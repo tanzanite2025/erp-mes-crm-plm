@@ -27,7 +27,7 @@ func queryMRPRequirementsFromSharedProductionMaterialBasis(database *gorm.DB, pa
 	if err != nil {
 		return response, err
 	}
-	input.Orders, input.SelectedKeys, input.BOMSelections, input.AsOf = orders, params.SelectedKeys, params.BOMSelections, asOf
+	input.Orders, input.SelectedKeys, input.AsOf = orders, params.SelectedKeys, asOf
 	expansion, err := ExpandProductionMaterialRequirements(input)
 	if err != nil {
 		return response, err

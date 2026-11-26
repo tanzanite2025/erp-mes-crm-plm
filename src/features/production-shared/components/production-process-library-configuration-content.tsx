@@ -252,6 +252,7 @@ function ProductionProcessLibraryConfigurationEditor({
           {canManage && (
             <Button
               type='button'
+              className='rounded-full'
               disabled={isSaving || Boolean(query.error) || query.isPending}
               onClick={() => void beginEditingProductionProcessLibraryEntry()}
             >
@@ -272,6 +273,7 @@ function ProductionProcessLibraryConfigurationEditor({
             <Button
               type='button'
               variant='outline'
+              className='rounded-full'
               disabled={query.isFetching}
               onClick={() => void query.refetch()}
             >
@@ -324,6 +326,7 @@ function ProductionProcessLibraryConfigurationEditor({
                     type='button'
                     variant='outline'
                     size='sm'
+                    className='rounded-full'
                     disabled={isSaving}
                     aria-label={t(
                       'productionArchitecture.processLibrary.editEntry',
@@ -340,6 +343,7 @@ function ProductionProcessLibraryConfigurationEditor({
                     type='button'
                     variant='outline'
                     size='sm'
+                    className='rounded-full'
                     disabled={isSaving || hasUnsavedChanges}
                     aria-label={t(
                       'productionArchitecture.processLibrary.deleteEntry',
@@ -429,7 +433,7 @@ function ProductionProcessLibraryConfigurationEditor({
               />
             </label>
             <div className='flex flex-wrap gap-2'>
-              <Button type='submit'>
+              <Button type='submit' className='rounded-full'>
                 {t(
                   isSaving
                     ? 'productionArchitecture.processLibrary.saving'
@@ -439,6 +443,7 @@ function ProductionProcessLibraryConfigurationEditor({
               <Button
                 type='button'
                 variant='outline'
+                className='rounded-full'
                 onClick={() =>
                   void cancelEditingProductionProcessLibraryEntry()
                 }

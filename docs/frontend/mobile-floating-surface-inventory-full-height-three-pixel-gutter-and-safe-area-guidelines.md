@@ -51,7 +51,7 @@
 | 车辆照片 | 包裹照片和标注的 flex 内容区隐藏溢出，后续标注不可达 | 内容区允许纵向滚动，并保留可用最小高度 |
 | 台账搜索 | 内层 grid 在限高下将结果表格压至 0px，并隐藏所有行 | 列表轨道采用内容高度，内容区使用剩余空间并滚动；保留横向表格滚动 |
 | 结算台账详情 | 内层独立按 dvh 减固定值，未跟随父级 svh 与安全区 | 统一纵向布局与内容滚动；覆盖正常、错误与短屏状态 |
-| 脑图节点编辑 | 二级容器保留旧 vh 上限并隐藏溢出 | 二级容器填充父级安全矩形，正文最小高度与外层滚动配合 |
+
 | BOM 缺料预警 | 二级容器按 90vh 限高，短屏出现多层挤压 | 跟随父级可用高度，正文保留可滚动空间；720px 表格继续使用横向滚动 |
 | 物料包装规则 | 材料选择 Popover 固定 486px，超出手机宽度 | 跟随触发器宽度，并使用 Radix 碰撞计算得到的可用宽高；移除正文旧 vh 上限 |
 | 库存阈值 | 摘要卡片固定最小宽度 220px，叠加内边距后超出窄屏 | 小屏取消最小宽度，长编码换行；桌面保留原最小宽度 |
@@ -180,7 +180,6 @@
 | [src/features/org-personnel/components/leave-action-dialog.tsx](../../src/features/org-personnel/components/leave-action-dialog.tsx) | DialogContent × 1 |
 | [src/features/org-personnel/components/leave-detail-dialog.tsx](../../src/features/org-personnel/components/leave-detail-dialog.tsx) | DialogContent × 1 |
 | [src/features/org-personnel/components/org-action-dialog.tsx](../../src/features/org-personnel/components/org-action-dialog.tsx) | ActionDialogShell × 1 |
-| [src/features/org-personnel/components/production-selector.tsx](../../src/features/org-personnel/components/production-selector.tsx) | DialogContent × 1 |
 | [src/features/org-personnel/tabs/attendance-devices.tsx](../../src/features/org-personnel/tabs/attendance-devices.tsx) | DialogContent × 2 |
 | [src/features/org-personnel/tabs/employee-management-list.tsx](../../src/features/org-personnel/tabs/employee-management-list.tsx) | ConfirmDialog × 1 |
 | [src/features/org-personnel/tabs/org-mgmt.tsx](../../src/features/org-personnel/tabs/org-mgmt.tsx) | ConfirmDialog × 1 |
@@ -201,13 +200,9 @@
 | [src/features/production-outsourcing/transfers/index.tsx](../../src/features/production-outsourcing/transfers/index.tsx) | DialogContent × 1 |
 | [src/features/production-quality/tabs/quality-inspection.tsx](../../src/features/production-quality/tabs/quality-inspection.tsx) | DialogContent × 1 |
 | [src/features/production-shared/components/production-line-profile-dialog.tsx](../../src/features/production-shared/components/production-line-profile-dialog.tsx) | DialogContent × 1 |
-| [src/features/production-shared/tabs/line-mindmap/components/mindmap-create-node-dialog.tsx](../../src/features/production-shared/tabs/line-mindmap/components/mindmap-create-node-dialog.tsx) | DialogContent × 1 |
-| [src/features/production-shared/tabs/line-mindmap/components/mindmap-node-edit-dialog.tsx](../../src/features/production-shared/tabs/line-mindmap/components/mindmap-node-edit-dialog.tsx) | DialogContent × 1 |
 | [src/features/production-shared/tabs/production-route/production-route-dialog.tsx](../../src/features/production-shared/tabs/production-route/production-route-dialog.tsx) | DialogContent × 1 |
-| [src/features/production-shared/tabs/topology-template/components/template-card.tsx](../../src/features/production-shared/tabs/topology-template/components/template-card.tsx) | AlertDialogContent × 1 |
-| [src/features/production-shared/tabs/topology-template/components/template-dialog.tsx](../../src/features/production-shared/tabs/topology-template/components/template-dialog.tsx) | DialogContent × 1 |
-| [src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx](../../src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx) | DialogContent × 1、AlertDialogContent × 1 |
-| [src/features/production-shared/topology/security-auth-dialog.tsx](../../src/features/production-shared/topology/security-auth-dialog.tsx) | DialogContent × 1 |
+| [src/features/production-shared/components/production-process-library-configuration-dialog.tsx](../../src/features/production-shared/components/production-process-library-configuration-dialog.tsx) | DialogContent × 1、AlertDialogContent × 1 |
+| [src/features/production-shared/components/production-line-security-authorization-dialog.tsx](../../src/features/production-shared/components/production-line-security-authorization-dialog.tsx) | DialogContent × 1 |
 | [src/features/purchase/logistics/purchase-logistics-list.tsx](../../src/features/purchase/logistics/purchase-logistics-list.tsx) | SheetContent × 1 |
 | [src/features/purchase/orders/components/purchase-order-action-dialog-shell.tsx](../../src/features/purchase/orders/components/purchase-order-action-dialog-shell.tsx) | DialogContent × 1 |
 | [src/features/purchase/orders/components/purchase-order-detail-sheet.tsx](../../src/features/purchase/orders/components/purchase-order-detail-sheet.tsx) | SheetContent × 1 |
@@ -292,9 +287,7 @@
 | [src/features/product-structure/tabs/bom-mgmt.tsx](../../src/features/product-structure/tabs/bom-mgmt.tsx) | confirm × 1、prompt × 1 |
 | [src/features/production-outsourcing/orders/index.tsx](../../src/features/production-outsourcing/orders/index.tsx) | confirm × 2 |
 | [src/features/production-outsourcing/partners/index.tsx](../../src/features/production-outsourcing/partners/index.tsx) | confirm × 1 |
-| [src/features/production-shared/tabs/line-mindmap/index.tsx](../../src/features/production-shared/tabs/line-mindmap/index.tsx) | confirm × 1 |
 | [src/features/production-shared/tabs/production-route/index.tsx](../../src/features/production-shared/tabs/production-route/index.tsx) | confirm × 1 |
-| [src/features/production-shared/tabs/topology-template/components/template-card.tsx](../../src/features/production-shared/tabs/topology-template/components/template-card.tsx) | prompt × 1 |
 | [src/features/purchase/orders/components/purchase-order-list.tsx](../../src/features/purchase/orders/components/purchase-order-list.tsx) | confirm × 1 |
 | [src/features/purchase/suppliers/components/supplier-list.tsx](../../src/features/purchase/suppliers/components/supplier-list.tsx) | confirm × 1 |
 | [src/features/quotes/hooks/use-quote-transfer-handler.ts](../../src/features/quotes/hooks/use-quote-transfer-handler.ts) | alert × 2 |
@@ -315,7 +308,7 @@
 - 提取现有源码中的 138 组不同根节点尺寸工具类，在浏览器中逐项投射验证，全部遵守移动端统一矩形；8 类桌面弹窗在启用／移除数据标记后，位置与尺寸一致。
 - Chromium 移动设备模拟通过原生 CDP 小视口差值覆盖，得到 100vh / 100dvh ≈ 851.10px、100svh ≈ 755.10px。弹窗实际高度约 749.10px，顶边 3px，底边约 752.10px，证明尺寸实际跟随较小的 svh，而非仅检查属性名称。
 - 系统安全区使用 CDP 覆盖浏览器原生 env() 值验证，包括 top=24px / bottom=28px 和横屏 left=32px / right=20px / bottom=24px；尺寸在安全区基础上继续保留每侧 3px。
-- 二次复核直接渲染真实业务组件的 16 个状态，在 320×640、412×915、844×390 触屏横屏和 393×300 短内容视口中完成 64 个场景。逐项检查安全矩形、横向输入框／按钮边界、可滚动内容末尾及隐藏溢出；全部通过。这些状态涉及报价、资产分类、车辆照片、脑图、物料规则、台账搜索、BOM 预警、装箱、MRP、打印、库存阈值、绑定历史、预浸料、用户权限及台账正常／错误状态。
+- 二次复核直接渲染真实业务组件的 16 个状态，在 320×640、412×915、844×390 触屏横屏和 393×300 短内容视口中完成 64 个场景。逐项检查安全矩形、横向输入框／按钮边界、可滚动内容末尾及隐藏溢出；全部通过。这些状态涉及报价、资产分类、车辆照片、物料规则、台账搜索、BOM 预警、装箱、MRP、打印、库存阈值、绑定历史、预浸料、用户权限及台账正常／错误状态。
 - 原生对话框迁移另完成 15 个浏览器场景，覆盖 3 种手机视口中的确认取消、确认接受、输入取消、输入接受和提示关闭。验证长说明的按钮点击、默认输入值、返回值、父弹窗保留和焦点恢复；全部通过。材料选择浮层另通过 2 个小屏宽度场景。
 - 请求队列、取消阻断、默认输入、空字符串、Escape、焦点恢复、重复响应保护和真实外观删除业务回归共 11 个测试通过。
 - 二次修改后重新执行 138 组既有根节点工具类覆盖、8 类桌面尺寸及 Pixel 小视口差值检查，全部通过。TypeScript 项目检查与 Vite 生产构建通过。

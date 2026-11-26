@@ -32,7 +32,6 @@ export const apsScheduling = {
     capacityNote:
       '负载 {{occupiedHours}} / 产能 {{availableHours}} / 窗口 {{timeWindowHours}}',
     segmentCategoryCount: '{{count}} 个{{levelName}}分组',
-    processCount: '{{count}} 个{{levelName}}',
   },
   cuttingIssuance: {
     header: {

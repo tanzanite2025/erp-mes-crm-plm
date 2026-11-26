@@ -17,6 +17,7 @@ import { getCustomers } from '@/features/trading/customer'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type BOM, type Product } from '../../data/schema'
 import { useBOMPerformanceVersionWeightDrafts } from '../../hooks/use-bom-performance-version-weight-drafts'
+import { type BOMProductionLineOption } from '../../services/bom-production-line-option-service'
 import { BOMFieldBusinessMeaningHelpPopover } from '../bom-field-business-meaning-help-popover'
 import { BOMEffectiveStartDateTextInputWithCalendar } from './bom-effective-start-date-text-input-with-calendar'
 import { BOMPerformanceVersionAndWeightField } from './bom-performance-version-and-weight-field'
@@ -30,6 +31,7 @@ interface BOMProductConfigurationInformationPanelProps {
   form: UseFormReturn<BOM>
   products: Product[]
   productDisplayLabelMap: Map<string, string>
+  productionLineOptions: BOMProductionLineOption[]
   isEdit: boolean
 }
 
@@ -38,12 +40,15 @@ export function BOMProductConfigurationInformationPanel({
   form,
   products,
   productDisplayLabelMap,
+  productionLineOptions,
   isEdit,
 }: BOMProductConfigurationInformationPanelProps) {
   const { t, locale } = useLanguage()
   const isZh = locale.startsWith('zh')
   const weightDrafts = useBOMPerformanceVersionWeightDrafts(form)
   const { currentBOM } = weightDrafts
+  const selectedProductionLineID = form.watch('productionLineId')
+  const selectedProductionLineName = form.watch('productionLineName')
   const productItems = useMemo(
     () =>
       products.map((product) => ({
@@ -52,6 +57,27 @@ export function BOMProductConfigurationInformationPanel({
       })),
     [products, productDisplayLabelMap]
   )
+  const productionLineItems = useMemo(() => {
+    const items = productionLineOptions.map((line) => ({
+      label: `${line.code} · ${line.name}`,
+      value: line.id,
+    }))
+    const selectedID = selectedProductionLineID
+    if (selectedID && !items.some((item) => item.value === selectedID)) {
+      items.unshift({
+        label:
+          selectedProductionLineName ||
+          (isZh ? '当前归属产线（已停用）' : 'Current line (inactive)'),
+        value: selectedID,
+      })
+    }
+    return items
+  }, [
+    isZh,
+    productionLineOptions,
+    selectedProductionLineID,
+    selectedProductionLineName,
+  ])
   const customersQuery = useQuery({
     queryKey: tradingQueryKeys.customers(),
     queryFn: getCustomers,
@@ -67,8 +93,10 @@ export function BOMProductConfigurationInformationPanel({
   const context: BOMProductConfigurationFieldContext = {
     isEdit,
     ownerType: currentBOM.ownerType,
+    bomType: currentBOM.bomType,
     t,
     productItems,
+    productionLineItems,
     customerItems,
     ownerTypeItems: [
       {

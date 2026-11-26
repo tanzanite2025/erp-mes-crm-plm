@@ -13,30 +13,35 @@ import (
 )
 
 func bomAuditSnapshot(bom models.BOM) map[string]any {
+	productionLineID := bom.ResolvedProductionLineID
+	if bom.BOMType == models.BOMTypeEBOM && productionLineID == nil {
+		productionLineID = bom.ProductionLineID
+	}
 	return map[string]any{
-		"id":            strings.TrimSpace(bom.ID),
-		"bomNo":         strings.TrimSpace(bom.BOMNo),
-		"bomType":       strings.TrimSpace(bom.BOMType),
-		"productId":     strings.TrimSpace(bom.ProductID),
-		"sourceEbomId":  bom.SourceEBOMID,
-		"version":       strings.TrimSpace(bom.VersionText),
-		"status":        strings.TrimSpace(bom.Status),
-		"isLocked":      bom.IsLocked,
+		"id":                 strings.TrimSpace(bom.ID),
+		"bomNo":              strings.TrimSpace(bom.BOMNo),
+		"bomType":            strings.TrimSpace(bom.BOMType),
+		"productId":          strings.TrimSpace(bom.ProductID),
+		"productionLineId":   productionLineID,
+		"sourceEbomId":       bom.SourceEBOMID,
+		"version":            strings.TrimSpace(bom.VersionText),
+		"status":             strings.TrimSpace(bom.Status),
+		"isLocked":           bom.IsLocked,
 		"ownerType":          strings.TrimSpace(bom.OwnerType),
 		"ownerCustomerId":    strings.TrimSpace(bom.OwnerCustomerID),
 		"versionLevel":       strings.TrimSpace(bom.VersionLevel),
 		"measuredWeight":     bom.MeasuredWeight,
 		"measuredWeightUnit": strings.TrimSpace(bom.MeasuredWeightUnit),
-		"description":   strings.TrimSpace(bom.Description),
-		"revisionNo":    strings.TrimSpace(bom.RevisionNo),
-		"effectiveFrom": bom.EffectiveFrom,
-		"effectiveTo":   bom.EffectiveTo,
-		"changeType":    strings.TrimSpace(bom.ChangeType),
-		"changeOrderNo": strings.TrimSpace(bom.ChangeOrderNo),
-		"siteCode":      strings.TrimSpace(bom.SiteCode),
-		"isDefaultSite": bom.IsDefaultSite,
-		"relationSidecar": parseEngineeringJSON(bom.RelationSidecar),
-		"items":         bomAuditItemsSnapshot(bom.Items),
+		"description":        strings.TrimSpace(bom.Description),
+		"revisionNo":         strings.TrimSpace(bom.RevisionNo),
+		"effectiveFrom":      bom.EffectiveFrom,
+		"effectiveTo":        bom.EffectiveTo,
+		"changeType":         strings.TrimSpace(bom.ChangeType),
+		"changeOrderNo":      strings.TrimSpace(bom.ChangeOrderNo),
+		"siteCode":           strings.TrimSpace(bom.SiteCode),
+		"isDefaultSite":      bom.IsDefaultSite,
+		"relationSidecar":    parseEngineeringJSON(bom.RelationSidecar),
+		"items":              bomAuditItemsSnapshot(bom.Items),
 	}
 }
 

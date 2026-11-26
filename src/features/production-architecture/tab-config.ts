@@ -9,19 +9,19 @@ type TranslateFn = (
 export function getProductionArchitectureTabs(t: TranslateFn): TabItem[] {
   return [
     {
-      key: 'mindmap',
-      label: t('productionArchitecture.layout.tabs.mindmap'),
-      href: '/production-architecture/mindmap',
-    },
-    {
-      key: 'topology',
-      label: t('productionArchitecture.layout.tabs.topology'),
-      href: '/production-architecture/topology',
+      key: 'line-structure',
+      label: t('productionArchitecture.layout.tabs.productionLines'),
+      href: '/production-architecture/line-structure',
     },
     {
       key: 'process-library',
       label: t('productionArchitecture.layout.tabs.processLibrary'),
       href: '/production-architecture/process-library',
+    },
+    {
+      key: 'branch-processes',
+      label: t('productionArchitecture.layout.tabs.branchProcesses'),
+      href: '/production-architecture/branch-processes',
     },
     {
       key: 'routes',

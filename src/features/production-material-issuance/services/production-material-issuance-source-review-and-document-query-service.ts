@@ -33,7 +33,7 @@ export async function reviewProductionMaterialIssuanceSources(
       return (
         !expected ||
         expected.salesOrderId !== basis.salesOrderId ||
-        expected.bomId !== basis.bom.id
+        expected.expectedBomId !== basis.bom.id
       )
     })
   )

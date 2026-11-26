@@ -77,9 +77,9 @@ func TestProductionMaterialIssuanceWarehousePostgresDifferentDocumentsCannotOver
 	database, first := openIsolatedProductionMaterialIssuanceWarehousePostgresConcurrencyTestDatabase(t)
 	ctx := context.Background()
 	orderID := uuid.NewString()
-	secondOrder := models.SalesOrder{ID: orderID, OrderNo: "SO-OTHER-WAREHOUSE", Version: 1, Status: "Pending", Evidences: json.RawMessage(`[]`), Lines: []models.SalesOrderLine{{ID: 102, LineNo: 1, ProductID: first.Sources[0].ProductID, Qty: 100, UOM: "PCS", Status: "Pending"}}}
+	secondOrder := models.SalesOrder{ID: orderID, OrderNo: "SO-OTHER-WAREHOUSE", Version: 1, Status: "Pending", Evidences: json.RawMessage(`[]`), Lines: []models.SalesOrderLine{{ID: 102, LineNo: 1, ProductID: first.Sources[0].ProductID, BOMOwnerType: first.Sources[0].BOM.OwnerType, BOMOwnerCustomerID: first.Sources[0].BOM.OwnerCustomerID, BOMVersionLevel: first.Sources[0].BOM.VersionLevel, Qty: 100, UOM: "PCS", Status: "Pending"}}}
 	require.NoError(t, database.Create(&secondOrder).Error)
-	bases, err := ReviewProductionMaterialIssuanceSources(ctx, database, []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: orderID, SalesOrderLineID: 102, BOMID: first.Sources[0].BOM.ID}})
+	bases, err := ReviewProductionMaterialIssuanceSources(ctx, database, []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: orderID, SalesOrderLineID: 102, ExpectedBOMID: first.Sources[0].BOM.ID}})
 	require.NoError(t, err)
 	second, err := DispatchProductionMaterialIssuanceDocument(ctx, database, ProductionMaterialIssuanceCommandActor{UserID: "dispatcher"}, buildProductionMaterialIssuanceDispatchTestRequest("other-dispatch", bases))
 	require.NoError(t, err)

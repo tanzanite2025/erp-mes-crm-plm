@@ -21,9 +21,9 @@ func TestValidateProductionRouteDTORequiresTransferForOutsource(t *testing.T) {
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			ProcessLibraryID: "process-1",
-			ExecutionMode:    "OUTSOURCE_REQUIRED",
-			QualityGate:      "NONE",
+			ProcessStepID: "process-1",
+			ExecutionMode: "OUTSOURCE_REQUIRED",
+			QualityGate:   "NONE",
 		}},
 	}
 
@@ -68,7 +68,7 @@ func TestValidateProductionRouteDTORequiresProcessLibraryIdentity(t *testing.T) 
 	}
 
 	if err := validateProductionRouteDTO(route); err == nil {
-		t.Fatal("expected a route step without processLibraryId to be rejected")
+		t.Fatal("expected a route step without processStepId to be rejected")
 	}
 }
 
@@ -77,9 +77,9 @@ func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 		Code: " route-001 ",
 		Name: " Standard Route ",
 		Steps: []ProductionRouteStepDTO{{
-			ProcessLibraryID: " process-1 ",
-			ExecutionMode:    "in_house",
-			QualityGate:      "",
+			ProcessStepID: " process-1 ",
+			ExecutionMode: "in_house",
+			QualityGate:   "",
 		}},
 	})
 
@@ -92,8 +92,8 @@ func TestNormalizeProductionRouteDTODefaultsStatusAndSequence(t *testing.T) {
 	if route.Steps[0].Sequence != 1 {
 		t.Fatalf("expected default sequence 1, got %d", route.Steps[0].Sequence)
 	}
-	if route.Steps[0].ProcessLibraryID != "process-1" {
-		t.Fatalf("expected trimmed process library identity, got %q", route.Steps[0].ProcessLibraryID)
+	if route.Steps[0].ProcessStepID != "process-1" {
+		t.Fatalf("expected trimmed process library identity, got %q", route.Steps[0].ProcessStepID)
 	}
 	if route.Steps[0].ExecutionMode != "IN_HOUSE" {
 		t.Fatalf("expected normalized execution mode, got %q", route.Steps[0].ExecutionMode)
@@ -107,17 +107,17 @@ func TestNormalizeProductionRouteDTOCanonicalizesQualityRouting(t *testing.T) {
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{
 			{
-				ID:               "step-a",
-				ProcessLibraryID: "process-1",
-				ExecutionMode:    "IN_HOUSE",
-				QualityGate:      "REQUIRED",
-				QualityRouting:   json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
+				ID:             "step-a",
+				ProcessStepID:  "process-1",
+				ExecutionMode:  "IN_HOUSE",
+				QualityGate:    "REQUIRED",
+				QualityRouting: json.RawMessage(`{"rework":{"targetRouteStepId":"step-b"}}`),
 			},
 			{
-				ID:               "step-b",
-				ProcessLibraryID: "process-2",
-				ExecutionMode:    "IN_HOUSE",
-				QualityGate:      "NONE",
+				ID:            "step-b",
+				ProcessStepID: "process-2",
+				ExecutionMode: "IN_HOUSE",
+				QualityGate:   "NONE",
 			},
 		},
 	})
@@ -141,11 +141,11 @@ func TestValidateProductionRouteDTORejectsQualityRoutingOutsideRoute(t *testing.
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			ID:               "step-a",
-			ProcessLibraryID: "process-1",
-			ExecutionMode:    "IN_HOUSE",
-			QualityGate:      "REQUIRED",
-			QualityRouting:   json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
+			ID:             "step-a",
+			ProcessStepID:  "process-1",
+			ExecutionMode:  "IN_HOUSE",
+			QualityGate:    "REQUIRED",
+			QualityRouting: json.RawMessage(`{"REWORK":{"targetRouteStepId":"missing-step"}}`),
 		}},
 	}
 
@@ -160,11 +160,11 @@ func TestValidateProductionRouteDTORejectsProcessStepQualityTargets(t *testing.T
 		Name:   "Standard Route",
 		Status: "DRAFT",
 		Steps: []ProductionRouteStepDTO{{
-			ID:               "step-a",
-			ProcessLibraryID: "process-a",
-			ExecutionMode:    "IN_HOUSE",
-			QualityGate:      "REQUIRED",
-			QualityRouting:   json.RawMessage(`{"REWORK":{"targetProcessStepId":"legacy-process"}}`),
+			ID:             "step-a",
+			ProcessStepID:  "process-a",
+			ExecutionMode:  "IN_HOUSE",
+			QualityGate:    "REQUIRED",
+			QualityRouting: json.RawMessage(`{"REWORK":{"targetProcessStepId":"legacy-process"}}`),
 		}},
 	}
 

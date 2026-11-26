@@ -13,8 +13,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LanguageProvider } from '@/context/language-provider'
 import { ProductionProcessLibraryConfigurationPage } from '@/features/production-architecture/pages/production-process-library-configuration-page'
 import type { ProductionProcessStep } from '../data/production-process'
-import { useProductionProcessesQuery } from '../hooks/use-production-resources'
-import { MindmapCreateProcessDialog } from '../tabs/line-mindmap/components/mindmap-create-node-dialog'
 import { ProductionProcessLibraryConfigurationContent } from './production-process-library-configuration-content'
 import { ProductionProcessLibraryConfigurationDialog } from './production-process-library-configuration-dialog'
 
@@ -264,50 +262,5 @@ describe('shared production process library configuration', () => {
     )
     expect(processLibraryTest.getSteps).not.toHaveBeenCalled()
     expect(screen.queryByRole('heading', { name: '钻孔' })).toBeNull()
-  })
-
-  it('opens configuration from an L3 dialog without replacing or submitting the parent draft', async () => {
-    const saveParent = vi.fn()
-    function ProductionMindmapParentDraftWithProcessLibraryHarness() {
-      const query = useProductionProcessesQuery()
-      return (
-        <MindmapCreateProcessDialog
-          open
-          onOpenChange={vi.fn()}
-          parentLevelName='L2'
-          levelName='L3'
-          parentNodes={[
-            { id: 'node-a', label: '型号 A', sourceId: 'segment-a' },
-          ]}
-          defaultParentId='node-a'
-          standardProcesses={query.data ?? []}
-          onSubmit={saveParent}
-        />
-      )
-    }
-    renderProductionProcessLibraryTestContent(
-      <ProductionMindmapParentDraftWithProcessLibraryHarness />
-    )
-    fireEvent.change(screen.getByPlaceholderText('输入L3名称'), {
-      target: { value: '尚未保存的分支工序' },
-    })
-    fireEvent.change(screen.getByPlaceholderText('补充L3说明'), {
-      target: { value: '父弹窗说明保留' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: '配置工序库' }))
-    expect(
-      await screen.findByRole('button', { name: '编辑工序：钻孔' })
-    ).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '关闭工序库' }))
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: '生产工序库' })).toBeNull()
-    )
-    expect(
-      (screen.getByPlaceholderText('输入L3名称') as HTMLInputElement).value
-    ).toBe('尚未保存的分支工序')
-    expect(
-      (screen.getByPlaceholderText('补充L3说明') as HTMLTextAreaElement).value
-    ).toBe('父弹窗说明保留')
-    expect(saveParent).not.toHaveBeenCalled()
   })
 })

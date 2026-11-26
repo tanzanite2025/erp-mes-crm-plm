@@ -27,6 +27,9 @@ func PromoteBOMStatus(ctx context.Context, id string, input PromoteBOMStatusInpu
 	if err != nil {
 		return BOMDetailResponse{}, err
 	}
+	if err := populateBOMProductionLineDisplay(db.DB, &saved); err != nil {
+		return BOMDetailResponse{}, err
+	}
 	return MapBOMToDetailResponse(saved)
 }
 
@@ -40,6 +43,9 @@ func promoteBOMLifecycleStatusWithinExistingTransaction(ctx context.Context, tx 
 	input.Status = string(normalizedTargetStatus)
 	var existing models.BOM
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Items").Where("id = ?", id).First(&existing).Error; err != nil {
+		return models.BOM{}, err
+	}
+	if err := populateBOMProductionLineDisplay(tx, &existing); err != nil {
 		return models.BOM{}, err
 	}
 

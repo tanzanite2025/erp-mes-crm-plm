@@ -68,7 +68,7 @@ export const basicSettings = {
       printTemplateMgmt: 'Print Templates',
       templateVarMgmt: 'Template Variables',
       factoryMgmt: 'Factory Management',
-      lineMgmt: 'Line Mindmap',
+      lineMgmt: 'Production Lines',
       sectionMgmt: 'Section Management',
       groupMgmt: 'Group Management',
       routingMgmt: 'Routing Management',
@@ -285,27 +285,27 @@ export const basicSettings = {
   },
   securityPage: {
     loading: 'Entering secure configuration center...',
-    title: 'System Security Architecture',
-    subtitle: 'System-level security gateway and topology authorization center',
-    authCardTitle: 'Topology Operation Authorization Code (AUTH_CODE)',
+    title: 'System Security Settings',
+    subtitle: 'Manage system security settings and production line edit authorization',
+    authCardTitle: 'Production Line Edit Authorization Code (AUTH_CODE)',
     authCardDescription:
-      'Controls the global verification password for topology renaming, hierarchy node adjustment, and node overflow.',
+      'Required by the server when editing existing production line master data.',
     currentPassword: 'Current Authorization Code',
     placeholder: 'Enter at least 4 letters or digits',
     warning:
-      'High-risk reminder: after changing this code, all opened topology pages must re-enter the new code.',
+      'After this code changes, use the new code for subsequent production line edits.',
     actions: {
       saving: 'Writing to system...',
       apply: 'Apply Global Changes',
     },
-    auditTitle: 'Security Audit Info',
+    auditTitle: 'Authorization Scope',
     auditItems: {
       first:
-        '1. This authorization code is enforced not only on the frontend, but also at the backend API layer.',
+        'The server checks this code when existing production line master data is edited.',
       second:
-        '2. All operations using this authorization code, such as rename and delete, are recorded in the audit log.',
+        'Production line edits are recorded in the audit log.',
       third:
-        '3. The authorization code is stored in the core configuration database and cannot be bypassed physically.',
+        'The authorization code is stored in system configuration.',
     },
     version: 'Architecture Hardening Ver: 1.0.4 - Secure System',
     toasts: {

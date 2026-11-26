@@ -10,21 +10,20 @@ import (
 )
 
 type ProductionRouteStepDTO struct {
-	ID                         string          `json:"id"`
-	CreatedAt                  time.Time       `json:"createdAt"`
-	UpdatedAt                  time.Time       `json:"updatedAt"`
-	RouteID                    string          `json:"routeId"`
-	Sequence                   int             `json:"sequence"`
-	BranchOperationID          string          `json:"branchOperationId"`
-	ProcessLibraryID           string          `json:"processLibraryId"`
-	BranchOperationName        string          `json:"branchOperationName"`
-	BranchOperationDescription string          `json:"branchOperationDescription"`
-	ExecutionMode              string          `json:"executionMode"`
-	QualityGate                string          `json:"qualityGate"`
-	QualityRouting             json.RawMessage `json:"qualityRouting"`
-	EstimatedMinutes           int             `json:"estimatedMinutes"`
-	TransferRequired           bool            `json:"transferRequired"`
-	Description                string          `json:"description"`
+	ID                 string          `json:"id"`
+	CreatedAt          time.Time       `json:"createdAt"`
+	UpdatedAt          time.Time       `json:"updatedAt"`
+	RouteID            string          `json:"routeId"`
+	Sequence           int             `json:"sequence"`
+	ProcessStepID      string          `json:"processStepId"`
+	ProcessName        string          `json:"processName"`
+	ProcessDescription string          `json:"processDescription"`
+	ExecutionMode      string          `json:"executionMode"`
+	QualityGate        string          `json:"qualityGate"`
+	QualityRouting     json.RawMessage `json:"qualityRouting"`
+	EstimatedMinutes   int             `json:"estimatedMinutes"`
+	TransferRequired   bool            `json:"transferRequired"`
+	Description        string          `json:"description"`
 }
 
 type ProductionRouteDTO struct {
@@ -58,38 +57,39 @@ type ProductionRoutesResponse struct {
 	Items []ProductionRouteDTO `json:"items"`
 }
 
-func mapProductionRouteStepToDTO(step models.ProductionRouteStep, published bool) ProductionRouteStepDTO {
-	branchOperationID := strings.TrimSpace(step.BranchOperationID)
-	branchOperationName := ""
-	branchOperationDescription := ""
-	processLibraryID := strings.TrimSpace(step.ProcessLibraryID)
-	if step.BranchOperation != nil && processLibraryID == "" {
-		processLibraryID = strings.TrimSpace(step.BranchOperation.ProcessLibraryID)
+func cloneProductionRouteQualityRoutingJSON(value json.RawMessage) json.RawMessage {
+	if len(value) == 0 {
+		return nil
 	}
+	return append(json.RawMessage(nil), value...)
+}
+
+func mapProductionRouteStepToDTO(step models.ProductionRouteStep, published bool) ProductionRouteStepDTO {
+	processName := ""
+	processDescription := ""
 	if published {
-		branchOperationName = strings.TrimSpace(step.BranchOperationNameSnapshot)
-		branchOperationDescription = step.BranchOperationDescriptionSnapshot
-	} else if step.BranchOperation != nil {
-		branchOperationName = step.BranchOperation.Name
-		branchOperationDescription = step.BranchOperation.Description
+		processName = strings.TrimSpace(step.ProcessNameSnapshot)
+		processDescription = step.ProcessDescriptionSnapshot
+	} else if step.ProcessStep != nil {
+		processName = step.ProcessStep.Name
+		processDescription = step.ProcessStep.Description
 	}
 
 	return ProductionRouteStepDTO{
-		ID:                         step.ID,
-		CreatedAt:                  step.CreatedAt,
-		UpdatedAt:                  step.UpdatedAt,
-		RouteID:                    step.RouteID,
-		Sequence:                   step.Sequence,
-		BranchOperationID:          branchOperationID,
-		ProcessLibraryID:           processLibraryID,
-		BranchOperationName:        branchOperationName,
-		BranchOperationDescription: branchOperationDescription,
-		ExecutionMode:              step.ExecutionMode,
-		QualityGate:                step.QualityGate,
-		QualityRouting:             cloneRawMessage(json.RawMessage(step.QualityRouting)),
-		EstimatedMinutes:           step.EstimatedMinutes,
-		TransferRequired:           step.TransferRequired,
-		Description:                step.Description,
+		ID:                 step.ID,
+		CreatedAt:          step.CreatedAt,
+		UpdatedAt:          step.UpdatedAt,
+		RouteID:            step.RouteID,
+		Sequence:           step.Sequence,
+		ProcessStepID:      strings.TrimSpace(step.ProcessStepID),
+		ProcessName:        processName,
+		ProcessDescription: processDescription,
+		ExecutionMode:      step.ExecutionMode,
+		QualityGate:        step.QualityGate,
+		QualityRouting:     cloneProductionRouteQualityRoutingJSON(json.RawMessage(step.QualityRouting)),
+		EstimatedMinutes:   step.EstimatedMinutes,
+		TransferRequired:   step.TransferRequired,
+		Description:        step.Description,
 	}
 }
 
@@ -100,16 +100,15 @@ func mapProductionRouteStepDTOToModel(step ProductionRouteStepDTO) models.Produc
 			CreatedAt: step.CreatedAt,
 			UpdatedAt: step.UpdatedAt,
 		},
-		RouteID:           step.RouteID,
-		Sequence:          step.Sequence,
-		BranchOperationID: strings.TrimSpace(step.BranchOperationID),
-		ProcessLibraryID:  strings.TrimSpace(step.ProcessLibraryID),
-		ExecutionMode:     step.ExecutionMode,
-		QualityGate:       step.QualityGate,
-		QualityRouting:    datatypes.JSON(cloneRawMessage(step.QualityRouting)),
-		EstimatedMinutes:  step.EstimatedMinutes,
-		TransferRequired:  step.TransferRequired,
-		Description:       step.Description,
+		RouteID:          step.RouteID,
+		Sequence:         step.Sequence,
+		ProcessStepID:    strings.TrimSpace(step.ProcessStepID),
+		ExecutionMode:    step.ExecutionMode,
+		QualityGate:      step.QualityGate,
+		QualityRouting:   datatypes.JSON(cloneProductionRouteQualityRoutingJSON(step.QualityRouting)),
+		EstimatedMinutes: step.EstimatedMinutes,
+		TransferRequired: step.TransferRequired,
+		Description:      step.Description,
 	}
 }
 

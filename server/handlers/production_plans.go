@@ -95,6 +95,7 @@ func SaveProductionPlanHandler(c *gin.Context) {
 		if hasPreviousPlan && strings.TrimSpace(previousPlan.ProductionRouteRevisionID) != "" {
 			plan.ProductionRouteRevisionID = previousPlan.ProductionRouteRevisionID
 			plan.ProductionRouteRevisionNo = previousPlan.ProductionRouteRevisionNo
+			plan.ProductionRouteMode = previousPlan.ProductionRouteMode
 		} else if err := services.BindProductionPlanToCurrentPublishedRouteRevisionTx(tx, &plan); err != nil {
 			return err
 		}

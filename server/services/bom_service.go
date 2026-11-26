@@ -122,6 +122,9 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		}
 		modelInput.Items = normalizedItems
 		modelInput.Items = normalizeBOMItems(modelInput.Items)
+		if strings.TrimSpace(modelInput.BOMType) == "" {
+			modelInput.BOMType = models.BOMTypeEBOM
+		}
 		if err := validateBOMReferences(tx, &modelInput); err != nil {
 			return err
 		}
@@ -156,6 +159,12 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 			modelInput.BOMType = existing.BOMType
 			modelInput.IsLocked = existing.IsLocked
 			modelInput.SourceEBOMID = existing.SourceEBOMID
+			if err := validateAndNormalizeBOMProductionLineAssignment(tx, &modelInput, &existing); err != nil {
+				return err
+			}
+			if err := populateBOMProductionLineDisplay(tx, &existing); err != nil {
+				return err
+			}
 
 			before := bomAuditSnapshot(existing)
 
@@ -169,6 +178,11 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 
 			if err := tx.Model(&existing).Omit("Items").Updates(modelInput).Error; err != nil {
 				return wrapBOMUniqueViolation(err, &modelInput)
+			}
+			if existing.BOMType == models.BOMTypeMBOM {
+				if err := tx.Model(&existing).Update("production_line_id", nil).Error; err != nil {
+					return err
+				}
 			}
 			// A cleared weight must not silently retain the previous positive value
 			// when validating an edited recipe for publication.
@@ -210,6 +224,9 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 				First(&saved, "id = ?", existing.ID).Error; err != nil {
 				return err
 			}
+			if err := populateBOMProductionLineDisplay(tx, &saved); err != nil {
+				return err
+			}
 			if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "SAVE"); err != nil {
 				return err
 			}
@@ -242,6 +259,9 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		if strings.TrimSpace(modelInput.BOMType) == "" {
 			modelInput.BOMType = models.BOMTypeEBOM
 		}
+		if err := validateAndNormalizeBOMProductionLineAssignment(tx, &modelInput, nil); err != nil {
+			return err
+		}
 		modelInput.IsLocked = false
 		modelInput.MasterDataControl.Normalize(defaultRevision)
 		items := modelInput.Items
@@ -258,6 +278,9 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		if err := tx.
 			Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).
 			First(&saved, "id = ?", modelInput.ID).Error; err != nil {
+			return err
+		}
+		if err := populateBOMProductionLineDisplay(tx, &saved); err != nil {
 			return err
 		}
 		if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "SAVE"); err != nil {
@@ -280,6 +303,9 @@ func SaveBOM(ctx context.Context, input SaveBOMInput) (BOMDetailResponse, error)
 		return nil
 	})
 	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+	if err := populateBOMProductionLineDisplay(db.DB, &saved); err != nil {
 		return BOMDetailResponse{}, err
 	}
 	return MapBOMToDetailResponse(saved)
@@ -428,6 +454,9 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 		if err := tx.Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).First(&saved, "id = ?", mbom.ID).Error; err != nil {
 			return err
 		}
+		if err := populateBOMProductionLineDisplay(tx, &saved); err != nil {
+			return err
+		}
 
 		// 8. 写入版本快照
 		if err := writeBOMVersionSnapshotTx(ctx, tx, saved, "DERIVE"); err != nil {
@@ -450,6 +479,9 @@ func DeriveMBOMFromEBOM(ctx context.Context, ebomID string, input DeriveMBOMInpu
 	})
 
 	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+	if err := populateBOMProductionLineDisplay(db.DB, &saved); err != nil {
 		return BOMDetailResponse{}, err
 	}
 
@@ -513,6 +545,9 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 		}
 		if current.Status != models.BOMStatusReleased {
 			return fmt.Errorf("[VALIDATION] only RELEASED MBOM can be revised (current: %s)", current.Status)
+		}
+		if err := populateBOMProductionLineDisplay(tx, &current); err != nil {
+			return err
 		}
 
 		// 3. 乐观锁
@@ -597,6 +632,9 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 		if err := tx.Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("bom_items.sort_order ASC") }).First(&savedNew, "id = ?", newMBOM.ID).Error; err != nil {
 			return err
 		}
+		if err := populateBOMProductionLineDisplay(tx, &savedNew); err != nil {
+			return err
+		}
 
 		// 9. 写入版本快照与审计日志
 		if err := writeBOMVersionSnapshotTx(ctx, tx, savedNew, "REVISE"); err != nil {
@@ -617,6 +655,9 @@ func ReviseMBOM(ctx context.Context, mbomID string, input ReviseMBOMInput) (BOMD
 	})
 
 	if err != nil {
+		return BOMDetailResponse{}, err
+	}
+	if err := populateBOMProductionLineDisplay(db.DB, &savedNew); err != nil {
 		return BOMDetailResponse{}, err
 	}
 

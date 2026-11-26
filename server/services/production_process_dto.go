@@ -24,6 +24,18 @@ type ProcessStepsResponse struct {
 	Items []ProcessStepDTO `json:"items"`
 }
 
+type SaveProductionMBOMBranchProcessSelectionHandlerRequest struct {
+	ProductID          string   `json:"productId"`
+	BOMOwnerType       string   `json:"bomOwnerType"`
+	BOMOwnerCustomerID string   `json:"bomOwnerCustomerId"`
+	BOMVersionLevel    string   `json:"bomVersionLevel"`
+	ProcessStepIDs     []string `json:"processStepIds"`
+}
+
+type ProductionMBOMBranchProcessSelectionResponse struct {
+	Items []ProcessStepDTO `json:"items"`
+}
+
 func mapProcessStepToDTO(step models.ProcessStep) ProcessStepDTO {
 	return ProcessStepDTO{
 		ID:          step.ID,

@@ -17,7 +17,7 @@ func TestProductionMaterialIssuancePostgresSourceOptionsScopedPreparationAndMiss
 	require.Len(t, options.Items, 1)
 	require.Equal(t, bases[0].SalesOrderID, options.Items[0].SalesOrderID)
 	selections := []ProductionMaterialIssuanceSourcePreparationSelection{{SalesOrderID: bases[0].SalesOrderID, SalesOrderLineID: bases[0].SalesOrderLineID}}
-	formalSelections := []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: bases[0].SalesOrderID, SalesOrderLineID: bases[0].SalesOrderLineID, BOMID: bases[0].BOM.ID}}
+	formalSelections := []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: bases[0].SalesOrderID, SalesOrderLineID: bases[0].SalesOrderLineID, ExpectedBOMID: bases[0].BOM.ID}}
 	prepared, err := PrepareProductionMaterialIssuanceSources(ctx, database, selections)
 	require.NoError(t, err)
 	require.True(t, prepared.IsReady)

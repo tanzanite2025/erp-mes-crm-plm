@@ -35,7 +35,6 @@ export const apsScheduling = {
     capacityNote:
       'Load {{occupiedHours}} / Capacity {{availableHours}} / Window {{timeWindowHours}}',
     segmentCategoryCount: '{{count}} {{levelName}} groups',
-    processCount: '{{count}} {{levelName}}',
   },
   cuttingIssuance: {
     header: {

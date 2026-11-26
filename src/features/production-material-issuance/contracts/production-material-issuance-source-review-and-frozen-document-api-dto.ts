@@ -14,7 +14,7 @@ const nonemptyText = z.string().trim().min(1)
 export const productionMaterialIssuanceSourceSelectionSchema = z.strictObject({
   salesOrderId: z.uuid(),
   salesOrderLineId: positiveSafeInteger,
-  bomId: z.uuid(),
+  expectedBomId: z.uuid(),
 })
 
 export const productionMaterialIssuanceSourceReviewRequestSchema = z

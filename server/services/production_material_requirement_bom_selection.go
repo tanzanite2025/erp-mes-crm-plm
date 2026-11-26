@@ -7,12 +7,14 @@ import (
 	"xdfc-server/models"
 )
 
-func selectApplicableProductionMaterialRequirementBOMs(boms []models.BOM, productID, customerID string, asOf time.Time) []models.BOM {
-	internal := make([]models.BOM, 0)
-	customer := make([]models.BOM, 0)
+func selectApplicableProductionMaterialRequirementBOMs(boms []models.BOM, line models.SalesOrderLine, asOf time.Time) []models.BOM {
+	candidates := make([]models.BOM, 0)
+	if !hasValidProductionMaterialRequirementMBOMBranch(line) {
+		return candidates
+	}
 	day := asOf.UTC().Format("2006-01-02")
 	for _, bom := range boms {
-		if bom.ProductID != productID || bom.BOMType != models.BOMTypeMBOM || bom.Status != models.BOMStatusReleased || bom.DeletedAt.Valid {
+		if !productionMaterialRequirementBOMMatchesSalesOrderLineBranch(bom, line) || bom.BOMType != models.BOMTypeMBOM || bom.Status != models.BOMStatusReleased || bom.DeletedAt.Valid {
 			continue
 		}
 		if bom.EffectiveFrom != nil && bom.EffectiveFrom.UTC().Format("2006-01-02") > day {
@@ -21,26 +23,33 @@ func selectApplicableProductionMaterialRequirementBOMs(boms []models.BOM, produc
 		if bom.EffectiveTo != nil && bom.EffectiveTo.UTC().Format("2006-01-02") < day {
 			continue
 		}
-		switch strings.TrimSpace(bom.OwnerType) {
-		case "CUSTOMER":
-			if customerID != "" && bom.OwnerCustomerID == customerID {
-				customer = append(customer, bom)
-			}
-		case "", "INTERNAL":
-			internal = append(internal, bom)
-		}
-	}
-	candidates := internal
-	if len(customer) > 0 {
-		candidates = customer
+		candidates = append(candidates, bom)
 	}
 	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].VersionLevel != candidates[j].VersionLevel {
-			return candidates[i].VersionLevel < candidates[j].VersionLevel
-		}
 		return candidates[i].ID < candidates[j].ID
 	})
 	return candidates
+}
+
+func hasValidProductionMaterialRequirementMBOMBranch(line models.SalesOrderLine) bool {
+	if strings.TrimSpace(line.ProductID) == "" {
+		return false
+	}
+	switch strings.ToUpper(strings.TrimSpace(line.BOMOwnerType)) {
+	case "INTERNAL":
+		return strings.TrimSpace(line.BOMOwnerCustomerID) == ""
+	case "CUSTOMER":
+		return strings.TrimSpace(line.BOMOwnerCustomerID) != ""
+	default:
+		return false
+	}
+}
+
+func productionMaterialRequirementBOMMatchesSalesOrderLineBranch(bom models.BOM, line models.SalesOrderLine) bool {
+	return strings.TrimSpace(bom.ProductID) == strings.TrimSpace(line.ProductID) &&
+		strings.ToUpper(strings.TrimSpace(bom.OwnerType)) == strings.ToUpper(strings.TrimSpace(line.BOMOwnerType)) &&
+		strings.TrimSpace(bom.OwnerCustomerID) == strings.TrimSpace(line.BOMOwnerCustomerID) &&
+		strings.TrimSpace(bom.VersionLevel) == strings.TrimSpace(line.BOMVersionLevel)
 }
 
 func mapProductionMaterialRequirementBOMCandidate(bom models.BOM, option models.ProductAttributeOption) ProductionMaterialRequirementBOMCandidate {

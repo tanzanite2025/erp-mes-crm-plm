@@ -86,6 +86,7 @@ export function ProductionProcessLibraryConfigurationDialog({
           <Button
             type='button'
             variant='outline'
+            className='rounded-full'
             disabled={interaction.isSaving}
             onClick={() => void changeProductionProcessLibraryDialogOpen(false)}
           >

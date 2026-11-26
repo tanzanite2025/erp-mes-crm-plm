@@ -47,6 +47,7 @@
 
 ## 当前文档入口与已知差异
 
+- **EBOM 产线归属：** `ProductionLine` 是独立产线主数据，由生产架构的产线 TAB 维护；一条产线可关联多个 EBOM。EBOM 草稿在 BOM 编辑区选择启用产线，草稿可调整、发布锁定后不可变。MBOM 不提供产线选择，详情从来源 EBOM 只读显示产线；保存、派生和修订均不另存或覆盖产线。选项接口使用工程权限，不要求生产配置权限。完整关系和路线边界见[生产线主数据与订单路线分阶段实施设计](../architecture/生产线主数据与订单路线分阶段实施设计.md)。
 - [BOM 三态生命周期与保存发布事务](bom-three-state-lifecycle-direct-release-and-atomic-save-publish-contract.md)：草稿直接发布、新建保存并发布、作废确认、历史状态兼容、权限与失败回滚。
 - [BOM 编辑弹窗职责边界](bom-editor-dialog-product-information-recipe-layout-and-responsibility-boundaries.md)：左右布局、移动端两步、配方单视图、共用分组、草稿保护、发布与派生条件。
 - [产品模板属性与 BOM 性能版本的边界](product-template-attribute-classification-business-components-reuse-guide.md)：模板属性独立维护，BOM 性能版本名称共用，具体产品的重量随 BOM 保存。

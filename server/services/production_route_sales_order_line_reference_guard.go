@@ -41,6 +41,20 @@ func validateSalesOrderLinesAgainstProductionReferencesTx(
 		if strings.TrimSpace(next.ProductID) != strings.TrimSpace(previous.ProductID) {
 			return fmt.Errorf("%w: 订单 %s 明细行 %d 已被生产路线或生产计划引用，不能更换产品", ErrSalesOrderLineProtectedByProductionRouteOrPlan, orderID, previous.LineNo)
 		}
+		if strings.ToUpper(strings.TrimSpace(next.BOMOwnerType)) != strings.ToUpper(strings.TrimSpace(previous.BOMOwnerType)) ||
+			strings.TrimSpace(next.BOMOwnerCustomerID) != strings.TrimSpace(previous.BOMOwnerCustomerID) ||
+			strings.TrimSpace(next.BOMVersionLevel) != strings.TrimSpace(previous.BOMVersionLevel) {
+			return fmt.Errorf("%w: 订单 %s 明细行 %d 已被生产路线或生产计划引用，不能更换 MBOM 分支", ErrSalesOrderLineProtectedByProductionRouteOrPlan, orderID, previous.LineNo)
+		}
+		if strings.ToUpper(strings.TrimSpace(next.ProductionRouteMode)) != strings.ToUpper(strings.TrimSpace(previous.ProductionRouteMode)) {
+			hasPlan, err := salesOrderLineHasProductionPlanReferenceTx(tx, previous.ID)
+			if err != nil {
+				return err
+			}
+			if hasPlan {
+				return fmt.Errorf("%w: 订单 %s 明细行 %d 已被生产计划引用，不能更换路线方式", ErrSalesOrderLineProtectedByProductionRouteOrPlan, orderID, previous.LineNo)
+			}
+		}
 	}
 	return nil
 }
@@ -57,18 +71,20 @@ func salesOrderLineHasProductionRouteOrPlanReferenceTx(tx *gorm.DB, salesOrderLi
 			return true, nil
 		}
 	}
-	if tx.Migrator().HasTable(&models.ProductionPlan{}) {
-		var planCount int64
-		if err := tx.Unscoped().Model(&models.ProductionPlan{}).
-			Where("sales_order_line_id = ?", salesOrderLineID).
-			Count(&planCount).Error; err != nil {
-			return false, err
-		}
-		if planCount > 0 {
-			return true, nil
-		}
+	return salesOrderLineHasProductionPlanReferenceTx(tx, salesOrderLineID)
+}
+
+func salesOrderLineHasProductionPlanReferenceTx(tx *gorm.DB, salesOrderLineID uint) (bool, error) {
+	if !tx.Migrator().HasTable(&models.ProductionPlan{}) {
+		return false, nil
 	}
-	return false, nil
+	var planCount int64
+	if err := tx.Unscoped().Model(&models.ProductionPlan{}).
+		Where("sales_order_line_id = ?", salesOrderLineID).
+		Count(&planCount).Error; err != nil {
+		return false, err
+	}
+	return planCount > 0, nil
 }
 
 func rejectSalesOrderDeletionWithProductionLineReferencesTx(tx *gorm.DB, orderID string) error {

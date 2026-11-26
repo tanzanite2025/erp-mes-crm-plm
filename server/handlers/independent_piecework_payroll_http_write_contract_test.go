@@ -19,6 +19,7 @@ func TestIndependentPayrollHTTPWritersRejectProductionFieldsBeforeDatabaseAccess
 		{"/calculate", `{"productId":"old-product","sourceExecutionId":"production-id"}`, CalculateFinancePieceworkSalaryHandler},
 		{"/calculate", `{"calculationDate":""}`, CalculateFinancePieceworkSalaryHandler},
 		{"/pay-items", `{"name":"Payroll item","routeStepId":"old-step"}`, SavePieceworkPayItemHandler},
+		{"/pay-items", `{"name":"Payroll item","unit":"PCS"}`, SavePieceworkPayItemHandler},
 		{"/pay-items", `{"name":"Payroll item"} {"other":"object"}`, SavePieceworkPayItemHandler},
 		{"/calculate", `{"calculationDate":"2026-10-15","rows":[{"teamId":"obsolete"}]}`, CalculateFinancePieceworkSalaryHandler},
 		{"/calculate", `{"requestKey":"obsolete"}`, CalculateFinancePieceworkSalaryHandler},

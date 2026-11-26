@@ -30,6 +30,12 @@ export const piecework = {
     name: 'Item Name',
     item: 'Pay Step',
     unit: 'Unit',
+    unitPlaceholder: 'Select a unit',
+    unitsEmpty:
+      'No active units. Add or activate a unit in Unit Management first.',
+    unitsLoading: 'Units are loading. Please try again shortly.',
+    unitsLoadFailed: 'Could not load units. Please retry.',
+    unitUnavailable: 'Select an active unit from Unit Management.',
     unitPrice: 'Unit Price',
     currency: 'Currency',
     noAvailableCurrencies: 'No available currencies',
@@ -87,7 +93,7 @@ export const piecework = {
   rules: {
     title: 'Piecework Rules',
     description:
-      'Maintain pay steps, units, piecework rates, and their effective dates.',
+      'Maintain pay steps and piecework rates by unit and effective date.',
     toast: {
       saveSuccess: 'Piecework rate updated',
       saveFailed: 'Failed to save rate: {{message}}',

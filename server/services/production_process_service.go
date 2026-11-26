@@ -95,23 +95,23 @@ func validateProductionProcessLibraryEntryReferences(database *gorm.DB, processL
 	}
 
 	var selectionCount int64
-	if err := database.Model(&models.ProductionBOMBranchOperationProcessLibrarySelection{}).
-		Where("process_library_id = ?", processLibraryID).
+	if err := database.Model(&models.ProductionMBOMBranchProcessAssociation{}).
+		Where("process_step_id = ?", processLibraryID).
 		Count(&selectionCount).Error; err != nil {
 		return err
 	}
 	if selectionCount > 0 {
-		return fmt.Errorf("%w: process library entry %s is selected by an MBOM branch", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
+		return fmt.Errorf("%w: process step %s is selected by an MBOM branch", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
 	}
-	if database.Migrator().HasTable(&models.ProductionBOMBranchOperation{}) {
-		var operationCount int64
-		if err := database.Model(&models.ProductionBOMBranchOperation{}).
-			Where("process_library_id = ?", processLibraryID).
-			Count(&operationCount).Error; err != nil {
+	if database.Migrator().HasTable(&models.ProductionRouteStep{}) {
+		var routeStepCount int64
+		if err := database.Model(&models.ProductionRouteStep{}).
+			Where("process_step_id = ?", processLibraryID).
+			Count(&routeStepCount).Error; err != nil {
 			return err
 		}
-		if operationCount > 0 {
-			return fmt.Errorf("%w: process library entry %s is used by a production route", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
+		if routeStepCount > 0 {
+			return fmt.Errorf("%w: process step %s is used by a production route", ErrProductionProcessLibraryReferenceConflict, processLibraryID)
 		}
 	}
 	return nil

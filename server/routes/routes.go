@@ -185,6 +185,7 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.GET("/products/next-code", handlers.GetNextProductCodeHandler)
 			engineeringGroup.GET("/products", handlers.GetProductsHandler)
 			engineeringGroup.GET("/products/:id", handlers.GetProductHandler)
+			engineeringGroup.GET("/production-line-options", handlers.GetBOMProductionLineOptionsHandler)
 			engineeringGroup.POST("/products", adminOnly, handlers.SaveProductHandler)
 			engineeringGroup.PATCH("/products/:id", adminOnly, handlers.PatchProductHandler)
 			engineeringGroup.DELETE("/products/:id", adminOnly, handlers.DeleteProductHandler)
@@ -487,7 +488,7 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 
 func registerBasicUnitRoutes(authorized *gin.RouterGroup) {
 	unitGroup := authorized.Group("/basic/units")
-	unitGroup.GET("", middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading, authz.MenuQuality), handlers.GetUnitsHandler)
+	unitGroup.GET("", middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading, authz.MenuQuality, authz.MenuPiecework), handlers.GetUnitsHandler)
 	unitMaintenance := unitGroup.Group("")
 	unitMaintenance.Use(middleware.RequireAnyPermission(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading))
 	unitMaintenance.POST("", middleware.RequireAnyPermission(authz.PermissionManage), handlers.SaveUnitHandler)

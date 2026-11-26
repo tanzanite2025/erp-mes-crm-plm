@@ -64,9 +64,9 @@ func openIsolatedProductionMaterialIssuancePostgresConcurrencyTestDatabase(t *te
 	require.NoError(t, database.Exec(`INSERT INTO materials VALUES (?, 'M-1','材料','规格','kg','Active',NULL)`, materialID).Error)
 	require.NoError(t, database.Exec(`INSERT INTO boms VALUES (?,?,'MBOM','MBOM-1','RELEASED','INTERNAL','',3,'V1','standard','A',480,'g',NULL,NULL,NULL)`, bomID, productID).Error)
 	require.NoError(t, database.Exec(`INSERT INTO bom_items VALUES (?,?,1,'A',?,'kg',0.5)`, uuid.NewString(), bomID, materialID).Error)
-	order := models.SalesOrder{ID: orderID, OrderNo: "SO-CONCURRENT", Version: 4, Status: "Pending", Evidences: json.RawMessage(`[]`), Lines: []models.SalesOrderLine{{ID: 101, LineNo: 1, ProductID: productID, Qty: 100, UOM: "PCS", Status: "Pending"}}}
+	order := models.SalesOrder{ID: orderID, OrderNo: "SO-CONCURRENT", Version: 4, Status: "Pending", Evidences: json.RawMessage(`[]`), Lines: []models.SalesOrderLine{{ID: 101, LineNo: 1, ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", Qty: 100, UOM: "PCS", Status: "Pending"}}}
 	require.NoError(t, database.Create(&order).Error)
-	bases, err := ReviewProductionMaterialIssuanceSources(context.Background(), database, []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: orderID, SalesOrderLineID: 101, BOMID: bomID}})
+	bases, err := ReviewProductionMaterialIssuanceSources(context.Background(), database, []ProductionMaterialIssuanceSourceSelection{{SalesOrderID: orderID, SalesOrderLineID: 101, ExpectedBOMID: bomID}})
 	require.NoError(t, err)
 	return database, bases, schemaName
 }

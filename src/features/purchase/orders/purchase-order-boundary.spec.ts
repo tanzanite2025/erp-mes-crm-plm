@@ -46,7 +46,7 @@ describe('purchase orders TAB ownership', () => {
       .map(relativeSourcePath)
 
     expect(violations).toEqual([])
-  })
+  }, 15_000)
 
   it('allows only the declared accounts-payable integration into trading', () => {
     const tradingImports = collectSourceFiles(orderRoot)

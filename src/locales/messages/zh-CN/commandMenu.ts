@@ -94,7 +94,6 @@ export const commandMenu = {
     rights: '用户权限',
     permissions: '权限审计',
     productionLines: '产线脑图',
-    topology: '拓扑模板',
     productionRoutes: '生产路线',
     productionExecution: '生产执行',
     leaveManagement: '请假管理',

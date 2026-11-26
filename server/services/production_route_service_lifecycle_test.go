@@ -56,7 +56,6 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			product_id TEXT,
 			product_sku TEXT,
 			product_name TEXT,
-			product_template_id TEXT,
 			bom_owner_type TEXT,
 			bom_owner_customer_id TEXT,
 			bom_owner_customer_name TEXT,
@@ -71,8 +70,10 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			deleted_at DATETIME,
 			sku TEXT NOT NULL,
 			name TEXT NOT NULL,
+			type_id TEXT,
 			status TEXT
 		)`,
+		`CREATE TABLE product_types (id TEXT PRIMARY KEY, name TEXT NOT NULL, active BOOLEAN NOT NULL DEFAULT 1)`,
 		`
 		CREATE TABLE customers (
 			id TEXT PRIMARY KEY,
@@ -93,6 +94,28 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			effective_to DATETIME
 		)`,
 		`
+		CREATE TABLE sales_orders (
+			id TEXT PRIMARY KEY,
+			order_no TEXT,
+			customer_name TEXT,
+			order_date TEXT,
+			deleted_at DATETIME
+		)`,
+		`
+		CREATE TABLE sales_order_lines (
+			id INTEGER PRIMARY KEY,
+			sales_order_id TEXT,
+			line_no INTEGER,
+			product_id TEXT,
+			product_model TEXT,
+			product_code TEXT,
+			specification TEXT,
+			bom_owner_type TEXT,
+			bom_owner_customer_id TEXT,
+			bom_version_level TEXT,
+			production_route_mode TEXT
+		)`,
+		`
 		CREATE TABLE production_route_steps (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -100,28 +123,13 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			deleted_at DATETIME,
 			route_id TEXT NOT NULL,
 			sequence INTEGER NOT NULL,
-			branch_operation_id TEXT,
+			process_step_id TEXT,
 			execution_mode TEXT NOT NULL,
 			quality_gate TEXT NOT NULL,
 			quality_routing TEXT,
 			estimated_minutes INTEGER,
 			transfer_required BOOLEAN,
 			description TEXT
-		)`,
-		`
-		CREATE TABLE production_bom_branch_operations (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			product_id TEXT NOT NULL,
-			bom_owner_type TEXT NOT NULL,
-			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
-			bom_version_level TEXT NOT NULL DEFAULT '',
-			name TEXT NOT NULL,
-			description TEXT,
-			sort_order INTEGER NOT NULL DEFAULT 0,
-			is_active BOOLEAN NOT NULL DEFAULT true
 		)`,
 		`
 		CREATE TABLE process_steps (
@@ -136,7 +144,7 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			is_active BOOLEAN
 		)`,
 		`
-		CREATE TABLE production_bom_branch_operation_process_library_selections (
+		CREATE TABLE production_mbom_branch_process_associations (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
 			updated_at DATETIME,
@@ -145,8 +153,7 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			bom_owner_type TEXT NOT NULL,
 			bom_owner_customer_id TEXT NOT NULL DEFAULT '',
 			bom_version_level TEXT NOT NULL DEFAULT '',
-			branch_operation_id TEXT NOT NULL UNIQUE,
-			process_library_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL,
 			sort_order INTEGER NOT NULL DEFAULT 0
 		)`,
 		`
@@ -171,7 +178,7 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 			execution_lot_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			branch_operation_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL,
 			production_work_location_id TEXT NOT NULL,
 			execution_mode TEXT,
 			partner_id TEXT,
@@ -194,58 +201,54 @@ func createProductionRouteLifecycleTestSchema(t *testing.T, database *gorm.DB) {
 func seedProductionRouteLifecycleReferences(t *testing.T, database *gorm.DB) {
 	t.Helper()
 
+	require.NoError(t, database.Exec(`INSERT INTO product_types (id, name) VALUES ('type-rim', '山地车圈')`).Error)
 	require.NoError(t, database.Exec(`
-		INSERT INTO products (id, sku, name, status)
-		VALUES (?, ?, ?, ?)
-	`, "product-g24", "G24", "G24产品", "Active").Error)
+		INSERT INTO products (id, sku, name, type_id, status)
+		VALUES (?, ?, ?, ?, ?)
+	`, "product-g24", "G24", "G24产品", "type-rim", "Active").Error)
 	require.NoError(t, database.Exec(`
 		INSERT INTO boms (id, product_id, bom_type, status, owner_type, owner_customer_id, version_level)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`, "bom-g24-internal", "product-g24", models.BOMTypeMBOM, models.BOMStatusReleased, "INTERNAL", "", "std").Error)
-	require.NoError(t, database.Create(&[]models.ProductionBOMBranchOperation{
-		{BaseModel: models.BaseModel{ID: "branch-operation-outer"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", Name: "G24外圈", SortOrder: 1, IsActive: true, ProcessLibraryID: "library-outer"},
-		{BaseModel: models.BaseModel{ID: "branch-operation-forming"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", Name: "成型", SortOrder: 2, IsActive: true, ProcessLibraryID: "library-forming"},
-	}).Error)
+	require.NoError(t, database.Exec(`INSERT INTO sales_orders (id, order_no) VALUES ('order-1', 'SO-1')`).Error)
+	require.NoError(t, database.Exec(`
+		INSERT INTO sales_order_lines
+			(id, sales_order_id, line_no, product_id, product_model, product_code, bom_owner_type, bom_owner_customer_id, bom_version_level, production_route_mode)
+		VALUES (101, 'order-1', 1, 'product-g24', 'G24', 'G24', 'INTERNAL', '', 'std', 'CUSTOM')
+	`).Error)
 	require.NoError(t, database.Create(&[]models.ProcessStep{
 		{BaseModel: models.BaseModel{ID: "library-outer"}, Code: "OUTER", Name: "G24外圈", IsActive: true},
-		{BaseModel: models.BaseModel{ID: "library-forming"}, Code: "FORM", Name: "成型", IsActive: true},
+		{BaseModel: models.BaseModel{ID: "library-forming"}, Code: "FORM", Name: "成型", Description: "成型工序说明", IsActive: true},
 	}).Error)
-	require.NoError(t, database.Create(&[]models.ProductionBOMBranchOperationProcessLibrarySelection{
-		{BaseModel: models.BaseModel{ID: "selection-outer"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", BranchOperationID: "branch-operation-outer", ProcessLibraryID: "library-outer", SortOrder: 1},
-		{BaseModel: models.BaseModel{ID: "selection-forming"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", BranchOperationID: "branch-operation-forming", ProcessLibraryID: "library-forming", SortOrder: 2},
+	require.NoError(t, database.Create(&[]models.ProductionMBOMBranchProcessAssociation{
+		{BaseModel: models.BaseModel{ID: "selection-outer"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", ProcessStepID: "library-outer", SortOrder: 1},
+		{BaseModel: models.BaseModel{ID: "selection-forming"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", ProcessStepID: "library-forming", SortOrder: 2},
 	}).Error)
 }
 
-func productionRouteLifecycleDTO(status string, branchOperationID string) ProductionRouteDTO {
+func productionRouteLifecycleDTO(status string, processStepID string) ProductionRouteDTO {
 	return ProductionRouteDTO{
-		Code:            "G24-ROUTE",
-		Name:            "G24 标准路线",
-		ProductID:       "product-g24",
-		ProductSKU:      "G24",
-		ProductName:     "G24",
-		BOMOwnerType:    "INTERNAL",
-		BOMVersionLevel: "std",
-		ScopeType:       productionRouteScopeBranchDefault,
-		Description:     "G24 标准生产路线",
-		Version:         1,
-		Status:          status,
+		Code:             "G24-ROUTE",
+		Name:             "G24 标准路线",
+		ProductID:        "product-g24",
+		ProductSKU:       "G24",
+		ProductName:      "G24",
+		BOMOwnerType:     "INTERNAL",
+		BOMVersionLevel:  "std",
+		ScopeType:        productionRouteScopeSalesOrderLine,
+		SalesOrderLineID: 101,
+		Description:      "G24 标准生产路线",
+		Version:          1,
+		Status:           status,
 		Steps: []ProductionRouteStepDTO{{
-			ID:                "route-g24-step-outer",
-			Sequence:          1,
-			BranchOperationID: branchOperationID,
-			ProcessLibraryID:  productionRouteLifecycleProcessLibraryID(branchOperationID),
-			ExecutionMode:     "IN_HOUSE",
-			QualityGate:       "NONE",
-			EstimatedMinutes:  10,
+			ID:               "route-g24-step-outer",
+			Sequence:         1,
+			ProcessStepID:    processStepID,
+			ExecutionMode:    "IN_HOUSE",
+			QualityGate:      "NONE",
+			EstimatedMinutes: 10,
 		}},
 	}
-}
-
-func productionRouteLifecycleProcessLibraryID(branchOperationID string) string {
-	if branchOperationID == "branch-operation-forming" {
-		return "library-forming"
-	}
-	return "library-outer"
 }
 
 func TestListProductionRouteBOMBranchesReturnsCurrentStableBranches(t *testing.T) {
@@ -285,16 +288,19 @@ func TestListProductionRouteBOMBranchesReturnsCurrentStableBranches(t *testing.T
 	require.Contains(t, identities, "INTERNAL::lightweight")
 	require.Contains(t, identities, "CUSTOMER:customer-a:std")
 	require.Equal(t, "客户 A", identities["CUSTOMER:customer-a:std"].BOMOwnerCustomerName)
-	require.Len(t, identities["INTERNAL::std"].BranchOperations, 2)
-	require.Equal(t, "G24外圈", identities["INTERNAL::std"].BranchOperations[0].Name)
-	require.Empty(t, identities["INTERNAL::lightweight"].BranchOperations)
+	require.Equal(t, "山地车圈", identities["INTERNAL::std"].ProductTypeName)
+	require.Len(t, identities["INTERNAL::std"].Processes, 2)
+	require.Equal(t, "G24外圈", identities["INTERNAL::std"].Processes[0].Name)
+	require.Empty(t, identities["INTERNAL::lightweight"].Processes)
 }
 
 func TestSaveProductionRouteHydratesAndValidatesBOMBranch(t *testing.T) {
 	service, _ := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, service.txManager.DB())
+	require.NoError(t, service.txManager.DB().Model(&models.SalesOrderLine{}).
+		Where("id = ?", 101).Update("production_route_mode", "DEFAULT").Error)
 
-	input := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
+	input := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
 	input.ProductSKU = "FORGED-SKU"
 	input.ProductName = "伪造产品名称"
 	created, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: input})
@@ -303,10 +309,13 @@ func TestSaveProductionRouteHydratesAndValidatesBOMBranch(t *testing.T) {
 	require.Equal(t, "G24产品", created.ProductName)
 	require.Equal(t, "INTERNAL", created.BOMOwnerType)
 	require.Equal(t, "std", created.BOMVersionLevel)
-	require.Equal(t, "branch-operation-outer", created.Steps[0].BranchOperationID)
-	require.Equal(t, "G24外圈", created.Steps[0].BranchOperationName)
+	require.Equal(t, "library-outer", created.Steps[0].ProcessStepID)
+	require.Equal(t, "G24外圈", created.Steps[0].ProcessName)
+	var orderLine models.SalesOrderLine
+	require.NoError(t, service.txManager.DB().First(&orderLine, "id = ?", 101).Error)
+	require.Equal(t, "CUSTOM", orderLine.ProductionRouteMode)
 
-	invalidBranch := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
+	invalidBranch := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
 	invalidBranch.Code = "G24-INVALID-BRANCH"
 	invalidBranch.BOMVersionLevel = "not-a-released-branch"
 	_, err = service.SaveProductionRoute(SaveProductionRouteRequest{Route: invalidBranch})
@@ -318,7 +327,7 @@ func TestPublishProductionRouteValidatesAndMakesRouteAvailableForExecution(t *te
 	seedProductionRouteLifecycleReferences(t, database)
 
 	draft, err := service.SaveProductionRoute(SaveProductionRouteRequest{
-		Route:    productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer"),
+		Route:    productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer"),
 		Operator: "route-editor",
 	})
 	require.NoError(t, err)
@@ -329,7 +338,7 @@ func TestPublishProductionRouteValidatesAndMakesRouteAvailableForExecution(t *te
 	require.Equal(t, productionRouteStatusPublished, published.Status)
 	require.Equal(t, draft.Version+1, published.Version)
 	require.Equal(t, draft.ProductID, published.ProductID)
-	require.Equal(t, draft.Steps[0].BranchOperationID, published.Steps[0].BranchOperationID)
+	require.Equal(t, draft.Steps[0].ProcessStepID, published.Steps[0].ProcessStepID)
 
 	listed, err := service.ListProductionRoutes()
 	require.NoError(t, err)
@@ -352,7 +361,7 @@ func TestPublishProductionRouteRejectsAnMBOMBranchThatIsNoLongerEffective(t *tes
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
 	draft, err := service.SaveProductionRoute(SaveProductionRouteRequest{
-		Route: productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer"),
+		Route: productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer"),
 	})
 	require.NoError(t, err)
 	require.NoError(t, database.Table("boms").Where("product_id = ? AND version_level = ?", "product-g24", "std").Update("status", "DRAFT").Error)
@@ -369,15 +378,14 @@ func TestPublishProductionRouteRejectsAnMBOMBranchThatIsNoLongerEffective(t *tes
 func TestProductionRouteRevisionCopiesPublishedSnapshotAndKeepsHistoryImmutable(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
-	input := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
+	input := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
 	input.Steps = append(input.Steps, ProductionRouteStepDTO{
-		ID:                "route-g24-step-forming",
-		Sequence:          2,
-		BranchOperationID: "branch-operation-forming",
-		ProcessLibraryID:  "library-forming",
-		ExecutionMode:     "IN_HOUSE",
-		QualityGate:       "OPTIONAL",
-		EstimatedMinutes:  15,
+		ID:               "route-g24-step-forming",
+		Sequence:         2,
+		ProcessStepID:    "library-forming",
+		ExecutionMode:    "IN_HOUSE",
+		QualityGate:      "OPTIONAL",
+		EstimatedMinutes: 15,
 	})
 
 	draft, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: input})
@@ -386,16 +394,16 @@ func TestProductionRouteRevisionCopiesPublishedSnapshotAndKeepsHistoryImmutable(
 	require.NoError(t, err)
 	require.Equal(t, 1, published.RevisionNo)
 	require.True(t, published.IsCurrentRevision)
-	require.Equal(t, "G24外圈", published.Steps[0].BranchOperationName)
+	require.Equal(t, "G24外圈", published.Steps[0].ProcessName)
 
-	require.NoError(t, database.Model(&models.ProductionBOMBranchOperation{}).
-		Where("id = ?", "branch-operation-outer").
+	require.NoError(t, database.Model(&models.ProcessStep{}).
+		Where("id = ?", "library-outer").
 		Updates(map[string]interface{}{"name": "G24外圈新名称", "description": "新工序说明"}).Error)
 	history, err := service.ListProductionRoutes()
 	require.NoError(t, err)
 	require.Len(t, history, 1)
-	require.Equal(t, "G24外圈", history[0].Steps[0].BranchOperationName)
-	require.Empty(t, history[0].Steps[0].BranchOperationDescription)
+	require.Equal(t, "G24外圈", history[0].Steps[0].ProcessName)
+	require.Empty(t, history[0].Steps[0].ProcessDescription)
 
 	newDraft, err := service.CreateProductionRouteRevision(published.ID, "editor", "")
 	require.NoError(t, err)
@@ -406,7 +414,7 @@ func TestProductionRouteRevisionCopiesPublishedSnapshotAndKeepsHistoryImmutable(
 	require.Equal(t, productionRouteStatusDraft, newDraft.Status)
 	require.Len(t, newDraft.Steps, 2)
 	require.NotEqual(t, published.Steps[0].ID, newDraft.Steps[0].ID)
-	require.Equal(t, "G24外圈新名称", newDraft.Steps[0].BranchOperationName)
+	require.Equal(t, "G24外圈新名称", newDraft.Steps[0].ProcessName)
 
 	newDraft.Name = "G24 调整后路线"
 	newDraft.Steps[0], newDraft.Steps[1] = newDraft.Steps[1], newDraft.Steps[0]
@@ -415,9 +423,9 @@ func TestProductionRouteRevisionCopiesPublishedSnapshotAndKeepsHistoryImmutable(
 	require.NoError(t, err)
 	publishedNewDraft, err := service.PublishProductionRoute(updatedDraft.ID, updatedDraft.Version, "publisher", "")
 	require.NoError(t, err)
-	require.Equal(t, "branch-operation-forming", publishedNewDraft.Steps[0].BranchOperationID)
-	require.Equal(t, "G24外圈新名称", publishedNewDraft.Steps[1].BranchOperationName)
-	require.Equal(t, "新工序说明", publishedNewDraft.Steps[1].BranchOperationDescription)
+	require.Equal(t, "library-forming", publishedNewDraft.Steps[0].ProcessStepID)
+	require.Equal(t, "G24外圈新名称", publishedNewDraft.Steps[1].ProcessName)
+	require.Equal(t, "新工序说明", publishedNewDraft.Steps[1].ProcessDescription)
 
 	history, err = service.ListProductionRoutes()
 	require.NoError(t, err)
@@ -428,36 +436,25 @@ func TestProductionRouteRevisionCopiesPublishedSnapshotAndKeepsHistoryImmutable(
 	}
 	require.True(t, byRevision[1].IsCurrentRevision == false)
 	require.True(t, byRevision[2].IsCurrentRevision)
-	require.Equal(t, "G24外圈", byRevision[1].Steps[0].BranchOperationName)
+	require.Equal(t, "G24外圈", byRevision[1].Steps[0].ProcessName)
 	require.Equal(t, "G24 调整后路线", byRevision[2].Name)
 }
 
-func TestSaveProductionRouteRejectsInactiveAndForeignBranchOperations(t *testing.T) {
+func TestSaveProductionRouteRejectsInactiveAndForeignProcesses(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
-	require.NoError(t, database.Create(&models.ProductionBOMBranchOperation{
-		BaseModel:       models.BaseModel{ID: "branch-operation-inactive"},
-		ProductID:       "product-g24",
-		BOMOwnerType:    "INTERNAL",
-		BOMVersionLevel: "std",
-		Name:            "停用工序",
-		IsActive:        false,
+	require.NoError(t, database.Create(&[]models.ProcessStep{
+		{BaseModel: models.BaseModel{ID: "library-inactive"}, Code: "INACTIVE", Name: "停用工序", IsActive: true},
+		{BaseModel: models.BaseModel{ID: "library-foreign"}, Code: "FOREIGN", Name: "其他分支工序", IsActive: true},
 	}).Error)
-	require.NoError(t, database.Model(&models.ProductionBOMBranchOperation{}).
-		Where("id = ?", "branch-operation-inactive").
-		Update("is_active", false).Error)
-	require.NoError(t, database.Create(&models.ProductionBOMBranchOperation{
-		BaseModel:       models.BaseModel{ID: "branch-operation-foreign"},
-		ProductID:       "product-g24",
-		BOMOwnerType:    "INTERNAL",
-		BOMVersionLevel: "lightweight",
-		Name:            "其他分支工序",
-		IsActive:        true,
+	require.NoError(t, database.Model(&models.ProcessStep{}).Where("id = ?", "library-inactive").Update("is_active", false).Error)
+	require.NoError(t, database.Create(&models.ProductionMBOMBranchProcessAssociation{
+		BaseModel: models.BaseModel{ID: "selection-inactive"}, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std", ProcessStepID: "library-inactive",
 	}).Error)
 
-	for _, operationID := range []string{"branch-operation-inactive", "branch-operation-foreign"} {
-		route := productionRouteLifecycleDTO(productionRouteStatusDraft, operationID)
-		route.Code = "G24-" + operationID
+	for _, processStepID := range []string{"library-inactive", "library-foreign"} {
+		route := productionRouteLifecycleDTO(productionRouteStatusDraft, processStepID)
+		route.Code = "G24-" + processStepID
 		_, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: route})
 		require.ErrorIs(t, err, ErrInvalidProductionRoute)
 	}
@@ -467,7 +464,7 @@ func TestSaveProductionRouteRejectsLegacyStatusValues(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
 	for _, status := range []string{productionRouteStatusPublished, "ARCHIVED"} {
-		route := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
+		route := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
 		route.Status = status
 		_, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: route})
 		require.ErrorIs(t, err, ErrInvalidProductionRouteStatus)
@@ -479,7 +476,7 @@ func TestSaveProductionRouteAllowsDraftEditAndRemovesDraftStep(t *testing.T) {
 	seedProductionRouteLifecycleReferences(t, database)
 
 	created, err := service.SaveProductionRoute(SaveProductionRouteRequest{
-		Route:    productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer"),
+		Route:    productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer"),
 		Operator: "tester",
 	})
 	require.NoError(t, err)
@@ -489,13 +486,12 @@ func TestSaveProductionRouteAllowsDraftEditAndRemovesDraftStep(t *testing.T) {
 	edited := created
 	edited.Name = "G24 修改后路线"
 	edited.Steps = []ProductionRouteStepDTO{{
-		ID:                "temp-route-g24-step-forming",
-		Sequence:          1,
-		BranchOperationID: "branch-operation-forming",
-		ProcessLibraryID:  "library-forming",
-		ExecutionMode:     "IN_HOUSE",
-		QualityGate:       "NONE",
-		EstimatedMinutes:  12,
+		ID:               "temp-route-g24-step-forming",
+		Sequence:         1,
+		ProcessStepID:    "library-forming",
+		ExecutionMode:    "IN_HOUSE",
+		QualityGate:      "NONE",
+		EstimatedMinutes: 12,
 	}}
 
 	updated, err := service.SaveProductionRoute(SaveProductionRouteRequest{
@@ -534,11 +530,11 @@ func TestListProductionRoutesHidesRoutesThatUseOldStepIdentities(t *testing.T) {
 		Version:         1,
 		Status:          productionRouteStatusDraft,
 		Steps: []models.ProductionRouteStep{{
-			BaseModel:         models.BaseModel{ID: "old-route-step"},
-			Sequence:          1,
-			BranchOperationID: "",
-			ExecutionMode:     "IN_HOUSE",
-			QualityGate:       "NONE",
+			BaseModel:     models.BaseModel{ID: "old-route-step"},
+			Sequence:      1,
+			ProcessStepID: "",
+			ExecutionMode: "IN_HOUSE",
+			QualityGate:   "NONE",
 		}},
 	})
 	createProductionRouteRevisionTestRecord(t, database, models.ProductionRoute{
@@ -572,7 +568,7 @@ func TestSaveProductionRouteRejectsStepFromAnotherRoute(t *testing.T) {
 	seedProductionRouteLifecycleReferences(t, database)
 
 	created, err := service.SaveProductionRoute(SaveProductionRouteRequest{
-		Route: productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer"),
+		Route: productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer"),
 	})
 	require.NoError(t, err)
 	currentStepID := created.Steps[0].ID
@@ -588,12 +584,12 @@ func TestSaveProductionRouteRejectsStepFromAnotherRoute(t *testing.T) {
 		Status:          productionRouteStatusDraft,
 	})
 	require.NoError(t, database.Create(&models.ProductionRouteStep{
-		BaseModel:         models.BaseModel{ID: "route-other-step"},
-		RouteID:           "route-other",
-		Sequence:          1,
-		BranchOperationID: "branch-operation-outer",
-		ExecutionMode:     "IN_HOUSE",
-		QualityGate:       "NONE",
+		BaseModel:     models.BaseModel{ID: "route-other-step"},
+		RouteID:       "route-other",
+		Sequence:      1,
+		ProcessStepID: "library-outer",
+		ExecutionMode: "IN_HOUSE",
+		QualityGate:   "NONE",
 	}).Error)
 
 	edited := created
@@ -623,15 +619,15 @@ func TestDeleteProductionRouteBlocksPublishedAndReferencedDraftRoutes(t *testing
 	t.Run("draft route with execution fact", func(t *testing.T) {
 		service, database := newProductionRouteLifecycleTestService(t)
 		seedProductionRouteLifecycleReferences(t, database)
-		draft := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
+		draft := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
 		created, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: draft})
 		require.NoError(t, err)
 		draft = created
 		require.NoError(t, database.Exec(`
 			INSERT INTO production_operation_executions (
-				id, product_barcode, route_id, route_step_id, branch_operation_id, production_work_location_id
+				id, product_barcode, route_id, route_step_id, process_step_id, production_work_location_id
 			) VALUES (?, ?, ?, ?, ?, ?)
-		`, "operation-1", "G24-001", draft.ID, "route-g24-step-outer", "branch-operation-outer", "test-work-location").Error)
+		`, "operation-1", "G24-001", draft.ID, "route-g24-step-outer", "library-outer", "test-work-location").Error)
 
 		err = service.DeleteProductionRoute(draft.ID, "tester", "")
 		require.ErrorIs(t, err, ErrProductionRouteDeleteBlocked)
@@ -642,7 +638,7 @@ func TestDeleteProductionRouteBlocksPublishedAndReferencedDraftRoutes(t *testing
 func TestDeleteProductionRouteAllowsUnreferencedDraft(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
-	draft := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
+	draft := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
 	created, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: draft})
 	require.NoError(t, err)
 	draft = created

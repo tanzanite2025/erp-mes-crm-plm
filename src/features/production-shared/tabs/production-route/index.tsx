@@ -83,13 +83,49 @@ export function ProductionRouteMgmt() {
     }
     try {
       await productionRoutesService.saveRoute(route)
-      await queryClient.invalidateQueries({
-        queryKey: productionResourceQueryKeys.routes(),
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: productionResourceQueryKeys.routes(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey:
+            productionResourceQueryKeys.routeSalesOrderLineCandidates(''),
+        }),
+      ])
       toast.success(t('productionArchitecture.routes.toasts.saved'))
     } catch (error) {
       logger.error('Failed to save production route', error)
       toast.error(t('productionArchitecture.routes.toasts.saveFailed'))
+      throw error
+    }
+  }
+
+  const handleRestoreBranchDefault = async (salesOrderLineID: number) => {
+    if (!canManage) {
+      return
+    }
+    try {
+      await productionRoutesService.resetSalesOrderLineRouteToBranchDefault(
+        salesOrderLineID
+      )
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: productionResourceQueryKeys.routes(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey:
+            productionResourceQueryKeys.routeSalesOrderLineCandidates(''),
+        }),
+      ])
+      toast.success(t('productionArchitecture.routes.toasts.defaultRestored'))
+    } catch (error) {
+      logger.error(
+        'Failed to restore branch default production operations',
+        error
+      )
+      toast.error(
+        t('productionArchitecture.routes.toasts.defaultRestoreFailed')
+      )
       throw error
     }
   }
@@ -228,10 +264,15 @@ export function ProductionRouteMgmt() {
                 <div className='flex items-start justify-between gap-3'>
                   <div>
                     <CardTitle className='text-base font-black tracking-tight'>
-                      {route.name}
+                      {route.salesOrderNo && route.salesOrderLineNo
+                        ? t('productionArchitecture.routes.orderLineTitle', {
+                            orderNo: route.salesOrderNo,
+                            lineNo: route.salesOrderLineNo,
+                          })
+                        : route.name}
                     </CardTitle>
                     <p className='mt-1 font-maple-ui text-[10px] font-bold text-muted-foreground'>
-                      {route.code} · R{route.revisionNo} · v{route.version}
+                      R{route.revisionNo} · v{route.version}
                     </p>
                   </div>
                   <div className='flex shrink-0 flex-wrap gap-2'>
@@ -253,16 +294,6 @@ export function ProductionRouteMgmt() {
                 <p className='line-clamp-2 text-xs font-medium text-muted-foreground'>
                   {route.description ||
                     t('productionArchitecture.routes.noDescription')}
-                </p>
-                <p className='text-xs font-semibold text-foreground/75'>
-                  {route.scopeType === 'SALES_ORDER_LINE'
-                    ? t('productionArchitecture.routes.salesOrderLineScope', {
-                        orderNo: route.salesOrderNo || route.salesOrderLineId || '',
-                        lineNo: route.salesOrderLineNo || '',
-                      })
-                    : t(
-                        'productionArchitecture.routes.scopeTypes.branchDefault'
-                      )}
                 </p>
               </CardHeader>
               <CardContent className='space-y-3'>
@@ -298,7 +329,7 @@ export function ProductionRouteMgmt() {
                         {step.sequence}
                       </span>
                       <span className='min-w-0 flex-1 truncate font-bold'>
-                        {step.branchOperationName || step.branchOperationId}
+                        {step.processName || step.processStepId}
                       </span>
                     </div>
                   ))}
@@ -314,6 +345,7 @@ export function ProductionRouteMgmt() {
                   <Button
                     variant='outline'
                     size='sm'
+                    className='rounded-full'
                     onClick={() => setHistoryFamilyId(route.routeFamilyId)}
                     title={t('productionArchitecture.routes.history.view')}
                   >
@@ -324,6 +356,7 @@ export function ProductionRouteMgmt() {
                     <Button
                       variant='default'
                       size='sm'
+                      className='rounded-full'
                       onClick={() => void handlePublish(route)}
                       disabled={
                         !canManage || isChecking || route.steps.length === 0
@@ -343,6 +376,7 @@ export function ProductionRouteMgmt() {
                   <Button
                     variant='outline'
                     size='sm'
+                    className='rounded-full'
                     onClick={() => openEdit(route)}
                     disabled={
                       !canManage || isChecking || route.status !== 'DRAFT'
@@ -358,6 +392,7 @@ export function ProductionRouteMgmt() {
                   <Button
                     variant='ghost'
                     size='icon'
+                    className='rounded-full'
                     onClick={() => void handleDelete(route)}
                     disabled={
                       !canManage || isChecking || route.status !== 'DRAFT'
@@ -380,11 +415,11 @@ export function ProductionRouteMgmt() {
       <ProductionRouteDialog
         open={dialogOpen}
         route={editingRoute}
-        routes={routes}
         bomBranches={bomBranchesQuery.data ?? []}
-        isLoadingBOMBranches={bomBranchesQuery.isLoading}
+        bomBranchesLoading={bomBranchesQuery.isLoading}
         onOpenChange={setDialogOpen}
         onSave={handleSave}
+        onRestoreBranchDefault={handleRestoreBranchDefault}
       />
       <ProductionRouteRevisionHistoryDialog
         open={historyFamilyId !== null}

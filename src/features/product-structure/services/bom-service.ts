@@ -75,8 +75,13 @@ function sanitizeBOMInput(data: SaveBOMInput): Record<string, unknown> {
     })),
   })
 
-  const { effectiveFrom, effectiveTo, masterDataControl, ...bomFields } =
-    sanitizedPayload
+  const {
+    effectiveFrom,
+    effectiveTo,
+    masterDataControl,
+    productionLineName: _productionLineName,
+    ...bomFields
+  } = sanitizedPayload
   const controlDates = {
     effectiveFrom:
       data.effectiveFrom !== undefined

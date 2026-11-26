@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"testing"
 	"xdfc-server/models"
 
@@ -11,19 +12,24 @@ import (
 func TestProductionPlanRouteBindingUsesExactOrderLineScopeAndNoLineUsesBranchDefault(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
-	require.NoError(t, database.Exec(`CREATE TABLE sales_orders (id TEXT PRIMARY KEY, deleted_at DATETIME)`).Error)
-	require.NoError(t, database.Exec(`CREATE TABLE sales_order_lines (id INTEGER PRIMARY KEY, sales_order_id TEXT, product_id TEXT)`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO sales_orders (id) VALUES ('order-1')`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO sales_order_lines (id, sales_order_id, product_id) VALUES (101, 'order-1', 'product-g24'), (102, 'order-1', 'product-g24')`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO sales_order_lines
+		(id, sales_order_id, product_id, bom_owner_type, bom_owner_customer_id, bom_version_level, production_route_mode)
+		VALUES (102, 'order-1', 'product-g24', 'INTERNAL', '', 'std', 'DEFAULT')`).Error)
 
-	defaultRoute := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-outer")
-	defaultRoute.Code = "G24-DEFAULT"
-	defaultDraft, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: defaultRoute})
-	require.NoError(t, err)
-	defaultPublished, err := service.PublishProductionRoute(defaultDraft.ID, defaultDraft.Version, "publisher", "")
-	require.NoError(t, err)
+	defaultBranch := models.ProductionRoute{
+		ProductID: "product-g24", ProductSKU: "G24", ProductName: "G24产品",
+		BOMOwnerType: "INTERNAL", BOMVersionLevel: "std",
+	}
+	var defaultFamily models.ProductionRouteFamily
+	var defaultPublished models.ProductionRoute
+	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
+		var err error
+		defaultFamily, defaultPublished, err = materializeCurrentBranchDefaultProductionRouteRevisionTx(tx, defaultBranch)
+		return err
+	}))
+	require.NotEmpty(t, defaultFamily.ID)
 
-	lineRoute := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-forming")
+	lineRoute := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-forming")
 	lineRoute.Code = "G24-ORDER-LINE"
 	lineRoute.Steps[0].ID = "route-g24-step-line"
 	lineRoute.ScopeType = productionRouteScopeSalesOrderLine
@@ -65,64 +71,156 @@ func TestProductionPlanRouteBindingUsesExactOrderLineScopeAndNoLineUsesBranchDef
 	planForLineWithoutRoute := models.ProductionPlan{
 		OrderID: "order-1", SalesOrderLineID: 102, ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std",
 	}
-	err = database.Transaction(func(tx *gorm.DB) error {
+	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
 		return BindProductionPlanToCurrentPublishedRouteRevisionTx(tx, &planForLineWithoutRoute)
-	})
-	require.ErrorIs(t, err, ErrInvalidProductionPlanBOMBranch)
-	require.Contains(t, err.Error(), "no route family exists for the selected sales order line")
+	}))
+	require.Equal(t, defaultPublished.ID, planForLineWithoutRoute.ProductionRouteRevisionID)
 }
 
-func TestProductionRouteSalesOrderLineCandidatesOnlyReturnSelectedProduct(t *testing.T) {
+func TestBranchDefaultProcessChangesCreateNewRouteRevisionAndKeepPreviousSnapshot(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
-	require.NoError(t, database.Exec(`CREATE TABLE sales_orders (id TEXT PRIMARY KEY, order_no TEXT, customer_name TEXT, order_date TEXT, deleted_at DATETIME)`).Error)
-	require.NoError(t, database.Exec(`CREATE TABLE sales_order_lines (id INTEGER PRIMARY KEY, sales_order_id TEXT, line_no INTEGER, product_id TEXT, product_model TEXT, product_code TEXT, specification TEXT)`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO sales_orders (id, order_no) VALUES ('order-a', 'SO-A'), ('order-b', 'SO-B')`).Error)
-	require.NoError(t, database.Exec(`INSERT INTO sales_order_lines (id, sales_order_id, line_no, product_id, product_model, product_code) VALUES (1, 'order-a', 1, 'product-a', 'MODEL-A', 'A'), (2, 'order-b', 1, 'product-b', 'MODEL-B', 'B')`).Error)
+	seedProductionRouteLifecycleReferences(t, database)
+	branch := models.ProductionRoute{
+		ProductID: "product-g24", ProductSKU: "G24", ProductName: "G24产品",
+		BOMOwnerType: "INTERNAL", BOMVersionLevel: "std",
+	}
 
-	candidates, err := service.ListProductionRouteSalesOrderLineCandidates("product-a")
+	var firstRevision models.ProductionRoute
+	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
+		_, route, err := materializeCurrentBranchDefaultProductionRouteRevisionTx(tx, branch)
+		firstRevision = route
+		return err
+	}))
+	require.Equal(t, 1, firstRevision.RevisionNo)
+	require.Equal(t, []string{"library-outer", "library-forming"}, []string{
+		firstRevision.Steps[0].ProcessStepID,
+		firstRevision.Steps[1].ProcessStepID,
+	})
+
+	_, err := service.SaveProductionMBOMBranchProcessSelection(SaveProductionMBOMBranchProcessSelectionRequest{
+		ProductID: "product-g24", BOMOwnerType: "INTERNAL", BOMVersionLevel: "std",
+		ProcessStepIDs: []string{"library-forming"},
+	})
 	require.NoError(t, err)
-	require.Len(t, candidates, 1)
-	require.EqualValues(t, 1, candidates[0].ID)
-	require.Equal(t, "SO-A", candidates[0].SalesOrderNo)
-	require.Equal(t, "MODEL-A", candidates[0].ProductModel)
+
+	var nextRevision models.ProductionRoute
+	require.NoError(t, database.Transaction(func(tx *gorm.DB) error {
+		_, route, err := materializeCurrentBranchDefaultProductionRouteRevisionTx(tx, branch)
+		nextRevision = route
+		return err
+	}))
+	require.NotEqual(t, firstRevision.ID, nextRevision.ID)
+	require.Equal(t, 2, nextRevision.RevisionNo)
+	require.Len(t, nextRevision.Steps, 1)
+	require.Equal(t, "library-forming", nextRevision.Steps[0].ProcessStepID)
+
+	previousRevision, err := loadProductionRouteRevisionForExecutionTx(database, firstRevision.ID)
+	require.NoError(t, err)
+	require.Len(t, previousRevision.Steps, 2)
+	require.Equal(t, "library-outer", previousRevision.Steps[0].ProcessStepID)
+	require.Equal(t, "library-forming", previousRevision.Steps[1].ProcessStepID)
 }
 
-func TestSavingRouteDirectlyFromProcessLibraryCreatesVisibleBranchOperation(t *testing.T) {
+func TestProductionRouteSalesOrderLineCandidatesIncludeBothModesForCurrentBranches(t *testing.T) {
+	service, database := newProductionRouteLifecycleTestService(t)
+	seedProductionRouteLifecycleReferences(t, database)
+	require.NoError(t, database.Exec(`UPDATE sales_orders SET order_no = 'SO-A' WHERE id = 'order-1'`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO sales_orders (id, order_no) VALUES ('order-b', 'SO-B')`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO products (id, sku, name, status) VALUES ('product-b', 'B', '产品 B', 'Active')`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO boms (id, product_id, bom_type, status, owner_type, owner_customer_id, version_level)
+		VALUES ('bom-b', 'product-b', 'MBOM', 'RELEASED', 'INTERNAL', '', 'std')`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO sales_order_lines
+		(id, sales_order_id, line_no, product_id, product_model, product_code, production_route_mode, bom_owner_type, bom_owner_customer_id, bom_version_level)
+		VALUES
+		(103, 'order-b', 1, 'product-b', 'MODEL-B', 'B', 'CUSTOM', 'INTERNAL', '', 'std'),
+		(104, 'order-1', 3, 'product-g24', 'MODEL-G24', 'G24', 'CUSTOM', 'INTERNAL', '', 'std'),
+		(105, 'order-1', 2, 'product-g24', 'MODEL-G24', 'G24', 'DEFAULT', 'INTERNAL', '', 'std')`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO production_route_families
+		(id, code, product_id, bom_owner_type, bom_owner_customer_id, bom_version_level, scope_type, sales_order_line_id)
+		VALUES ('family-existing', 'EXISTING', 'product-g24', 'INTERNAL', '', 'std', 'SALES_ORDER_LINE', 104)`).Error)
+
+	candidates, err := service.ListProductionRouteSalesOrderLineCandidates("product-g24")
+	require.NoError(t, err)
+	require.Len(t, candidates, 3)
+	require.EqualValues(t, 101, candidates[0].ID)
+	require.Equal(t, "SO-A", candidates[0].SalesOrderNo)
+	require.Equal(t, "G24", candidates[0].ProductModel)
+	require.Equal(t, "INTERNAL", candidates[0].BOMOwnerType)
+	require.Equal(t, "CUSTOM", candidates[0].ProductionRouteMode)
+	require.False(t, candidates[0].HasProductionRoute)
+	require.EqualValues(t, 105, candidates[1].ID)
+	require.Equal(t, "DEFAULT", candidates[1].ProductionRouteMode)
+	require.False(t, candidates[1].HasProductionRoute)
+	require.EqualValues(t, 104, candidates[2].ID)
+	require.True(t, candidates[2].HasProductionRoute)
+
+	encoded, err := json.Marshal(candidates[0])
+	require.NoError(t, err)
+	require.Contains(t, string(encoded), `"id":101`)
+	require.Contains(t, string(encoded), `"salesOrderNo":"SO-A"`)
+	require.Contains(t, string(encoded), `"bomOwnerType":"INTERNAL"`)
+	require.Contains(t, string(encoded), `"productionRouteMode":"CUSTOM"`)
+	require.Contains(t, string(encoded), `"hasProductionRoute":false`)
+	require.NotContains(t, string(encoded), `"ID"`)
+}
+
+func TestOrderLineCanRestoreBranchDefaultUntilAProductionPlanExists(t *testing.T) {
+	service, database := newProductionRouteLifecycleTestService(t)
+	seedProductionRouteLifecycleReferences(t, database)
+	require.NoError(t, database.Exec(`CREATE TABLE production_plans (
+		id TEXT PRIMARY KEY, deleted_at DATETIME, sales_order_line_id INTEGER
+	)`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO production_plans (id, sales_order_line_id) VALUES ('plan-1', 101)`).Error)
+
+	err := service.ResetSalesOrderLineProductionRouteToBranchDefault(101, "route-editor", "")
+	require.ErrorIs(t, err, ErrProductionSalesOrderLineRouteModeLocked)
+
+	require.NoError(t, database.Exec(`DELETE FROM production_plans WHERE id = 'plan-1'`).Error)
+	require.NoError(t, service.ResetSalesOrderLineProductionRouteToBranchDefault(101, "route-editor", ""))
+	var orderLine models.SalesOrderLine
+	require.NoError(t, database.First(&orderLine, "id = ?", 101).Error)
+	require.Equal(t, "DEFAULT", orderLine.ProductionRouteMode)
+
+	input := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-outer")
+	input.Code = "G24-ROUTE-AFTER-DEFAULT"
+	input.Steps[0].ID = "route-g24-step-after-default"
+	_, err = service.SaveProductionRoute(SaveProductionRouteRequest{Route: input})
+	require.NoError(t, err)
+	require.NoError(t, database.First(&orderLine, "id = ?", 101).Error)
+	require.Equal(t, "CUSTOM", orderLine.ProductionRouteMode)
+}
+
+func TestSavingRouteRequiresExplicitConfiguredProcessStepID(t *testing.T) {
+	service, database := newProductionRouteLifecycleTestService(t)
+	seedProductionRouteLifecycleReferences(t, database)
+
+	route := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-forming")
+	route.Code = "G24-EXISTING-BRANCH-PROCESS"
+	route.Steps[0].ID = "route-g24-step-existing-branch-process"
+	route.Steps[0].ProcessStepID = ""
+	_, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: route})
+	require.ErrorIs(t, err, ErrInvalidProductionRoute)
+	require.Contains(t, err.Error(), "processStepId is required")
+}
+
+func TestSavingRouteRejectsProcessNotConfiguredForMBOMBranch(t *testing.T) {
 	service, database := newProductionRouteLifecycleTestService(t)
 	seedProductionRouteLifecycleReferences(t, database)
 	require.NoError(t, database.Create(&models.ProcessStep{
 		BaseModel: models.BaseModel{ID: "library-route-direct"}, Code: "DIRECT", Name: "路线直接选择工序", IsActive: true,
 	}).Error)
 
-	route := productionRouteLifecycleDTO(productionRouteStatusDraft, "branch-operation-forming")
-	route.Code = "G24-DIRECT-PROCESS"
+	route := productionRouteLifecycleDTO(productionRouteStatusDraft, "library-forming")
+	route.Code = "G24-UNCONFIGURED-PROCESS"
 	route.Steps[0].ID = "route-g24-step-direct"
-	route.Steps[0].BranchOperationID = ""
-	route.Steps[0].ProcessLibraryID = "library-route-direct"
-	savedRoute, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: route})
-	require.NoError(t, err)
-	require.Len(t, savedRoute.Steps, 1)
+	route.Steps[0].ProcessStepID = ""
+	route.Steps[0].ProcessStepID = "library-route-direct"
+	_, err := service.SaveProductionRoute(SaveProductionRouteRequest{Route: route})
+	require.ErrorIs(t, err, ErrInvalidProductionRoute)
+	require.Contains(t, err.Error(), "not configured for the selected MBOM branch")
 
-	var operation models.ProductionBOMBranchOperation
-	require.NoError(t, database.First(&operation, "process_library_id = ?", "library-route-direct").Error)
-	var selection models.ProductionBOMBranchOperationProcessLibrarySelection
-	require.NoError(t, database.First(&selection, "branch_operation_id = ?", operation.ID).Error)
-	require.Equal(t, operation.ID, selection.BranchOperationID)
-	require.Equal(t, "library-route-direct", selection.ProcessLibraryID)
-
-	branches, err := service.ListProductionRouteBOMBranches()
-	require.NoError(t, err)
-	var visibleOperation *ProductionBOMBranchOperationDTO
-	for _, branch := range branches {
-		if branch.ProductID != "product-g24" || branch.BOMVersionLevel != "std" {
-			continue
-		}
-		for index := range branch.BranchOperations {
-			if branch.BranchOperations[index].ID == operation.ID {
-				visibleOperation = &branch.BranchOperations[index]
-			}
-		}
-	}
-	require.NotNil(t, visibleOperation)
-	require.Equal(t, "路线直接选择工序", visibleOperation.Name)
+	var operationCount int64
+	require.NoError(t, database.Model(&models.ProductionMBOMBranchProcessAssociation{}).
+		Where("product_id = ? AND process_step_id = ?", "product-g24", "library-route-direct").Count(&operationCount).Error)
+	require.Zero(t, operationCount)
 }

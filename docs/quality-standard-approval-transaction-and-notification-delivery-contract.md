@@ -84,7 +84,7 @@ flowchart LR
 
 `server/handlers/quality.go` 与 `quality_dto.go` 只承担 HTTP 解析、差量更新入口、查询与响应映射；`quality_standard_write_error_response.go` 统一标准写入错误。独立配置的存储模型为 `server/models/business_approval_policy_configuration.go`，HTTP 映射为 `server/handlers/business_approval_policy_configuration.go`。通用 `approval_service.go` 负责审批节点权限和状态，品质回写集中在对应业务契约中。通用投递队列模型在 `server/models/workflow_notification_outbox_entry.go`，由数据库启动迁移注册，后台工作器由 `server/main.go` 启动。
 
-前端 `src/features/quality/services/quality-standard-workflow-service.ts` 只生成操作差量；`quality-standard-approval-submission-service.ts` 只验证单次服务端提交结果。两个操作 Hook 负责页面反馈与查询刷新。审批调用统一审批接口；`src/hooks/use-notifications.ts` 收到刷新提示后重新查询服务端收件和业务状态。已移除浏览器自行派发品质标准规则的旧服务。
+前端 `src/features/quality/services/quality-standard-workflow-service.ts` 只生成操作差量；`quality-standard-approval-submission-service.ts` 只验证单次服务端提交结果。两个操作 Hook 负责页面反馈与查询刷新。审批调用统一审批接口；`src/hooks/use-notifications.ts` 收到刷新提示后重新查询服务端收件和业务状态。
 
 ## 通知可靠性和实际边界
 

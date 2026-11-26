@@ -7,16 +7,15 @@ import (
 )
 
 var (
-	ErrOrganizationNameConflict              = errors.New("organization name conflict")
-	ErrOrganizationNameRequired              = errors.New("organization name required")
-	ErrOrganizationIDInvalid                 = errors.New("organization id invalid")
-	ErrOrganizationParentIDInvalid           = errors.New("organization parent id invalid")
-	ErrOrganizationHasChildren               = errors.New("organization has child departments")
-	ErrOrganizationHasEmployees              = errors.New("organization has employees")
-	ErrOrganizationParentNotFound            = errors.New("organization parent not found")
-	ErrOrganizationHierarchyInvalid          = errors.New("organization hierarchy invalid")
-	ErrOrganizationDepthExceeded             = errors.New("organization depth exceeded")
-	ErrOrganizationLinkedArchitectureInvalid = errors.New("organization linked architecture invalid")
+	ErrOrganizationNameConflict     = errors.New("organization name conflict")
+	ErrOrganizationNameRequired     = errors.New("organization name required")
+	ErrOrganizationIDInvalid        = errors.New("organization id invalid")
+	ErrOrganizationParentIDInvalid  = errors.New("organization parent id invalid")
+	ErrOrganizationHasChildren      = errors.New("organization has child departments")
+	ErrOrganizationHasEmployees     = errors.New("organization has employees")
+	ErrOrganizationParentNotFound   = errors.New("organization parent not found")
+	ErrOrganizationHierarchyInvalid = errors.New("organization hierarchy invalid")
+	ErrOrganizationDepthExceeded    = errors.New("organization depth exceeded")
 )
 
 type OrganizationService struct {

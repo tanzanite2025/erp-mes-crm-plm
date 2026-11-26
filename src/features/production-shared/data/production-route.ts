@@ -1,5 +1,5 @@
 import type { ProductionBOMBranch } from './production-bom-branch'
-import type { ProductionBOMBranchOperation } from './production-line'
+import type { ProductionProcessStep } from './production-process'
 
 export const productionRouteStatuses = ['DRAFT', 'PUBLISHED'] as const
 export const productionRouteScopeTypes = [
@@ -20,7 +20,8 @@ export const productionRouteQualityGates = [
 ] as const
 
 export type ProductionRouteStatus = (typeof productionRouteStatuses)[number]
-export type ProductionRouteScopeType = (typeof productionRouteScopeTypes)[number]
+export type ProductionRouteScopeType =
+  (typeof productionRouteScopeTypes)[number]
 export type ProductionRouteExecutionMode =
   (typeof productionRouteExecutionModes)[number]
 export type ProductionRouteQualityGate =
@@ -47,9 +48,9 @@ export interface ProductionRouteStep {
   id: string
   routeId?: string
   sequence: number
-  branchOperationId: string
-  processLibraryId?: string
-  branchOperationName?: string
+  processStepId: string
+  processName?: string
+  processDescription?: string
   executionMode: ProductionRouteExecutionMode
   qualityGate: ProductionRouteQualityGate
   qualityRouting?: ProductionRouteQualityRouting
@@ -89,7 +90,7 @@ export interface ProductionRoute {
 
 export type { ProductionBOMBranch } from './production-bom-branch'
 export interface ProductionRouteBOMBranch extends ProductionBOMBranch {
-  branchOperations: ProductionBOMBranchOperation[]
+  processes: ProductionProcessStep[]
 }
 
 export interface ProductionRouteSalesOrderLineCandidate {
@@ -102,5 +103,10 @@ export interface ProductionRouteSalesOrderLineCandidate {
   productModel: string
   productCode: string
   specification: string
+  bomOwnerType: string
+  bomOwnerCustomerId: string
+  bomVersionLevel: string
+  productionRouteMode: 'DEFAULT' | 'CUSTOM'
+  hasProductionRoute: boolean
 }
 export { getProductionBOMBranchIdentityKey as getProductionRouteBOMBranchIdentityKey } from './production-bom-branch'

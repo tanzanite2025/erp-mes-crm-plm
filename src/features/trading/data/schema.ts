@@ -88,6 +88,10 @@ export interface SalesOrderLine {
   id?: number
   lineNo: number
   productId?: string
+  bomOwnerType?: string
+  bomOwnerCustomerId?: string
+  bomVersionLevel?: string
+  productionRouteMode?: 'DEFAULT' | 'CUSTOM'
   productModel: string
   productCode: string
   specification: string
@@ -130,6 +134,7 @@ export interface SalesOrderLine {
 
 export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   lineNo: 1,
+  productionRouteMode: 'DEFAULT',
   productModel: '',
   productCode: '',
   specification: '',
@@ -160,6 +165,7 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
 
 export const createEmptySalesOrderLine = (): SalesOrderLine => ({
   lineNo: 1,
+  productionRouteMode: 'DEFAULT',
   productModel: '',
   productCode: '',
   specification: '',

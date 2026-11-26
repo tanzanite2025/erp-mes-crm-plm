@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -24,7 +25,7 @@ func createFinanceSalaryExistingDepartmentAndAssignmentTestData(t *testing.T, da
 }
 
 func financeSalaryTestCalculationRequest(quantity float64) FinancePieceworkSalaryCalculationRequest {
-	return FinancePieceworkSalaryCalculationRequest{CalculationDate: "2026-10-15", Rows: []FinancePieceworkSalaryCalculationRow{{EmployeeID: pieceworkTestEmployeeID, DepartmentID: financeSalaryTestDepartmentID, PayItemID: pieceworkTestPayItemID, Quantity: quantity}}}
+	return FinancePieceworkSalaryCalculationRequest{CalculationDate: "2026-10-15", Rows: []FinancePieceworkSalaryCalculationRow{{EmployeeID: pieceworkTestEmployeeID, DepartmentID: financeSalaryTestDepartmentID, PayItemID: pieceworkTestPayItemID, Unit: "PCS", Quantity: quantity}}}
 }
 
 func TestFinanceSalaryCalculationUsesExistingPeopleDepartmentsAndWritesNoBusinessFacts(t *testing.T) {
@@ -48,6 +49,20 @@ func TestFinanceSalaryCalculationUsesExistingPeopleDepartmentsAndWritesNoBusines
 	first, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, financeSalaryTestCalculationRequest(3))
 	require.NoError(t, err)
 	require.Equal(t, int64(600), first.Rows[0].AmountCents)
+	kgRate := pieceworkTestRateCommand()
+	kgRate.Unit, kgRate.UnitPrice = "KG", 4
+	_, err = rates.CreatePieceworkRate(pieceworkRateTestContext(), kgRate)
+	require.NoError(t, err)
+	writeCount = 0
+	kgRequest := financeSalaryTestCalculationRequest(3)
+	kgRequest.Rows[0].Unit = "KG"
+	kgResult, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, kgRequest)
+	require.NoError(t, err)
+	require.Equal(t, "KG", kgResult.Rows[0].Unit)
+	require.Equal(t, int64(1200), kgResult.Rows[0].AmountCents)
+	calculatedRowJSON, err := json.Marshal(kgResult.Rows[0])
+	require.NoError(t, err)
+	require.Contains(t, string(calculatedRowJSON), `"unit":"KG"`)
 	repeated, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, financeSalaryTestCalculationRequest(3))
 	require.NoError(t, err)
 	require.Equal(t, first, repeated)
@@ -82,8 +97,12 @@ func TestFinanceSalaryCalculationRejectsInvalidInputsAndMissingRatesWithoutParti
 		_, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, financeSalaryTestCalculationRequest(quantity))
 		require.ErrorIs(t, err, ErrInvalidFinancePieceworkCalculation)
 	}
+	requestWithoutUnit := financeSalaryTestCalculationRequest(3)
+	requestWithoutUnit.Rows[0].Unit = ""
+	_, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, requestWithoutUnit)
+	require.ErrorIs(t, err, ErrInvalidFinancePieceworkCalculation)
 	request := financeSalaryTestCalculationRequest(3)
-	_, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, request)
+	_, err = calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, request)
 	require.ErrorIs(t, err, ErrPieceworkRateNotFound)
 	request.Rows[0].EmployeeID = uuid.NewString()
 	_, err = calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, request)
@@ -92,7 +111,7 @@ func TestFinanceSalaryCalculationRejectsInvalidInputsAndMissingRatesWithoutParti
 	_, err = rates.CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
 	require.NoError(t, err)
 	request = financeSalaryTestCalculationRequest(3)
-	request.Rows = append(request.Rows, FinancePieceworkSalaryCalculationRow{EmployeeID: pieceworkTestEmployeeID, DepartmentID: uuid.NewString(), PayItemID: pieceworkTestPayItemID, Quantity: 3})
+	request.Rows = append(request.Rows, FinancePieceworkSalaryCalculationRow{EmployeeID: pieceworkTestEmployeeID, DepartmentID: uuid.NewString(), PayItemID: pieceworkTestPayItemID, Unit: "PCS", Quantity: 3})
 	result, err := calculateFinancePieceworkSalaryFromMasterData(context.Background(), database, request)
 	require.ErrorIs(t, err, ErrInvalidFinancePieceworkCalculation)
 	require.Empty(t, result.Rows)

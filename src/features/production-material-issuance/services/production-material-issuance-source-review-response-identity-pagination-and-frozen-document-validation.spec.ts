@@ -31,7 +31,7 @@ describe('production material read-only API contracts', () => {
     for (const selections of [
       [],
       [selection, selection],
-      [{ ...selection, bomId: '' }],
+      [{ ...selection, expectedBomId: '' }],
       [{ ...selection, salesOrderLineId: 0 }],
       [{ ...selection, salesOrderLineId: Number.MAX_SAFE_INTEGER + 1 }],
       Array.from({ length: 501 }, (_, index) => ({

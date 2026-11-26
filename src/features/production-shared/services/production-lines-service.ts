@@ -4,22 +4,14 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import {
   toProductionLineContract,
   toProductionLineContracts,
-  toProductionLineProductTemplateContracts,
-  toProductionRouteBOMBranchContracts,
   toSaveProductionLineApiDTO,
 } from '../adapters/production-resource-api-adapter'
 import type {
   ProductionLineApiDTO,
-  ProductionLineProductTemplatesResponseApiDTO,
   ProductionLinesResponseApiDTO,
   ProductionMessageApiDTO,
-  ProductionRouteBOMBranchesResponseApiDTO,
 } from '../contracts/production-resource-api-dto'
-import type {
-  ProductionLine,
-  ProductionLineBOMBranch,
-  ProductionLineProductTemplate,
-} from '../data/production-line'
+import type { ProductionLine } from '../data/production-line'
 import { normalizeProductionLineEntity } from '../utils/production-code-normalization'
 
 export { PRODUCTION_LINES_UPDATED_EVENT } from './production-resource-sync'
@@ -29,27 +21,6 @@ type SaveLinePayload = ProductionLine & {
 }
 
 export const productionLinesService = {
-  getProductTemplates: async (): Promise<ProductionLineProductTemplate[]> => {
-    const response =
-      await apiFetch<ProductionLineProductTemplatesResponseApiDTO>(
-        '/production/product-templates'
-      )
-    const checked = ensureObjectResponse<
-      ProductionLineProductTemplatesResponseApiDTO & Record<string, unknown>
-    >(response, 'productionLinesService.getProductTemplates')
-    return toProductionLineProductTemplateContracts(checked.items || [])
-  },
-
-  getBOMBranches: async (): Promise<ProductionLineBOMBranch[]> => {
-    const response = await apiFetch<ProductionRouteBOMBranchesResponseApiDTO>(
-      '/production/lines/bom-branches'
-    )
-    const checked = ensureObjectResponse<
-      ProductionRouteBOMBranchesResponseApiDTO & Record<string, unknown>
-    >(response, 'productionLinesService.getBOMBranches')
-    return toProductionRouteBOMBranchContracts(checked.items || [])
-  },
-
   getLines: async (): Promise<ProductionLine[]> => {
     const res =
       await apiFetch<ProductionLinesResponseApiDTO>('/production/lines')

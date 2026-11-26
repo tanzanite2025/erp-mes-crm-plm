@@ -236,16 +236,16 @@ func backfillProductionRouteStepSnapshotsTx(tx *gorm.DB, routeID string) error {
 		return fmt.Errorf("failed to load published route steps for snapshot migration: %w", err)
 	}
 	for _, step := range steps {
-		if strings.TrimSpace(step.BranchOperationNameSnapshot) != "" {
+		if strings.TrimSpace(step.ProcessNameSnapshot) != "" {
 			continue
 		}
-		var operation models.ProductionBOMBranchOperation
-		if err := tx.First(&operation, "id = ?", step.BranchOperationID).Error; err != nil {
-			return fmt.Errorf("failed to snapshot branch operation for published route step %s: %w", step.ID, err)
+		var processStep models.ProcessStep
+		if err := tx.First(&processStep, "id = ?", step.ProcessStepID).Error; err != nil {
+			return fmt.Errorf("failed to snapshot process step for published route step %s: %w", step.ID, err)
 		}
 		if err := tx.Model(&models.ProductionRouteStep{}).Where("id = ?", step.ID).Updates(map[string]interface{}{
-			"branch_operation_name_snapshot":        operation.Name,
-			"branch_operation_description_snapshot": operation.Description,
+			"process_name_snapshot":        processStep.Name,
+			"process_description_snapshot": processStep.Description,
 		}).Error; err != nil {
 			return fmt.Errorf("failed to write published route step snapshot %s: %w", step.ID, err)
 		}

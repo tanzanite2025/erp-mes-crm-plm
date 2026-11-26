@@ -94,7 +94,6 @@ export const commandMenu = {
     rights: 'User Permissions',
     permissions: 'Permission Audit',
     productionLines: 'Line Mindmap',
-    topology: 'Topology Templates',
     productionRoutes: 'Production Routes',
     productionExecution: 'Production Execution',
     leaveManagement: 'Leave Management',

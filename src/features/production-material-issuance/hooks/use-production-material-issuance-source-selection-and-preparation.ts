@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import type { ProductionMaterialRequirementBomSelection } from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 import type {
   ProductionMaterialIssuanceSelectedSource,
   ProductionMaterialIssuanceSourceOption,
@@ -96,26 +95,13 @@ export function useProductionMaterialIssuanceSourceSelectionAndPreparation(
           ]
     )
   }
-  function changeProductionMaterialIssuanceSelectedBom(
-    selection: ProductionMaterialRequirementBomSelection
-  ) {
-    replaceProductionMaterialIssuanceSelectedSources(
-      selected.map((source) =>
-        source.salesOrderId === selection.salesOrderId &&
-        source.salesOrderLineId === selection.salesOrderLineId
-          ? { ...source, bomId: selection.bomId }
-          : source
-      )
-    )
-  }
   function prepareSelectedProductionMaterialIssuanceSources() {
     if (selected.length < 1 || selected.length > 500) return
     preparation.mutate({
       scope,
-      sources: selected.map(({ salesOrderId, salesOrderLineId, bomId }) => ({
+      sources: selected.map(({ salesOrderId, salesOrderLineId }) => ({
         salesOrderId,
         salesOrderLineId,
-        ...(bomId ? { bomId } : {}),
       })),
     })
   }
@@ -130,7 +116,6 @@ export function useProductionMaterialIssuanceSourceSelectionAndPreparation(
     preparationError,
     preparationKey: `${scope}/${preparation.submittedAt}`,
     toggleProductionMaterialIssuanceSource,
-    changeProductionMaterialIssuanceSelectedBom,
     prepareSelectedProductionMaterialIssuanceSources,
     removeProductionMaterialIssuanceSelectedSource: (id: number) =>
       replaceProductionMaterialIssuanceSelectedSources(

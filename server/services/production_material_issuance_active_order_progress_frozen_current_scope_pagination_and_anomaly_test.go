@@ -95,7 +95,7 @@ func TestProductionMaterialIssuanceActiveProgressPreservesPerLineOutstandingExce
 func TestProductionMaterialIssuanceActiveProgressFlagsMissingAmbiguousAndInvalidUnitsWithoutPretendZeroFulfillment(t *testing.T) {
 	for _, scenario := range []struct{ name, statement, issue string }{
 		{"missing", `UPDATE boms SET status='DRAFT'`, "MISSING_BOM"},
-		{"ambiguous", `INSERT INTO boms SELECT 'bom-2',product_id,bom_type,'MBOM-2',status,owner_type,owner_customer_id,version,version_text,'light',revision_no,measured_weight,measured_weight_unit,effective_from,effective_to,deleted_at FROM boms`, "BOM_SELECTION_REQUIRED"},
+		{"ambiguous", `INSERT INTO boms SELECT 'bom-2',product_id,bom_type,'MBOM-2',status,owner_type,owner_customer_id,version,version_text,'standard',revision_no,measured_weight,measured_weight_unit,effective_from,effective_to,deleted_at FROM boms`, "DUPLICATE_EFFECTIVE_MBOM"},
 		{"material-unit", `UPDATE bom_items SET unit='kg'`, "MATERIAL_UNIT_MISMATCH"},
 		{"finished-unit", `UPDATE sales_order_lines SET uom='' WHERE id=101`, "INVALID_SOURCE_LINE"},
 	} {

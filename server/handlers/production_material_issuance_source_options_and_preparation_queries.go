@@ -63,7 +63,7 @@ func PrepareProductionMaterialIssuanceSourcesHandler(c *gin.Context) {
 		return
 	}
 	for _, source := range request.Sources {
-		if !isCanonicalProductionMaterialIssuanceHTTPUUID(source.SalesOrderID) || (source.BOMID != "" && !isCanonicalProductionMaterialIssuanceHTTPUUID(source.BOMID)) {
+		if !isCanonicalProductionMaterialIssuanceHTTPUUID(source.SalesOrderID) {
 			respondToProductionMaterialIssuanceQueryError(c, services.ErrProductionMaterialIssuanceInvalidRequest)
 			return
 		}

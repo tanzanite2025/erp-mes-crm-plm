@@ -124,12 +124,12 @@ const productionExecutionWorkflowTestRoute: ProductionRoute = {
   status: 'PUBLISHED',
   createdAt: '',
   updatedAt: '',
-  steps: ['裁切', '缝制', '包装'].map((branchOperationName, index) => ({
+  steps: ['裁切', '缝制', '包装'].map((processName, index) => ({
     id: `step-${index + 1}`,
     routeId: 'route-1',
     sequence: index + 1,
-    branchOperationId: `operation-${index + 1}`,
-    branchOperationName,
+    processStepId: `operation-${index + 1}`,
+    processName,
     executionMode: 'IN_HOUSE',
     qualityGate: 'NONE',
     estimatedMinutes: 0,
@@ -142,8 +142,8 @@ const productionExecutionWorkflowTestRecordedState = {
   productName: '测试产品',
   routeId: 'route-1',
   routeStepId: 'step-1',
-  currentBranchOperationId: 'operation-1',
-  currentBranchOperation: { id: 'operation-1', code: 'CUT', name: '裁切' },
+  currentProcessStepId: 'operation-1',
+  currentProcessStep: { id: 'operation-1', code: 'CUT', name: '裁切' },
   status: 'IN_PROGRESS',
 }
 const productionExecutionWorkflowTestCompletionResponse = {
@@ -152,13 +152,13 @@ const productionExecutionWorkflowTestCompletionResponse = {
   state: {
     ...productionExecutionWorkflowTestRecordedState,
     routeStepId: 'step-2',
-    currentBranchOperationId: 'operation-2',
-    currentBranchOperation: { id: 'operation-2', code: 'SEW', name: '缝制' },
+    currentProcessStepId: 'operation-2',
+    currentProcessStep: { id: 'operation-2', code: 'SEW', name: '缝制' },
     status: 'NOT_STARTED',
   },
   progress: {
     executedRouteStepId: 'step-1',
-    executedBranchOperationId: 'operation-1',
+    executedProcessStepId: 'operation-1',
     advanced: true,
     routeCompleted: false,
   },
@@ -254,7 +254,7 @@ describe('production execution product review and explicit confirmation', () => 
       productionExecutionWorkflowLifecyclePage({
         ...productionExecutionWorkflowTestRecordedState,
         routeStepId: 'step-2',
-        currentBranchOperationId: 'operation-2',
+        currentProcessStepId: 'operation-2',
       })
     )
     productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mockResolvedValue(
@@ -299,7 +299,7 @@ describe('production execution product review and explicit confirmation', () => 
       productionExecutionWorkflowLifecyclePage({
         ...productionExecutionWorkflowTestRecordedState,
         routeStepId: 'step-3',
-        currentBranchOperationId: 'operation-3',
+        currentProcessStepId: 'operation-3',
       })
     )
     productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mockResolvedValue(
@@ -308,12 +308,12 @@ describe('production execution product review and explicit confirmation', () => 
         state: {
           ...productionExecutionWorkflowTestRecordedState,
           routeStepId: 'step-3',
-          currentBranchOperationId: 'operation-3',
+          currentProcessStepId: 'operation-3',
           status: 'COMPLETED',
         },
         progress: {
           executedRouteStepId: 'step-3',
-          executedBranchOperationId: 'operation-3',
+          executedProcessStepId: 'operation-3',
           advanced: false,
           routeCompleted: true,
         },
@@ -370,7 +370,7 @@ describe('production execution product review and explicit confirmation', () => 
       ...productionExecutionWorkflowLifecyclePage({
         ...productionExecutionWorkflowTestRecordedState,
         routeStepId: 'step-2',
-        currentBranchOperationId: 'operation-2',
+        currentProcessStepId: 'operation-2',
         status: 'NOT_STARTED',
       }),
       currentState: {
@@ -378,7 +378,7 @@ describe('production execution product review and explicit confirmation', () => 
           productionExecutionWorkflowTestRecordedState
         )!.currentState,
         routeStepId: 'step-2',
-        currentBranchOperationId: 'operation-2',
+        currentProcessStepId: 'operation-2',
         status: 'NOT_STARTED',
         lastEventId: 'event-current',
       },
@@ -405,7 +405,7 @@ describe('production execution product review and explicit confirmation', () => 
           productBarcode: 'PRODUCT-001',
           routeId: 'route-1',
           routeStepId: 'step-1',
-          branchOperationId: 'operation-1',
+          processStepId: 'operation-1',
           action: 'COMPLETE',
           result: 'PASS',
           notes: '首道工序完成',
@@ -445,7 +445,7 @@ describe('production execution product review and explicit confirmation', () => 
           productBarcode: 'PRODUCT-001',
           routeId: 'route-1',
           routeStepId: 'step-1',
-          branchOperationId: 'operation-1',
+          processStepId: 'operation-1',
           action: 'START',
           operator: '旧操作员',
           createdAt: '2026-11-14T09:00:00Z',
@@ -539,7 +539,7 @@ describe('production execution product review and explicit confirmation', () => 
     expect(submittedCommand).not.toHaveProperty('executionLotId')
     expect(submittedCommand).not.toHaveProperty('routeId')
     expect(submittedCommand).not.toHaveProperty('routeStepId')
-    expect(submittedCommand).not.toHaveProperty('branchOperationId')
+    expect(submittedCommand).not.toHaveProperty('processStepId')
     const result = screen.getByRole('region', { name: '最近一次办理结果' })
     expect(
       productionExecutionWorkflowTestDependencies.executeConfirmedOperation.mock
@@ -657,7 +657,7 @@ describe('production execution product review and explicit confirmation', () => 
     expect(submittedCommand).not.toHaveProperty('executionLotId')
     expect(submittedCommand).not.toHaveProperty('routeId')
     expect(submittedCommand).not.toHaveProperty('routeStepId')
-    expect(submittedCommand).not.toHaveProperty('branchOperationId')
+    expect(submittedCommand).not.toHaveProperty('processStepId')
   })
 
   it('keeps confirmation disabled when reading fails', async () => {

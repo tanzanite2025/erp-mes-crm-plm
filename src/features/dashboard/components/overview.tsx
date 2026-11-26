@@ -1,14 +1,14 @@
 import { useLanguage } from '@/context/language-provider'
 
 interface OverviewProps {
-  levelName: string
+  lineName: string
   data: {
     name: string
     total: number
   }[]
 }
 
-export function Overview({ data, levelName }: OverviewProps) {
+export function Overview({ data, lineName }: OverviewProps) {
   const { t } = useLanguage()
 
   if (!data || data.length === 0) {
@@ -18,10 +18,10 @@ export function Overview({ data, levelName }: OverviewProps) {
           <div className='size-8 animate-pulse rounded-full bg-muted-foreground/10' />
         </div>
         <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
-          {t('dashboard.page.throughput.empty.title', { levelName })}
+          {t('dashboard.page.throughput.empty.title', { lineName })}
         </p>
         <p className='mt-2 text-[9px] font-black uppercase opacity-40'>
-          {t('dashboard.page.throughput.empty.description', { levelName })}
+          {t('dashboard.page.throughput.empty.description', { lineName })}
         </p>
       </div>
     )

@@ -9,63 +9,15 @@ export interface ProductionProcessStepApiDTO {
   updatedAt?: string
 }
 
-export interface ProductionBOMBranchOperationApiDTO {
-  id: string
-  createdAt?: string
-  updatedAt?: string
-  productId: string
-  bomOwnerType: 'INTERNAL' | 'CUSTOMER'
-  bomOwnerCustomerId: string
-  bomVersionLevel: string
-  name: string
-  description?: string
-  sortOrder: number
-  isActive: boolean
-  processLibraryId?: string
-}
-
-export interface ProductionLineSegmentApiDTO {
-  id: string
-  lineId?: string
-  name: string
-  productId: string
-  productSKU?: string
-  productName?: string
-  bomOwnerType?: string
-  bomOwnerCustomerId?: string
-  bomOwnerCustomerName?: string
-  bomVersionLevel?: string
-  description?: string
-  sortOrder?: number
-  attributes?: Record<string, unknown> | null
-  processes: ProductionProcessStepApiDTO[]
-  branchOperations: ProductionBOMBranchOperationApiDTO[]
-  createdAt?: string
-  updatedAt?: string
-}
-
 export interface ProductionLineApiDTO {
   id: string
   code: string
   name: string
-  productTemplateId?: string
   description: string
   version: number
   isActive: boolean
   createdAt: string
   updatedAt: string
-  segments: ProductionLineSegmentApiDTO[]
-}
-
-export interface ProductionLineProductTemplateApiDTO {
-  id: string
-  name: string
-  code: string
-  active: boolean
-}
-
-export interface ProductionLineProductTemplatesResponseApiDTO {
-  items: ProductionLineProductTemplateApiDTO[]
 }
 
 export interface ProductionLinesResponseApiDTO {
@@ -78,9 +30,9 @@ export interface ProductionRouteStepApiDTO {
   updatedAt?: string
   routeId?: string
   sequence: number
-  branchOperationId: string
-  processLibraryId?: string
-  branchOperationName?: string
+  processStepId: string
+  processName?: string
+  processDescription?: string
   executionMode: string
   qualityGate: string
   qualityRouting?: Record<
@@ -133,6 +85,11 @@ export interface ProductionRouteSalesOrderLineCandidateApiDTO {
   productModel: string
   productCode: string
   specification: string
+  bomOwnerType: string
+  bomOwnerCustomerId: string
+  bomVersionLevel: string
+  productionRouteMode: 'DEFAULT' | 'CUSTOM'
+  hasProductionRoute: boolean
 }
 
 export interface ProductionRouteSalesOrderLineCandidatesResponseApiDTO {
@@ -143,11 +100,12 @@ export interface ProductionRouteBOMBranchApiDTO {
   productId: string
   productSKU: string
   productName: string
+  productTypeName?: string
   bomOwnerType: 'INTERNAL' | 'CUSTOMER'
   bomOwnerCustomerId: string
   bomOwnerCustomerName: string
   bomVersionLevel: string
-  branchOperations: ProductionBOMBranchOperationApiDTO[]
+  processes: ProductionProcessStepApiDTO[]
 }
 
 export interface ProductionRouteBOMBranchesResponseApiDTO {
@@ -173,6 +131,3 @@ export interface SaveProductionLineApiDTO extends ProductionLineApiDTO {
 export type SaveProductionRouteApiDTO = ProductionRouteApiDTO
 
 export type SaveProductionProcessStepApiDTO = ProductionProcessStepApiDTO
-
-export type SaveProductionBOMBranchOperationApiDTO =
-  ProductionBOMBranchOperationApiDTO

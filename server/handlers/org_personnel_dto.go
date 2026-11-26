@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"time"
 	"xdfc-server/services"
 
@@ -9,23 +8,21 @@ import (
 )
 
 type OrganizationSaveHandlerRequest struct {
-	ID                 string          `json:"id"`
-	Name               string          `json:"name"`
-	ParentID           *string         `json:"parentId"`
-	Manager            string          `json:"manager"`
-	Description        string          `json:"description"`
-	Type               string          `json:"type"`
-	LinkedArchitecture json.RawMessage `json:"linkedArchitecture"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	ParentID    *string `json:"parentId"`
+	Manager     string  `json:"manager"`
+	Description string  `json:"description"`
+	Type        string  `json:"type"`
 }
 
 type BulkSyncOrganizationHandlerRequest struct {
-	ID                 string          `json:"id"`
-	Name               string          `json:"name"`
-	ParentID           *string         `json:"parentId"`
-	Manager            string          `json:"manager"`
-	Description        string          `json:"description"`
-	Type               string          `json:"type"`
-	LinkedArchitecture json.RawMessage `json:"linkedArchitecture"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	ParentID    *string `json:"parentId"`
+	Manager     string  `json:"manager"`
+	Description string  `json:"description"`
+	Type        string  `json:"type"`
 }
 
 type EmployeeSaveHandlerRequest struct {
@@ -68,13 +65,12 @@ type BulkSyncEmployeeHandlerRequest struct {
 
 func mapOrganizationSaveHandlerRequestToService(input OrganizationSaveHandlerRequest) services.OrganizationSaveRequest {
 	return services.OrganizationSaveRequest{
-		ID:                 input.ID,
-		Name:               input.Name,
-		ParentID:           input.ParentID,
-		Manager:            input.Manager,
-		Description:        input.Description,
-		Type:               input.Type,
-		LinkedArchitecture: input.LinkedArchitecture,
+		ID:          input.ID,
+		Name:        input.Name,
+		ParentID:    input.ParentID,
+		Manager:     input.Manager,
+		Description: input.Description,
+		Type:        input.Type,
 	}
 }
 
@@ -82,13 +78,12 @@ func mapBulkSyncOrganizationHandlerRequestsToService(input []BulkSyncOrganizatio
 	result := make([]services.BulkSyncOrganizationRequest, 0, len(input))
 	for _, item := range input {
 		result = append(result, services.BulkSyncOrganizationRequest{
-			ID:                 item.ID,
-			Name:               item.Name,
-			ParentID:           item.ParentID,
-			Manager:            item.Manager,
-			Description:        item.Description,
-			Type:               item.Type,
-			LinkedArchitecture: item.LinkedArchitecture,
+			ID:          item.ID,
+			Name:        item.Name,
+			ParentID:    item.ParentID,
+			Manager:     item.Manager,
+			Description: item.Description,
+			Type:        item.Type,
 		})
 	}
 	return result
@@ -96,16 +91,15 @@ func mapBulkSyncOrganizationHandlerRequestsToService(input []BulkSyncOrganizatio
 
 func mapOrganizationSaveServiceResponseToResponse(input services.OrganizationSaveResponse) gin.H {
 	return gin.H{
-		"id":                 input.ID,
-		"name":               input.Name,
-		"parentId":           input.ParentID,
-		"manager":            input.Manager,
-		"description":        input.Description,
-		"type":               input.Type,
-		"linkedArchitecture": input.LinkedArchitecture,
-		"createdAt":          input.CreatedAt,
-		"updatedAt":          input.UpdatedAt,
-		"version":            optimisticVersionForResponse(input.UpdatedAt, input.CreatedAt),
+		"id":          input.ID,
+		"name":        input.Name,
+		"parentId":    input.ParentID,
+		"manager":     input.Manager,
+		"description": input.Description,
+		"type":        input.Type,
+		"createdAt":   input.CreatedAt,
+		"updatedAt":   input.UpdatedAt,
+		"version":     optimisticVersionForResponse(input.UpdatedAt, input.CreatedAt),
 	}
 }
 

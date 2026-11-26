@@ -22,7 +22,7 @@ func TestProductionExecutionAndRequestReplayWorkWithoutPayrollTablesOrEmployeeBi
 	removePayrollTablesFromProductionExecutionTestDatabase(t, database)
 	for index, action := range []string{ProductionOperationActionStart, ProductionOperationActionHold, ProductionOperationActionComplete, ProductionOperationActionRework, ProductionOperationActionComplete} {
 		request := RecordProductionOperationExecutionRequest{
-			ProductBarcode: "PRODUCTION-WITHOUT-PAYROLL", BranchOperationID: "production-only-process", Action: action,
+			ProductBarcode: "PRODUCTION-WITHOUT-PAYROLL", ProcessStepID: "production-only-process", Action: action,
 			IdempotencyKey: action + "-" + strconv.Itoa(index),
 		}
 		original, err := service.RecordProductionOperationExecution(request)
@@ -60,13 +60,15 @@ func TestProductionCompletionAndReworkNeverChangeExistingPayrollSnapshots(t *tes
 	service, database := newProductionOperationExecutionTestService(t)
 	seedProductionOperationBranch(t, database, "isolated-production-process")
 	require.NoError(t, database.Exec(`CREATE TABLE audit_logs(id TEXT PRIMARY KEY,module TEXT,target_id TEXT,action TEXT,diff TEXT,operator TEXT,ip TEXT,created_at DATETIME)`).Error)
+	require.NoError(t, database.Exec(`CREATE TABLE units (id TEXT PRIMARY KEY, created_at DATETIME, updated_at DATETIME, deleted_at DATETIME, code TEXT, name TEXT, category TEXT, precision INTEGER, status TEXT, is_system BOOLEAN, description TEXT)`).Error)
+	require.NoError(t, database.Exec(`INSERT INTO units (id, code, name, category, status) VALUES ('piecework-unit-pcs', 'PCS', '件', 'QUANTITY', 'active')`).Error)
 	_, err := NewPieceworkRateService(productionOperationExecutionTestTxManager{db: database}).CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
 	require.NoError(t, err)
 	require.NoError(t, database.Exec("INSERT INTO piecework_records(id,work_date,total_amount) VALUES('historical-finance-row','2026-10-15',6)").Error)
 	for index, action := range []string{ProductionOperationActionComplete, ProductionOperationActionRework, ProductionOperationActionComplete} {
 		_, err := service.RecordProductionOperationExecution(RecordProductionOperationExecutionRequest{
 			IdempotencyKey: "payroll-independent-command-" + strconv.Itoa(index),
-			ProductBarcode: "PRODUCTION-PRESERVES-PAYROLL", BranchOperationID: "isolated-production-process", Action: action,
+			ProductBarcode: "PRODUCTION-PRESERVES-PAYROLL", ProcessStepID: "isolated-production-process", Action: action,
 		})
 		require.NoError(t, err)
 	}

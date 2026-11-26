@@ -53,7 +53,7 @@ func TestProductionExecutionRequestReplayPreservesCompletionAndRequiresReworkFor
 	seedProductionExecutionReplayPricedWork(t, database, "REPLAY-001", "process-replay")
 	request := RecordProductionOperationExecutionRequest{
 		IdempotencyKey: "original-completion", ProductBarcode: "REPLAY-001",
-		BranchOperationID: "process-replay", Action: ProductionOperationActionComplete,
+		ProcessStepID: "process-replay", Action: ProductionOperationActionComplete,
 	}
 	original, err := service.RecordProductionOperationExecution(request)
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestProductionExecutionRequestReplayPreservesCompletionAndRequiresReworkFor
 	require.NoError(t, err)
 	require.Equal(t, original.ID, secondResult.ID)
 	conflicting := request
-	conflicting.BranchOperationID = "another-process"
+	conflicting.ProcessStepID = "another-process"
 	_, err = service.RecordProductionOperationExecution(conflicting)
 	require.ErrorIs(t, err, ErrProductionExecutionRequestKeyConflict)
 	futureRound := request
@@ -114,11 +114,11 @@ func TestCompletedProductBarcodeRequiresReworkBeforeRestartOrHold(t *testing.T) 
 	seedProductionOperationBranch(t, database, "process-completed-lifecycle")
 
 	startRequest := RecordProductionOperationExecutionRequest{
-		IdempotencyKey:    "completed-lifecycle-start",
-		ProductBarcode:    "COMPLETED-LIFECYCLE-001",
-		BranchOperationID: "process-completed-lifecycle",
-		Action:            ProductionOperationActionStart,
-		ExecutionRound:    1,
+		IdempotencyKey: "completed-lifecycle-start",
+		ProductBarcode: "COMPLETED-LIFECYCLE-001",
+		ProcessStepID:  "process-completed-lifecycle",
+		Action:         ProductionOperationActionStart,
+		ExecutionRound: 1,
 	}
 	_, err := service.RecordProductionOperationExecution(startRequest)
 	require.NoError(t, err)
@@ -173,7 +173,7 @@ func TestProductionExecutionFailedRequestDoesNotReserveRequestKey(t *testing.T) 
 	seedProductionExecutionReplayPricedWork(t, database, "FAILED-REQUEST-002", "process-failed-request")
 	request := RecordProductionOperationExecutionRequest{
 		IdempotencyKey: "initial-valid-completion",
-		ProductBarcode: "FAILED-REQUEST-002", BranchOperationID: "process-failed-request", Action: ProductionOperationActionComplete,
+		ProductBarcode: "FAILED-REQUEST-002", ProcessStepID: "process-failed-request", Action: ProductionOperationActionComplete,
 	}
 	original, err := service.RecordProductionOperationExecution(request)
 	require.NoError(t, err)
@@ -183,13 +183,13 @@ func TestProductionExecutionFailedRequestDoesNotReserveRequestKey(t *testing.T) 
 	assertProductionExecutionReplayFactCounts(t, database, 1, 1, 0)
 	failedRequest := request
 	failedRequest.IdempotencyKey = "failed-then-corrected-command"
-	failedRequest.BranchOperationID = "missing-process"
+	failedRequest.ProcessStepID = "missing-process"
 	_, err = service.RecordProductionOperationExecution(failedRequest)
 	require.ErrorIs(t, err, ErrInvalidProductionOperationExecution)
 	var receiptCount int64
 	require.NoError(t, database.Model(&models.ProductionExecutionCommandRequestReceipt{}).Count(&receiptCount).Error)
 	require.EqualValues(t, 1, receiptCount)
-	failedRequest.BranchOperationID = "process-failed-request"
+	failedRequest.ProcessStepID = "process-failed-request"
 	replayed, err = service.RecordProductionOperationExecution(failedRequest)
 	require.NoError(t, err)
 	require.Equal(t, original.ID, replayed.ID)
@@ -198,11 +198,11 @@ func TestProductionExecutionFailedRequestDoesNotReserveRequestKey(t *testing.T) 
 func TestProductionExecutionDistinctRouteStepsSharingProcessHaveIndependentCompletions(t *testing.T) {
 	_, database := newProductionScanCommandTestService(t)
 	steps := seedProductionScanRoute(t, database, "route-shared-process", "process-shared", "process-placeholder")
-	require.NoError(t, database.Model(&models.ProductionRouteStep{}).Where("id = ?", steps[1]).Update("branch_operation_id", "process-shared").Error)
+	require.NoError(t, database.Model(&models.ProductionRouteStep{}).Where("id = ?", steps[1]).Update("process_step_id", "process-shared").Error)
 	seedProductionExecutionReplayPricedWork(t, database, "SHARED-PROCESS-001", "process-shared")
 	service := NewProductionOperationExecutionService(productionOperationExecutionTestTxManager{db: database})
 	request := RecordProductionOperationExecutionRequest{
-		ProductBarcode: "SHARED-PROCESS-001", RouteID: "route-shared-process", BranchOperationID: "process-shared",
+		ProductBarcode: "SHARED-PROCESS-001", RouteID: "route-shared-process", ProcessStepID: "process-shared",
 		ProductionWorkLocationID: productionOperationExecutionTestWorkLocationID, Action: ProductionOperationActionComplete,
 	}
 	completedIDs := make([]string, 0, len(steps))

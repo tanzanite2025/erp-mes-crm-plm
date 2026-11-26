@@ -16,6 +16,7 @@ type ProductionPlan struct {
 	BOMOwnerType              string           `gorm:"size:20;not null;default:'';index" json:"bomOwnerType"`
 	BOMOwnerCustomerID        string           `gorm:"size:36;not null;default:'';index" json:"bomOwnerCustomerId"`
 	BOMVersionLevel           string           `gorm:"size:50;not null;default:'';index" json:"bomVersionLevel"`
+	ProductionRouteMode       string           `gorm:"size:20;not null;default:'BRANCH_DEFAULT'" json:"productionRouteMode"`
 	ProductionRouteRevisionID string           `gorm:"type:uuid;index;default:null" json:"productionRouteRevisionId"`
 	ProductionRouteRevisionNo int              `gorm:"not null;default:0" json:"productionRouteRevisionNo"`
 	Quantity                  float64          `gorm:"not null" json:"quantity"`

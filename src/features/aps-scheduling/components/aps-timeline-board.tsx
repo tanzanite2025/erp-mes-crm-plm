@@ -1,6 +1,5 @@
 import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent } from '@/components/ui/card'
-import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 import type { ApsSchedulingSource } from '../adapters/aps-scheduling.adapter'
 import { ApsTimelineLane } from './aps-timeline-lane'
 
@@ -10,8 +9,6 @@ type ApsTimelineBoardProps = {
 
 export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
   const { t } = useLanguage()
-  const { level3Name } = useProductionTopologyLabels()
-
   return (
     <Card className='rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'>
       <CardContent className='flex flex-col gap-4 p-4 md:p-5'>
@@ -57,74 +54,6 @@ export function ApsTimelineBoard({ source }: ApsTimelineBoardProps) {
             ))}
           </div>
 
-          <div className='border-t border-dashed border-muted/50 bg-background/40'>
-            {source.processTree.map((line) => (
-              <div key={line.id} className='grid grid-cols-[180px_1fr]'>
-                <div className='border-r border-dashed border-muted/40 bg-background/70 px-4 py-3'>
-                  <p className='text-sm font-black tracking-tight text-foreground'>
-                    {line.name}
-                  </p>
-                  <p className='mt-1 text-[9px] font-black tracking-[0.24em] text-muted-foreground/45 uppercase'>
-                    {line.code}
-                  </p>
-                  {line.description ? (
-                    <p className='mt-1.5 text-[10px] leading-4 text-muted-foreground/70'>
-                      {line.description}
-                    </p>
-                  ) : null}
-                </div>
-                <div className='flex flex-col gap-2 px-4 py-3'>
-                  {line.segments.map((segment) => (
-                    <div
-                      key={segment.id}
-                      className='rounded-[18px] border border-dashed border-cyan-500/15 bg-cyan-500/5 p-2.5'
-                    >
-                      <div className='flex flex-wrap items-center justify-between gap-2'>
-                        <div>
-                          <p className='text-xs font-black tracking-[0.24em] text-cyan-700/80 uppercase'>
-                            {segment.name}
-                          </p>
-                          {segment.description ? (
-                            <p className='mt-0.5 text-[10px] text-cyan-900/60'>
-                              {segment.description}
-                            </p>
-                          ) : null}
-                        </div>
-                        <span className='rounded-full border border-cyan-500/15 bg-white px-2 py-1 text-[9px] font-black tracking-[0.2em] text-cyan-700/70 uppercase'>
-                          {t('apsScheduling.board.processCount', {
-                            count: segment.processes.length,
-                            levelName: level3Name,
-                          })}
-                        </span>
-                      </div>
-
-                      <div className='mt-2 flex flex-col gap-2'>
-                        {segment.processes.map((process) => (
-                          <div
-                            key={process.id}
-                            className='rounded-[14px] border border-dashed border-muted/40 bg-background/80 p-2.5'
-                          >
-                            <div className='flex items-center justify-between gap-2'>
-                              <div>
-                                <p className='text-[10px] font-black tracking-[0.22em] text-foreground uppercase'>
-                                  {process.name}
-                                </p>
-                                {process.description ? (
-                                  <p className='mt-0.5 text-[10px] text-muted-foreground/70'>
-                                    {process.description}
-                                  </p>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </CardContent>
     </Card>

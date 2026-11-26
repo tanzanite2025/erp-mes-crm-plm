@@ -10,21 +10,21 @@ export const dashboard = {
     },
     throughput: {
       title: '各环节产能概览',
-      description: '{{levelName}}实时产量分布',
+      description: '{{lineName}}实时产量分布',
       empty: {
-        title: '等待挂载{{levelName}}...',
-        description: '请通过设置按钮配置显示{{levelName}}...',
+        title: '等待挂载{{lineName}}...',
+        description: '请通过设置按钮配置显示{{lineName}}...',
       },
     },
     scanStream: {
       title: '最新扫码动态',
       description: '摄像头与扫码枪原始采集事件流',
     },
-    segmentDialog: {
-      title: '配置显示{{levelName}}',
-      description: '选择要在全厂概览中展示产量的{{levelName}}节点。',
-      emptyTitle: '暂无{{levelName}}定义',
-      emptyDescription: '请先前往“生产架构 -> 产线脑图”添加{{levelName}}。',
+    lineDialog: {
+      title: '配置显示{{lineName}}',
+      description: '选择要在全厂概览中展示产量的{{lineName}}。',
+      emptyTitle: '暂无{{lineName}}定义',
+      emptyDescription: '请先前往“生产架构 -> 产线”添加{{lineName}}。',
       cancel: '取消',
       save: '保存配置',
     },

@@ -1,12 +1,12 @@
-# 生产物料需求共用计算：BOM 选择、库存分配与包装契约
+# 生产物料需求共用计算：订单行 MBOM 分支、库存分配与包装契约
 
-复核日期：2026-10-27。共用能力已接入 MRP 分析及正式下发；核对／历史查询和明确下发／撤回已接入 HTTP 与前端。仓库确认、单据级领退进度及库存移交已接入 Go 领域层、HTTP 和独立动作权限，原单内仓库界面已接入，总体订单范围进度仍待接入。
+复核日期：2026-11-26。共用能力已接入 MRP 分析及正式下发；核对／历史查询和明确下发／撤回已接入 HTTP 与前端。仓库确认、单据级领退进度、库存移交及总体订单范围进度已接入 Go 领域层、HTTP 和独立动作权限，原单内仓库界面已接入。MRP 与正式领料已按订单行已选 MBOM 稳定分支限制 BOM 候选。服务层及隔离 SQLite HTTP 路由回归覆盖订单行分支保存、MRP 候选与错误分支拦截、领料准备／核对及正式下发冻结；前端关键交互回归已通过。浏览器 UI 连接实际 API 的跨层验收仍待完成。
 
 ## 职责与复用
 
 Go 提供唯一的逐订单行配方展开、指定仓库可用量与分组包装投影。MRP 使用完整订单数量形成理论需求；生产领料下发领域层已引用同一配方展开能力冻结依据，后续另外关联真实领退事实。生产领料不得另建需求、库存缺口、包装算法或库存余额。
 
-TS 负责 Zod 校验、全部选单分页、用户的配方选择、React Query 查询及展示，不把浏览器数据保存为正式依据。查询不预占、不扣库存、不创建单据。
+TS 负责 Zod 校验、全部选单分页、订单行已选稳定分支内唯一有效 MBOM 配方的展示、React Query 查询及展示，不把浏览器数据保存为正式依据。查询不预占、不扣库存、不创建单据。
 
 ## 数据和选择
 
@@ -14,11 +14,15 @@ MRP 与生产领料总体进度共用有效订单读取：未删除、非报价�
 
 每条来源保留 salesOrderId、salesOrderLineId、orderVersion、orderNo、lineNo、产品／客户、finishedQty、productModel（模具查询原键）、展示名称、候选 BOM、采用 BOM 和配方贡献。每个贡献保留 bomItemId、materialId、section、unit、standardUsage、requiredQty。
 
-候选仅含同产品、未删除、已发布 MBOM，按 UTC 日历日期核对生效区间，起止日期均包含；空日期不限制。当日时间由服务端传入，不使用浏览器时钟。优先同客户专供，存在时不混入企业配方；否则使用企业自有。唯一候选自动采用，多份候选由用户逐订单行明确选择，候选稳定排序只用于展示，不代表最新或默认配方。性能版本编码保留为身份键，另从现有选项目录只读取得中英名称供展示，不能将编码当作用户可读名称，也不调用会补种选项的写入服务。
+候选范围由销售订单明细已保存的 MBOM 稳定分支决定，稳定身份为 `ProductID + BOMOwnerType + BOMOwnerCustomerID + BOMVersionLevel`。候选 BOM 必须与这四个字段逐项相同，并且是未删除、已发布、生效日期覆盖服务端分析日的 MBOM；起止日期均包含，空日期不限制。当日由服务端传入，不使用浏览器时钟。不得根据订单客户重新推断分支，不得在客户专用与企业自有之间自动回退，也不得用分类、产品名称或“最新 BOM”猜选。缺少或无效的订单行分支返回 `MISSING_MBOM_BRANCH`，该来源不完整并阻断打印、导出及正式领料。
 
-选择绑定订单 ID、行 ID、BOM ID。失效选择不会自动换配方。旧选单地址协议仍为“订单号-行号”，只从最后一个连字符解析，坏格式、不存在来源或越范围选择报错，不能回退全量。
+订单行只选择一个有效 MBOM 稳定分支；分支身份不是某个 BOM 修订 ID。同一稳定分支在同一 BOM 类型下由数据库唯一约束保证最多一条 `RELEASED` 记录，修订通过旧记录转 `OBSOLETE`、新记录发布来替换当前记录。MRP 从订单行已选分支读取唯一当前有效 MBOM，不再让用户选择该分支的另一个修订。若查询发现多个符合条件的已发布 MBOM，视为数据完整性异常，阻断该来源并返回明确错误；不得将异常候选列表交给用户挑选或按排序猜选。无有效 MBOM 时返回 `MISSING_MBOM_BRANCH`。性能版本编码保留为身份键，另从现有选项目录只读取得中英名称供展示，不能将编码当作用户可读名称，也不调用会补种选项的写入服务。
 
-缺少适用 BOM、多份待选、失效选择、无效物料、单位不一致、无效用量或空配方会在来源行返回 issueCode；任何来源不完整时 isComplete=false，requirements 为空，界面先核对且禁打印、导出。没有可选订单是空范围，不表示错误记录需求为零。
+订单行保存产品分类展示上下文和该产品已选的有效 MBOM 稳定分支；分类用于识别和校验归属，不单独决定配方或工序。MRP 分析只能在该稳定分支内确定具体有效 BOM 配方修订，分析请求不能另选或改写订单生产分支。候选生成已按 `ProductID + BOMOwnerType + BOMOwnerCustomerID + BOMVersionLevel` 四字段精确匹配；客户与内部归属不自动回退，缺少有效分支时阻断分析和正式领料。
+
+MRP 分析范围绑定订单 ID 和真实行 ID；系统从订单行分支自动解析唯一当前有效的已发布 MBOM，不提供 BOM 修订选择。正式来源核对与下发事务必须重新读取真实订单行，复核 MBOM 稳定分支及解析出的 BOM 仍然匹配，再冻结该修订及配方贡献；请求中的预期 BOM ID 只用于发现读取后依据变化，不用于选定分支或修订。旧选单地址协议仍为“订单号-行号”，只从最后一个连字符解析，坏格式、不存在来源或越范围选择报错，不能回退全量。
+
+缺少有效 MBOM、发现重复有效 MBOM、无效物料、单位不一致、无效用量或空配方会在来源行返回 issueCode；任何来源不完整时 isComplete=false，requirements 为空，界面先核对且禁打印、导出。重复有效 MBOM 是完整性错误，不是用户选择场景。没有可选订单是空范围，不表示错误记录需求为零。
 
 ## 数量、库存与包装
 
@@ -43,8 +47,8 @@ MRP 与生产领料总体进度共用有效订单读取：未删除、非报价�
 
 | 文件                                                                                                                                                                             | 职责                                                             |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| [basis contract](../../server/services/production_material_requirement_basis_contract.go)                                                                                        | 来源、配方候选、选择与贡献公共类型                               |
-| [BOM selection](../../server/services/production_material_requirement_bom_selection.go)                                                                                          | 发布、生效区间、客户归属与候选规则                               |
+| [basis contract](../../server/services/production_material_requirement_basis_contract.go)                                                                                        | 来源、分支约束、配方候选与贡献公共类型                           |
+| [BOM resolution](../../server/services/production_material_requirement_bom_selection.go)                                                                                          | 发布、生效区间、客户归属与唯一有效分支解析规则                   |
 | [expansion](../../server/services/production_material_requirement_expansion.go)                                                                                                  | 纯快照展开与逐行完整性校验                                       |
 | [display projection](../../server/services/production_material_requirement_display_projection.go)                                                                                | 产品展示名称及默认文字，不影响模具型号                           |
 | [inventory query](../../server/services/material_inventory_availability_query_service.go)                                                                                        | 调用者 DB／tx 内显式仓库与批次可用量查询                         |
@@ -53,16 +57,16 @@ MRP 与生产领料总体进度共用有效订单读取：未删除、非报价�
 | [MRP orchestration](../../server/services/mrp_requirements.go)                                                                                                                   | 数据读取、公共能力调用、模具统计                                 |
 | [frontend DTO](../../src/features/mrp/contracts/production-material-requirement-analysis-api-dto.ts)                                                                             | 运行时 Zod 验证及推导类型                                        |
 | [order loading](../../src/features/mrp/services/production-material-requirement-order-selection-service.ts)                                                                      | 全部有效订单分页、重复及中途范围变化检查                         |
-| [basis review](../../src/features/mrp/components/requirements/production-material-requirement-bom-basis-review.tsx)                                                              | 单面板逐行核对及配方选择，无嵌套弹窗                             |
+| [basis review](../../src/features/mrp/components/requirements/production-material-requirement-bom-basis-review.tsx)                                                              | 单面板逐行核对分支解析出的 BOM，无嵌套弹窗                       |
 | [production issuance review and dispatch](../../src/features/production-material-issuance/components/production-material-issuance-source-basis-review-and-dispatch-workflow.tsx) | 完整分析后明确核对，再由独立权限控件确认全部来源下发，不复制计算 |
 
 ## 后续接入的前置条件
 
-当前 MRP 查询是多次读取的分析参考，不是正式事务快照。[销售编辑及同步的行身份规则](sales-order-line-stable-identity-edit-reorder-version-and-production-material-source-reference-contract.md)已修正并完成隔离回归：正式来源使用真实订单及明细 ID，行号只用于显示。[正式来源核对服务](../../server/services/production_material_issuance_source_review_and_frozen_basis_service.go)先定位真实来源，再调用本共用展开；下发事务重新校验来源／BOM 版本与完整依据指纹、建立有效覆盖并冻结选中配方及重量。空范围、重复来源和缺失明确 BOM 不会变为全量下发，前端汇总不直接进入正式单。
+当前 MRP 查询是多次读取的分析参考，不是正式事务快照。[销售编辑及同步的行身份规则](sales-order-line-stable-identity-edit-reorder-version-and-production-material-source-reference-contract.md)已修正并完成隔离回归：正式来源使用真实订单及明细 ID，行号只用于显示。[正式来源核对服务](../../server/services/production_material_issuance_source_review_and_frozen_basis_service.go)先定位真实来源，再调用本共用展开；下发事务重新校验来源／BOM 版本与完整依据指纹、建立有效覆盖并冻结分支当前解析出的配方及重量。空范围、重复来源和缺失 MBOM 分支不会变为全量下发，前端汇总不直接进入正式单。
 
 MRP 分析抽屉现提供“核对生产领料依据”，要求完整分析及独立查看动作权限；核对只读取当前真实依据，展示重量／性能版本与逐配方贡献，不生成单据或占用库存。分析范围、选择、完整性和加载状态变化时卸载旧结果，迟到响应不能挂到新范围。该权限当前允许系统共享生产范围，不代表客户／组织级数据隔离；具体路由与授权见生产领料契约。冻结单据追溯位于生产领料页，与当前 MRP 分析分开查询。
 
-已核对后可在具有独立下发权限时确认全部范围，向专用领域命令提交来源、明确 BOM、预期版本及指纹；服务端重新核对并冻结，不能直接采用浏览器数量。单据详情另有独立权限及版本／原因约束的撤回。两种命令都不反向修改理论分析，重试沿用同一请求，旧原单已撤回时不冒充新下发。
+已核对后可在具有独立下发权限时确认全部范围，向专用领域命令提交来源身份、核对时解析出的预期 BOM ID、预期版本及指纹；服务端重新解析并冻结，不能直接采用浏览器数量。预期 BOM ID 仅用于并发变化检测，不是人工 BOM 选择。单据详情另有独立权限及版本／原因约束的撤回。两种命令都不反向修改理论分析，重试沿用同一请求，旧原单已撤回时不冒充新下发。
 
 下发只冻结需求，不读取、预占或扣减库存，不把当次库存缺口或包装投影存成正式收发事实。历史单据查询只读已冻结依据，当前 MRP 分析仍按当前有效配方运行；总体领料查询接入时须选择当前未下发或已有有效冻结依据，不能叠加两者。仓库确认另做实际发退、归属守恒、库存过账、幂等和审计。
 

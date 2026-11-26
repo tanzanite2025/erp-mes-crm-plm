@@ -2,6 +2,7 @@ export interface ProductionBOMBranch {
   productId: string
   productSKU: string
   productName: string
+  productTypeName?: string
   bomOwnerType: 'INTERNAL' | 'CUSTOMER'
   bomOwnerCustomerId: string
   bomOwnerCustomerName: string
@@ -46,6 +47,11 @@ export function getProductionBOMBranchDisplayName(
     branch.bomOwnerType === 'CUSTOMER'
       ? `客户 · ${branch.bomOwnerCustomerName || branch.bomOwnerCustomerId}`
       : '内部'
+  const productTypeLabel = branch.productTypeName?.trim()
+    ? `分类 · ${branch.productTypeName.trim()}`
+    : ''
 
-  return [productLabel, versionLabel, ownerLabel].filter(Boolean).join(' · ')
+  return [productTypeLabel, productLabel, versionLabel, ownerLabel]
+    .filter(Boolean)
+    .join(' · ')
 }

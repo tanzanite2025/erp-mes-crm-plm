@@ -128,14 +128,14 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/aps-scheduling/engine-config': 'apsScheduling.engineConfig.title',
   '/aps-scheduling/engine-tuning': 'apsScheduling.layout.tabs.engineTuning',
   '/production-architecture': 'sidebar.items.productionArchitecture',
-  '/production-architecture/mindmap':
-    'productionArchitecture.layout.tabs.mindmap',
-  '/production-architecture/topology':
-    'productionArchitecture.layout.tabs.topology',
+  '/production-architecture/line-structure':
+    'productionArchitecture.layout.tabs.productionLines',
   '/production-architecture/routes':
     'productionArchitecture.layout.tabs.routes',
   '/production-architecture/process-library':
     'productionArchitecture.layout.tabs.processLibrary',
+  '/production-architecture/branch-processes':
+    'productionArchitecture.layout.tabs.branchProcesses',
   '/production-execution': 'productionExecution.page.title',
   '/production-outsourcing': 'sidebar.items.productionOutsourcing',
   '/production-outsourcing/orders': 'productionOutsourcing.layout.tabs.orders',
@@ -168,7 +168,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/personnel/employees': 'orgPersonnel.tabs.employees',
   '/personnel/accounts': 'orgPersonnel.tabs.accounts',
   '/personnel/rights': 'orgPersonnel.tabs.rights',
-  '/personnel/architecture': 'productionShared.workArchitecture.title',
   '/attendance-management': 'sidebar.items.attendanceManagement',
   '/personnel/attendance-management-operation-guide':
     'orgPersonnel.attendanceOperationGuide.title',

@@ -112,7 +112,7 @@ type OutsourceTransferDTO struct {
 	PartnerID            string  `json:"partnerId"`
 	RouteID              string  `json:"routeId"`
 	RouteStepID          string  `json:"routeStepId"`
-	BranchOperationID    string  `json:"branchOperationId"`
+	ProcessStepID        string  `json:"processStepId"`
 	FromHolderType       string  `json:"fromHolderType"`
 	FromHolderID         string  `json:"fromHolderId"`
 	ToHolderType         string  `json:"toHolderType"`
@@ -147,7 +147,7 @@ type OutsourceInspectionDTO struct {
 	UOM                  string  `json:"uom"`
 	RouteID              string  `json:"routeId"`
 	RouteStepID          string  `json:"routeStepId"`
-	BranchOperationID    string  `json:"branchOperationId"`
+	ProcessStepID        string  `json:"processStepId"`
 	OperationID          string  `json:"operationId"`
 	InspectedAt          string  `json:"inspectedAt"`
 	Inspector            string  `json:"inspector"`
@@ -435,7 +435,7 @@ func (s *ProductionOutsourcingService) InspectOutsourceOrderLine(req OutsourceIn
 			productionOptionalUUIDWrite{Column: "inspection_task_id", Value: inspection.InspectionTaskID},
 			productionOptionalUUIDWrite{Column: "route_id", Value: inspection.RouteID},
 			productionOptionalUUIDWrite{Column: "route_step_id", Value: inspection.RouteStepID},
-			productionOptionalUUIDWrite{Column: "branch_operation_id", Value: inspection.BranchOperationID},
+			productionOptionalUUIDWrite{Column: "process_step_id", Value: inspection.ProcessStepID},
 			productionOptionalUUIDWrite{Column: "operation_id", Value: inspection.OperationID},
 		); err != nil {
 			return err
@@ -995,7 +995,7 @@ func loadOutsourceBarcodeStateForLineTx(tx *gorm.DB, order models.OutsourceOrder
 	if err != nil {
 		return models.ProductBarcodeState{}, false, err
 	}
-	if step.RouteID != state.RouteID || step.BranchOperationID != state.CurrentBranchOperationID {
+	if step.RouteID != state.RouteID || step.ProcessStepID != state.CurrentProcessStepID {
 		return models.ProductBarcodeState{}, false, fmt.Errorf("%w: productBarcode route step does not match its current branch operation", ErrInvalidOutsourceOrder)
 	}
 	return state, exists, nil
@@ -1036,21 +1036,21 @@ func createOutsourceTransferTx(
 ) (models.OutsourceTransfer, error) {
 	fromHolderType, fromHolderID, toHolderType, toHolderID := resolveOutsourceTransferHolders(order, transferType, req)
 	transferEvent, err := recordProductBarcodeTransferEventTx(tx, ProductBarcodeTransferEventWriteRequest{
-		ProductBarcode:        req.ProductBarcode,
-		StateID:               state.ID,
-		TransferType:          ProductBarcodeTransferTypeCustodyTransfer,
-		RouteID:               state.RouteID,
-		FromRouteStepID:       state.RouteStepID,
-		ToRouteStepID:         state.RouteStepID,
-		FromBranchOperationID: state.CurrentBranchOperationID,
-		ToBranchOperationID:   state.CurrentBranchOperationID,
-		FromHolderType:        fromHolderType,
-		FromHolderID:          fromHolderID,
-		ToHolderType:          toHolderType,
-		ToHolderID:            toHolderID,
-		Operator:              req.Operator,
-		CommandSource:         ProductionScanCommandSourceWeb,
-		Action:                "OUTSOURCE_" + transferType,
+		ProductBarcode:    req.ProductBarcode,
+		StateID:           state.ID,
+		TransferType:      ProductBarcodeTransferTypeCustodyTransfer,
+		RouteID:           state.RouteID,
+		FromRouteStepID:   state.RouteStepID,
+		ToRouteStepID:     state.RouteStepID,
+		FromProcessStepID: state.CurrentProcessStepID,
+		ToProcessStepID:   state.CurrentProcessStepID,
+		FromHolderType:    fromHolderType,
+		FromHolderID:      fromHolderID,
+		ToHolderType:      toHolderType,
+		ToHolderID:        toHolderID,
+		Operator:          req.Operator,
+		CommandSource:     ProductionScanCommandSourceWeb,
+		Action:            "OUTSOURCE_" + transferType,
 	})
 	if err != nil {
 		return models.OutsourceTransfer{}, err
@@ -1069,7 +1069,7 @@ func createOutsourceTransferTx(
 		PartnerID:            order.PartnerID,
 		RouteID:              state.RouteID,
 		RouteStepID:          state.RouteStepID,
-		BranchOperationID:    state.CurrentBranchOperationID,
+		ProcessStepID:        state.CurrentProcessStepID,
 		FromHolderType:       fromHolderType,
 		FromHolderID:         fromHolderID,
 		ToHolderType:         toHolderType,
@@ -1085,7 +1085,7 @@ func createOutsourceTransferTx(
 	if err := createProductionRecordWithOptionalUUIDs(tx, &transfer,
 		productionOptionalUUIDWrite{Column: "route_id", Value: transfer.RouteID},
 		productionOptionalUUIDWrite{Column: "route_step_id", Value: transfer.RouteStepID},
-		productionOptionalUUIDWrite{Column: "branch_operation_id", Value: transfer.BranchOperationID},
+		productionOptionalUUIDWrite{Column: "process_step_id", Value: transfer.ProcessStepID},
 		productionOptionalUUIDWrite{Column: "from_holder_id", Value: transfer.FromHolderID},
 		productionOptionalUUIDWrite{Column: "to_holder_id", Value: transfer.ToHolderID},
 		productionOptionalUUIDWrite{Column: "transfer_event_id", Value: transfer.TransferEventID},
@@ -1154,7 +1154,7 @@ func buildOutsourceInspection(
 		UOM:                  line.UOM,
 		RouteID:              state.RouteID,
 		RouteStepID:          state.RouteStepID,
-		BranchOperationID:    state.CurrentBranchOperationID,
+		ProcessStepID:        state.CurrentProcessStepID,
 		OperationID:          operationID,
 		InspectedAt:          inspectedAt,
 		Inspector:            resolveProductBarcodeStateOperator(req.Operator),
@@ -1182,7 +1182,7 @@ func buildOutsourceInspectionScanCommand(
 		ProductBarcode:           req.ProductBarcode,
 		RouteID:                  state.RouteID,
 		RouteStepID:              state.RouteStepID,
-		BranchOperationID:        state.CurrentBranchOperationID,
+		ProcessStepID:            state.CurrentProcessStepID,
 		ProductionWorkLocationID: req.ProductionWorkLocationID,
 		TargetRouteStepID:        target.TargetRouteStepID,
 		ExecutionMode:            ProductionOperationExecutionModeOutsource,
@@ -1442,7 +1442,7 @@ func mapOutsourceTransferToDTO(item models.OutsourceTransfer) OutsourceTransferD
 		PartnerID:            strings.TrimSpace(item.PartnerID),
 		RouteID:              strings.TrimSpace(item.RouteID),
 		RouteStepID:          strings.TrimSpace(item.RouteStepID),
-		BranchOperationID:    strings.TrimSpace(item.BranchOperationID),
+		ProcessStepID:        strings.TrimSpace(item.ProcessStepID),
 		FromHolderType:       strings.TrimSpace(item.FromHolderType),
 		FromHolderID:         strings.TrimSpace(item.FromHolderID),
 		ToHolderType:         strings.TrimSpace(item.ToHolderType),
@@ -1487,7 +1487,7 @@ func mapOutsourceInspectionToDTO(item models.OutsourceInspection) OutsourceInspe
 		UOM:                  strings.TrimSpace(item.UOM),
 		RouteID:              strings.TrimSpace(item.RouteID),
 		RouteStepID:          strings.TrimSpace(item.RouteStepID),
-		BranchOperationID:    strings.TrimSpace(item.BranchOperationID),
+		ProcessStepID:        strings.TrimSpace(item.ProcessStepID),
 		OperationID:          strings.TrimSpace(item.OperationID),
 		InspectedAt:          formatProductBarcodeStateTime(item.InspectedAt),
 		Inspector:            strings.TrimSpace(item.Inspector),

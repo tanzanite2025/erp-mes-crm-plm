@@ -123,6 +123,10 @@ export function useSalesOrderLinesEditorViewModel({
       const displayProjection = productDisplayProjectionMap.get(productId)
       if (!product || !displayProjection) {
         onLineChange(index, 'productId', productId, {
+          bomOwnerType: '',
+          bomOwnerCustomerId: '',
+          bomVersionLevel: '',
+          productionRouteMode: 'DEFAULT',
           selectedPackaging: undefined,
         })
         return
@@ -135,6 +139,10 @@ export function useSalesOrderLinesEditorViewModel({
 
       onLineChange(index, 'productId', productId, {
         ...productFields,
+        bomOwnerType: '',
+        bomOwnerCustomerId: '',
+        bomVersionLevel: '',
+        productionRouteMode: 'DEFAULT',
         uom: 'PCS',
         selectedPackaging: undefined,
       })

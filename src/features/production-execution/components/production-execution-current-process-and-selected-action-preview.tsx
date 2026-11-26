@@ -39,7 +39,7 @@ export function ProductionExecutionCurrentProcessAndSelectedActionPreview({
   const { t } = useLanguage()
   const currentName =
     formatProductionExecutionRouteStepName(currentStep) ||
-    state?.currentBranchOperation?.name
+    state?.currentProcessStep?.name
   const afterAction =
     action === 'COMPLETE'
       ? nextStep

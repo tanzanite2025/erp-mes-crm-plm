@@ -1,6 +1,5 @@
 import { forwardRef } from 'react'
 import { useLanguage } from '@/context/language-provider'
-import { useProductionTopologyLabels } from '@/features/production-shared/topology/production-topology-labels'
 
 export interface BOMPrintItem {
   section: string
@@ -32,7 +31,6 @@ export const BOMPrintTemplate = forwardRef<
     ref
   ) => {
     const { locale, t } = useLanguage()
-    const { level3Name } = useProductionTopologyLabels()
     const today = new Intl.DateTimeFormat(
       locale === 'zh-CN' ? 'zh-CN' : 'en-US',
       {
@@ -145,7 +143,7 @@ export const BOMPrintTemplate = forwardRef<
                 className='font-bold'
                 style={{ width: '8%', borderTop: 'none' }}
               >
-                {level3Name}
+                {t('printMgmt.bomTemplate.columns.section')}
               </th>
               <th
                 className='font-bold'

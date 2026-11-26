@@ -8,12 +8,6 @@ import (
 
 var ErrInvalidProductionMaterialRequirementSelection = errors.New("invalid production material requirement selection")
 
-type ProductionMaterialRequirementBOMSelection struct {
-	SalesOrderID     string `json:"salesOrderId"`
-	SalesOrderLineID uint   `json:"salesOrderLineId"`
-	BOMID            string `json:"bomId"`
-}
-
 type ProductionMaterialRequirementBOMCandidate struct {
 	ID                  string  `json:"id"`
 	BOMNo               string  `json:"bomNo"`
@@ -63,7 +57,6 @@ type ProductionMaterialRequirementExpansionInput struct {
 	Materials                 []models.Material
 	Products                  []models.Product
 	SelectedKeys              []string
-	BOMSelections             []ProductionMaterialRequirementBOMSelection
 	PerformanceVersionOptions []models.ProductAttributeOption
 	AsOf                      time.Time
 }

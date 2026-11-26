@@ -39,7 +39,7 @@ func openProductionMaterialIssuanceReadonlyHTTPTestDatabase(t *testing.T) (*gorm
 		`CREATE TABLE boms (id TEXT PRIMARY KEY, product_id TEXT, bom_type TEXT, bom_no TEXT, status TEXT, owner_type TEXT, owner_customer_id TEXT, version INTEGER, version_text TEXT, version_level TEXT, revision_no TEXT, measured_weight REAL, measured_weight_unit TEXT, effective_from DATETIME, effective_to DATETIME, deleted_at DATETIME)`,
 		`CREATE TABLE bom_items (id TEXT PRIMARY KEY, bom_id TEXT, sort_order INTEGER, section TEXT, material_id TEXT, unit TEXT, standard_usage REAL)`,
 		`CREATE TABLE materials (id TEXT PRIMARY KEY, code TEXT, name TEXT, spec TEXT, uom TEXT, status TEXT, deleted_at DATETIME)`,
-		`CREATE TABLE products (id TEXT PRIMARY KEY, sku TEXT, name TEXT, tech_series TEXT, brake_type TEXT, deleted_at DATETIME)`,
+		`CREATE TABLE products (id TEXT PRIMARY KEY, sku TEXT, name TEXT, tech_series TEXT, brake_type TEXT, status TEXT, deleted_at DATETIME)`,
 		`CREATE TABLE product_attribute_options (id TEXT PRIMARY KEY, category TEXT, value TEXT, label TEXT, label_en TEXT, deleted_at DATETIME)`,
 	} {
 		require.NoError(t, database.Exec(statement).Error)
@@ -47,12 +47,12 @@ func openProductionMaterialIssuanceReadonlyHTTPTestDatabase(t *testing.T) (*gorm
 	orderID, productID, materialID, bomID := uuid.NewString(), uuid.NewString(), uuid.NewString(), uuid.NewString()
 	require.NoError(t, database.Exec(`INSERT INTO sales_orders VALUES (?, 'SO-HTTP', 'Pending', 4, 'standard', 'normal', 'customer-1', '测试客户', NULL)`, orderID).Error)
 	require.NoError(t, database.Exec(`INSERT INTO warehouse_categories VALUES (?, 'MATERIAL', 1, 1, 1, NULL)`, uuid.NewString()).Error)
-	require.NoError(t, database.Exec(`INSERT INTO products VALUES (?, 'R50', '产品', '系列', '碟刹', NULL)`, productID).Error)
+	require.NoError(t, database.Exec(`INSERT INTO products VALUES (?, 'R50', '产品', '系列', '碟刹', 'ACTIVE', NULL)`, productID).Error)
 	require.NoError(t, database.Exec(`INSERT INTO materials VALUES (?, 'M-1', '材料原名', '规格', 'kg', 'Active', NULL)`, materialID).Error)
 	require.NoError(t, database.Exec(`INSERT INTO boms VALUES (?, ?, 'MBOM', 'MBOM-HTTP', 'RELEASED', 'INTERNAL', '', 3, 'V1', 'light', 'A', 420, 'g', NULL, NULL, NULL)`, bomID, productID).Error)
 	require.NoError(t, database.Exec(`INSERT INTO bom_items VALUES (?, ?, 1, 'A', ?, 'kg', 0.5)`, uuid.NewString(), bomID, materialID).Error)
-	require.NoError(t, database.Create(&models.SalesOrderLine{ID: 101, SalesOrderID: orderID, LineNo: 1, ProductID: productID, ProductModel: "R50", Qty: 100, UOM: "PCS"}).Error)
-	return database, services.ProductionMaterialIssuanceSourceSelection{SalesOrderID: orderID, SalesOrderLineID: 101, BOMID: bomID}
+	require.NoError(t, database.Create(&models.SalesOrderLine{ID: 101, SalesOrderID: orderID, LineNo: 1, ProductID: productID, BOMOwnerType: "INTERNAL", BOMVersionLevel: "light", ProductModel: "R50", Qty: 100, UOM: "PCS"}).Error)
+	return database, services.ProductionMaterialIssuanceSourceSelection{SalesOrderID: orderID, SalesOrderLineID: 101, ExpectedBOMID: bomID}
 }
 
 func requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions []string, actorID, method, endpoint, body string) *httptest.ResponseRecorder {
@@ -102,7 +102,7 @@ func TestProductionMaterialIssuanceReadonlyHTTPReviewsRealSourceAndRejectsMalfor
 	require.EqualValues(t, 101, reviewed.Sources[0].SalesOrderLineID)
 	require.Equal(t, 420.0, reviewed.Sources[0].BOM.MeasuredWeight)
 	require.Equal(t, 50.0, reviewed.Sources[0].Contributions[0].RequiredQty)
-	for _, invalidBody := range []string{`null`, `{}`, `{"sources":[]}`, string(raw) + `{}`, `{"sources":[],"finishedQty":999}`, strings.Replace(string(raw), `"bomId":`, `"actorId":"forged","bomId":`, 1), `{"sources":[{"salesOrderId":"bad","salesOrderLineId":101,"bomId":"bad"}]}`, `{"sources":[],"padding":"` + strings.Repeat("x", 256*1024) + `"}`} {
+	for _, invalidBody := range []string{`null`, `{}`, `{"sources":[]}`, string(raw) + `{}`, `{"sources":[],"finishedQty":999}`, strings.Replace(string(raw), `"expectedBomId":`, `"actorId":"forged","expectedBomId":`, 1), `{"sources":[{"salesOrderId":"bad","salesOrderLineId":101,"expectedBomId":"bad"}]}`, `{"sources":[],"padding":"` + strings.Repeat("x", 256*1024) + `"}`} {
 		response = requestProductionMaterialIssuanceReadonlyHTTPRoute(permissions, "reader-1", "POST", "/source-review", invalidBody)
 		require.Equal(t, http.StatusBadRequest, response.Code, response.Body.String())
 	}

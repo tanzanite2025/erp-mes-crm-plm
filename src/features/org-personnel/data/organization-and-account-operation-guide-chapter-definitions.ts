@@ -78,7 +78,7 @@ export const organizationAndAccountOperationGuideReferencePages = {
   employees: '/personnel/employees',
   accounts: '/personnel/accounts',
   permissions: '/personnel/rights',
-  productionArchitecture: '/production-architecture/mindmap',
+  productionArchitecture: '/production-architecture/line-structure',
 } as const
 
 export const organizationAndAccountOperationGuideConceptKeys = [

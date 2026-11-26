@@ -24,9 +24,7 @@ export function PartRequirements() {
     stats,
     calculate,
     sourceLines,
-    bomSelections,
     isComplete,
-    setBomSelection,
     recalculate,
     ordersError,
     isLoadingOrders,
@@ -109,9 +107,7 @@ export function PartRequirements() {
           onClose={() => setIsDrawerOpen(false)}
           data={requirements}
           sourceLines={sourceLines}
-          bomSelections={bomSelections}
           isComplete={isComplete}
-          onBomSelectionChange={setBomSelection}
           onRecalculate={recalculate}
           errorMessage={
             error && !isForbiddenError(error) && error instanceof Error

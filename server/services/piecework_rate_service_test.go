@@ -45,6 +45,30 @@ func createIndependentPieceworkPayrollSQLiteTables(t *testing.T, database *gorm.
 		require.NoError(t, database.Exec(statement).Error)
 	}
 	require.NoError(t, db.EnsureIndependentPieceworkPayrollStorageContract(database))
+	require.NoError(t, database.Exec(`
+		CREATE TABLE units (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			code TEXT NOT NULL UNIQUE,
+			name TEXT NOT NULL,
+			category TEXT,
+			precision INTEGER DEFAULT 0,
+			status TEXT DEFAULT 'active',
+			is_system BOOLEAN DEFAULT false,
+			description TEXT
+		)
+	`).Error)
+	for _, unit := range []models.Unit{
+		{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "PCS", Name: "件", Category: "QUANTITY", Status: "active"},
+		{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "KG", Name: "千克", Category: "WEIGHT", Status: "active"},
+		{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "HOUR", Name: "小时", Category: "TIME", Status: "active"},
+		{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "BOX", Name: "箱", Category: "QUANTITY", Status: "active"},
+		{BaseModel: models.BaseModel{ID: uuid.NewString()}, Code: "OLD", Name: "旧单位", Category: "OTHER", Status: "inactive"},
+	} {
+		require.NoError(t, database.Create(&unit).Error)
+	}
 	seedPieceworkAttributionTestIdentities(t, database)
 	require.NoError(t, database.Create(&models.PieceworkPayItem{BaseModel: models.BaseModel{ID: pieceworkTestPayItemID}, Code: "PAY-001", Name: "Independent payroll item", Unit: "PCS", Status: "active", Version: 1}).Error)
 }
@@ -100,8 +124,13 @@ func TestPieceworkRatePayrollIntervalsAreHalfOpenAndRejectOverlapAndStaleChanges
 	match, err := resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{PayItemID: cmd.PayItemID, Unit: cmd.Unit, At: end})
 	require.NoError(t, err)
 	require.Equal(t, next.ID, match.Rate.ID)
-	_, err = resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{PayItemID: cmd.PayItemID, Unit: "KG", At: end})
-	require.ErrorIs(t, err, ErrPieceworkRateNotFound)
+	kgCommand := cmd
+	kgCommand.EffectiveFrom, kgCommand.Unit, kgCommand.UnitPrice = &end, "KG", 8
+	kgRate, err := service.CreatePieceworkRate(pieceworkRateTestContext(), kgCommand)
+	require.NoError(t, err)
+	kgMatch, err := resolver.Resolve(pieceworkRateTestContext(), PieceworkRateLookup{PayItemID: cmd.PayItemID, Unit: "KG", At: end})
+	require.NoError(t, err)
+	require.Equal(t, kgRate.ID, kgMatch.Rate.ID)
 	update := PieceworkRatePatchCommand{UnitPrice: PieceworkRatePatchField[float64]{Set: true, Value: pointerFloat(3)}}
 	updated, err := service.PatchPieceworkRate(pieceworkRateTestContext(), original.ID, update, original.Version)
 	require.NoError(t, err)
@@ -121,7 +150,9 @@ func TestPieceworkRatePayrollRejectsMissingIdentityDateUnitAndInvalidDecimals(t 
 		func(c *PieceworkRateCommand) { c.PayItemID = "" },
 		func(c *PieceworkRateCommand) { c.EffectiveFrom = nil },
 		func(c *PieceworkRateCommand) { c.Unit = "" },
-		func(c *PieceworkRateCommand) { c.Unit = "KG" },
+		func(c *PieceworkRateCommand) { c.Unit = "件" },
+		func(c *PieceworkRateCommand) { c.Unit = "OLD" },
+		func(c *PieceworkRateCommand) { c.Unit = "UNKNOWN" },
 		func(c *PieceworkRateCommand) { c.UnitPrice = -1 },
 		func(c *PieceworkRateCommand) { c.UnitPrice = 1.00001 },
 		func(c *PieceworkRateCommand) { c.UnitPrice = 1000000 },
@@ -135,6 +166,30 @@ func TestPieceworkRatePayrollRejectsMissingIdentityDateUnitAndInvalidDecimals(t 
 	}
 	_, err := service.UpdatePieceworkRate(pieceworkRateTestContext(), "", pieceworkTestRateCommand(), 1)
 	require.ErrorIs(t, err, ErrInvalidPieceworkRate)
+}
+
+func TestPieceworkRateCanPreserveLegacyUnitOnEditAndMoveToConfiguredUnit(t *testing.T) {
+	service, database := newPieceworkRateTestService(t)
+	start := pieceworkTestDate("2026-10-01")
+	legacyRate := models.PieceworkRate{
+		BaseModel: models.BaseModel{ID: uuid.NewString()},
+		PayItemID: pieceworkTestPayItemID, PayItemCode: "PAY-001", PayItemName: "Legacy payroll item",
+		Unit: "件", UnitPrice: 1, Currency: "CNY", EffectiveFrom: &start, Status: "active", Version: 1,
+	}
+	require.NoError(t, database.Create(&legacyRate).Error)
+
+	updated, err := service.PatchPieceworkRate(pieceworkRateTestContext(), legacyRate.ID, PieceworkRatePatchCommand{
+		UnitPrice: PieceworkRatePatchField[float64]{Set: true, Value: pointerFloat(2)},
+	}, legacyRate.Version)
+	require.NoError(t, err)
+	require.Equal(t, "件", updated.Unit)
+
+	configuredUnit := "PCS"
+	updated, err = service.PatchPieceworkRate(pieceworkRateTestContext(), legacyRate.ID, PieceworkRatePatchCommand{
+		Unit: PieceworkRatePatchField[string]{Set: true, Value: &configuredUnit},
+	}, updated.Version)
+	require.NoError(t, err)
+	require.Equal(t, "PCS", updated.Unit)
 }
 
 func TestPieceworkRatePatchRequiresFullSDRTSAndRejectsProductionIdentities(t *testing.T) {
@@ -151,20 +206,18 @@ func TestPieceworkRatePatchRequiresFullSDRTSAndRejectsProductionIdentities(t *te
 	require.Nil(t, cmd.EffectiveTo.Value)
 }
 
-func TestPieceworkPayItemMaintenanceKeepsUsedUnitAndVersionStable(t *testing.T) {
+func TestPieceworkPayItemMaintenanceDoesNotOwnRateUnitAndPreservesVersionGuard(t *testing.T) {
 	rates, database := newPieceworkRateTestService(t)
 	service := NewPieceworkPayItemService(pieceworkRateTestTxManager{db: database})
-	item, err := service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{Code: "PAY-NEW", Name: "Payroll work", Unit: "H", Status: "active"})
+	item, err := service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{Code: "PAY-NEW", Name: "Payroll work", Status: "active"})
 	require.NoError(t, err)
-	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{Code: "pay-new", Name: "Duplicate", Unit: "H"})
+	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{Code: "pay-new", Name: "Duplicate"})
 	require.ErrorIs(t, err, ErrInvalidPieceworkPayItem)
-	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: item.ID, Version: 0, Code: item.Code, Name: item.Name, Unit: item.Unit})
+	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: item.ID, Version: 0, Code: item.Code, Name: item.Name})
 	require.ErrorIs(t, err, ErrPieceworkRateVersionConflict)
 	_, err = rates.CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())
 	require.NoError(t, err)
-	_, err = service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: pieceworkTestPayItemID, Version: 1, Code: "PAY-001", Name: "Renamed", Unit: "KG"})
-	require.ErrorIs(t, err, ErrInvalidPieceworkPayItem)
-	saved, err := service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: pieceworkTestPayItemID, Version: 1, Code: "PAY-001", Name: "Renamed", Unit: "PCS", Status: "inactive"})
+	saved, err := service.SavePieceworkPayItem(pieceworkRateTestContext(), PieceworkPayItemCommand{ID: pieceworkTestPayItemID, Version: 1, Code: "PAY-001", Name: "Renamed", Status: "inactive"})
 	require.NoError(t, err)
 	require.Equal(t, int64(2), saved.Version)
 	_, err = rates.CreatePieceworkRate(pieceworkRateTestContext(), pieceworkTestRateCommand())

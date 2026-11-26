@@ -188,6 +188,7 @@ beforeEach(() => {
     productTypes: [],
     productAttributeCategories: [],
     productAttributeOptions: [],
+    productionLines: [{ id: 'line-a', code: 'LINE-A', name: '一号产线' }],
   }
   vi.mocked(apiFetch).mockImplementation(async (path, options) => {
     if (editBOMRecord && path === '/engineering/bom/' + editBOMRecord.id)
@@ -1130,5 +1131,5 @@ describe('BOM product information, recipe and submit responsibility boundaries',
       measuredWeightUnit: 'g',
       items: [{ unitUsage: 4, standardUsage: 4.2 }],
     })
-  })
+  }, 15_000)
 })

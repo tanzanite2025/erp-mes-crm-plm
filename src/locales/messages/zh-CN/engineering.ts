@@ -1387,6 +1387,8 @@ export const engineering = {
       bomNo: 'BOM 编号',
       bomNoAutoPlaceholder: '保存后自动生成',
       bomType: 'BOM 类型',
+      productionLine: '产线',
+      productionLinePlaceholder: '请选择产线',
       product: '产品',
       productPlaceholder: '请选择产品...',
       version: '系统版本',

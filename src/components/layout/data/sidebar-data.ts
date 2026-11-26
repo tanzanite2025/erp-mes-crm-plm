@@ -737,7 +737,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
             url: '/personnel/org',
             activeMatches: [
               ...getOrgPersonnelTabs((key) => key).map((tab) => tab.href),
-              '/personnel/architecture',
             ],
             icon: Users,
             permissionId: permissionIdForPath('/personnel'),

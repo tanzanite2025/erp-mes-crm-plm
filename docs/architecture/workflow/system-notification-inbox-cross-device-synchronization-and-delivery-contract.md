@@ -40,8 +40,6 @@ flowchart LR
 | 系统告警         | 告警 webhook                                       | 按 fingerprint + startsAt 唯一轮次冻结有效管理账号；解除持久化，重复或迟到 firing 不复活                                                                                                                                                       |
 | 物流记录         | 新建、真实状态变化、进入异常、删除解除             | 采购/销售分别按 MenuPurchase/MenuTrading 可见；需显式导入源及配置规则；承运商 DeliveryOrder 已统一轨迹事务与购销权限，仍缺可靠业务关联及正式通知接入，详见[物流契约](../../logistics-record-transaction-and-notification-delivery-contract.md) |
 
-旧 Workflow 定义、实例、任务表已由既有迁移移除。不得根据历史文档重建第二套工作流。
-
 ## 3. 数据职责与文件边界
 
 | 数据                                    | 唯一职责                                                                        |
@@ -69,7 +67,7 @@ flowchart LR
 | `server/services/workflow_notification_outbox_delivery_service.go`              | SKIP LOCKED 领取、发布、失败调度及失效任务取消；不重跑业务或审批                           |
 | `server/services/system_notification_delivery_queue_operations_service.go`      | 积压诊断、恢复原任务及按统一锁顺序执行有界清理                                             |
 | `server/services/rule_execution_log_service.go`                                 | 历史诊断和原任务恢复适配；无日志直投重试                                                   |
-| `server/db/system_notification_inbox_cutover.go`                                | 停止旧完整业务载荷任务，不补造历史收件                                                     |
+| `server/db/system_notification_inbox_cutover.go`                                | 收件箱和投递数据迁移                                                                       |
 | `src/features/system-mgmt/notifications/system-notification-inbox-service.ts`   | 收件 HTTP 契约                                                                             |
 | 同目录 `use-system-notification-inbox.ts`                                       | 按账号/权限隔离查询、状态 mutation、清缓存、周期对账                                       |
 | 同目录 `components/notification-center.tsx`                                     | 收件与历史列表、精确本页操作、错误和离线反馈                                               |
@@ -100,7 +98,7 @@ flowchart LR
 | `POST /message-center/inbox/state`                           | `{ids:[稳定收件ID], action:"read"或"archive"}`；1..100个精确 ID，成功204，非法400，越权/不存在404           |
 | `GET /message-center/delivery-queue`                         | perm_manage；待重试数、暂停数、最老积压时间、最近失败                                                       |
 | `POST /message-center/delivery-queue/:id/retry`              | perm_manage；恢复同一投递任务，不生成新收件；失效409                                                        |
-| `POST /message-center/execution-logs/:id/retry-notification` | 管理诊断适配，仅恢复关联的原任务；无关联的旧日志拒绝                                                        |
+| `POST /message-center/execution-logs/:id/retry-notification` | 管理诊断适配，仅恢复关联的投递任务；无关联任务时拒绝                                                        |
 
 个人收件接口只要求认证，不套用整个消息配置页或审批菜单权限；可见性按每条记录过滤。账号从认证上下文获取，提交的自选账号字段不生效。执行日志不再开放浏览器写入接口。
 
@@ -152,9 +150,9 @@ WS 只发布 `NotificationInbox / CHANGED`，载荷含稳定收件 ID（批量�
 
 工作器每小时执行有界清理，每类最多500条。清理按收件、队列的顺序锁定并删除，均按 ID 排序、使用 `FOR UPDATE SKIP LOCKED`，与员工状态操作、业务解除和人工恢复保持相同锁方向；其他操作占用的记录留给后续批次，不拖住本批清理。收件和队列删除仍在同一事务，任一写入失败整体回滚。业务、审批和审计使用各自保留制度。活跃待办与未解除严重告警不因年龄被清理。
 
-## 8. 一次切换与接入要求
+## 8. 来源接入要求
 
-本轮已切换品质、销售、采购、生产/委外、物流记录、现有 BOM 入口及公共审批和告警。两个本地消息 Store、浏览器执行/扫描服务和 BOM 前端通知副作用已删除，保留配置 CRUD。启动迁移取消旧完整载荷的未发布任务；不导入浏览器旧消息，不从执行日志补造历史收件，也不自动补发旧待办。
+品质、销售、采购、生产/委外、物流记录、现有 BOM 入口及公共审批和告警均通过共用收件服务接入。浏览器根据服务端状态刷新收件，不承担通知生成或业务扫描。
 
 新增来源必须提供真实事务入口、稳定事实键、生成时收件人、必要权限、模板字段和精确解除条件，并调用共用收件服务。仅登记模板不能标记“全覆盖”；确有存量补提醒需求时必须定义独立的当前事实作业，不重启浏览器扫描。
 
@@ -175,8 +173,6 @@ WS 只发布 `NotificationInbox / CHANGED`，载荷含稳定收件 ID（批量�
 | `quality_standard_workflow_postgres_integration_test.go`                           | 真实单级/两级审批、当前申请、版本和并发、固定/动态账号去重、CREATED/STATUS_CHANGED 动作一致及无效账号整体回滚                      |
 
 前端收件同步测试为 `src/features/system-mgmt/notifications/system-notification-inbox-account-isolation-and-state-synchronization.spec.tsx`，验证切换账号/退出清缓存、操作失败不伪造已读及重查另一设备已提交的状态。物流与承运商事务专项的文件和边界见[物流契约](../../logistics-record-transaction-and-notification-delivery-contract.md)，品质细节见[品质契约](../../quality-standard-approval-transaction-and-notification-delivery-contract.md)。
-
-旧委外 CLI 的 `redis-notification` 入口及“新建重试日志”的验收断言已移除。CLI 继续负责业务事实、并发和权限验收，当前通知恢复验证使用上述隔离测试。
 
 ### 2026-10-20 本地验证记录
 

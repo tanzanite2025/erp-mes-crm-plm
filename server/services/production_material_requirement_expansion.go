@@ -24,14 +24,6 @@ func ExpandProductionMaterialRequirements(input ProductionMaterialRequirementExp
 		}
 		selected[key] = false
 	}
-	choices := make(map[string]string)
-	for _, choice := range input.BOMSelections {
-		key := fmt.Sprintf("%s/%d", choice.SalesOrderID, choice.SalesOrderLineID)
-		if choice.SalesOrderID == "" || choice.SalesOrderLineID == 0 || choice.BOMID == "" || choices[key] != "" {
-			return result, fmt.Errorf("%w: invalid or duplicate BOM choice", ErrInvalidProductionMaterialRequirementSelection)
-		}
-		choices[key] = choice.BOMID
-	}
 	materials := make(map[string]models.Material, len(input.Materials))
 	for _, material := range input.Materials {
 		materials[material.ID] = material
@@ -58,35 +50,30 @@ func ExpandProductionMaterialRequirements(input ProductionMaterialRequirementExp
 			if !isFiniteProductionMaterialRequirementQuantity(line.Qty) {
 				return result, fmt.Errorf("[CRITICAL] nonfinite finished quantity for order %s line %d", order.OrderNo, line.LineNo)
 			}
-			candidates := selectApplicableProductionMaterialRequirementBOMs(input.BOMs, line.ProductID, order.CustomerID, input.AsOf)
+			if order.ID == "" || line.ID == 0 || strings.TrimSpace(line.ProductID) == "" || line.Qty <= 0 {
+				source.IssueCode = "INVALID_SOURCE_LINE"
+			} else if !hasValidProductionMaterialRequirementMBOMBranch(line) {
+				source.IssueCode = "MISSING_MBOM_BRANCH"
+			}
+			candidates := make([]models.BOM, 0)
+			if source.IssueCode == "" {
+				candidates = selectApplicableProductionMaterialRequirementBOMs(input.BOMs, line, input.AsOf)
+			}
 			for _, candidate := range candidates {
 				if !isFiniteProductionMaterialRequirementQuantity(candidate.MeasuredWeight) || candidate.MeasuredWeight < 0 {
 					return result, fmt.Errorf("[CRITICAL] invalid finished weight for BOM %s", candidate.BOMNo)
 				}
 				source.BOMCandidates = append(source.BOMCandidates, mapProductionMaterialRequirementBOMCandidate(candidate, versionOptions[candidate.VersionLevel]))
 			}
-			choiceKey := fmt.Sprintf("%s/%d", order.ID, line.ID)
-			chosenID := choices[choiceKey]
-			delete(choices, choiceKey)
 			var chosen *models.BOM
-			if chosenID != "" {
-				for index := range candidates {
-					if candidates[index].ID == chosenID {
-						chosen = &candidates[index]
-					}
+			if source.IssueCode == "" {
+				if len(candidates) == 1 {
+					chosen = &candidates[0]
+				} else if len(candidates) == 0 {
+					source.IssueCode = "MISSING_BOM"
+				} else {
+					source.IssueCode = "DUPLICATE_EFFECTIVE_MBOM"
 				}
-				if chosen == nil {
-					source.IssueCode = "BOM_SELECTION_CHANGED"
-				}
-			} else if len(candidates) == 1 {
-				chosen = &candidates[0]
-			} else if len(candidates) == 0 {
-				source.IssueCode = "MISSING_BOM"
-			} else {
-				source.IssueCode = "BOM_SELECTION_REQUIRED"
-			}
-			if order.ID == "" || line.ID == 0 || line.ProductID == "" || !isFiniteProductionMaterialRequirementQuantity(line.Qty) || line.Qty <= 0 {
-				source.IssueCode = "INVALID_SOURCE_LINE"
 			}
 			if chosen != nil && source.IssueCode == "" {
 				basis := mapProductionMaterialRequirementBOMCandidate(*chosen, versionOptions[chosen.VersionLevel])
@@ -136,9 +123,6 @@ func ExpandProductionMaterialRequirements(input ProductionMaterialRequirementExp
 		if !matched {
 			return result, fmt.Errorf("%w: selected order line is unavailable: %s", ErrInvalidProductionMaterialRequirementSelection, key)
 		}
-	}
-	if len(choices) > 0 {
-		return result, fmt.Errorf("%w: BOM choice is outside the selected order scope", ErrInvalidProductionMaterialRequirementSelection)
 	}
 	return result, nil
 }

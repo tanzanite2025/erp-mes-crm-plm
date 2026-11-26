@@ -40,64 +40,64 @@ var (
 )
 
 type InitializeProductBarcodeStateRequest struct {
-	ProductBarcode    string `json:"productBarcode"`
-	ProductID         string `json:"productId"`
-	ProductName       string `json:"productName"`
-	RouteID           string `json:"-"`
-	RouteStepID       string `json:"-"`
-	BranchOperationID string `json:"-"`
-	Status            string `json:"status"`
-	Operator          string `json:"-"`
-	IP                string `json:"-"`
+	ProductBarcode string `json:"productBarcode"`
+	ProductID      string `json:"productId"`
+	ProductName    string `json:"productName"`
+	RouteID        string `json:"-"`
+	RouteStepID    string `json:"-"`
+	ProcessStepID  string `json:"-"`
+	Status         string `json:"status"`
+	Operator       string `json:"-"`
+	IP             string `json:"-"`
 }
 
 type productBarcodeStateAttributes struct {
-	ProductBarcode    string
-	ProductID         string
-	ProductName       string
-	RouteID           string
-	RouteStepID       string
-	BranchOperationID string
-	Status            string
-	Operator          string
-	IP                string
+	ProductBarcode string
+	ProductID      string
+	ProductName    string
+	RouteID        string
+	RouteStepID    string
+	ProcessStepID  string
+	Status         string
+	Operator       string
+	IP             string
 }
 
-type ProductBarcodeStateBranchOperationResponse struct {
+type ProductBarcodeStateProcessStepResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 type ProductBarcodeStateEventResponse struct {
-	ID                    string `json:"id"`
-	StateID               string `json:"stateId"`
-	OperationID           string `json:"operationId,omitempty"`
-	ProductBarcode        string `json:"productBarcode"`
-	EventType             string `json:"eventType"`
-	FromBranchOperationID string `json:"fromBranchOperationId"`
-	ToBranchOperationID   string `json:"toBranchOperationId"`
-	RouteID               string `json:"routeId"`
-	RouteStepID           string `json:"routeStepId"`
-	Operator              string `json:"operator"`
-	PayloadSnapshot       string `json:"payloadSnapshot"`
-	OccurredAt            string `json:"occurredAt"`
+	ID                string `json:"id"`
+	StateID           string `json:"stateId"`
+	OperationID       string `json:"operationId,omitempty"`
+	ProductBarcode    string `json:"productBarcode"`
+	EventType         string `json:"eventType"`
+	FromProcessStepID string `json:"fromProcessStepId"`
+	ToProcessStepID   string `json:"toProcessStepId"`
+	RouteID           string `json:"routeId"`
+	RouteStepID       string `json:"routeStepId"`
+	Operator          string `json:"operator"`
+	PayloadSnapshot   string `json:"payloadSnapshot"`
+	OccurredAt        string `json:"occurredAt"`
 }
 
 type ProductBarcodeStateResponse struct {
-	ID                       string                                      `json:"id"`
-	ProductBarcode           string                                      `json:"productBarcode"`
-	ProductID                string                                      `json:"productId"`
-	ProductName              string                                      `json:"productName"`
-	RouteID                  string                                      `json:"routeId"`
-	RouteStepID              string                                      `json:"routeStepId"`
-	CurrentBranchOperationID string                                      `json:"currentBranchOperationId"`
-	CurrentBranchOperation   *ProductBarcodeStateBranchOperationResponse `json:"currentBranchOperation,omitempty"`
-	Status                   string                                      `json:"status"`
-	LastEventID              string                                      `json:"lastEventId"`
-	StartedAt                string                                      `json:"startedAt"`
-	CompletedAt              string                                      `json:"completedAt"`
-	UpdatedAt                string                                      `json:"updatedAt"`
-	Events                   []ProductBarcodeStateEventResponse          `json:"events"`
+	ID                   string                                  `json:"id"`
+	ProductBarcode       string                                  `json:"productBarcode"`
+	ProductID            string                                  `json:"productId"`
+	ProductName          string                                  `json:"productName"`
+	RouteID              string                                  `json:"routeId"`
+	RouteStepID          string                                  `json:"routeStepId"`
+	CurrentProcessStepID string                                  `json:"currentProcessStepId"`
+	CurrentProcessStep   *ProductBarcodeStateProcessStepResponse `json:"currentProcessStep,omitempty"`
+	Status               string                                  `json:"status"`
+	LastEventID          string                                  `json:"lastEventId"`
+	StartedAt            string                                  `json:"startedAt"`
+	CompletedAt          string                                  `json:"completedAt"`
+	UpdatedAt            string                                  `json:"updatedAt"`
+	Events               []ProductBarcodeStateEventResponse      `json:"events"`
 }
 
 type ProductBarcodeStateService struct {
@@ -160,7 +160,7 @@ func (s *ProductBarcodeStateService) InitializeProductBarcodeState(req Initializ
 		createResult := applyProductionOptionalUUIDOmit(tx,
 			productionOptionalUUIDWrite{Column: "route_id", Value: state.RouteID},
 			productionOptionalUUIDWrite{Column: "route_step_id", Value: state.RouteStepID},
-			productionOptionalUUIDWrite{Column: "current_branch_operation_id", Value: state.CurrentBranchOperationID},
+			productionOptionalUUIDWrite{Column: "current_process_step_id", Value: state.CurrentProcessStepID},
 			productionOptionalUUIDWrite{Column: "last_event_id", Value: state.LastEventID},
 		).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "product_barcode"}},
@@ -174,20 +174,20 @@ func (s *ProductBarcodeStateService) InitializeProductBarcodeState(req Initializ
 		}
 
 		event := models.ProductBarcodeStateEvent{
-			BaseModel:           models.BaseModel{ID: uuid.NewString()},
-			StateID:             state.ID,
-			ProductBarcode:      state.ProductBarcode,
-			EventType:           ProductBarcodeStateEventInitialized,
-			ToBranchOperationID: state.CurrentBranchOperationID,
-			RouteID:             state.RouteID,
-			RouteStepID:         state.RouteStepID,
-			Operator:            resolveProductBarcodeStateOperator(attributes.Operator),
-			PayloadSnapshot:     buildProductBarcodeStateEventSnapshot(attributes),
-			OccurredAt:          &now,
+			BaseModel:       models.BaseModel{ID: uuid.NewString()},
+			StateID:         state.ID,
+			ProductBarcode:  state.ProductBarcode,
+			EventType:       ProductBarcodeStateEventInitialized,
+			ToProcessStepID: state.CurrentProcessStepID,
+			RouteID:         state.RouteID,
+			RouteStepID:     state.RouteStepID,
+			Operator:        resolveProductBarcodeStateOperator(attributes.Operator),
+			PayloadSnapshot: buildProductBarcodeStateEventSnapshot(attributes),
+			OccurredAt:      &now,
 		}
 		if err := createProductionRecordWithOptionalUUIDs(tx, &event,
 			productionOptionalUUIDWrite{Column: "operation_id", Value: event.OperationID},
-			productionOptionalUUIDWrite{Column: "to_branch_operation_id", Value: event.ToBranchOperationID},
+			productionOptionalUUIDWrite{Column: "to_process_step_id", Value: event.ToProcessStepID},
 			productionOptionalUUIDWrite{Column: "route_id", Value: event.RouteID},
 			productionOptionalUUIDWrite{Column: "route_step_id", Value: event.RouteStepID},
 		); err != nil {
@@ -221,15 +221,15 @@ func normalizeProductBarcodeStateInitialization(input InitializeProductBarcodeSt
 	}
 
 	return productBarcodeStateAttributes{
-		ProductBarcode:    normalizeProductBarcodeValue(input.ProductBarcode),
-		ProductID:         strings.TrimSpace(input.ProductID),
-		ProductName:       strings.TrimSpace(input.ProductName),
-		RouteID:           strings.TrimSpace(input.RouteID),
-		RouteStepID:       strings.TrimSpace(input.RouteStepID),
-		BranchOperationID: normalizeProductionExecutionUUIDIdentity(input.BranchOperationID),
-		Status:            status,
-		Operator:          strings.TrimSpace(input.Operator),
-		IP:                strings.TrimSpace(input.IP),
+		ProductBarcode: normalizeProductBarcodeValue(input.ProductBarcode),
+		ProductID:      strings.TrimSpace(input.ProductID),
+		ProductName:    strings.TrimSpace(input.ProductName),
+		RouteID:        strings.TrimSpace(input.RouteID),
+		RouteStepID:    strings.TrimSpace(input.RouteStepID),
+		ProcessStepID:  normalizeProductionExecutionUUIDIdentity(input.ProcessStepID),
+		Status:         status,
+		Operator:       strings.TrimSpace(input.Operator),
+		IP:             strings.TrimSpace(input.IP),
 	}
 }
 
@@ -248,11 +248,11 @@ func validateProductBarcodeStateInitializationInput(attributes productBarcodeSta
 
 func validateProductBarcodeStateInitializationReferences(tx *gorm.DB, attributes *productBarcodeStateAttributes) error {
 	if attributes.RouteStepID == "" {
-		if attributes.RouteID != "" && attributes.BranchOperationID != "" {
+		if attributes.RouteID != "" && attributes.ProcessStepID != "" {
 			return fmt.Errorf("%w: routeStepId is required when initializing a barcode at a route process", ErrInvalidProductBarcodeState)
 		}
-		if attributes.BranchOperationID != "" {
-			if err := ensureProductionRecordExists(tx, &models.ProductionBOMBranchOperation{}, attributes.BranchOperationID, "branchOperationId"); err != nil {
+		if attributes.ProcessStepID != "" {
+			if err := ensureProductionRecordExists(tx, &models.ProcessStep{}, attributes.ProcessStepID, "processStepId"); err != nil {
 				return err
 			}
 		}
@@ -281,16 +281,16 @@ func validateProductBarcodeStateInitializationReferences(tx *gorm.DB, attributes
 	if attributes.RouteID != "" && normalizeProductionExecutionUUIDIdentity(attributes.RouteID) != normalizeProductionExecutionUUIDIdentity(selectedStep.RouteID) {
 		return fmt.Errorf("%w: routeStepId does not belong to routeId", ErrInvalidProductBarcodeState)
 	}
-	selectedBranchOperationID := strings.TrimSpace(selectedStep.BranchOperationID)
-	if attributes.BranchOperationID != "" && normalizeProductionExecutionUUIDIdentity(attributes.BranchOperationID) != normalizeProductionExecutionUUIDIdentity(selectedBranchOperationID) {
-		return fmt.Errorf("%w: routeStepId does not match branchOperationId", ErrInvalidProductBarcodeState)
+	selectedProcessStepID := strings.TrimSpace(selectedStep.ProcessStepID)
+	if attributes.ProcessStepID != "" && normalizeProductionExecutionUUIDIdentity(attributes.ProcessStepID) != normalizeProductionExecutionUUIDIdentity(selectedProcessStepID) {
+		return fmt.Errorf("%w: routeStepId does not match processStepId", ErrInvalidProductBarcodeState)
 	}
-	if selectedBranchOperationID == "" {
-		return fmt.Errorf("%w: routeStepId has no branchOperationId", ErrInvalidProductBarcodeState)
+	if selectedProcessStepID == "" {
+		return fmt.Errorf("%w: routeStepId has no processStepId", ErrInvalidProductBarcodeState)
 	}
 
 	attributes.RouteID = strings.TrimSpace(selectedStep.RouteID)
-	attributes.BranchOperationID = selectedBranchOperationID
+	attributes.ProcessStepID = selectedProcessStepID
 	if err := ensureProductionRecordExists(tx, &models.ProductionRoute{}, attributes.RouteID, "routeId"); err != nil {
 		return err
 	}
@@ -301,7 +301,7 @@ func validateProductBarcodeStateInitializationReferences(tx *gorm.DB, attributes
 	if !published {
 		return fmt.Errorf("%w: production route must be PUBLISHED before initializing a barcode", ErrInvalidProductBarcodeState)
 	}
-	if err := ensureProductionRecordExists(tx, &models.ProductionBOMBranchOperation{}, attributes.BranchOperationID, "branchOperationId"); err != nil {
+	if err := ensureProductionRecordExists(tx, &models.ProcessStep{}, attributes.ProcessStepID, "processStepId"); err != nil {
 		return err
 	}
 
@@ -357,7 +357,7 @@ func applyProductBarcodeStateAttributes(state *models.ProductBarcodeState, attri
 	state.ProductName = attributes.ProductName
 	state.RouteID = attributes.RouteID
 	state.RouteStepID = attributes.RouteStepID
-	state.CurrentBranchOperationID = attributes.BranchOperationID
+	state.CurrentProcessStepID = attributes.ProcessStepID
 	state.Status = attributes.Status
 
 	if attributes.Status == ProductBarcodeStateStatusInProgress && state.StartedAt == nil {
@@ -379,14 +379,14 @@ func resolveProductBarcodeStateOperator(operator string) string {
 
 func buildProductBarcodeStateEventSnapshot(attributes productBarcodeStateAttributes) string {
 	payload, err := json.Marshal(map[string]string{
-		"productBarcode":    attributes.ProductBarcode,
-		"productId":         attributes.ProductID,
-		"productName":       attributes.ProductName,
-		"routeId":           attributes.RouteID,
-		"routeStepId":       attributes.RouteStepID,
-		"branchOperationId": attributes.BranchOperationID,
-		"status":            attributes.Status,
-		"operator":          resolveProductBarcodeStateOperator(attributes.Operator),
+		"productBarcode": attributes.ProductBarcode,
+		"productId":      attributes.ProductID,
+		"productName":    attributes.ProductName,
+		"routeId":        attributes.RouteID,
+		"routeStepId":    attributes.RouteStepID,
+		"processStepId":  attributes.ProcessStepID,
+		"status":         attributes.Status,
+		"operator":       resolveProductBarcodeStateOperator(attributes.Operator),
 	})
 	if err != nil {
 		return "{}"
@@ -397,7 +397,7 @@ func buildProductBarcodeStateEventSnapshot(attributes productBarcodeStateAttribu
 func loadProductBarcodeStateWithEvents(tx *gorm.DB, productBarcode string) (models.ProductBarcodeState, []models.ProductBarcodeStateEvent, error) {
 	var state models.ProductBarcodeState
 	if err := tx.
-		Preload("CurrentBranchOperation").
+		Preload("CurrentProcessStep").
 		Where("product_barcode = ?", productBarcode).
 		First(&state).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -429,28 +429,28 @@ func loadProductBarcodeStateWithEvents(tx *gorm.DB, productBarcode string) (mode
 
 func mapProductBarcodeStateToResponse(state models.ProductBarcodeState, events []models.ProductBarcodeStateEvent) ProductBarcodeStateResponse {
 	return ProductBarcodeStateResponse{
-		ID:                       strings.TrimSpace(state.ID),
-		ProductBarcode:           strings.TrimSpace(state.ProductBarcode),
-		ProductID:                strings.TrimSpace(state.ProductID),
-		ProductName:              strings.TrimSpace(state.ProductName),
-		RouteID:                  strings.TrimSpace(state.RouteID),
-		RouteStepID:              strings.TrimSpace(state.RouteStepID),
-		CurrentBranchOperationID: strings.TrimSpace(state.CurrentBranchOperationID),
-		CurrentBranchOperation:   mapProductBarcodeStateBranchOperation(state.CurrentBranchOperation),
-		Status:                   strings.TrimSpace(state.Status),
-		LastEventID:              strings.TrimSpace(state.LastEventID),
-		StartedAt:                formatProductBarcodeStateTime(state.StartedAt),
-		CompletedAt:              formatProductBarcodeStateTime(state.CompletedAt),
-		UpdatedAt:                state.UpdatedAt.UTC().Format(time.RFC3339),
-		Events:                   mapProductBarcodeStateEventsToResponse(events),
+		ID:                   strings.TrimSpace(state.ID),
+		ProductBarcode:       strings.TrimSpace(state.ProductBarcode),
+		ProductID:            strings.TrimSpace(state.ProductID),
+		ProductName:          strings.TrimSpace(state.ProductName),
+		RouteID:              strings.TrimSpace(state.RouteID),
+		RouteStepID:          strings.TrimSpace(state.RouteStepID),
+		CurrentProcessStepID: strings.TrimSpace(state.CurrentProcessStepID),
+		CurrentProcessStep:   mapProductBarcodeStateProcessStep(state.CurrentProcessStep),
+		Status:               strings.TrimSpace(state.Status),
+		LastEventID:          strings.TrimSpace(state.LastEventID),
+		StartedAt:            formatProductBarcodeStateTime(state.StartedAt),
+		CompletedAt:          formatProductBarcodeStateTime(state.CompletedAt),
+		UpdatedAt:            state.UpdatedAt.UTC().Format(time.RFC3339),
+		Events:               mapProductBarcodeStateEventsToResponse(events),
 	}
 }
 
-func mapProductBarcodeStateBranchOperation(step *models.ProductionBOMBranchOperation) *ProductBarcodeStateBranchOperationResponse {
+func mapProductBarcodeStateProcessStep(step *models.ProcessStep) *ProductBarcodeStateProcessStepResponse {
 	if step == nil || strings.TrimSpace(step.ID) == "" {
 		return nil
 	}
-	return &ProductBarcodeStateBranchOperationResponse{
+	return &ProductBarcodeStateProcessStepResponse{
 		ID:   strings.TrimSpace(step.ID),
 		Name: strings.TrimSpace(step.Name),
 	}
@@ -460,18 +460,18 @@ func mapProductBarcodeStateEventsToResponse(events []models.ProductBarcodeStateE
 	result := make([]ProductBarcodeStateEventResponse, 0, len(events))
 	for _, event := range events {
 		result = append(result, ProductBarcodeStateEventResponse{
-			ID:                    strings.TrimSpace(event.ID),
-			StateID:               strings.TrimSpace(event.StateID),
-			OperationID:           strings.TrimSpace(event.OperationID),
-			ProductBarcode:        strings.TrimSpace(event.ProductBarcode),
-			EventType:             strings.TrimSpace(event.EventType),
-			FromBranchOperationID: strings.TrimSpace(event.FromBranchOperationID),
-			ToBranchOperationID:   strings.TrimSpace(event.ToBranchOperationID),
-			RouteID:               strings.TrimSpace(event.RouteID),
-			RouteStepID:           strings.TrimSpace(event.RouteStepID),
-			Operator:              strings.TrimSpace(event.Operator),
-			PayloadSnapshot:       strings.TrimSpace(event.PayloadSnapshot),
-			OccurredAt:            formatProductBarcodeStateTime(event.OccurredAt),
+			ID:                strings.TrimSpace(event.ID),
+			StateID:           strings.TrimSpace(event.StateID),
+			OperationID:       strings.TrimSpace(event.OperationID),
+			ProductBarcode:    strings.TrimSpace(event.ProductBarcode),
+			EventType:         strings.TrimSpace(event.EventType),
+			FromProcessStepID: strings.TrimSpace(event.FromProcessStepID),
+			ToProcessStepID:   strings.TrimSpace(event.ToProcessStepID),
+			RouteID:           strings.TrimSpace(event.RouteID),
+			RouteStepID:       strings.TrimSpace(event.RouteStepID),
+			Operator:          strings.TrimSpace(event.Operator),
+			PayloadSnapshot:   strings.TrimSpace(event.PayloadSnapshot),
+			OccurredAt:        formatProductBarcodeStateTime(event.OccurredAt),
 		})
 	}
 	return result

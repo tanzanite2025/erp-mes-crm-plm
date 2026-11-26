@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import {
   buildApsSchedulingSource,
   type ApsSchedulingSource,
@@ -11,10 +10,6 @@ import { getApsScheduling } from '../services/aps-scheduling-service'
 const APS_SCHEDULING_BOARD_QUERY_KEY = ['aps-scheduling', 'board'] as const
 
 export function useApsSchedulingSource() {
-  const linesQuery = useProductionLinesQuery({
-    staleTime: 30_000,
-    retry: 1,
-  })
   const jobsQuery = useQuery({
     queryKey: APS_SCHEDULING_BOARD_QUERY_KEY,
     queryFn: () => getApsScheduling(),
@@ -24,25 +19,22 @@ export function useApsSchedulingSource() {
 
   const source: ApsSchedulingSource = useMemo(() => {
     return buildApsSchedulingSource({
-      lines: linesQuery.data ?? [],
       jobs: jobsQuery.data?.jobs ?? [],
       lanes: jobsQuery.data?.lanes,
       stageCards: jobsQuery.data?.stageCards,
       timelineSlots: jobsQuery.data?.timelineSlots,
     })
-  }, [jobsQuery.data, linesQuery.data])
+  }, [jobsQuery.data])
 
-  const hasResolvedSource =
-    linesQuery.data !== undefined || jobsQuery.data !== undefined
+  const hasResolvedSource = jobsQuery.data !== undefined
 
   return {
     source: hasResolvedSource ? source : apsFallbackSource,
-    isLoading:
-      (linesQuery.isLoading || jobsQuery.isLoading) && !hasResolvedSource,
-    error: linesQuery.error ?? jobsQuery.error,
-    isFetching: linesQuery.isFetching || jobsQuery.isFetching,
+    isLoading: jobsQuery.isLoading && !hasResolvedSource,
+    error: jobsQuery.error,
+    isFetching: jobsQuery.isFetching,
     refetch: async () => {
-      await Promise.all([linesQuery.refetch(), jobsQuery.refetch()])
+      await jobsQuery.refetch()
     },
     isFallback: !hasResolvedSource,
   }

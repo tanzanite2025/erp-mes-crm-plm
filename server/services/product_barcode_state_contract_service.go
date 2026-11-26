@@ -154,9 +154,9 @@ func buildProductBarcodeProductionLocationAnchorContracts() []ProductBarcodeStat
 			Required:    true,
 		},
 		{
-			Code:        "L3_BRANCH_OPERATION",
-			Field:       "currentBranchOperationId",
-			SourceTable: "production_bom_branch_operations",
+			Code:        "PROCESS_STEP",
+			Field:       "currentProcessStepId",
+			SourceTable: "process_steps",
 			Required:    true,
 		},
 		{
@@ -182,11 +182,11 @@ func buildProductBarcodeStateWritePolicyContracts() []ProductBarcodeStateWritePo
 		},
 		{
 			Code:        "PRODUCTION_STATUS_WITH_LOCATION",
-			Description: "Production status is the first-level state; routeStepId and currentBranchOperationId identify the route position, while productionWorkLocationId records the actual work location.",
+			Description: "Production status is the first-level state; routeStepId and currentProcessStepId identify the route position, while productionWorkLocationId records the actual work location.",
 		},
 		{
-			Code:        "ROUTE_STEP_IS_PRECISE_L3_ANCHOR",
-			Description: "Writes persist both routeStepId and branchOperationId; routeStepId identifies the ordered route position when one branch operation appears more than once.",
+			Code:        "ROUTE_STEP_IS_PRECISE_ROUTE_POSITION",
+			Description: "Writes persist both routeStepId and processStepId; routeStepId identifies the ordered route position when one process appears more than once.",
 		},
 		{
 			Code:        "WRITE_THROUGH_SCAN_OR_EXECUTION_COMMAND",

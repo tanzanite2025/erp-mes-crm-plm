@@ -25,7 +25,7 @@ func ReviewProductionMaterialIssuanceSourcesHandler(c *gin.Context) {
 			respondToProductionMaterialIssuanceQueryError(c, services.ErrProductionMaterialIssuanceInvalidRequest)
 			return
 		}
-		if !isCanonicalProductionMaterialIssuanceHTTPUUID(source.BOMID) {
+		if !isCanonicalProductionMaterialIssuanceHTTPUUID(source.ExpectedBOMID) {
 			respondToProductionMaterialIssuanceQueryError(c, services.ErrProductionMaterialIssuanceInvalidRequest)
 			return
 		}

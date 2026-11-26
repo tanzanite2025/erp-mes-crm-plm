@@ -176,22 +176,21 @@ const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
     pinyin: 'yhqx',
   },
   {
-    href: '/production-architecture/mindmap',
+    href: '/production-architecture/line-structure',
     labelKeys: [
-      'productionArchitecture.layout.tabs.mindmap',
+      'productionArchitecture.layout.tabs.productionLines',
       'commandMenu.parents.productionCoordination',
     ],
-    keywords: ['mindmap', 'L1', 'L2', 'L3', '产线脑图', '脑图', '生产结构'],
-    pinyin: 'ctxnt',
-  },
-  {
-    href: '/production-architecture/topology',
-    labelKeys: [
-      'commandMenu.items.topology',
-      'commandMenu.parents.productionCoordination',
+    keywords: [
+      'production line',
+      'MBOM branch',
+      'L1',
+      'L2',
+      '产线',
+      'MBOM分支',
+      '生产结构',
     ],
-    keywords: ['topology', 'template', '拓扑'],
-    pinyin: 'tpmb',
+    pinyin: 'cxybomfz',
   },
   {
     href: '/production-architecture/routes',

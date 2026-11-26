@@ -3,10 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import type {
-  ProductionMaterialRequirementBomSelection,
-  ProductionMaterialRequirementSourceLine,
-} from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
+import type { ProductionMaterialRequirementSourceLine } from '@/features/production-material-requirements/contracts/production-material-requirement-source-bom-and-contribution-api-dto'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import {
   type MaterialRequirement,
@@ -42,9 +39,6 @@ export function useRequirements() {
   const [sourceLines, setSourceLines] = useState<
     ProductionMaterialRequirementSourceLine[]
   >([])
-  const [bomSelections, setBomSelections] = useState<
-    ProductionMaterialRequirementBomSelection[]
-  >([])
   const [lastSelectedKeys, setLastSelectedKeys] = useState<string[]>([])
   const [isComplete, setIsComplete] = useState(false)
 
@@ -57,13 +51,8 @@ export function useRequirements() {
   })
   const calculateMutation = useMutation({
     mutationKey: mrpQueryKeys.requirementsCalculation(),
-    mutationFn: ({
-      selectedKeys,
-      bomSelections,
-    }: {
-      selectedKeys: string[]
-      bomSelections: ProductionMaterialRequirementBomSelection[]
-    }) => requirementService.getMrpRequirements(selectedKeys, bomSelections),
+    mutationFn: ({ selectedKeys }: { selectedKeys: string[] }) =>
+      requirementService.getMrpRequirements(selectedKeys),
     onMutate: () => {
       setIsComplete(false)
       setRequirements([])
@@ -96,7 +85,6 @@ export function useRequirements() {
     requirements,
     stats,
     sourceLines,
-    bomSelections,
     isComplete,
     activeOrders: ordersQuery.data ?? [],
     ordersError,
@@ -110,28 +98,12 @@ export function useRequirements() {
       queryClient.invalidateQueries({
         queryKey: tradingQueryKeys.salesOrdersRoot(),
       }),
-    setBomSelection: (selection: ProductionMaterialRequirementBomSelection) => {
-      setBomSelections((current) => [
-        ...current.filter(
-          (item) =>
-            item.salesOrderId !== selection.salesOrderId ||
-            item.salesOrderLineId !== selection.salesOrderLineId
-        ),
-        selection,
-      ])
-      setIsComplete(false)
-      setRequirements([])
-    },
     recalculate: () =>
-      calculateMutation.mutate({
-        selectedKeys: lastSelectedKeys,
-        bomSelections,
-      }),
+      calculateMutation.mutate({ selectedKeys: lastSelectedKeys }),
     calculate: (selectedKeys: string[] = []) => {
       setLastSelectedKeys(selectedKeys)
-      setBomSelections([])
       setSourceLines([])
-      calculateMutation.mutate({ selectedKeys, bomSelections: [] })
+      calculateMutation.mutate({ selectedKeys })
     },
   }
 }

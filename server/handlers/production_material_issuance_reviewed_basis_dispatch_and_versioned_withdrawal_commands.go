@@ -27,7 +27,7 @@ func DispatchProductionMaterialIssuanceReviewedBasisHandler(c *gin.Context) {
 		return
 	}
 	for _, source := range request.Sources {
-		if !isCanonicalProductionMaterialIssuanceHTTPUUID(source.SalesOrderID) || !isCanonicalProductionMaterialIssuanceHTTPUUID(source.BOMID) {
+		if !isCanonicalProductionMaterialIssuanceHTTPUUID(source.SalesOrderID) || !isCanonicalProductionMaterialIssuanceHTTPUUID(source.ExpectedBOMID) {
 			respondToProductionMaterialIssuanceCommandError(c, services.ErrProductionMaterialIssuanceInvalidRequest)
 			return
 		}

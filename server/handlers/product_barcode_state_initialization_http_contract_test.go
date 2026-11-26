@@ -39,7 +39,7 @@ func newProductBarcodeStateInitializationHTTPRouter(t *testing.T) (*gorm.DB, *gi
 			product_name TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
-			current_branch_operation_id TEXT,
+			current_process_step_id TEXT,
 			status TEXT,
 			last_event_id TEXT,
 			started_at DATETIME,
@@ -56,8 +56,8 @@ func newProductBarcodeStateInitializationHTTPRouter(t *testing.T) (*gorm.DB, *gi
 			operation_id TEXT,
 			product_barcode TEXT NOT NULL,
 			event_type TEXT NOT NULL,
-			from_branch_operation_id TEXT,
-			to_branch_operation_id TEXT,
+			from_process_step_id TEXT,
+			to_process_step_id TEXT,
 			route_id TEXT,
 			route_step_id TEXT,
 			operator TEXT,
@@ -119,12 +119,12 @@ func TestProductBarcodeStateInitializationHTTPRejectsStatusMutationAndDuplicateC
 
 func TestProductBarcodeStateInitializationHTTPIgnoresClientRouteIdentity(t *testing.T) {
 	database, router := newProductBarcodeStateInitializationHTTPRouter(t)
-	response := sendProductBarcodeStateInitializationHTTPRequest(router, `{"productBarcode":"HTTP-ROUTE-IGNORED","productId":"product-1","routeId":"client-route","routeStepId":"client-route-step","branchOperationId":"client-operation"}`)
+	response := sendProductBarcodeStateInitializationHTTPRequest(router, `{"productBarcode":"HTTP-ROUTE-IGNORED","productId":"product-1","routeId":"client-route","routeStepId":"client-route-step","processStepId":"client-operation"}`)
 	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
 
 	var savedState models.ProductBarcodeState
 	require.NoError(t, database.Where("product_barcode = ?", "HTTP-ROUTE-IGNORED").First(&savedState).Error)
 	require.Empty(t, savedState.RouteID)
 	require.Empty(t, savedState.RouteStepID)
-	require.Empty(t, savedState.CurrentBranchOperationID)
+	require.Empty(t, savedState.CurrentProcessStepID)
 }

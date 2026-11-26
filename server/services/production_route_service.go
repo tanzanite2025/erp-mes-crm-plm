@@ -59,6 +59,23 @@ func (s *ProductionService) ListProductionRoutes() ([]ProductionRouteDTO, error)
 	if err != nil {
 		return nil, err
 	}
+	lineIDs := make([]uint, 0, len(routes))
+	for _, route := range routes {
+		lineID := productionRouteSalesOrderLineID(route.SalesOrderLineID)
+		if lineID != 0 {
+			lineIDs = append(lineIDs, lineID)
+		}
+	}
+	lineRouteModes := make(map[uint]string, len(lineIDs))
+	if len(lineIDs) > 0 {
+		var lines []models.SalesOrderLine
+		if err := s.txManager.DB().Select("id", "production_route_mode").Where("id IN ?", lineIDs).Find(&lines).Error; err != nil {
+			return nil, fmt.Errorf("failed to load production route order line modes: %w", err)
+		}
+		for _, line := range lines {
+			lineRouteModes[line.ID] = strings.ToUpper(strings.TrimSpace(line.ProductionRouteMode))
+		}
+	}
 	branches, err := s.ListProductionRouteBOMBranches()
 	if err != nil {
 		return nil, err
@@ -79,10 +96,16 @@ func (s *ProductionService) ListProductionRoutes() ([]ProductionRouteDTO, error)
 		if status != productionRouteStatusDraft && status != productionRouteStatusPublished {
 			continue
 		}
+		if strings.ToUpper(strings.TrimSpace(route.ScopeType)) != productionRouteScopeSalesOrderLine {
+			continue
+		}
+		if lineRouteModes[productionRouteSalesOrderLineID(route.SalesOrderLineID)] != "CUSTOM" {
+			continue
+		}
 		if _, exists := availableBranches[productionRouteBOMBranchIdentityFromModel(route)]; !exists {
 			continue
 		}
-		if !productionRouteHasBranchOperationSteps(route) {
+		if !productionRouteHasValidProcessSteps(route) {
 			continue
 		}
 		currentRoutes = append(currentRoutes, route)
@@ -129,7 +152,7 @@ func (s *ProductionService) PublishProductionRoute(id string, version int64, ope
 		if err := validateProductionRouteScopeReferenceTx(tx, route); err != nil {
 			return err
 		}
-		if err := ensureProductionRouteBranchOperationIdentitiesTx(tx, &route); err != nil {
+		if err := resolveConfiguredProductionRouteProcessesTx(tx, &route); err != nil {
 			return err
 		}
 		if err := validateProductionRouteReferences(tx, route); err != nil {
@@ -139,14 +162,16 @@ func (s *ProductionService) PublishProductionRoute(id string, version int64, ope
 			return err
 		}
 		for index := range route.Steps {
-			if route.Steps[index].BranchOperation == nil {
-				return fmt.Errorf("%w: route step %s has no branch operation to snapshot", ErrInvalidProductionRoute, route.Steps[index].ID)
+			var processStep models.ProcessStep
+			if err := tx.First(&processStep, "id = ?", route.Steps[index].ProcessStepID).Error; err != nil {
+				return fmt.Errorf("%w: route step %s has no process step to snapshot", ErrInvalidProductionRoute, route.Steps[index].ID)
 			}
-			route.Steps[index].BranchOperationNameSnapshot = strings.TrimSpace(route.Steps[index].BranchOperation.Name)
-			route.Steps[index].BranchOperationDescriptionSnapshot = route.Steps[index].BranchOperation.Description
+			route.Steps[index].ProcessStep = &processStep
+			route.Steps[index].ProcessNameSnapshot = strings.TrimSpace(processStep.Name)
+			route.Steps[index].ProcessDescriptionSnapshot = processStep.Description
 			if err := tx.Model(&models.ProductionRouteStep{}).Where("id = ?", route.Steps[index].ID).Updates(map[string]interface{}{
-				"branch_operation_name_snapshot":        route.Steps[index].BranchOperationNameSnapshot,
-				"branch_operation_description_snapshot": route.Steps[index].BranchOperationDescriptionSnapshot,
+				"process_name_snapshot":        route.Steps[index].ProcessNameSnapshot,
+				"process_description_snapshot": route.Steps[index].ProcessDescriptionSnapshot,
 			}).Error; err != nil {
 				return fmt.Errorf("failed to snapshot route step %s: %w", route.Steps[index].ID, err)
 			}
@@ -254,23 +279,18 @@ func (s *ProductionService) CreateProductionRouteRevision(id string, operator st
 			if err != nil {
 				return err
 			}
-			processLibraryID := ""
-			if sourceStep.BranchOperation != nil {
-				processLibraryID = sourceStep.BranchOperation.ProcessLibraryID
-			}
 			newRevision.Steps = append(newRevision.Steps, models.ProductionRouteStep{
-				BaseModel:                          models.BaseModel{ID: newStepIDs[strings.TrimSpace(sourceStep.ID)]},
-				Sequence:                           sourceStep.Sequence,
-				BranchOperationID:                  sourceStep.BranchOperationID,
-				ProcessLibraryID:                   processLibraryID,
-				BranchOperationNameSnapshot:        sourceStep.BranchOperationNameSnapshot,
-				BranchOperationDescriptionSnapshot: sourceStep.BranchOperationDescriptionSnapshot,
-				ExecutionMode:                      sourceStep.ExecutionMode,
-				QualityGate:                        sourceStep.QualityGate,
-				QualityRouting:                     datatypes.JSON(routingJSON),
-				EstimatedMinutes:                   sourceStep.EstimatedMinutes,
-				TransferRequired:                   sourceStep.TransferRequired,
-				Description:                        sourceStep.Description,
+				BaseModel:                  models.BaseModel{ID: newStepIDs[strings.TrimSpace(sourceStep.ID)]},
+				Sequence:                   sourceStep.Sequence,
+				ProcessStepID:              sourceStep.ProcessStepID,
+				ProcessNameSnapshot:        sourceStep.ProcessNameSnapshot,
+				ProcessDescriptionSnapshot: sourceStep.ProcessDescriptionSnapshot,
+				ExecutionMode:              sourceStep.ExecutionMode,
+				QualityGate:                sourceStep.QualityGate,
+				QualityRouting:             datatypes.JSON(routingJSON),
+				EstimatedMinutes:           sourceStep.EstimatedMinutes,
+				TransferRequired:           sourceStep.TransferRequired,
+				Description:                sourceStep.Description,
 			})
 		}
 		if err := validateProductionRouteReferences(tx, newRevision); err != nil {
@@ -279,7 +299,7 @@ func (s *ProductionService) CreateProductionRouteRevision(id string, operator st
 		if err := validateProductionRouteScopeReferenceTx(tx, newRevision); err != nil {
 			return err
 		}
-		if err := ensureProductionRouteBranchOperationIdentitiesTx(tx, &newRevision); err != nil {
+		if err := resolveConfiguredProductionRouteProcessesTx(tx, &newRevision); err != nil {
 			return err
 		}
 		if err := s.repository.SaveProductionRoute(tx, &newRevision); err != nil {
@@ -354,10 +374,13 @@ func (s *ProductionService) SaveProductionRoute(req SaveProductionRouteRequest) 
 			if err := hydrateProductionRouteBOMBranch(tx, &route); err != nil {
 				return err
 			}
+			if err := activateSalesOrderLineCustomProductionRouteTx(tx, route, req.Operator, req.IP); err != nil {
+				return err
+			}
 			if err := validateProductionRouteScopeReferenceTx(tx, route); err != nil {
 				return err
 			}
-			if err := ensureProductionRouteBranchOperationIdentitiesTx(tx, &route); err != nil {
+			if err := resolveConfiguredProductionRouteProcessesTx(tx, &route); err != nil {
 				return err
 			}
 			beforeDTO := mapProductionRouteToDTO(existing)
@@ -392,10 +415,13 @@ func (s *ProductionService) SaveProductionRoute(req SaveProductionRouteRequest) 
 			if err := hydrateProductionRouteBOMBranch(tx, &route); err != nil {
 				return err
 			}
+			if err := activateSalesOrderLineCustomProductionRouteTx(tx, route, req.Operator, req.IP); err != nil {
+				return err
+			}
 			if err := validateProductionRouteScopeReferenceTx(tx, route); err != nil {
 				return err
 			}
-			if err := ensureProductionRouteBranchOperationIdentitiesTx(tx, &route); err != nil {
+			if err := resolveConfiguredProductionRouteProcessesTx(tx, &route); err != nil {
 				return err
 			}
 			if err := createProductionRouteFamilyForDraftTx(tx, &route); err != nil {
@@ -499,8 +525,7 @@ func normalizeProductionRouteDTO(route ProductionRouteDTO) ProductionRouteDTO {
 
 	for index := range route.Steps {
 		route.Steps[index].RouteID = route.ID
-		route.Steps[index].BranchOperationID = strings.TrimSpace(route.Steps[index].BranchOperationID)
-		route.Steps[index].ProcessLibraryID = strings.TrimSpace(route.Steps[index].ProcessLibraryID)
+		route.Steps[index].ProcessStepID = strings.TrimSpace(route.Steps[index].ProcessStepID)
 		route.Steps[index].ExecutionMode = strings.ToUpper(strings.TrimSpace(route.Steps[index].ExecutionMode))
 		if route.Steps[index].ExecutionMode == "" {
 			route.Steps[index].ExecutionMode = "IN_HOUSE"
@@ -509,7 +534,7 @@ func normalizeProductionRouteDTO(route ProductionRouteDTO) ProductionRouteDTO {
 		if route.Steps[index].QualityGate == "" {
 			route.Steps[index].QualityGate = "NONE"
 		}
-		route.Steps[index].QualityRouting = cloneRawMessage(route.Steps[index].QualityRouting)
+		route.Steps[index].QualityRouting = cloneProductionRouteQualityRoutingJSON(route.Steps[index].QualityRouting)
 		route.Steps[index].Description = strings.TrimSpace(route.Steps[index].Description)
 		if route.Steps[index].Sequence <= 0 {
 			route.Steps[index].Sequence = index + 1
@@ -532,13 +557,16 @@ func validateProductionRouteDTO(route ProductionRouteDTO) error {
 	if _, err := normalizeProductionRouteScope(route.ScopeType, route.SalesOrderLineID); err != nil {
 		return err
 	}
+	if strings.ToUpper(strings.TrimSpace(route.ScopeType)) != productionRouteScopeSalesOrderLine {
+		return fmt.Errorf("%w: default route revisions are generated from MBOM branch operations", ErrInvalidProductionRoute)
+	}
 	if len(route.Steps) == 0 {
-		return fmt.Errorf("%w: at least one branch operation step is required", ErrInvalidProductionRoute)
+		return fmt.Errorf("%w: at least one process step is required", ErrInvalidProductionRoute)
 	}
 
 	for index, step := range route.Steps {
-		if strings.TrimSpace(step.ProcessLibraryID) == "" {
-			return fmt.Errorf("%w: steps[%d].processLibraryId is required", ErrInvalidProductionRoute, index)
+		if strings.TrimSpace(step.ProcessStepID) == "" {
+			return fmt.Errorf("%w: steps[%d].processStepId is required", ErrInvalidProductionRoute, index)
 		}
 		if step.ExecutionMode != "IN_HOUSE" && step.ExecutionMode != "OUTSOURCE_ALLOWED" && step.ExecutionMode != "OUTSOURCE_REQUIRED" {
 			return fmt.Errorf("%w: unsupported steps[%d].executionMode %s", ErrInvalidProductionRoute, index, step.ExecutionMode)
@@ -574,42 +602,101 @@ func validateProductionRouteScopeReferenceTx(tx *gorm.DB, route models.Productio
 	if strings.TrimSpace(line.ProductID) != strings.TrimSpace(route.ProductID) {
 		return fmt.Errorf("%w: selected sales order line product does not match the MBOM branch product", ErrInvalidProductionRoute)
 	}
+	if (productionRouteBOMBranchIdentity{
+		ProductID:          strings.TrimSpace(line.ProductID),
+		BOMOwnerType:       strings.ToUpper(strings.TrimSpace(line.BOMOwnerType)),
+		BOMOwnerCustomerID: strings.TrimSpace(line.BOMOwnerCustomerID),
+		BOMVersionLevel:    strings.TrimSpace(line.BOMVersionLevel),
+	}) != productionRouteBOMBranchIdentityFromModel(route) {
+		return fmt.Errorf("%w: selected sales order line MBOM branch does not match the route", ErrInvalidProductionRoute)
+	}
+	if !strings.EqualFold(strings.TrimSpace(line.ProductionRouteMode), "CUSTOM") {
+		return fmt.Errorf("%w: select custom operations on the sales order line before creating its route", ErrInvalidProductionRoute)
+	}
 	return nil
 }
 
+func activateSalesOrderLineCustomProductionRouteTx(tx *gorm.DB, route models.ProductionRoute, operator string, ip string) error {
+	lineID := productionRouteSalesOrderLineID(route.SalesOrderLineID)
+	if lineID == 0 {
+		return fmt.Errorf("%w: custom production routes require a sales order line", ErrInvalidProductionRoute)
+	}
+	var line models.SalesOrderLine
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&line, "id = ?", lineID).Error; err != nil {
+		return fmt.Errorf("%w: selected sales order line does not exist", ErrInvalidProductionRoute)
+	}
+	if strings.TrimSpace(line.ProductID) != strings.TrimSpace(route.ProductID) {
+		return fmt.Errorf("%w: selected sales order line product does not match the MBOM branch product", ErrInvalidProductionRoute)
+	}
+	if (productionRouteBOMBranchIdentity{
+		ProductID:          strings.TrimSpace(line.ProductID),
+		BOMOwnerType:       strings.ToUpper(strings.TrimSpace(line.BOMOwnerType)),
+		BOMOwnerCustomerID: strings.TrimSpace(line.BOMOwnerCustomerID),
+		BOMVersionLevel:    strings.TrimSpace(line.BOMVersionLevel),
+	}) != productionRouteBOMBranchIdentityFromModel(route) {
+		return fmt.Errorf("%w: selected sales order line MBOM branch does not match the route", ErrInvalidProductionRoute)
+	}
+	if strings.EqualFold(strings.TrimSpace(line.ProductionRouteMode), "CUSTOM") {
+		return nil
+	}
+	if tx.Migrator().HasTable(&models.ProductionPlan{}) {
+		var planCount int64
+		if err := tx.Unscoped().Model(&models.ProductionPlan{}).
+			Where("sales_order_line_id = ?", lineID).
+			Count(&planCount).Error; err != nil {
+			return fmt.Errorf("failed to check production plan references: %w", err)
+		}
+		if planCount > 0 {
+			return ErrProductionSalesOrderLineRouteModeLocked
+		}
+	}
+	if err := tx.Model(&line).Update("production_route_mode", "CUSTOM").Error; err != nil {
+		return fmt.Errorf("failed to set sales order line to custom production operations: %w", err)
+	}
+	return recordAuditEventTx(tx, audit.NewAuditEvent(
+		audit.AuditEntitySalesOrder,
+		line.SalesOrderID,
+		audit.AuditActionUpdate,
+		audit.AuditActor{Username: strings.TrimSpace(operator), IP: strings.TrimSpace(ip), Source: "http"},
+	).WithChanges(audit.AuditChange{
+		Field:    fmt.Sprintf("lines.%d.productionRouteMode", line.LineNo),
+		OldValue: "DEFAULT",
+		NewValue: "CUSTOM",
+	}).Normalize())
+}
+
 func validateProductionRouteReferences(tx *gorm.DB, route models.ProductionRoute) error {
-	operationIDs := make([]string, 0, len(route.Steps))
+	processStepIDs := make([]string, 0, len(route.Steps))
 	for _, step := range route.Steps {
-		operationIDs = append(operationIDs, strings.TrimSpace(step.BranchOperationID))
+		processStepIDs = append(processStepIDs, strings.TrimSpace(step.ProcessStepID))
 	}
-	var operations []models.ProductionBOMBranchOperation
-	if len(operationIDs) > 0 {
+	var processSteps []models.ProcessStep
+	if len(processStepIDs) > 0 {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id IN ?", operationIDs).Order("id asc").Find(&operations).Error; err != nil {
-			return fmt.Errorf("failed to lock production route branch operations: %w", err)
+			Where("id IN ?", processStepIDs).Order("id asc").Find(&processSteps).Error; err != nil {
+			return fmt.Errorf("failed to lock production route process steps: %w", err)
 		}
 	}
-	operationsByID := make(map[string]models.ProductionBOMBranchOperation, len(operations))
-	for _, operation := range operations {
-		operationsByID[operation.ID] = operation
+	processStepsByID := make(map[string]models.ProcessStep, len(processSteps))
+	for _, processStep := range processSteps {
+		processStepsByID[processStep.ID] = processStep
 	}
-	routeIdentity := productionRouteBOMBranchIdentityFromModel(route)
 	for index, step := range route.Steps {
-		operationID := strings.TrimSpace(step.BranchOperationID)
-		operation, exists := operationsByID[operationID]
-		if !exists || !operation.IsActive {
-			return fmt.Errorf("%w: steps[%d].branchOperationId is missing or inactive", ErrInvalidProductionRoute, index)
+		processStepID := strings.TrimSpace(step.ProcessStepID)
+		processStep, exists := processStepsByID[processStepID]
+		if !exists || !processStep.IsActive {
+			return fmt.Errorf("%w: steps[%d].processStepId is missing or inactive", ErrInvalidProductionRoute, index)
 		}
-		if productionBOMBranchOperationIdentity(operation) != routeIdentity {
-			return fmt.Errorf("%w: steps[%d].branchOperationId belongs to a different MBOM branch", ErrInvalidProductionRoute, index)
+		var associationCount int64
+		if err := tx.Model(&models.ProductionMBOMBranchProcessAssociation{}).
+			Where("product_id = ? AND UPPER(bom_owner_type) = ? AND COALESCE(bom_owner_customer_id, '') = ? AND COALESCE(bom_version_level, '') = ? AND process_step_id = ?",
+				strings.TrimSpace(route.ProductID), strings.ToUpper(strings.TrimSpace(route.BOMOwnerType)),
+				strings.TrimSpace(route.BOMOwnerCustomerID), strings.TrimSpace(route.BOMVersionLevel), processStepID).
+			Count(&associationCount).Error; err != nil {
+			return fmt.Errorf("failed to validate MBOM branch process association: %w", err)
 		}
-		if strings.TrimSpace(step.ProcessLibraryID) == "" ||
-			strings.TrimSpace(operation.ProcessLibraryID) != strings.TrimSpace(step.ProcessLibraryID) {
-			return fmt.Errorf("%w: steps[%d] process library identity does not match its MBOM branch operation", ErrInvalidProductionRoute, index)
-		}
-		var process models.ProcessStep
-		if err := tx.First(&process, "id = ? AND is_active = ?", operation.ProcessLibraryID, true).Error; err != nil {
-			return fmt.Errorf("%w: steps[%d] process library entry is missing or inactive", ErrInvalidProductionRoute, index)
+		if associationCount == 0 {
+			return fmt.Errorf("%w: steps[%d].processStepId is not configured for the selected MBOM branch", ErrInvalidProductionRoute, index)
 		}
 	}
 
@@ -625,18 +712,15 @@ func productionRouteBOMBranchIdentityFromModel(route models.ProductionRoute) pro
 	}
 }
 
-func productionRouteHasBranchOperationSteps(route models.ProductionRoute) bool {
+func productionRouteHasValidProcessSteps(route models.ProductionRoute) bool {
 	if len(route.Steps) == 0 {
 		return false
 	}
 	for _, step := range route.Steps {
-		if strings.TrimSpace(step.BranchOperationID) == "" || step.BranchOperation == nil {
+		if strings.TrimSpace(step.ProcessStepID) == "" || step.ProcessStep == nil {
 			return false
 		}
-		if !step.BranchOperation.IsActive {
-			return false
-		}
-		if productionBOMBranchOperationIdentity(*step.BranchOperation) != productionRouteBOMBranchIdentityFromModel(route) {
+		if !step.ProcessStep.IsActive || step.ProcessStep.ID != step.ProcessStepID {
 			return false
 		}
 	}

@@ -20,8 +20,8 @@ import {
   type SystemConfig,
 } from '../services/system-config-service'
 
-const TOPOLOGY_AUTH_KEY = 'topology_auth_password'
-const TOPOLOGY_AUTH_LABEL = '产线拓扑操作授权码'
+const PRODUCTION_LINE_EDIT_AUTH_KEY = 'production_line_edit_auth_password'
+const PRODUCTION_LINE_EDIT_AUTH_LABEL = '产线资料编辑授权码'
 
 export function SecuritySettings() {
   const { t } = useLanguage()
@@ -38,7 +38,9 @@ export function SecuritySettings() {
       setError(null)
       const data = await systemConfigService.getConfigs()
       setConfigs(data)
-      const pwdConfig = data.find((config) => config.key === TOPOLOGY_AUTH_KEY)
+      const pwdConfig = data.find(
+        (config) => config.key === PRODUCTION_LINE_EDIT_AUTH_KEY
+      )
       if (pwdConfig) {
         setAuthPassword(pwdConfig.value)
       }
@@ -73,11 +75,11 @@ export function SecuritySettings() {
     setIsSaving(true)
     try {
       const targetConfig = configs.find(
-        (config) => config.key === TOPOLOGY_AUTH_KEY
+        (config) => config.key === PRODUCTION_LINE_EDIT_AUTH_KEY
       ) || {
-        key: TOPOLOGY_AUTH_KEY,
+        key: PRODUCTION_LINE_EDIT_AUTH_KEY,
         value: authPassword,
-        label: TOPOLOGY_AUTH_LABEL,
+        label: PRODUCTION_LINE_EDIT_AUTH_LABEL,
       }
 
       await systemConfigService.updateConfig({

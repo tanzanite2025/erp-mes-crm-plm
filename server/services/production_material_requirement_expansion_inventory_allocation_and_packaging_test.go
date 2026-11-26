@@ -16,7 +16,7 @@ func newProductionMaterialRequirementExpansionFixture() ProductionMaterialRequir
 	return ProductionMaterialRequirementExpansionInput{
 		PerformanceVersionOptions: []models.ProductAttributeOption{{Value: "standard", LabelZh: "标准版", LabelEn: "Standard"}},
 		AsOf:                      time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC),
-		Orders:                    []models.SalesOrder{{ID: "order-1", OrderNo: "SO-2026-01", CustomerID: "customer-1", Version: 7, Lines: []models.SalesOrderLine{{ID: 12, LineNo: 1, ProductID: "product-1", ProductModel: "R50", Qty: 100}}}},
+		Orders:                    []models.SalesOrder{{ID: "order-1", OrderNo: "SO-2026-01", CustomerID: "customer-1", Version: 7, Lines: []models.SalesOrderLine{{ID: 12, LineNo: 1, ProductID: "product-1", BOMOwnerType: "INTERNAL", BOMVersionLevel: "standard", ProductModel: "R50", Qty: 100}}}},
 		Materials:                 []models.Material{{BaseModel: models.BaseModel{ID: "material-1"}, Code: "M1", Name: "材料", UOM: "m2", Status: "Active"}},
 		BOMs: []models.BOM{{BaseModel: models.BaseModel{ID: "bom-1"}, BOMNo: "MBOM-1", ProductID: "product-1", BOMType: models.BOMTypeMBOM, Status: models.BOMStatusReleased, OwnerType: "INTERNAL", Version: 3, VersionLevel: "standard", Items: []models.BOMItem{
 			{ID: "item-1", MaterialID: "material-1", Section: "A", Unit: "m2", StandardUsage: 0.4},
@@ -47,33 +47,32 @@ func TestProductionMaterialRequirementRepeatedRecipeContributionsPreserveFinishe
 	require.Equal(t, 3, items[0].Packaging.PackQty) // Total requirement 60 / 25, independent of the gap.
 }
 
-func TestProductionMaterialRequirementRequiresExplicitBOMChoiceAndRejectsStaleChoice(t *testing.T) {
+func TestProductionMaterialRequirementBlocksDuplicateEffectiveMBOMsAndUsesUniqueCandidate(t *testing.T) {
 	input := newProductionMaterialRequirementExpansionFixture()
 	second := input.BOMs[0]
-	second.ID, second.VersionLevel = "bom-2", "lightweight"
+	second.ID, second.Version = "bom-2", 4
 	second.CreatedAt = input.AsOf.Add(time.Hour)
-	input.BOMs = append(input.BOMs, second)
+	otherBranch := input.BOMs[0]
+	otherBranch.ID, otherBranch.VersionLevel = "other-branch-bom", "lightweight"
+	input.BOMs = append(input.BOMs, second, otherBranch)
 	expansion, err := ExpandProductionMaterialRequirements(input)
 	require.NoError(t, err)
 	require.False(t, expansion.IsComplete)
-	require.Equal(t, "BOM_SELECTION_REQUIRED", expansion.SourceLines[0].IssueCode)
+	require.Equal(t, "DUPLICATE_EFFECTIVE_MBOM", expansion.SourceLines[0].IssueCode)
 	require.Nil(t, expansion.SourceLines[0].BOM)
+	require.Len(t, expansion.SourceLines[0].BOMCandidates, 2)
+	require.NotContains(t, []string{expansion.SourceLines[0].BOMCandidates[0].ID, expansion.SourceLines[0].BOMCandidates[1].ID}, "other-branch-bom")
 	items, err := ProjectMRPRequirementsFromExpandedSources(expansion, input.Materials, nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, items)
-	input.BOMSelections = []ProductionMaterialRequirementBOMSelection{{SalesOrderID: "order-1", SalesOrderLineID: 12, BOMID: "bom-1"}}
+	input.BOMs = input.BOMs[:1]
 	expansion, err = ExpandProductionMaterialRequirements(input)
 	require.NoError(t, err)
 	require.True(t, expansion.IsComplete)
 	require.Equal(t, "bom-1", expansion.SourceLines[0].BOM.ID)
-	input.BOMSelections[0].BOMID = "unavailable-bom"
-	expansion, err = ExpandProductionMaterialRequirements(input)
-	require.NoError(t, err)
-	require.False(t, expansion.IsComplete)
-	require.Equal(t, "BOM_SELECTION_CHANGED", expansion.SourceLines[0].IssueCode)
 }
 
-func TestProductionMaterialRequirementRespectsCustomerOwnershipManufacturingTypeAndEffectiveDate(t *testing.T) {
+func TestProductionMaterialRequirementUsesOnlyTheSelectedBranchAndHonorsEffectiveDates(t *testing.T) {
 	input := newProductionMaterialRequirementExpansionFixture()
 	customer := input.BOMs[0]
 	customer.ID, customer.OwnerType, customer.OwnerCustomerID = "customer-bom", "CUSTOMER", "customer-1"
@@ -90,8 +89,33 @@ func TestProductionMaterialRequirementRespectsCustomerOwnershipManufacturingType
 	expansion, err := ExpandProductionMaterialRequirements(input)
 	require.NoError(t, err)
 	require.True(t, expansion.IsComplete)
+	require.Equal(t, "bom-1", expansion.SourceLines[0].BOM.ID)
+	require.Len(t, expansion.SourceLines[0].BOMCandidates, 1)
+
+	input.Orders[0].Lines[0].BOMOwnerType = "CUSTOMER"
+	input.Orders[0].Lines[0].BOMOwnerCustomerID = "customer-1"
+	expansion, err = ExpandProductionMaterialRequirements(input)
+	require.NoError(t, err)
+	require.True(t, expansion.IsComplete)
 	require.Equal(t, "customer-bom", expansion.SourceLines[0].BOM.ID)
 	require.Len(t, expansion.SourceLines[0].BOMCandidates, 1)
+
+	input.Orders[0].Lines[0].BOMOwnerCustomerID = "another-customer"
+	expansion, err = ExpandProductionMaterialRequirements(input)
+	require.NoError(t, err)
+	require.False(t, expansion.IsComplete)
+	require.Equal(t, "MISSING_BOM", expansion.SourceLines[0].IssueCode)
+	require.Empty(t, expansion.SourceLines[0].BOMCandidates)
+}
+
+func TestProductionMaterialRequirementRequiresAnExplicitMBOMBranch(t *testing.T) {
+	input := newProductionMaterialRequirementExpansionFixture()
+	input.Orders[0].Lines[0].BOMOwnerType = ""
+	expansion, err := ExpandProductionMaterialRequirements(input)
+	require.NoError(t, err)
+	require.False(t, expansion.IsComplete)
+	require.Equal(t, "MISSING_MBOM_BRANCH", expansion.SourceLines[0].IssueCode)
+	require.Empty(t, expansion.SourceLines[0].BOMCandidates)
 }
 
 func TestProductionMaterialRequirementBlocksInvalidUnitsMaterialsUsageAndMissingSelectionWithoutPartialTotals(t *testing.T) {

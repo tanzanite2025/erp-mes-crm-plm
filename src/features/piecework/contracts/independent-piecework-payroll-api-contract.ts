@@ -2,7 +2,6 @@ export interface PieceworkPayItem {
   id: string
   code: string
   name: string
-  unit: string
   status: 'active' | 'inactive'
   remarks: string
   version: number
@@ -30,6 +29,7 @@ export interface FinancePieceworkSalaryInputRow {
   employeeId: string
   departmentId: string
   payItemId: string
+  unit: string
   quantity: number
 }
 
