@@ -1,6 +1,6 @@
 # Stage 1: Build (Rust 1.88 on Debian Bookworm)
 # ---------------------------------------------------
-FROM rust:1.88-bookworm as builder
+FROM rust:1.88-bookworm AS builder
 
 WORKDIR /usr/src/watchdog
 COPY . .
@@ -14,7 +14,7 @@ RUN cargo build --release
 FROM debian:bookworm-slim
 
 # 安装必要的运行时库 (openssl, ca-certificates 为数据库连接/安全验证所需)
-RUN apt-get update && apt-get upgrade -y \
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
     && apt-get install -y --no-install-recommends \
     openssl \
     ca-certificates \
