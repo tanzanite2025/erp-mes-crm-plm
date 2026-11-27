@@ -1738,8 +1738,8 @@ func InitDB(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
-	if err := MigrateProductionLineEditAuthorizationConfigIdentity(DB); err != nil {
-		log.Fatal("Failed to migrate production line authorization config:", err)
+	if err := DeleteRetiredProductionLineEditAuthorizationConfigs(DB); err != nil {
+		log.Fatal("Failed to delete retired production line authorization configs:", err)
 	}
 	if err := EnsureProductionMBOMBranchProcessIdentityCutover(DB); err != nil {
 		log.Fatal("Failed to migrate production process identities:", err)
@@ -1859,31 +1859,6 @@ func InitDB(dsn string) {
 	ensureDefaultBOMSections()
 	if err := EnsureDefaultQualityInspectionStages(DB); err != nil {
 		log.Fatal("Failed to initialize quality inspection stages: ", err)
-	}
-
-	// 6. 闂傚倸鍊风粈渚€骞夐敍鍕殰婵°倕鍟畷鏌ユ煕瀹€鈧崕鎴犵礊閺嶎厽鐓欓梺顓ㄧ畱閺嬫盯鎮楅崹顐ゅ弨闁哄被鍊栭幈銊╁箛椤戣棄浜炬俊銈呮噹閺勩儵鏌ｅΟ鑲╁笡闁绘挻娲樼换娑㈠幢濡ゅ啰顔囬梺閫炲苯澧紓宥咃工椤?Seed
-	var configCount int64
-	DB.Model(&models.SystemConfig{}).Where("key = ?", "production_line_edit_auth_password").Count(&configCount)
-	if configCount == 0 {
-		lineEditAuthPassword := os.Getenv("PRODUCTION_LINE_EDIT_AUTH_PASSWORD")
-		ginMode := os.Getenv("GIN_MODE")
-		if lineEditAuthPassword == "" {
-			if ginMode == "release" {
-				log.Fatal("[CRITICAL_SECURITY] PRODUCTION_LINE_EDIT_AUTH_PASSWORD is required in release mode for production safety.")
-			} else {
-				lineEditAuthPassword = "local-development-only"
-				fmt.Println("[DEV_SEC_NOTICE] PRODUCTION_LINE_EDIT_AUTH_PASSWORD not set. Using debug fallback.")
-			}
-		}
-
-		config := models.SystemConfig{
-			Key:         "production_line_edit_auth_password",
-			Value:       lineEditAuthPassword,
-			Label:       "Production Line Edit Authorization Code",
-			Description: "Password required to edit existing production line master data.",
-		}
-		DB.Create(&config)
-		fmt.Println("Initial system config seeded.")
 	}
 
 }

@@ -37,24 +37,6 @@ vi.mock('@/features/production-shared/hooks/use-production-lines', () => ({
   }),
 }))
 
-vi.mock(
-  '@/features/production-shared/components/production-line-security-authorization-dialog',
-  () => ({
-    ProductionLineSecurityAuthorizationDialog: ({
-      open,
-      onConfirm,
-    }: {
-      open: boolean
-      onConfirm: (password: string) => Promise<boolean | void>
-    }) =>
-      open ? (
-        <button type='button' onClick={() => void onConfirm('valid-auth-code')}>
-          确认授权修改
-        </button>
-      ) : null,
-  })
-)
-
 vi.mock('@/lib/application-confirm-prompt-and-alert-dialog-requests', () => ({
   requestApplicationConfirmation: testState.confirmApplicationAction,
 }))
@@ -129,12 +111,10 @@ describe('production line management page', () => {
       target: { value: '碳纤维车圈产线' },
     })
     fireEvent.click(screen.getByRole('button', { name: '保存' }))
-    fireEvent.click(await screen.findByRole('button', { name: '确认授权修改' }))
 
     await waitFor(() =>
       expect(testState.updateLineStrict).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'UPDATE', id: 'line-a', version: 4 }),
-        'valid-auth-code'
+        expect.objectContaining({ type: 'UPDATE', id: 'line-a', version: 4 })
       )
     )
     const [mutation] = testState.updateLineStrict.mock.calls[0]

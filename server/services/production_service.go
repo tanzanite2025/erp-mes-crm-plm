@@ -18,7 +18,6 @@ var (
 	ErrProductionRouteRevisionConflict             = errors.New("production route revision conflict")
 	ErrInvalidProductionRoute                      = errors.New("invalid production route")
 	ErrInvalidProcessStep                          = errors.New("invalid process step")
-	ErrProductionLineUnauthorized                  = errors.New("production line authorization failed")
 	ErrProductionRouteImmutable                    = errors.New("production route is immutable")
 	ErrProductionRouteDeleteBlocked                = errors.New("production route deletion is blocked")
 	ErrInvalidProductionRouteStatus                = errors.New("invalid production route status transition")
@@ -27,7 +26,6 @@ var (
 
 type SaveProductionLineRequest struct {
 	Line     ProductionLineDTO
-	AuthCode string
 	Operator string
 	IP       string
 }
@@ -36,7 +34,6 @@ type PatchProductionLineRequest struct {
 	ID       string
 	Delta    map[string]json.RawMessage
 	Version  int64
-	AuthCode string
 	Operator string
 	IP       string
 }
@@ -64,20 +61,17 @@ type SaveProductionMBOMBranchProcessSelectionRequest struct {
 }
 
 type ProductionService struct {
-	txManager        transactionManager
-	repository       repositories.ProductionRepository
-	systemConfigRepo repositories.SystemConfigRepository
+	txManager  transactionManager
+	repository repositories.ProductionRepository
 }
 
 func NewProductionService(
 	txManager transactionManager,
 	repository repositories.ProductionRepository,
-	systemConfigRepo repositories.SystemConfigRepository,
 ) *ProductionService {
 	return &ProductionService{
-		txManager:        txManager,
-		repository:       repository,
-		systemConfigRepo: systemConfigRepo,
+		txManager:  txManager,
+		repository: repository,
 	}
 }
 
@@ -86,5 +80,4 @@ var defaultProductionRuntime = defaultServiceRuntime()
 var defaultProductionService = NewProductionService(
 	defaultProductionRuntime.txManager,
 	repositories.NewProductionRepository(),
-	repositories.NewSystemConfigRepository(),
 )

@@ -110,7 +110,6 @@ export const commandMenu = {
     units: '单位管理',
     sequences: '一维码发号规则',
     enterprise: '企业信息',
-    security: '安全设置',
     engineeringProducts: '产品工程 / 型号管理',
     engineeringBom: 'BOM物料配方管理',
     engineeringTemplates: '产品模板配置',

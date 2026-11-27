@@ -12,17 +12,9 @@ export const productionArchitecture = {
     updateSuccess: 'Production line updated',
     addSuccess: 'Production line added',
     saveConflict: 'Save failed because the production line changed. Reloading.',
-    saveForbiddenAuthCode:
-      'Save failed: the authorization password is invalid.',
     saveForbiddenPermission: 'Save failed: you cannot update production lines.',
     saveError: 'Save failed. Check the connection and retry.',
     deleteFailed: 'Production line deletion failed',
-    authGenericTitle: 'Authorization required',
-    authGenericDesc:
-      'Enter the authorization password to update this production line.',
-    authPasswordPlaceholder: 'Enter authorization password',
-    authVerify: 'Verify and continue',
-    cancel: 'Cancel',
   },
   processLibrary: {
     title: 'Production Process Library',

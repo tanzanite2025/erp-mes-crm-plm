@@ -35,7 +35,6 @@ func newProductionProcessStepTestService(t *testing.T) *ProductionService {
 	return NewProductionService(
 		productionProcessStepTestTxManager{db: database},
 		repositories.NewProductionRepository(),
-		repositories.NewSystemConfigRepository(),
 	)
 }
 

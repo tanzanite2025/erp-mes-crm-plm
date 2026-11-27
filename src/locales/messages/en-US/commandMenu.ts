@@ -110,7 +110,6 @@ export const commandMenu = {
     units: 'Unit Management',
     sequences: 'Linear Barcode Numbering Rules',
     enterprise: 'Enterprise Info',
-    security: 'Security Settings',
     engineeringProducts: 'Product Engineering / Models',
     engineeringBom: 'BOM Formulas',
     engineeringTemplates: 'Product Templates',

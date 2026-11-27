@@ -18,11 +18,6 @@ export const basicSettingsTabs: TabItem[] = [
     label: 'Enterprise Info',
     href: '/basic-settings/enterprise',
   },
-  {
-    key: 'security',
-    label: 'Security Settings',
-    href: '/basic-settings/security',
-  },
 ]
 
 export function getBasicSettingsTabs(t: TranslateFn): TabItem[] {
@@ -41,11 +36,6 @@ export function getBasicSettingsTabs(t: TranslateFn): TabItem[] {
       key: 'enterprise',
       label: t('basicSettings.tabs.enterprise'),
       href: '/basic-settings/enterprise',
-    },
-    {
-      key: 'security',
-      label: t('basicSettings.tabs.security'),
-      href: '/basic-settings/security',
     },
   ]
 }

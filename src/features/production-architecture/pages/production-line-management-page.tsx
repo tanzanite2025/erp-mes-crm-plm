@@ -12,17 +12,10 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { usePermissionActions } from '@/features/authz/hooks/use-permission-access'
 import { ProductionLineProfileDialog } from '@/features/production-shared/components/production-line-profile-dialog'
-import { ProductionLineSecurityAuthorizationDialog } from '@/features/production-shared/components/production-line-security-authorization-dialog'
 import type { ProductionLineMutationPayload } from '@/features/production-shared/contracts/production-line-mutation'
 import type { ProductionLine } from '@/features/production-shared/data/production-line'
 import { productionResourceQueryKeys } from '@/features/production-shared/data/production-resource-query-keys'
 import { useProductionLines } from '@/features/production-shared/hooks/use-production-lines'
-
-interface PendingProductionLineUpdate {
-  delta: Record<string, { o: unknown; n: unknown }>
-  lineId: string
-  version: number
-}
 
 export function ProductionLineManagementPage() {
   const queryClient = useQueryClient()
@@ -41,9 +34,6 @@ export function ProductionLineManagementPage() {
   const [search, setSearch] = useState('')
   const [profileDialogOpen, setProfileDialogOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<ProductionLine | null>(null)
-  const [pendingUpdate, setPendingUpdate] =
-    useState<PendingProductionLineUpdate | null>(null)
-  const [authDialogOpen, setAuthDialogOpen] = useState(false)
 
   const visibleLines = lines.filter((line) =>
     `${line.name} ${line.code}`
@@ -67,30 +57,10 @@ export function ProductionLineManagementPage() {
       return
     }
     if (!canUpdate) return
-    setPendingUpdate({
-      delta: payload.delta,
-      lineId: payload.id,
-      version: payload.version,
-    })
-    setAuthDialogOpen(true)
-  }
-
-  async function confirmAuthorizedLineUpdate(password: string) {
-    if (!pendingUpdate) return false
-    await updateLineStrict(
-      {
-        type: 'UPDATE',
-        id: pendingUpdate.lineId,
-        delta: pendingUpdate.delta,
-        version: pendingUpdate.version,
-      },
-      password
-    )
-    setPendingUpdate(null)
+    await updateLineStrict(payload)
     await queryClient.invalidateQueries({
       queryKey: productionResourceQueryKeys.lines(),
     })
-    return true
   }
 
   async function deleteLine(line: ProductionLine) {
@@ -113,12 +83,19 @@ export function ProductionLineManagementPage() {
     tracker.data.isActive = !line.isActive
     const delta = tracker.commit()
     if (Object.keys(delta).length === 0) return
-    setPendingUpdate({
-      delta,
-      lineId: line.id,
-      version: line.version,
+    try {
+      await updateLineStrict({
+        type: 'UPDATE',
+        id: line.id,
+        delta,
+        version: line.version,
+      })
+    } catch {
+      return
+    }
+    await queryClient.invalidateQueries({
+      queryKey: productionResourceQueryKeys.lines(),
     })
-    setAuthDialogOpen(true)
   }
 
   if (isChecking || (isLoading && lines.length === 0)) {
@@ -237,16 +214,6 @@ export function ProductionLineManagementPage() {
         editingLine={editingLine}
         lines={lines}
         onSubmit={submitLineProfile}
-      />
-      <ProductionLineSecurityAuthorizationDialog
-        open={authDialogOpen}
-        onOpenChange={(open) => {
-          setAuthDialogOpen(open)
-          if (!open) setPendingUpdate(null)
-        }}
-        onConfirm={confirmAuthorizedLineUpdate}
-        title='确认修改产线'
-        description='请输入授权密码以保存产线修改。'
       />
     </div>
   )

@@ -524,15 +524,6 @@ const moduleSearchKeywordOverrides: GlobalSearchNavigationKeywordAlias[] = [
     pinyin: 'qyxx',
   },
   {
-    href: '/basic-settings/security',
-    labelKeys: [
-      'commandMenu.items.security',
-      'commandMenu.parents.basicSettings',
-    ],
-    keywords: ['security', '安全'],
-    pinyin: 'aqsz',
-  },
-  {
     href: '/message-center/rules',
     labelKeys: [
       'messageCenter.pages.rules.title',

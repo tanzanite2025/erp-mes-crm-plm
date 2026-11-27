@@ -16,10 +16,6 @@ import { normalizeProductionLineEntity } from '../utils/production-code-normaliz
 
 export { PRODUCTION_LINES_UPDATED_EVENT } from './production-resource-sync'
 
-type SaveLinePayload = ProductionLine & {
-  authCode?: string
-}
-
 export const productionLinesService = {
   getLines: async (): Promise<ProductionLine[]> => {
     const res =
@@ -30,17 +26,11 @@ export const productionLinesService = {
     return toProductionLineContracts(checked)
   },
 
-  saveLine: async (
-    line: ProductionLine,
-    authCode?: string
-  ): Promise<ProductionLine> => {
+  saveLine: async (line: ProductionLine): Promise<ProductionLine> => {
     const normalizedLine = normalizeProductionLineEntity(line)
-    const payload: SaveLinePayload = authCode
-      ? { ...normalizedLine, authCode }
-      : normalizedLine
     const res = await apiFetch<ProductionLineApiDTO>('/production/lines', {
       method: 'POST',
-      body: JSON.stringify(toSaveProductionLineApiDTO(payload, authCode)),
+      body: JSON.stringify(toSaveProductionLineApiDTO(normalizedLine)),
     })
 
     const saved = toProductionLineContract(
@@ -56,8 +46,7 @@ export const productionLinesService = {
   patchLine: async (
     id: string,
     delta: DeltaSet,
-    version: number,
-    authCode?: string
+    version: number
   ): Promise<ProductionLine> => {
     const payload: DeltaPayload = {
       op: 'PATCH',
@@ -65,7 +54,6 @@ export const productionLinesService = {
       metadata: {
         id,
         version,
-        authCode,
       },
     }
 

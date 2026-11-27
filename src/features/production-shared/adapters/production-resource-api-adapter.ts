@@ -206,8 +206,7 @@ export function toProductionProcessContracts(
 }
 
 export function toSaveProductionLineApiDTO(
-  line: ProductionLine,
-  authCode?: string
+  line: ProductionLine
 ): SaveProductionLineApiDTO {
   return {
     id: line.id,
@@ -218,7 +217,6 @@ export function toSaveProductionLineApiDTO(
     isActive: line.isActive,
     createdAt: line.createdAt || '',
     updatedAt: line.updatedAt || '',
-    authCode,
   }
 }
 

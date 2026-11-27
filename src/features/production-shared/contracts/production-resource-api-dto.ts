@@ -124,9 +124,7 @@ export interface ProductionMessageApiDTO {
   message: string
 }
 
-export interface SaveProductionLineApiDTO extends ProductionLineApiDTO {
-  authCode?: string
-}
+export type SaveProductionLineApiDTO = ProductionLineApiDTO
 
 export type SaveProductionRouteApiDTO = ProductionRouteApiDTO
 

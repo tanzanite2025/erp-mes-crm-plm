@@ -85,14 +85,6 @@ func (s *ProductionService) saveProductionLineTransaction(tx *gorm.DB, req SaveP
 		if line.Name == "" || line.Code == "" {
 			return fmt.Errorf("%w: name and code are required", ErrInvalidProductionLine)
 		}
-		currentAuthCode, err := s.systemConfigRepo.GetSystemConfigValue(tx, "production_line_edit_auth_password", "local-development-only")
-		if err != nil {
-			return err
-		}
-		if existing != nil && req.AuthCode != currentAuthCode {
-			return ErrProductionLineUnauthorized
-		}
-
 		if existing != nil {
 			updated, err := s.repository.BumpProductionLineVersion(tx, line.ID, line.Version)
 			if err != nil {
@@ -142,7 +134,6 @@ func (s *ProductionService) PatchProductionLine(req PatchProductionLineRequest) 
 
 	return s.SaveProductionLine(SaveProductionLineRequest{
 		Line:     lineDTO,
-		AuthCode: req.AuthCode,
 		Operator: req.Operator,
 		IP:       req.IP,
 	})

@@ -157,6 +157,8 @@ export function ProductionLineProfileDialog({
         })
       }
       onOpenChange(false)
+    } catch {
+      return
     } finally {
       setIsSubmitting(false)
     }

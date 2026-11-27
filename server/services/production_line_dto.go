@@ -7,7 +7,6 @@ import (
 
 type SaveProductionLineHandlerRequest struct {
 	ProductionLineDTO
-	AuthCode string `json:"authCode"`
 }
 
 type ProductionLineDTO struct {
@@ -60,4 +59,3 @@ func mapProductionLinesToDTO(lines []models.ProductionLine) []ProductionLineDTO 
 	}
 	return result
 }
-

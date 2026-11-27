@@ -41,7 +41,7 @@ func TestDeletingProductionLineDoesNotChangeBranchProcessOrExecutionFacts(t *tes
 	}
 	require.NotEmpty(t, line.ID)
 	line.IsActive = false
-	line, err = service.SaveProductionLine(SaveProductionLineRequest{Line: line, AuthCode: "local-development-only"})
+	line, err = service.SaveProductionLine(SaveProductionLineRequest{Line: line})
 	require.NoError(t, err)
 	require.NoError(t, service.DeleteProductionLine(line.ID, "test", ""))
 	lines, err = service.ListProductionLines()

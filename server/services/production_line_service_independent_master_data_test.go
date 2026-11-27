@@ -96,10 +96,6 @@ func newProductionServiceTestHarness(t *testing.T) (*ProductionService, *gorm.DB
 			effective_to DATETIME,
 			deleted_at DATETIME
 		)`,
-		`CREATE TABLE system_configs (
-			key TEXT PRIMARY KEY,
-			value TEXT
-		)`,
 		`CREATE TABLE audit_logs (
 			id TEXT PRIMARY KEY,
 			module TEXT,
@@ -118,7 +114,6 @@ func newProductionServiceTestHarness(t *testing.T) (*ProductionService, *gorm.DB
 	service := NewProductionService(
 		productionServiceTestTransactionManager{database: database},
 		repositories.NewProductionRepository(),
-		repositories.NewSystemConfigRepository(),
 	)
 	return service, database
 }
@@ -149,9 +144,8 @@ func TestProductionLineCRUDUsesOnlyIndependentMasterData(t *testing.T) {
 	require.Len(t, lines, 1)
 	require.Equal(t, "碳纤维车圈产线", lines[0].Name)
 	updated, err := service.PatchProductionLine(PatchProductionLineRequest{
-		ID:       saved.ID,
-		Version:  saved.Version,
-		AuthCode: "local-development-only",
+		ID:      saved.ID,
+		Version: saved.Version,
 		Delta: map[string]json.RawMessage{
 			"name": json.RawMessage(`{"o":"碳纤维车圈产线","n":"碳纤维车圈产线（改）"}`),
 		},

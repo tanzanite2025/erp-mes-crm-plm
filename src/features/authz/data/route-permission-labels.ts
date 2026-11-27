@@ -229,7 +229,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/basic-settings/units': 'basicSettings.tabs.units',
   '/basic-settings/knowledge-base': 'basicSettings.tabs.knowledgeBase',
   '/basic-settings/enterprise': 'basicSettings.tabs.enterprise',
-  '/basic-settings/security': 'basicSettings.tabs.security',
   '/pda-shell': 'sidebar.items.pdaShell',
   '/wheel-trace': 'scanPlatform.modules.wheelTrace.name',
 }

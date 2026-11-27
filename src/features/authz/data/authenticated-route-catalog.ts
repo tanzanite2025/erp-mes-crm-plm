@@ -105,7 +105,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   '/raw-materials/binding-qr',
   '/terminal-config/scanners',
   '/tooling-furnaces/archive',
-  '/basic-settings/security',
   '/business-analysis/scrap',
   '/dashboard/notifications',
   '/engineering-db/drilling',

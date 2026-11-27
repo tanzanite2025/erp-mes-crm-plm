@@ -32,7 +32,6 @@ func TestProductionProcessLibraryReferenceProtectionBlocksDeactivateAndDeleteUnt
 	service := NewProductionService(
 		productionProcessLibraryReferenceProtectionTestTxManager{database: database},
 		repositories.NewProductionRepository(),
-		repositories.NewSystemConfigRepository(),
 	)
 	require.NoError(t, database.Create(&models.ProcessStep{
 		BaseModel: models.BaseModel{ID: "library-cut"},

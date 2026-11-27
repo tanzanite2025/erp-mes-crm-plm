@@ -57,7 +57,6 @@ var KnownRoutePermissionIDs = map[string]struct{}{
 	"tab_basic_settings_enterprise": {},
 	"tab_basic_settings_knowledge_base": {},
 	"tab_basic_settings_permission_tree_smoke": {},
-	"tab_basic_settings_security": {},
 	"tab_basic_settings_units": {},
 	"tab_business_analysis_customers": {},
 	"tab_business_analysis_defect_trend": {},

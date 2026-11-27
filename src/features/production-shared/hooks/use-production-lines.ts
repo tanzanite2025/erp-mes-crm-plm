@@ -19,17 +19,6 @@ function isStructuredValue(value: unknown): boolean {
   return value !== null && typeof value === 'object'
 }
 
-function isProductionLineEditUnauthorized(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false
-  }
-
-  return (
-    /production line authorization failed/i.test(error.message) ||
-    /^UNAUTHORIZED$/i.test(error.message)
-  )
-}
-
 function isComplexLineDeltaEntry(
   path: string,
   value: { o: unknown; n: unknown }
@@ -149,7 +138,6 @@ export function useProductionLines(options?: ProductionLinesHookOptions) {
 
   const handleUpdateLine = async (
     payload: ProductionLineMutationPayload,
-    authCode?: string,
     rethrowError = false
   ): Promise<ProductionLine | null> => {
     const isUpdate = payload.type === 'UPDATE'
@@ -177,18 +165,13 @@ export function useProductionLines(options?: ProductionLinesHookOptions) {
 
       if (isUpdate) {
         const { id, delta, version } = payload
-        saved = await productionLinesService.patchLine(
-          id,
-          delta,
-          version,
-          authCode
-        )
+        saved = await productionLinesService.patchLine(id, delta, version)
         setConfirmedLines((current) =>
           current.map((line) => (line.id === id ? saved : line))
         )
         setPendingUpdates((prev) => prev.filter((entry) => entry.id !== id))
       } else {
-        saved = await productionLinesService.saveLine(payload.data, authCode)
+        saved = await productionLinesService.saveLine(payload.data)
         setPendingCreates((prev) =>
           prev.filter((currentLine) => currentLine.id !== optimisticTempId)
         )
@@ -231,9 +214,7 @@ export function useProductionLines(options?: ProductionLinesHookOptions) {
         Number(error.status) === 403
       ) {
         toast.error(
-          isProductionLineEditUnauthorized(error)
-            ? t('productionArchitecture.lineMgmt.saveForbiddenAuthCode')
-            : t('productionArchitecture.lineMgmt.saveForbiddenPermission')
+          t('productionArchitecture.lineMgmt.saveForbiddenPermission')
         )
       } else {
         toast.error(t('productionArchitecture.lineMgmt.saveError'))
@@ -268,20 +249,18 @@ export function useProductionLines(options?: ProductionLinesHookOptions) {
   }
 
   return {
-    createLine: (data: ProductionLine, authCode?: string) =>
-      handleUpdateLine({ type: 'CREATE', data }, authCode),
-    createLineStrict: (data: ProductionLine, authCode?: string) =>
-      handleUpdateLine({ type: 'CREATE', data }, authCode, true),
+    createLine: (data: ProductionLine) =>
+      handleUpdateLine({ type: 'CREATE', data }),
+    createLineStrict: (data: ProductionLine) =>
+      handleUpdateLine({ type: 'CREATE', data }, true),
     deleteLine: handleDeleteLine,
     deleteLineStrict: (id: string) => handleDeleteLine(id, true),
     error,
     isLoading,
     lines,
-    updateLine: (payload: ProductionLineMutationPayload, authCode?: string) =>
-      handleUpdateLine(payload, authCode),
-    updateLineStrict: (
-      payload: ProductionLineMutationPayload,
-      authCode?: string
-    ) => handleUpdateLine(payload, authCode, true),
+    updateLine: (payload: ProductionLineMutationPayload) =>
+      handleUpdateLine(payload),
+    updateLineStrict: (payload: ProductionLineMutationPayload) =>
+      handleUpdateLine(payload, true),
   }
 }

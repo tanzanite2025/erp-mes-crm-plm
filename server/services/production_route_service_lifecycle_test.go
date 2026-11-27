@@ -36,7 +36,6 @@ func newProductionRouteLifecycleTestService(t *testing.T) (*ProductionService, *
 	service := NewProductionService(
 		productionRouteLifecycleTestTxManager{db: database},
 		repositories.NewProductionRepository(),
-		repositories.NewSystemConfigRepository(),
 	)
 	return service, database
 }

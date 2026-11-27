@@ -4,7 +4,6 @@ export const basicSettings = {
     knowledgeBase: '知识库',
     sequences: '产品编码发号规则',
     enterprise: '企业信息',
-    security: '安全设置',
   },
   knowledgeBase: {
     page: {
@@ -296,33 +295,6 @@ export const basicSettings = {
       createFailed: '创建单位失败',
       updateFailed: '更新单位失败',
       deleteFailed: '删除单位失败',
-    },
-  },
-  securityPage: {
-    loading: '正在进入加密配置中心...',
-    title: '系统安全设置',
-    subtitle: '管理系统安全参数与产线资料编辑授权',
-    authCardTitle: '产线资料编辑授权码 (AUTH_CODE)',
-    authCardDescription: '用于验证现有产线主数据修改操作的授权口令',
-    currentPassword: '当前授权码',
-    placeholder: '输入至少 4 位数字或字母',
-    warning: '修改后，后续编辑现有产线资料时需要使用新授权码。',
-    actions: {
-      saving: '正在写入系统...',
-      apply: '提交全局变更',
-    },
-    auditTitle: '授权范围',
-    auditItems: {
-      first: '该授权码由后端校验，用于修改现有产线主数据。',
-      second: '产线资料修改会写入审计日志。',
-      third: '授权码保存在系统配置中。',
-    },
-    version: '系统安全加固版本：1.0.4',
-    toasts: {
-      loadFailed: '获取安全配置失败',
-      minLength: '授权码长度至少为 4 位',
-      saved: '安全授权码已更新',
-      saveFailed: '更新失败，请重试',
     },
   },
   enterprisePage: {

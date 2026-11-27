@@ -29,7 +29,7 @@ func TestProductionRoutePostgresPublicationLocksRouteBeforeProcessStepsToAvoidLo
 	require.NoError(t, locked.Clauses(clause.Locking{Strength: "UPDATE"}).First(&route, "id = ?", fixture.route.ID).Error)
 	publicationPID := make(chan int, 1)
 	manager := productionObservedPostgresTransactionManager{database: database, transactionPID: publicationPID}
-	service := NewProductionService(manager, repositories.NewProductionRepository(), repositories.NewSystemConfigRepository())
+	service := NewProductionService(manager, repositories.NewProductionRepository())
 	publicationResult := make(chan error, 1)
 	go func() {
 		_, err := service.PublishProductionRoute(route.ID, route.Version, "test", "")
@@ -65,7 +65,7 @@ func TestProductionRoutePostgresDraftSaveLocksFamilyBeforeRevision(t *testing.T)
 
 	savePID := make(chan int, 1)
 	manager := productionObservedPostgresTransactionManager{database: database, transactionPID: savePID}
-	service := NewProductionService(manager, repositories.NewProductionRepository(), repositories.NewSystemConfigRepository())
+	service := NewProductionService(manager, repositories.NewProductionRepository())
 	saveResult := make(chan error, 1)
 	go func() {
 		_, err := service.SaveProductionRoute(request)

@@ -37,17 +37,12 @@ func SaveProductionLineHandler(c *gin.Context) {
 
 	line, err := services.SaveProductionLine(services.SaveProductionLineRequest{
 		Line:     input.ProductionLineDTO,
-		AuthCode: input.AuthCode,
 		Operator: middleware.GetSafeUsername(c),
 		IP:       c.ClientIP(),
 	})
 	if err != nil {
 		if err == services.ErrProductionLineVersionConflict {
 			respondVersionConflict(c)
-			return
-		}
-		if err == services.ErrProductionLineUnauthorized {
-			c.JSON(http.StatusForbidden, gin.H{"error": "UNAUTHORIZED", "message": "Topology authorization code is invalid"})
 			return
 		}
 		if errors.Is(err, services.ErrInvalidProductionLine) {
@@ -76,17 +71,12 @@ func PatchProductionLineHandler(c *gin.Context) {
 		ID:       c.Param("id"),
 		Delta:    input.Delta,
 		Version:  input.Metadata.Version,
-		AuthCode: input.Metadata.AuthCode,
 		Operator: middleware.GetSafeUsername(c),
 		IP:       c.ClientIP(),
 	})
 	if err != nil {
 		if err == services.ErrProductionLineVersionConflict {
 			respondVersionConflict(c)
-			return
-		}
-		if err == services.ErrProductionLineUnauthorized {
-			c.JSON(http.StatusForbidden, gin.H{"error": "UNAUTHORIZED", "message": "Topology authorization code is invalid"})
 			return
 		}
 		if errors.Is(err, services.ErrInvalidProductionLine) {

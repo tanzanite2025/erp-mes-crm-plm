@@ -5,7 +5,6 @@ export const basicSettings = {
     knowledgeBase: 'Knowledge Base',
     sequences: 'Product Code Numbering Rules',
     enterprise: 'Enterprise Info',
-    security: 'Security Settings',
   },
   knowledgeBase: {
     page: {
@@ -281,37 +280,6 @@ export const basicSettings = {
       createFailed: 'Failed to create unit',
       updateFailed: 'Failed to update unit',
       deleteFailed: 'Failed to delete unit',
-    },
-  },
-  securityPage: {
-    loading: 'Entering secure configuration center...',
-    title: 'System Security Settings',
-    subtitle:
-      'Manage system security settings and production line edit authorization',
-    authCardTitle: 'Production Line Edit Authorization Code (AUTH_CODE)',
-    authCardDescription:
-      'Required by the server when editing existing production line master data.',
-    currentPassword: 'Current Authorization Code',
-    placeholder: 'Enter at least 4 letters or digits',
-    warning:
-      'After this code changes, use the new code for subsequent production line edits.',
-    actions: {
-      saving: 'Writing to system...',
-      apply: 'Apply Global Changes',
-    },
-    auditTitle: 'Authorization Scope',
-    auditItems: {
-      first:
-        'The server checks this code when existing production line master data is edited.',
-      second: 'Production line edits are recorded in the audit log.',
-      third: 'The authorization code is stored in system configuration.',
-    },
-    version: 'Architecture Hardening Ver: 1.0.4 - Secure System',
-    toasts: {
-      loadFailed: 'Failed to load security settings',
-      minLength: 'Authorization code must be at least 4 characters long',
-      saved: 'Security authorization code updated',
-      saveFailed: 'Update failed. Please try again.',
     },
   },
   appearanceMapping: {
